@@ -12,24 +12,41 @@ declare var elliptic;
 export class Transaction {
     info = null;
     transaction = null;
+    key = null;
     constructor(public navCtrl: NavController, public navParams: NavParams) {
         var ec = elliptic.ec('secp256k1');
-        var key = ec.genKeyPair();
+        this.key = ec.genKeyPair();
         this.info = navParams.data;
+        var blockchainurl = this.info.blockchainurl;
+        var callbackurl = this.info.callbackurl;
+        var my_bulletin_secret = forge.sha256.create().update(this.key.getPrivate('hex')).digest().toHex()
         this.transaction = {
             relationship: this.encrypt(),
-            rid: forge.sha256.create(key.getPrivate('hex')).digest().toHex() + this.info.relationship.bulletin_secret,
+            rid:  forge.sha256.create().update(my_bulletin_secret + this.info.relationship.bulletin_secret).digest().toHex(),
             fee: 0.1,
             value: 1,
             requester_rid: null,
             requested_rid: null
         };
         var msgHash = elliptic.utils.toArray(JSON.stringify(this.transaction));
-        var signature = key.sign(msgHash);
+        var signature = this.key.sign(msgHash);
         var derSign = signature.toDER();
         this.transaction.id = this.byteArrayToHexString(derSign);
-        this.transaction.public_key = forge.sha256.create(key.getPublic('hex')).digest().toHex();
+        this.transaction.public_key = this.key.getPublic('hex');
         console.log(this.transaction);
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", blockchainurl, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.send(JSON.stringify(this.transaction));
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", callbackurl, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.send(JSON.stringify({
+            shared_secret: this.info.relationship.shared_secret,
+            bulletin_secret: forge.sha256.create().update(this.key.getPrivate('hex')).digest().toHex()
+        }));
     }
 
     hexToBytes(s) {
@@ -49,7 +66,7 @@ export class Transaction {
     }
 
     encrypt() {
-        var key = forge.pkcs5.pbkdf2(this.info.relationship.shared_secret, 'salt', 400, 32);
+        var key = forge.pkcs5.pbkdf2(forge.sha256.create().update(this.key.getPrivate('hex')).digest().toHex(), 'salt', 400, 32);
         var cipher = forge.cipher.createCipher('AES-CBC', key);
         var iv = forge.random.getBytesSync(16);
         cipher.start({iv: iv});

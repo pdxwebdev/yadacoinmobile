@@ -38,7 +38,9 @@ export class HomePage {
                      shared_secret: info.shared_secret
                  },
                  requester_rid: info.requester_rid,
-                 requested_rid: info.requested_rid
+                 requested_rid: info.requested_rid,
+                 blockchainurl: info.blockchainurl,
+                 callbackurl: info.callbackurl
              })
              this.qrScanner.hide(); // hide camera preview
              scanSub.unsubscribe(); // stop scanning
