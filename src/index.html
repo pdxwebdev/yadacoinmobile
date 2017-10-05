@@ -16,8 +16,24 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
   <!-- cordova.js required for cordova apps -->
-  <script src="cordova.js"></script>
+  <script src="cordova.js" type="text/javascript"></script>
+  <script src="assets/aes.js" type="text/javascript"></script>
+  <script src="assets/uuid4.js" type="text/javascript"></script>
+  <script src="assets/forge.min.js" type="text/javascript"></script>
+  <script src="assets/elliptic.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    String.prototype.hexEncode = function(){
+        var hex, i;
 
+        var result = "";
+        for (i=0; i<this.length; i++) {
+            hex = this.charCodeAt(i).toString(16);
+            result += ("000"+hex).slice(-2);
+        }
+
+        return result
+    }
+  </script>
   <!-- un-comment this code to enable service worker
   <script>
     if ('serviceWorker' in navigator) {
