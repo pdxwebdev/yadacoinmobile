@@ -12,6 +12,7 @@ import { SplashScreen } from '@ionic-native/splash-screen';
 
 import { QRScanner } from '@ionic-native/qr-scanner';
 import { NgxQRCodeModule } from 'ngx-qrcode2';
+import { IonicStorageModule } from '@ionic/storage';
 
 @NgModule({
   declarations: [
@@ -23,6 +24,7 @@ import { NgxQRCodeModule } from 'ngx-qrcode2';
   imports: [
     BrowserModule,
     IonicModule.forRoot(MyApp),
+    IonicStorageModule.forRoot(),
     NgxQRCodeModule
   ],
   bootstrap: [IonicApp],
