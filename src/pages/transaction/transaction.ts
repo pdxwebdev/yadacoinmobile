@@ -51,9 +51,12 @@ export class Transaction {
         var blockchainurl = this.info.blockchainurl;
         var callbackurl = this.info.callbackurl;
         var my_bulletin_secret = forge.sha256.create().update(this.private_key_hex).digest().toHex();
+        var rids = [my_bulletin_secret, this.info.relationship.bulletin_secret].sort(function (a, b) {
+            return a.toLowerCase().localeCompare(b.toLowerCase());
+        });
         this.transaction = {
             relationship: this.encrypt(),
-            rid:  forge.sha256.create().update(my_bulletin_secret + this.info.relationship.bulletin_secret).digest().toHex(),
+            rid:  forge.sha256.create().update(rids[0] + rids[1]).digest().toHex(),
             fee: 0.1,
             value: 1,
             requester_rid: this.info.requester_rid,
