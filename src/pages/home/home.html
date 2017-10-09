@@ -11,7 +11,7 @@
   <h3>Ionic Menu Starter</h3>
 
   <ion-item>
-    <ion-input type="text" placeholder="MY QR Code data" [(ngModel)]="qrData">
+    <ion-input type="text" placeholder="MY QR Code data" [(ngModel)]="postText">
     </ion-input>
   </ion-item>
   <ion-card *ngIf="createdCode">
@@ -22,6 +22,7 @@
   </ion-card>
 
   <button ion-button secondary menuToggle>Toggle Menu</button>
+  <button ion-button secondary (click)="post()">Post</button>
   <button ion-button secondary (click)="createCode()">Create Code</button>
   <button ion-button secondary (click)="scan_friend()">Scan Friend</button>
   <button ion-button secondary (click)="login()">Login</button>

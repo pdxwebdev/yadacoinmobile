@@ -2,23 +2,55 @@ import { Component } from '@angular/core';
 import { NavController } from 'ionic-angular';
 import { QRScanner, QRScannerStatus } from '@ionic-native/qr-scanner';
 import { Transaction } from '../transaction/transaction';
+import { Storage } from '@ionic/storage';
 
+declare var forge;
+declare var elliptic;
+declare var uuid4;
 
 @Component({
   selector: 'page-home',
   templateUrl: 'home.html'
 })
 export class HomePage {
-  qrData = null;
+  postText = null;
   createdCode = null;
   scannedCode = null;
+  public_key = null;
+  private_key = null;
+  public_key_hex = null;
+  private_key_hex = null;
 
-  constructor(public navCtrl: NavController, private qrScanner: QRScanner) {
+  constructor(public navCtrl: NavController, private qrScanner: QRScanner, private storage: Storage) {
 
   }
 
   createCode() {
-    this.createdCode = this.qrData;
+    this.storage.get('keys').then((keys) => {
+      var ec = elliptic.ec('secp256k1');
+      if(keys && typeof keys.public_key == 'string' && typeof keys.private_key == 'string') {
+          this.public_key_hex = keys.public_key;
+          this.private_key_hex = keys.private_key;
+          this.public_key = ec.keyFromPublic(keys.public_key, 'hex');
+          this.private_key = ec.keyFromPrivate(keys.private_key, 'hex');
+      } else {
+          var keys = ec.genKeyPair();
+          this.public_key_hex = keys.getPublic('hex');
+          this.private_key_hex = keys.getPrivate('hex');
+          this.public_key = keys.getPublic();
+          this.private_key = keys.getPrivate();
+          this.storage.set('keys', {
+              public_key: this.public_key_hex,
+              private_key: this.private_key_hex
+          });
+      }
+      
+      var my_bulletin_secret = forge.sha256.create().update(this.private_key_hex).digest().toHex();
+      this.createdCode = JSON.stringify({
+        bulletin_secret: my_bulletin_secret,
+        shared_secret: uuid4()
+      });
+    });
   }
 
   scan_friend() {
@@ -41,7 +73,7 @@ export class HomePage {
                  requested_rid: info.requested_rid,
                  blockchainurl: info.blockchainurl,
                  callbackurl: info.callbackurl,
-                 type: 'register'
+                 type: 'scan_friend'
              })
              this.qrScanner.hide(); // hide camera preview
              scanSub.unsubscribe(); // stop scanning
@@ -104,6 +136,13 @@ export class HomePage {
         })
         .catch((e: any) => console.log('Error is', e));
 
+  }
+
+  post() {
+    this.navCtrl.push(Transaction, {
+      post_text: this.postText,
+      type: 'post'
+    })
   }
 
 }

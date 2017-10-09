@@ -29,22 +29,24 @@ export class Transaction {
                 var keys = ec.genKeyPair();
                 this.public_key_hex = keys.getPublic('hex');
                 this.private_key_hex = keys.getPrivate('hex');
-                this.public_key = keys.public_key;
-                this.private_key = keys.private_key;
+                this.public_key = keys.getPublic();
+                this.private_key = keys.getPrivate();
                 this.storage.set('keys', {
-                    public_key: this.public_key,
-                    private_key: this.private_key
+                    public_key: this.public_key_hex,
+                    private_key: this.private_key_hex
                 });
             }
-            if (navParams.data.type == 'register') {
-                this.register(navParams.data);
+            if (navParams.data.type == 'scan_friend') {
+                this.scan_friend(navParams.data);
             } else if (navParams.data.type == 'login') {
                 this.login(navParams.data);
+            } else if (navParams.data.type == 'post') {
+                this.post(navParams.data);
             }
         });
     }
 
-    register(data) {
+    scan_friend(data) {
         this.info = data;
         var blockchainurl = this.info.blockchainurl;
         var callbackurl = this.info.callbackurl;
@@ -54,8 +56,8 @@ export class Transaction {
             rid:  forge.sha256.create().update(my_bulletin_secret + this.info.relationship.bulletin_secret).digest().toHex(),
             fee: 0.1,
             value: 1,
-            requester_rid: null,
-            requested_rid: null
+            requester_rid: this.info.requester_rid,
+            requested_rid: this.info.requested_rid
         };
         var msgHash = elliptic.utils.toArray(JSON.stringify(this.transaction));
         var signature = this.private_key.sign(msgHash);
@@ -88,12 +90,12 @@ export class Transaction {
         this.xhr = new XMLHttpRequest();
         this.xhr.open('GET', 'http://192.168.1.130:5000/transaction?rid=' + this.rid, true);
         this.xhr.onreadystatechange = () => {
-            this.readyStateChange();
+            this.loginReadyStateChange();
         }
         this.xhr.send();
     }
 
-    readyStateChange() {
+    loginReadyStateChange() {
         if (this.xhr.readyState === 4) {
             var transaction = JSON.parse(this.xhr.responseText);
             var encrypted_relationship = transaction.relationship;
@@ -122,6 +124,33 @@ export class Transaction {
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.send(JSON.stringify(this.transaction));
         }
+    }
+
+    post(data) {
+        this.info = data;
+
+        this.transaction = {
+            post_text: this.shared_encrypt(this.private_key_hex, data.post_text),
+            fee: 0.1,
+        };
+        var msgHash = elliptic.utils.toArray(JSON.stringify(this.transaction));
+        var signature = this.private_key.sign(msgHash);
+        var derSign = signature.toDER();
+        this.transaction.id = this.byteArrayToHexString(derSign);
+        this.transaction.public_key = this.public_key_hex;
+
+        this.xhr = new XMLHttpRequest();
+        this.xhr.open('POST', 'http://192.168.1.130:5000/transaction', true);
+        this.xhr.setRequestHeader('Content-Type', 'application/json');
+        this.xhr.onreadystatechange = () => {
+            //this.postReadyStateChange();
+        }
+        this.xhr.send(JSON.stringify(this.transaction));
+
+    }
+
+    direct_message(data) {
+        //placeholder
     }
 
     hexToBytes(s) {
