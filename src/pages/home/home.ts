@@ -44,7 +44,7 @@ export class HomePage {
               private_key: this.private_key_hex
           });
       }
-      
+
       var my_bulletin_secret = forge.sha256.create().update(this.private_key_hex).digest().toHex();
       this.createdCode = JSON.stringify({
         bulletin_secret: my_bulletin_secret,
@@ -112,6 +112,7 @@ export class HomePage {
              this.navCtrl.push(Transaction, {
                  bulletin_secret: info.bulletin_secret,
                  callbackurl: info.callbackurl,
+                 blockchainurl: info.blockchainurl,
                  challenge_code: info.challenge_code,
                  type: 'login'
              })

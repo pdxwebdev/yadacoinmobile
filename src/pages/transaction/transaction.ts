@@ -18,6 +18,9 @@ export class Transaction {
     public_key_hex = null;
     private_key_hex = null;
     constructor(public navCtrl: NavController, public navParams: NavParams, private storage: Storage) {
+        this.storage.get('blockchainurl').then((blockchainurl) => {
+            this.blockchainurl = blockchainurl;
+        });
         this.storage.get('keys').then((keys) => {
             var ec = elliptic.ec('secp256k1');
             if(keys && typeof keys.public_key == 'string' && typeof keys.private_key == 'string') {
@@ -49,6 +52,7 @@ export class Transaction {
     scan_friend(data) {
         this.info = data;
         var blockchainurl = this.info.blockchainurl;
+        this.storage.set('blockchainurl', blockchainurl);
         var callbackurl = this.info.callbackurl;
         var my_bulletin_secret = forge.sha256.create().update(this.private_key_hex).digest().toHex();
         var rids = [my_bulletin_secret, this.info.relationship.bulletin_secret].sort(function (a, b) {
@@ -85,13 +89,16 @@ export class Transaction {
     xhr = null;
     rid = null;
     callbackurl = null;
+    blockchainurl = null;
     login(data) {
         this.info = data;
         this.callbackurl = this.info.callbackurl;
+        this.blockchainurl = this.info.blockchainurl;
+        this.storage.set('blockchainurl', this.info.blockchainurl);
         var my_bulletin_secret = forge.sha256.create().update(this.private_key_hex).digest().toHex();
         this.rid = forge.sha256.create().update(my_bulletin_secret + this.info.bulletin_secret).digest().toHex();
         this.xhr = new XMLHttpRequest();
-        this.xhr.open('GET', 'http://192.168.1.130:5000/transaction?rid=' + this.rid, true);
+        this.xhr.open('GET', this.blockchainurl + '?rid=' + this.rid, true);
         this.xhr.onreadystatechange = () => {
             this.loginReadyStateChange();
         }
@@ -143,7 +150,7 @@ export class Transaction {
         this.transaction.public_key = this.public_key_hex;
 
         this.xhr = new XMLHttpRequest();
-        this.xhr.open('POST', 'http://192.168.1.130:5000/transaction', true);
+        this.xhr.open('POST', this.blockchainurl, true);
         this.xhr.setRequestHeader('Content-Type', 'application/json');
         this.xhr.onreadystatechange = () => {
             //this.postReadyStateChange();
