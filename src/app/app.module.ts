@@ -13,6 +13,9 @@ import { SplashScreen } from '@ionic-native/splash-screen';
 import { QRScanner } from '@ionic-native/qr-scanner';
 import { NgxQRCodeModule } from 'ngx-qrcode2';
 import { IonicStorageModule } from '@ionic/storage';
+import { HTTP } from '@ionic-native/http';
+import { GraphService } from './graph.service';
+import { BulletinSecretService } from './bulletinSecret.service';
 
 @NgModule({
   declarations: [
@@ -39,7 +42,10 @@ import { IonicStorageModule } from '@ionic/storage';
     SplashScreen,
     {provide: ErrorHandler, useClass: IonicErrorHandler},
     QRScanner,
-    NgxQRCodeModule
+    NgxQRCodeModule,
+    GraphService,
+    BulletinSecretService,
+    HTTP
   ]
 })
 export class AppModule {}

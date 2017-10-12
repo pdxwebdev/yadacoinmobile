@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { NavController, NavParams } from 'ionic-angular';
 import { Storage } from '@ionic/storage';
+import { BulletinSecretService } from '../../app/bulletinSecret.service';
 
 declare var forge;
 declare var elliptic;
@@ -17,36 +18,23 @@ export class Transaction {
     private_key = null;
     public_key_hex = null;
     private_key_hex = null;
-    constructor(public navCtrl: NavController, public navParams: NavParams, private storage: Storage) {
+    constructor(public navCtrl: NavController, public navParams: NavParams, private storage: Storage, private bulletinSecretService: BulletinSecretService) {
         this.storage.get('blockchainurl').then((blockchainurl) => {
             this.blockchainurl = blockchainurl;
         });
-        this.storage.get('keys').then((keys) => {
-            var ec = elliptic.ec('secp256k1');
-            if(keys && typeof keys.public_key == 'string' && typeof keys.private_key == 'string') {
-                this.public_key_hex = keys.public_key;
-                this.private_key_hex = keys.private_key;
-                this.public_key = ec.keyFromPublic(keys.public_key, 'hex');
-                this.private_key = ec.keyFromPrivate(keys.private_key, 'hex');
-            } else {
-                var keys = ec.genKeyPair();
-                this.public_key_hex = keys.getPublic('hex');
-                this.private_key_hex = keys.getPrivate('hex');
-                this.public_key = keys.getPublic();
-                this.private_key = keys.getPrivate();
-                this.storage.set('keys', {
-                    public_key: this.public_key_hex,
-                    private_key: this.private_key_hex
-                });
-            }
-            if (navParams.data.type == 'scan_friend') {
-                this.scan_friend(navParams.data);
-            } else if (navParams.data.type == 'login') {
-                this.login(navParams.data);
-            } else if (navParams.data.type == 'post') {
-                this.post(navParams.data);
-            }
-        });
+
+        this.public_key_hex = bulletinSecretService.public_key_hex;
+        this.private_key_hex = bulletinSecretService.private_key_hex;
+        this.public_key = bulletinSecretService.public_key;
+        this.private_key = bulletinSecretService.private_key;
+
+        if (navParams.data.type == 'scan_friend') {
+            this.scan_friend(navParams.data);
+        } else if (navParams.data.type == 'login') {
+            this.login(navParams.data);
+        } else if (navParams.data.type == 'post') {
+            this.post(navParams.data);
+        }
     }
 
     scan_friend(data) {

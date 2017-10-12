@@ -3,6 +3,7 @@ import { NavController } from 'ionic-angular';
 import { QRScanner, QRScannerStatus } from '@ionic-native/qr-scanner';
 import { Transaction } from '../transaction/transaction';
 import { Storage } from '@ionic/storage';
+import { BulletinSecretService } from '../../app/bulletinSecret.service';
 
 declare var forge;
 declare var elliptic;
@@ -21,35 +22,14 @@ export class HomePage {
   public_key_hex = null;
   private_key_hex = null;
 
-  constructor(public navCtrl: NavController, private qrScanner: QRScanner, private storage: Storage) {
+  constructor(public navCtrl: NavController, private qrScanner: QRScanner, private storage: Storage, private bulletinSecretService: BulletinSecretService) {
 
   }
 
   createCode() {
-    this.storage.get('keys').then((keys) => {
-      var ec = elliptic.ec('secp256k1');
-      if(keys && typeof keys.public_key == 'string' && typeof keys.private_key == 'string') {
-          this.public_key_hex = keys.public_key;
-          this.private_key_hex = keys.private_key;
-          this.public_key = ec.keyFromPublic(keys.public_key, 'hex');
-          this.private_key = ec.keyFromPrivate(keys.private_key, 'hex');
-      } else {
-          var keys = ec.genKeyPair();
-          this.public_key_hex = keys.getPublic('hex');
-          this.private_key_hex = keys.getPrivate('hex');
-          this.public_key = keys.getPublic();
-          this.private_key = keys.getPrivate();
-          this.storage.set('keys', {
-              public_key: this.public_key_hex,
-              private_key: this.private_key_hex
-          });
-      }
-
-      var my_bulletin_secret = forge.sha256.create().update(this.private_key_hex).digest().toHex();
-      this.createdCode = JSON.stringify({
-        bulletin_secret: my_bulletin_secret,
+    this.createdCode = JSON.stringify({
+        bulletin_secret: this.bulletinSecretService.bulletin_secret,
         shared_secret: uuid4()
-      });
     });
   }
 
