@@ -6,6 +6,7 @@ import { GraphService } from './graph.service';
 
 import { HomePage } from '../pages/home/home';
 import { ListPage } from '../pages/list/list';
+import { Settings } from '../pages/settings/settings';
 
 @Component({
   templateUrl: 'app.html'
@@ -28,7 +29,8 @@ export class MyApp {
       { title: 'Friends', component: ListPage },
       { title: 'Friend Requests', component: ListPage },
       { title: 'Sent Requests', component: ListPage },
-      { title: 'Posts', component: ListPage }
+      { title: 'Posts', component: ListPage },
+      { title: 'Settings', component: Settings }
     ];
 
     this.graph = graphService.getGraph();

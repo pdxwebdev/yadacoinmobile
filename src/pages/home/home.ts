@@ -21,9 +21,12 @@ export class HomePage {
   private_key = null;
   public_key_hex = null;
   private_key_hex = null;
+  blockchainAddress = null;
 
   constructor(public navCtrl: NavController, private qrScanner: QRScanner, private storage: Storage, private bulletinSecretService: BulletinSecretService) {
-
+      this.storage.get('blockchainAddress').then((blockchainAddress) => {
+          this.blockchainAddress = blockchainAddress;
+      });
   }
 
   createCode() {
@@ -51,8 +54,8 @@ export class HomePage {
                  },
                  requester_rid: info.requester_rid,
                  requested_rid: info.requested_rid,
-                 blockchainurl: info.blockchainurl,
-                 callbackurl: info.callbackurl,
+                 blockchainurl: this.blockchainAddress + info.blockchainurl,
+                 callbackurl: this.blockchainAddress + info.callbackurl,
                  type: 'scan_friend'
              })
              this.qrScanner.hide(); // hide camera preview
@@ -91,8 +94,8 @@ export class HomePage {
              let info = JSON.parse(text);
              this.navCtrl.push(Transaction, {
                  bulletin_secret: info.bulletin_secret,
-                 callbackurl: info.callbackurl,
-                 blockchainurl: info.blockchainurl,
+                 callbackurl: this.blockchainAddress + info.callbackurl,
+                 blockchainurl: this.blockchainAddress + info.blockchainurl,
                  challenge_code: info.challenge_code,
                  type: 'login'
              })

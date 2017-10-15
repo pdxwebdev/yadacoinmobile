@@ -19,9 +19,6 @@ export class Transaction {
     public_key_hex = null;
     private_key_hex = null;
     constructor(public navCtrl: NavController, public navParams: NavParams, private storage: Storage, private bulletinSecretService: BulletinSecretService) {
-        this.storage.get('blockchainurl').then((blockchainurl) => {
-            this.blockchainurl = blockchainurl;
-        });
 
         this.public_key_hex = bulletinSecretService.public_key_hex;
         this.private_key_hex = bulletinSecretService.private_key_hex;
@@ -39,8 +36,7 @@ export class Transaction {
 
     scan_friend(data) {
         this.info = data;
-        var blockchainurl = this.info.blockchainurl;
-        this.storage.set('blockchainurl', blockchainurl);
+        this.blockchainurl = this.info.blockchainurl;
         var callbackurl = this.info.callbackurl;
         var my_bulletin_secret = forge.sha256.create().update(this.private_key_hex).digest().toHex();
         var rids = [my_bulletin_secret, this.info.relationship.bulletin_secret].sort(function (a, b) {
@@ -51,18 +47,31 @@ export class Transaction {
             rid:  forge.sha256.create().update(rids[0] + rids[1]).digest().toHex(),
             fee: 0.1,
             value: 1,
-            requester_rid: this.info.requester_rid,
-            requested_rid: this.info.requested_rid
+            requester_rid: typeof this.info.requester_rid == 'undefined' ? '' : this.info.requester_rid,
+            requested_rid: typeof this.info.requested_rid == 'undefined' ? '' : this.info.requested_rid,
+            challenge_code: typeof this.info.challenge_code == 'undefined' ? '' : this.info.challenge_code
         };
         var msgHash = elliptic.utils.toArray(JSON.stringify(this.transaction));
         var signature = this.private_key.sign(msgHash);
         var derSign = signature.toDER();
         this.transaction.id = this.byteArrayToHexString(derSign);
         this.transaction.public_key = this.public_key_hex;
+
+        this.transaction.hash = forge.sha256.create().update(
+            this.transaction.rid +
+            this.transaction.id +
+            this.transaction.relationship +
+            this.transaction.public_key +
+            this.transaction.value +
+            this.transaction.fee +
+            this.transaction.requester_rid +
+            this.transaction.requested_rid +
+            this.transaction.challenge_code
+        ).digest().toHex()
         console.log(this.transaction);
 
         var xhr = new XMLHttpRequest();
-        xhr.open("POST", blockchainurl, true);
+        xhr.open("POST", this.blockchainurl, true);
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.send(JSON.stringify(this.transaction));
 
@@ -82,9 +91,11 @@ export class Transaction {
         this.info = data;
         this.callbackurl = this.info.callbackurl;
         this.blockchainurl = this.info.blockchainurl;
-        this.storage.set('blockchainurl', this.info.blockchainurl);
         var my_bulletin_secret = forge.sha256.create().update(this.private_key_hex).digest().toHex();
-        this.rid = forge.sha256.create().update(my_bulletin_secret + this.info.bulletin_secret).digest().toHex();
+        var rids = [my_bulletin_secret, this.info.bulletin_secret].sort(function (a, b) {
+            return a.toLowerCase().localeCompare(b.toLowerCase());
+        });
+        this.rid = forge.sha256.create().update(rids[0] + rids[1]).digest().toHex();
         this.xhr = new XMLHttpRequest();
         this.xhr.open('GET', this.blockchainurl + '?rid=' + this.rid, true);
         this.xhr.onreadystatechange = () => {
@@ -95,10 +106,15 @@ export class Transaction {
 
     loginReadyStateChange() {
         if (this.xhr.readyState === 4) {
-            var transaction = JSON.parse(this.xhr.responseText);
-            var encrypted_relationship = transaction.relationship;
-            var decrypted_relationship = this.decrypt(encrypted_relationship);
-            var shared_secret = JSON.parse(decrypted_relationship).shared_secret;
+            var transactions = JSON.parse(this.xhr.responseText);
+            for (var i=0; i < transactions.length; i++) {
+                var encrypted_relationship = transactions[i].relationship;
+                var decrypted_relationship = this.decrypt(encrypted_relationship);
+                if (decrypted_relationship.data.indexOf('shared_secret') > 0) {
+                    var shared_secret = JSON.parse(decrypted_relationship.data).shared_secret;
+                    break;
+                }
+            }
             var challenge_code = this.info.challenge_code;
             var answer = this.shared_encrypt(shared_secret, challenge_code);
             this.transaction = {
@@ -107,8 +123,8 @@ export class Transaction {
                 rid: this.rid,
                 fee: 0.1,
                 value: 1,
-                requester_rid: null,
-                requested_rid: null
+                requester_rid: '',
+                requested_rid: ''
             };
             var msgHash = elliptic.utils.toArray(JSON.stringify(this.transaction));
             var signature = this.private_key.sign(msgHash);
@@ -117,8 +133,20 @@ export class Transaction {
             this.transaction.public_key = this.public_key_hex;
             console.log(this.transaction);
 
+
+            this.transaction.hash = forge.sha256.create().update(
+                this.transaction.rid +
+                this.transaction.id +
+                this.transaction.public_key +
+                this.transaction.value +
+                this.transaction.fee +
+                this.transaction.requester_rid +
+                this.transaction.requested_rid +
+                this.transaction.challenge_code +
+                this.transaction.answer                
+            ).digest().toHex()
             var xhr = new XMLHttpRequest();
-            xhr.open("POST", this.callbackurl, true);
+            xhr.open("POST", this.blockchainurl, true);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.send(JSON.stringify(this.transaction));
         }
@@ -126,24 +154,26 @@ export class Transaction {
 
     post(data) {
         this.info = data;
+        this.storage.get('blockchainurl').then((blockchainurl) => {
+            this.blockchainurl = blockchainurl;
+            this.transaction = {
+                post_text: this.shared_encrypt(this.private_key_hex, data.post_text),
+                fee: 0.1,
+            };
+            var msgHash = elliptic.utils.toArray(JSON.stringify(this.transaction));
+            var signature = this.private_key.sign(msgHash);
+            var derSign = signature.toDER();
+            this.transaction.id = this.byteArrayToHexString(derSign);
+            this.transaction.public_key = this.public_key_hex;
 
-        this.transaction = {
-            post_text: this.shared_encrypt(this.private_key_hex, data.post_text),
-            fee: 0.1,
-        };
-        var msgHash = elliptic.utils.toArray(JSON.stringify(this.transaction));
-        var signature = this.private_key.sign(msgHash);
-        var derSign = signature.toDER();
-        this.transaction.id = this.byteArrayToHexString(derSign);
-        this.transaction.public_key = this.public_key_hex;
-
-        this.xhr = new XMLHttpRequest();
-        this.xhr.open('POST', this.blockchainurl, true);
-        this.xhr.setRequestHeader('Content-Type', 'application/json');
-        this.xhr.onreadystatechange = () => {
-            //this.postReadyStateChange();
-        }
-        this.xhr.send(JSON.stringify(this.transaction));
+            this.xhr = new XMLHttpRequest();
+            this.xhr.open('POST', this.blockchainurl, true);
+            this.xhr.setRequestHeader('Content-Type', 'application/json');
+            this.xhr.onreadystatechange = () => {
+                //this.postReadyStateChange();
+            }
+            this.xhr.send(JSON.stringify(this.transaction));
+        });
 
     }
 

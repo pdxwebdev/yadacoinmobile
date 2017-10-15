@@ -1,0 +1,19 @@
+<ion-header>
+  <ion-navbar>
+    <button ion-button menuToggle>
+      <ion-icon name="menu"></ion-icon>
+    </button>
+    <ion-title>Settings</ion-title>
+  </ion-navbar>
+</ion-header>
+
+<ion-content padding>
+  <h3>Settings</h3>
+
+  <ion-item>
+    <ion-input type="text" placeholder="Blockchain URL" [(ngModel)]="blockchainAddress">
+    </ion-input>
+  </ion-item>
+
+  <button ion-button secondary (click)="save()">Save</button>
+</ion-content>

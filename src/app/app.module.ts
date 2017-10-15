@@ -6,6 +6,7 @@ import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
 import { ListPage } from '../pages/list/list';
 import { Transaction } from '../pages/transaction/transaction'
+import { Settings } from '../pages/settings/settings';
 
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
@@ -22,7 +23,8 @@ import { BulletinSecretService } from './bulletinSecret.service';
     MyApp,
     HomePage,
     ListPage,
-    Transaction
+    Transaction,
+    Settings
   ],
   imports: [
     BrowserModule,
@@ -35,7 +37,8 @@ import { BulletinSecretService } from './bulletinSecret.service';
     MyApp,
     HomePage,
     ListPage,
-    Transaction
+    Transaction,
+    Settings
   ],
   providers: [
     StatusBar,
