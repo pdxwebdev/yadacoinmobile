@@ -4,7 +4,7 @@ import { Storage } from '@ionic/storage';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 
 declare var forge;
-declare var elliptic;
+declare var foobar;
 
 @Component({
   selector: 'page-transaction',
@@ -14,16 +14,14 @@ declare var elliptic;
 export class Transaction {
     info = null;
     transaction = null;
-    public_key = null;
-    private_key = null;
-    public_key_hex = null;
-    private_key_hex = null;
+    key = null;
+    xhr = null;
+    rid = null;
+    callbackurl = null;
+    blockchainurl = null;
     constructor(public navCtrl: NavController, public navParams: NavParams, private storage: Storage, private bulletinSecretService: BulletinSecretService) {
 
-        this.public_key_hex = bulletinSecretService.public_key_hex;
-        this.private_key_hex = bulletinSecretService.private_key_hex;
-        this.public_key = bulletinSecretService.public_key;
-        this.private_key = bulletinSecretService.private_key;
+        this.key = bulletinSecretService.key;
 
         if (navParams.data.type == 'scan_friend') {
             this.scan_friend(navParams.data);
@@ -38,36 +36,42 @@ export class Transaction {
         this.info = data;
         this.blockchainurl = this.info.blockchainurl;
         var callbackurl = this.info.callbackurl;
-        var my_bulletin_secret = forge.sha256.create().update(this.private_key_hex).digest().toHex();
+        var my_bulletin_secret = foobar.bitcoin.crypto.sha256(this.key.toWIF()).toString('hex');
         var rids = [my_bulletin_secret, this.info.relationship.bulletin_secret].sort(function (a, b) {
             return a.toLowerCase().localeCompare(b.toLowerCase());
         });
         this.transaction = {
             relationship: this.encrypt(),
-            rid:  forge.sha256.create().update(rids[0] + rids[1]).digest().toHex(),
+            rid:  foobar.bitcoin.crypto.sha256(rids[0] + rids[1]).toString('hex'),
             fee: 0.1,
             value: 1,
             requester_rid: typeof this.info.requester_rid == 'undefined' ? '' : this.info.requester_rid,
             requested_rid: typeof this.info.requested_rid == 'undefined' ? '' : this.info.requested_rid,
             challenge_code: typeof this.info.challenge_code == 'undefined' ? '' : this.info.challenge_code
         };
-        var msgHash = elliptic.utils.toArray(JSON.stringify(this.transaction));
-        var signature = this.private_key.sign(msgHash);
-        var derSign = signature.toDER();
-        this.transaction.id = this.byteArrayToHexString(derSign);
-        this.transaction.public_key = this.public_key_hex;
-
-        this.transaction.hash = forge.sha256.create().update(
+        var hash = foobar.bitcoin.crypto.sha256(
             this.transaction.rid +
-            this.transaction.id +
             this.transaction.relationship +
-            this.transaction.public_key +
             this.transaction.value +
             this.transaction.fee +
             this.transaction.requester_rid +
             this.transaction.requested_rid +
             this.transaction.challenge_code
-        ).digest().toHex()
+        ).toString('hex')
+        this.transaction.hash = hash
+
+        this.transaction.public_key = this.key.getPublicKeyBuffer().toString('hex');
+        var combine = new Uint8Array(hash.length + 2);
+        combine[0] = 0;
+        combine[1] = 64;
+        for (var i = 0; i < hash.length; i++) {
+            combine[i+2] = hash.charCodeAt(i)
+        }
+        var shaMessage = foobar.bitcoin.crypto.sha256(foobar.bitcoin.crypto.sha256(combine));
+        var signature = this.key.sign(shaMessage);
+        var compact = signature.toCompact(0, true);
+        this.transaction.id = foobar.base64.fromByteArray(compact);
+
         console.log(this.transaction);
 
         var xhr = new XMLHttpRequest();
@@ -83,15 +87,11 @@ export class Transaction {
             bulletin_secret: my_bulletin_secret
         }));
     }
-    xhr = null;
-    rid = null;
-    callbackurl = null;
-    blockchainurl = null;
     login(data) {
         this.info = data;
         this.callbackurl = this.info.callbackurl;
         this.blockchainurl = this.info.blockchainurl;
-        var my_bulletin_secret = forge.sha256.create().update(this.private_key_hex).digest().toHex();
+        var my_bulletin_secret = forge.sha256.create().update(this.key.toWIF).digest().toHex();
         var rids = [my_bulletin_secret, this.info.bulletin_secret].sort(function (a, b) {
             return a.toLowerCase().localeCompare(b.toLowerCase());
         });
@@ -126,18 +126,12 @@ export class Transaction {
                 requester_rid: '',
                 requested_rid: ''
             };
-            var msgHash = elliptic.utils.toArray(JSON.stringify(this.transaction));
-            var signature = this.private_key.sign(msgHash);
-            var derSign = signature.toDER();
-            this.transaction.id = this.byteArrayToHexString(derSign);
-            this.transaction.public_key = this.public_key_hex;
+            this.transaction.public_key = this.key.getPublicKeyBuffer().toString('hex');
             console.log(this.transaction);
 
 
             this.transaction.hash = forge.sha256.create().update(
                 this.transaction.rid +
-                this.transaction.id +
-                this.transaction.public_key +
                 this.transaction.value +
                 this.transaction.fee +
                 this.transaction.requester_rid +
@@ -145,6 +139,12 @@ export class Transaction {
                 this.transaction.challenge_code +
                 this.transaction.answer                
             ).digest().toHex()
+
+            var msgHash = foobar.bitcoin.crypto.sha256(foobar.bitcoin.crypto.sha256(JSON.stringify(this.transaction.hash)));
+            var signature = this.key.sign(msgHash);
+            var compact = signature.toCompact(0, true);
+            this.transaction.id = foobar.base64.fromByteArray(compact);
+
             var xhr = new XMLHttpRequest();
             xhr.open("POST", this.blockchainurl, true);
             xhr.setRequestHeader('Content-Type', 'application/json');
@@ -157,14 +157,14 @@ export class Transaction {
         this.storage.get('blockchainurl').then((blockchainurl) => {
             this.blockchainurl = blockchainurl;
             this.transaction = {
-                post_text: this.shared_encrypt(this.private_key_hex, data.post_text),
+                post_text: this.shared_encrypt(this.key.toWIF(), data.post_text),
                 fee: 0.1,
             };
-            var msgHash = elliptic.utils.toArray(JSON.stringify(this.transaction));
-            var signature = this.private_key.sign(msgHash);
-            var derSign = signature.toDER();
-            this.transaction.id = this.byteArrayToHexString(derSign);
-            this.transaction.public_key = this.public_key_hex;
+            var msgHash = foobar.bitcoin.crypto.sha256(foobar.bitcoin.crypto.sha256(JSON.stringify(this.transaction)));
+            var signature = this.key.sign(msgHash);
+            var compact = signature.toCompact(0, true);
+            this.transaction.id = this.byteArrayToHexString(compact);
+            this.transaction.public_key = this.key.getPublicKeyBuffer().toString('hex');
 
             this.xhr = new XMLHttpRequest();
             this.xhr.open('POST', this.blockchainurl, true);
@@ -198,7 +198,7 @@ export class Transaction {
     }
 
     encrypt() {
-        var key = forge.pkcs5.pbkdf2(forge.sha256.create().update(this.private_key_hex).digest().toHex(), 'salt', 400, 32);
+        var key = forge.pkcs5.pbkdf2(forge.sha256.create().update(this.key.toWIF()).digest().toHex(), 'salt', 400, 32);
         var cipher = forge.cipher.createCipher('AES-CBC', key);
         var iv = forge.random.getBytesSync(16);
         cipher.start({iv: iv});
@@ -218,7 +218,7 @@ export class Transaction {
     }
 
     decrypt(message) {
-        var key = forge.pkcs5.pbkdf2(forge.sha256.create().update(this.private_key_hex).digest().toHex(), 'salt', 400, 32);
+        var key = forge.pkcs5.pbkdf2(forge.sha256.create().update(this.key.toWIF()).digest().toHex(), 'salt', 400, 32);
         var decipher = forge.cipher.createDecipher('AES-CBC', key);
         var enc = this.hexToBytes(message);
         decipher.start({iv: enc.slice(0,16)});

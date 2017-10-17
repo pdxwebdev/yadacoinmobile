@@ -26,9 +26,12 @@
         "@ionic-native/splash-screen": "3.12.1",
         "@ionic-native/status-bar": "3.12.1",
         "@ionic/storage": "^2.0.1",
+        "base64-js": "^1.2.1",
+        "bitcoinjs-lib": "^3.2.0",
+        "browserify": "^14.4.0",
         "cordova-android": "^6.3.0",
-        "cordova-plugin-advanced-http": "^1.6.1",
         "cordova-ios": "^4.4.0",
+        "cordova-plugin-advanced-http": "^1.6.1",
         "cordova-plugin-compat": "^1.2.0",
         "cordova-plugin-device": "^1.1.4",
         "cordova-plugin-file": "^4.3.3",
@@ -45,6 +48,7 @@
         "node-forge": "^0.7.1",
         "rxjs": "5.4.3",
         "sw-toolbox": "3.6.0",
+        "uglify-js": "^3.1.4",
         "zone.js": "0.8.18"
     },
     "devDependencies": {
