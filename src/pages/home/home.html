@@ -10,19 +10,14 @@
 <ion-content padding>
   <h3>Yada Coin App</h3>
 
-  <ion-item>
-    <ion-input type="text" placeholder="Write your post for your friends here." [(ngModel)]="postText">
-    </ion-input>
-  </ion-item>
+  <button ion-button secondary (click)="scan_friend()">Scan Friend</button>
+  <button ion-button secondary (click)="login()">Login</button> 
+  <button ion-button secondary (click)="createCode()">New Code</button>
   <ion-card *ngIf="createdCode">
     <ngx-qrcode [qrc-value]="createdCode"></ngx-qrcode>
     <ion-card-content>
-      <p>Value: {{ createdCode }}</p>
+      <p>Let a friend scan this qr code</p>
+      <p>To add another friend, tap 'new code'</p>
     </ion-card-content>
   </ion-card>
-
-  <button ion-button secondary (click)="post()">Post</button><br>
-  <button ion-button secondary (click)="createCode()">Create Code</button>
-  <button ion-button secondary (click)="scan_friend()">Scan Friend</button>
-  <button ion-button secondary (click)="login()">Login</button>
 </ion-content>

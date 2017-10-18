@@ -26,6 +26,7 @@ export class HomePage {
   constructor(public navCtrl: NavController, private qrScanner: QRScanner, private storage: Storage, private bulletinSecretService: BulletinSecretService) {
       this.storage.get('blockchainAddress').then((blockchainAddress) => {
           this.blockchainAddress = blockchainAddress;
+          this.createCode();
       });
   }
 
@@ -120,13 +121,6 @@ export class HomePage {
         })
         .catch((e: any) => console.log('Error is', e));
 
-  }
-
-  post() {
-    this.navCtrl.push(Transaction, {
-      post_text: this.postText,
-      type: 'post'
-    })
   }
 
 }

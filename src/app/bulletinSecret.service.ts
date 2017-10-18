@@ -16,7 +16,17 @@ export class BulletinSecretService {
                 this.key = foobar.bitcoin.ECPair.makeRandom();
                 this.storage.set('key', this.key.toWIF());
             }
-            this.bulletin_secret = forge.sha256.create().update(this.key).digest().toHex();
+            this.bulletin_secret = foobar.bitcoin.crypto.sha256(this.shared_encrypt(this.key.toWIF(), this.key.toWIF())).toString('hex');
         });
+    }
+
+    shared_encrypt(shared_secret, message) {
+        var key = forge.pkcs5.pbkdf2(forge.sha256.create().update(shared_secret).digest().toHex(), 'salt', 400, 32);
+        var cipher = forge.cipher.createCipher('AES-CBC', key);
+        var iv = '';
+        cipher.start({iv: iv});
+        cipher.update(forge.util.createBuffer(iv + message));
+        cipher.finish()
+        return cipher.output.toHex()
     }
 }
