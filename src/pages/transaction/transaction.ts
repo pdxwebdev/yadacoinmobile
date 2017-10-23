@@ -20,68 +20,19 @@ export class Transaction {
     callbackurl = null;
     blockchainurl = null;
     bulletin_secret = null;
+    shared_secret = null;
     constructor(public navCtrl: NavController, public navParams: NavParams, private storage: Storage, private bulletinSecretService: BulletinSecretService) {
 
         this.key = bulletinSecretService.key;
         this.bulletin_secret = bulletinSecretService.bulletin_secret;
 
-        if (navParams.data.type == 'scan_friend') {
-            this.scan_friend(navParams.data);
-        } else if (navParams.data.type == 'login') {
-            this.login(navParams.data);
-        }
-    }
-
-    scan_friend(data) {
-        this.info = data;
+        this.info = navParams.data;
         this.blockchainurl = this.info.blockchainurl;
-        var callbackurl = this.info.callbackurl;
-        var rids = [this.bulletin_secret, this.info.relationship.bulletin_secret].sort(function (a, b) {
-            return a.toLowerCase().localeCompare(b.toLowerCase());
-        });
-        this.transaction = {
-            relationship: this.encrypt(),
-            rid:  foobar.bitcoin.crypto.sha256(rids[0] + rids[1]).toString('hex'),
-            fee: 0.1,
-            value: 1,
-            requester_rid: typeof this.info.requester_rid == 'undefined' ? '' : this.info.requester_rid,
-            requested_rid: typeof this.info.requested_rid == 'undefined' ? '' : this.info.requested_rid,
-            challenge_code: typeof this.info.challenge_code == 'undefined' ? '' : this.info.challenge_code
-        };
-        var hash = foobar.bitcoin.crypto.sha256(
-            this.transaction.rid +
-            this.transaction.relationship +
-            this.transaction.value +
-            this.transaction.fee +
-            this.transaction.requester_rid +
-            this.transaction.requested_rid +
-            this.transaction.challenge_code
-        ).toString('hex')
-        this.transaction.hash = hash
-
-        this.transaction.public_key = this.key.getPublicKeyBuffer().toString('hex');
-
-        this.transaction.id = this.get_transaction_id(hash)
-
-        console.log(this.transaction);
-
-        var xhr = new XMLHttpRequest();
-        xhr.open("POST", this.blockchainurl, true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.send(JSON.stringify(this.transaction));
-
-        var xhr = new XMLHttpRequest();
-        xhr.open("POST", callbackurl, true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.send(JSON.stringify({
-            shared_secret: this.info.relationship.shared_secret,
-            bulletin_secret: this.bulletin_secret
-        }));
-    }
-    login(data) {
-        this.info = data;
         this.callbackurl = this.info.callbackurl;
-        this.blockchainurl = this.info.blockchainurl;
+        this.registerOrLogin()
+    }
+
+    registerOrLogin() {
         var rids = [this.bulletin_secret, this.info.bulletin_secret].sort(function (a, b) {
             return a.toLowerCase().localeCompare(b.toLowerCase());
         });
@@ -97,50 +48,106 @@ export class Transaction {
     loginReadyStateChange() {
         if (this.xhr.readyState === 4) {
             var transactions = JSON.parse(this.xhr.responseText);
-            for (var i=0; i < transactions.length; i++) {
-                var encrypted_relationship = transactions[i].relationship;
-                var decrypted_relationship = this.decrypt(encrypted_relationship);
-                if (decrypted_relationship.data.indexOf('shared_secret') > 0) {
-                    var shared_secret = JSON.parse(decrypted_relationship.data).shared_secret;
-                    break;
-                }
-            }
+
+            var rids = [this.bulletin_secret, this.info.relationship.bulletin_secret].sort(function (a, b) {
+                return a.toLowerCase().localeCompare(b.toLowerCase());
+            });
+            this.rid = foobar.bitcoin.crypto.sha256(rids[0] + rids[1]).toString('hex');
+
             var challenge_code = this.info.challenge_code;
-            var answer = this.shared_encrypt(shared_secret, challenge_code);
+
             this.transaction = {
-                challenge_code: challenge_code,
-                answer: answer,
-                rid: this.rid,
+                rid:  this.rid,
                 fee: 0.1,
                 value: 1,
-                requester_rid: '',
-                requested_rid: ''
+                requester_rid: typeof this.info.requester_rid == 'undefined' ? '' : this.info.requester_rid,
+                requested_rid: typeof this.info.requested_rid == 'undefined' ? '' : this.info.requested_rid,
+                challenge_code: challenge_code,
+                answer: answer
             };
-            console.log(this.transaction);
 
-            var hash = foobar.bitcoin.crypto.sha256(
-                this.transaction.rid +
-                this.transaction.value +
-                this.transaction.fee +
-                this.transaction.requester_rid +
-                this.transaction.requested_rid +
-                this.transaction.challenge_code +
-                this.transaction.answer                
-            ).toString('hex')
+            
+            if (transactions.length > 0) {
+                // existing relationship, attempt login
+                var found = false;
+                for (var i=0; i < transactions.length; i++) {
+                    var encrypted_relationship = transactions[i].relationship;
+                    var decrypted_relationship = this.decrypt(encrypted_relationship);
+                    if (decrypted_relationship.data.indexOf('shared_secret') > 0) {
+                        this.shared_secret = JSON.parse(decrypted_relationship.data).shared_secret;
+                        found = true;
+                        break;
+                    }
+                }
+                var answer = this.shared_encrypt(this.shared_secret, challenge_code);
+                this.transaction = {
+                    rid: this.rid,
+                    fee: 0.1,
+                    value: 1,
+                    requester_rid: '',
+                    requested_rid: '',
+                    challenge_code: challenge_code,
+                    answer: answer
+                };
+                var hash = foobar.bitcoin.crypto.sha256(
+                    this.transaction.rid +
+                    this.transaction.value +
+                    this.transaction.fee +
+                    this.transaction.requester_rid +
+                    this.transaction.requested_rid +
+                    this.transaction.challenge_code +
+                    this.transaction.answer                
+                ).toString('hex')
+            } else {
+                // no relationship, attempt registration. This will also login the user.
+                this.shared_secret = this.info.relationship.shared_secret;
+                this.transaction.answer = this.shared_encrypt(this.shared_secret, challenge_code);
+                this.transaction.relationship = this.encrypt()
+                var hash = foobar.bitcoin.crypto.sha256(
+                    this.transaction.rid +
+                    this.transaction.relationship +
+                    this.transaction.value +
+                    this.transaction.fee +
+                    this.transaction.requester_rid +
+                    this.transaction.requested_rid +
+                    this.transaction.challenge_code +
+                    this.transaction.answer          
+                ).toString('hex')
+            }
             this.transaction.hash = hash
 
             this.transaction.public_key = this.key.getPublicKeyBuffer().toString('hex');
 
-            this.transaction.id = this.get_transaction_id(hash)
-
-            var xhr = new XMLHttpRequest();
-            xhr.open("POST", this.blockchainurl, true);
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            xhr.send(JSON.stringify(this.transaction));
+            this.transaction.id = this.get_transaction_id(hash, 4);
+            this.sendTransaction();
+            this.sendCallback();
+            this.transaction.id = this.get_transaction_id(hash, 5);
+            this.sendTransaction();
+            this.sendCallback();
+            this.transaction.id = this.get_transaction_id(hash, 12);
+            this.sendTransaction();
+            this.sendCallback();
         }
     }
 
-    get_transaction_id(hash) {
+    sendTransaction() {
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", this.blockchainurl, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.send(JSON.stringify(this.transaction));
+    }
+
+    sendCallback() {
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", this.callbackurl, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.send(JSON.stringify({
+            bulletin_secret: this.bulletin_secret,
+            shared_secret: this.shared_secret
+        }));
+    }
+
+    get_transaction_id(hash, trynum) {
         var combine = new Uint8Array(hash.length + 2);
         combine[0] = 0;
         combine[1] = 64;
@@ -149,7 +156,7 @@ export class Transaction {
         }
         var shaMessage = foobar.bitcoin.crypto.sha256(foobar.bitcoin.crypto.sha256(combine));
         var signature = this.key.sign(shaMessage);
-        var compact = signature.toCompact(0, true);
+        var compact = signature.toCompact(trynum, false);
         return foobar.base64.fromByteArray(compact);
     }
 

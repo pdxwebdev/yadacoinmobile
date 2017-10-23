@@ -10,8 +10,7 @@
 <ion-content padding>
   <h3>Yada Coin App</h3>
 
-  <button ion-button secondary (click)="scan_friend()">Scan Friend</button>
-  <button ion-button secondary (click)="login()">Login</button> 
+  <button ion-button secondary (click)="scan_friend()">Register / Login</button> 
   <button ion-button secondary (click)="createCode()">New Code</button>
   <ion-card *ngIf="createdCode">
     <ngx-qrcode [qrc-value]="createdCode"></ngx-qrcode>

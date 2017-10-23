@@ -12,7 +12,7 @@ export class Settings {
     constructor(public navCtrl: NavController, public navParams: NavParams, private storage: Storage) {
         this.storage.get('blockchainAddress').then((blockchainAddress) => {
             if(blockchainAddress == null) {
-                this.blockchainAddress = 'http://54.83.141.113';
+                this.blockchainAddress = 'http://54.83.141.113/transaction';
                 this.storage.set('blockchainAddress', this.blockchainAddress);
             } else {
                 this.blockchainAddress = blockchainAddress;
