@@ -9,6 +9,7 @@ import { Storage } from '@ionic/storage';
 
 export class Settings {
     blockchainAddress = null
+    graphproviderAddress = null
     constructor(public navCtrl: NavController, public navParams: NavParams, private storage: Storage) {
         this.storage.get('blockchainAddress').then((blockchainAddress) => {
             if(blockchainAddress == null) {
@@ -18,9 +19,18 @@ export class Settings {
                 this.blockchainAddress = blockchainAddress;
             }
         });
+        this.storage.get('graphproviderAddress').then((graphproviderAddress) => {
+            if(graphproviderAddress == null) {
+                this.graphproviderAddress = 'http://54.83.141.113/get-graph-mobile';
+                this.storage.set('graphproviderAddress', this.graphproviderAddress);
+            } else {
+                this.graphproviderAddress = graphproviderAddress;
+            }
+        });
     }
 
     save() {
         this.storage.set('blockchainAddress', this.blockchainAddress);
+        this.storage.set('graphproviderAddress', this.graphproviderAddress);
     }
 }
