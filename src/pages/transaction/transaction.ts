@@ -54,7 +54,7 @@ export class Transaction {
             });
             this.rid = foobar.bitcoin.crypto.sha256(rids[0] + rids[1]).toString('hex');
 
-            var challenge_code = this.info.challenge_code;
+            var challenge_code = this.info.challenge_code != undefined ? this.info.challenge_code : '';
 
             this.transaction = {
                 rid:  this.rid,
@@ -101,7 +101,11 @@ export class Transaction {
             } else {
                 // no relationship, attempt registration. This will also login the user.
                 this.shared_secret = this.info.relationship.shared_secret;
-                this.transaction.answer = this.shared_encrypt(this.shared_secret, challenge_code);
+                if (this.shared_secret != undefined) {
+                    this.transaction.answer = this.shared_encrypt(this.shared_secret, challenge_code);                    
+                } else {
+                    this.transaction.answer = '';
+                }
                 this.transaction.relationship = this.encrypt()
                 var hash = foobar.bitcoin.crypto.sha256(
                     this.transaction.rid +
