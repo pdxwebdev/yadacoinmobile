@@ -58,7 +58,7 @@ export class HomePage {
                  blockchainurl: this.blockchainAddress,
                  challenge_code: info.challenge_code,
                  callbackurl: info.callbackurl
-             })
+             });
              this.qrScanner.hide(); // hide camera preview
              scanSub.unsubscribe(); // stop scanning
              window.document.querySelector('ion-app').classList.remove('transparentBody');
