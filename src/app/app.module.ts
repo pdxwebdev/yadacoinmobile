@@ -17,6 +17,7 @@ import { IonicStorageModule } from '@ionic/storage';
 import { HTTP } from '@ionic-native/http';
 import { GraphService } from './graph.service';
 import { BulletinSecretService } from './bulletinSecret.service';
+import { PeerService } from './peer.service';
 
 @NgModule({
   declarations: [
@@ -48,6 +49,7 @@ import { BulletinSecretService } from './bulletinSecret.service';
     NgxQRCodeModule,
     GraphService,
     BulletinSecretService,
+    PeerService,
     HTTP
   ]
 })
