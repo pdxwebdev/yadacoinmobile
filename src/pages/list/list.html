@@ -3,7 +3,7 @@
     <button ion-button menuToggle>
       <ion-icon name="menu"></ion-icon>
     </button>
-    <ion-title>List</ion-title>
+    <ion-title>{{pageTitle}}</ion-title>
   </ion-navbar>
 </ion-header>
 
@@ -19,5 +19,7 @@
   </ion-list>
   <div *ngIf="selectedItem" padding>
     You navigated here from <b>{{selectedItem.title}}</b>
+
+    <button *ngIf="pageTitle == 'Friend Requests'" ion-button secondary (click)="accept(selectedItem.title)">Accept Request</button>
   </div>
 </ion-content>

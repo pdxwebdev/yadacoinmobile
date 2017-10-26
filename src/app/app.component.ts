@@ -32,9 +32,6 @@ export class MyApp {
       { title: 'Posts', component: ListPage },
       { title: 'Settings', component: Settings }
     ];
-
-    this.graph = graphService.getGraph();
-
   }
 
   initializeApp() {

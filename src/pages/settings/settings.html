@@ -14,11 +14,13 @@
     <ion-input type="text" placeholder="Blockchain URL" [(ngModel)]="blockchainAddress">
     </ion-input>
   </ion-item>
-    
+
   <ion-item>
     <ion-input type="text" placeholder="Graph Provider URL" [(ngModel)]="graphproviderAddress">
     </ion-input>
   </ion-item>
 
   <button ion-button secondary (click)="save()">Save</button>
+  <button ion-button secondary (click)="dev_reset()">Dev Reset</button>
+  <button ion-button secondary (click)="prod_reset()">Prod Reset</button>
 </ion-content>
