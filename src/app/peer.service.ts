@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { Component } from '@angular/core';
-import { NavController, NavParams } from 'ionic-angular';
 import { Storage } from '@ionic/storage';
 import { GraphService } from './graph.service';
 import { BulletinSecretService } from './bulletinSecret.service';
@@ -14,7 +13,7 @@ export class PeerService {
     conn = null;
     relationship = null;
     callback = null;
-    constructor(private storage: Storage, private navParams: NavParams, private graphService: GraphService, private bulletinSecretService: BulletinSecretService) {
+    constructor(private storage: Storage, private graphService: GraphService, private bulletinSecretService: BulletinSecretService) {
         this.peer = new Peer({
           config: {'iceServers': [
             { url: 'turn:34.237.46.10:3478', credential: 'root', username: 'user' }
