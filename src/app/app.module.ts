@@ -18,6 +18,7 @@ import { HTTP } from '@ionic-native/http';
 import { GraphService } from './graph.service';
 import { BulletinSecretService } from './bulletinSecret.service';
 import { PeerService } from './peer.service';
+import { SettingsService } from './settings.service';
 
 @NgModule({
   declarations: [
@@ -50,6 +51,7 @@ import { PeerService } from './peer.service';
     GraphService,
     BulletinSecretService,
     PeerService,
+    SettingsService,
     HTTP
   ]
 })

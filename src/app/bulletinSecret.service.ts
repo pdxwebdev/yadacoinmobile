@@ -9,12 +9,13 @@ export class BulletinSecretService {
     key = null;
     bulletin_secret = null;
     constructor(private storage: Storage) {
-        this.storage.get('key').then((key) => {
+        var keyname = 'key';
+        this.storage.get(keyname).then((key) => {
             if(key && typeof key == 'string') {
                 this.key = foobar.bitcoin.ECPair.fromWIF(key);
             } else {
                 this.key = foobar.bitcoin.ECPair.makeRandom();
-                this.storage.set('key', this.key.toWIF());
+                this.storage.set(keyname, this.key.toWIF());
             }
             this.bulletin_secret = foobar.bitcoin.crypto.sha256(this.shared_encrypt(this.key.toWIF(), this.key.toWIF())).toString('hex');
         });

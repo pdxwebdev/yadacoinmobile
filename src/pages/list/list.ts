@@ -63,7 +63,9 @@ export class ListPage {
     xhr.onreadystatechange = () => {
       if (xhr.readyState === 4) {
         var data = JSON.parse(xhr.responseText);
+        this.peerService.rid = transaction.requested_rid;
         this.peerService.callback = this.pushTransaction;
+        this.peerService.init();
         this.peerService.connect(data.peerId, (conn) => {
             // Receive messages: step 3 in friend accept process
             conn.on('data', function(data) {

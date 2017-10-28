@@ -4,6 +4,7 @@ import { QRScanner, QRScannerStatus } from '@ionic-native/qr-scanner';
 import { Transaction } from '../transaction/transaction';
 import { Storage } from '@ionic/storage';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
+import { PeerService } from '../../app/peer.service';
 
 declare var forge;
 declare var elliptic;
@@ -23,7 +24,7 @@ export class HomePage {
   private_key_hex = null;
   blockchainAddress = null;
 
-  constructor(public navCtrl: NavController, private qrScanner: QRScanner, private storage: Storage, private bulletinSecretService: BulletinSecretService) {
+  constructor(public navCtrl: NavController, private qrScanner: QRScanner, private storage: Storage, private bulletinSecretService: BulletinSecretService, private peerService: PeerService) {
       this.storage.get('blockchainAddress').then((blockchainAddress) => {
           this.blockchainAddress = blockchainAddress;
           this.createCode();
@@ -59,6 +60,8 @@ export class HomePage {
                  challenge_code: info.challenge_code,
                  callbackurl: info.callbackurl
              });
+             this.peerService.rid = info.requester_rid;
+             this.peerService.init();
              this.qrScanner.hide(); // hide camera preview
              scanSub.unsubscribe(); // stop scanning
              window.document.querySelector('ion-app').classList.remove('transparentBody');

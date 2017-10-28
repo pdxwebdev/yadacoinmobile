@@ -13,7 +13,12 @@ export class PeerService {
     conn = null;
     relationship = null;
     callback = null;
+    rid = null;
     constructor(private storage: Storage, private graphService: GraphService, private bulletinSecretService: BulletinSecretService) {
+
+    }
+
+    init() {
         this.peer = new Peer({
           config: {'iceServers': [
             { url: 'turn:34.237.46.10:3478', credential: 'root', username: 'user' }
@@ -28,6 +33,11 @@ export class PeerService {
             console.log(copy);
           }
         });
+        this.peer.on('open', (id) => {
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', 'http://192.168.1.130:5000/add-peer?rid=' + this.rid + '&peer_id=' + id, true);
+          xhr.send();
+        });
         this.peer.on('connection', function(connection) {
           // This `connection` is a DataConnection object with which we can send
           // data.
@@ -37,10 +47,6 @@ export class PeerService {
           connection.on('open', function() {
             // Send 'Hello' on the connection.
             console.log('opened');
-            
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', 'http://192.168.1.130:5000/add-peer?peer_id=' + this.peer.id, true);
-            xhr.send();
           });
           // The `data` event is fired when data is received on the connection.
           //: step 2 in friend accept process
