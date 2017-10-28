@@ -22,25 +22,25 @@ export class ListPage {
           this.blockchainAddress = blockchainAddress;
       });
     this.selectedItem = navParams.get('item');
-    this.pageTitle = this.selectedItem ? this.selectedItem.pageTitle : navParams.get('pageTitle').title;
-
+    var pageTitle = this.selectedItem ? this.selectedItem.pageTitle : navParams.get('pageTitle').title;
+    this.pageTitle = pageTitle;
     if(!this.selectedItem) {
       // Let's populate this page with some filler content for funzies
       this.icons = ['flask', 'wifi', 'beer', 'football', 'basketball', 'paper-plane',
       'american-football', 'boat', 'bluetooth', 'build'];
       var callback = () => {
-        if (this.pageTitle == 'Friends') {
+        if (pageTitle == 'Friends') {
             var graphArray = graphService.graph.friends
-        } else if (this.pageTitle == 'Friend Requests') {
+        } else if (pageTitle == 'Friend Requests') {
             var graphArray = graphService.graph.friend_requests
-        } else if (this.pageTitle == 'Sent Requests') {
+        } else if (pageTitle == 'Sent Requests') {
             var graphArray = graphService.graph.sent_friend_requests
         }
 
         this.items = [];
         for (let i = 0; i < graphArray.length; i++) {
           this.items.push({
-            pageTitle: this.pageTitle,
+            pageTitle: pageTitle,
             transaction: graphArray[i]
           });
         }
@@ -59,7 +59,7 @@ export class ListPage {
 
   accept(transaction) {
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', 'http://34.237.46.10/get-peer?rid=' + transaction.requester_id, true);
+    xhr.open('GET', 'http://192.168.1.130:5000/get-peer?rid=' + transaction.requester_rid, true);
     xhr.onreadystatechange = () => {
       if (xhr.readyState === 4) {
         var data = JSON.parse(xhr.responseText);

@@ -37,6 +37,10 @@ export class PeerService {
           connection.on('open', function() {
             // Send 'Hello' on the connection.
             console.log('opened');
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', 'http://192.168.1.130:5000/add-peer?peer_id=' + this.peer.id, true);
+            xhr.send();
           });
           // The `data` event is fired when data is received on the connection.
           //: step 2 in friend accept process
@@ -73,9 +77,6 @@ export class PeerService {
                 xhr.send();
           });
         });
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', 'http://34.237.46.10/add-peer?peer_id=' + this.peer.id, true);
-        xhr.send();
     }
 
     connect(peerId, callback) {
