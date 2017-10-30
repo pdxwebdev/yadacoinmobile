@@ -5,6 +5,7 @@ import { BulletinSecretService } from '../../app/bulletinSecret.service';
 
 declare var forge;
 declare var foobar;
+declare var uuid4;
 
 @Component({
   selector: 'page-transaction',
@@ -104,6 +105,7 @@ export class Transaction {
                 if (this.shared_secret != undefined) {
                     this.transaction.answer = this.shared_encrypt(this.shared_secret, challenge_code);                    
                 } else {
+                    this.info.relationship.shared_secret = uuid4();
                     this.transaction.answer = '';
                 }
                 this.transaction.relationship = this.encrypt()

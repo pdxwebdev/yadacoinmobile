@@ -6,6 +6,7 @@ import { BulletinSecretService } from './bulletinSecret.service';
 
 declare var Peer;
 declare var foobar;
+declare var forge;
 
 @Injectable()
 export class PeerService {
@@ -14,8 +15,16 @@ export class PeerService {
     relationship = null;
     callback = null;
     rid = null;
+    key = null;
     constructor(private storage: Storage, private graphService: GraphService, private bulletinSecretService: BulletinSecretService) {
-
+      this.storage.get('key').then((key) => {
+          if(key && typeof key == 'string') {
+              this.key = foobar.bitcoin.ECPair.fromWIF(key);
+          } else {
+              this.key = foobar.bitcoin.ECPair.makeRandom();
+              this.storage.set('key', this.key.toWIF());
+          }
+      });
     }
 
     init() {
@@ -38,7 +47,7 @@ export class PeerService {
           xhr.open('GET', 'http://192.168.1.130:5000/add-peer?rid=' + this.rid + '&peer_id=' + id, true);
           xhr.send();
         });
-        this.peer.on('connection', function(connection) {
+        this.peer.on('connection', (connection) => {
           // This `connection` is a DataConnection object with which we can send
           // data.
           // The `open` event firing means that the connection is now ready to
@@ -60,7 +69,7 @@ export class PeerService {
             var testrid = foobar.bitcoin.crypto.sha256(rids[0] + rids[1]).toString('hex');
 
                 var xhr = new XMLHttpRequest();
-                xhr.open('GET', 'http://34.237.46.10/transaction?rid=' + testrid, true);
+                xhr.open('GET', 'http://192.168.1.130:5000/transaction?rid=' + testrid, true);
                 xhr.onreadystatechange = () => {
                   if (xhr.readyState === 4) {
                         var transactions = JSON.parse(xhr.responseText);
@@ -88,5 +97,24 @@ export class PeerService {
     connect(peerId, callback) {
         this.conn = this.peer.connect(peerId);
         this.conn.on('open', callback);
+    }
+
+    decrypt(message) {
+        var key = forge.pkcs5.pbkdf2(forge.sha256.create().update(this.key.toWIF()).digest().toHex(), 'salt', 400, 32);
+        var decipher = forge.cipher.createDecipher('AES-CBC', key);
+        var enc = this.hexToBytes(message);
+        decipher.start({iv: enc.slice(0,16)});
+        decipher.update(forge.util.createBuffer(enc.slice(16)));
+        decipher.finish();
+        return decipher.output
+    }
+
+    hexToBytes(s) {
+        var arr = []
+        for (var i = 0; i < s.length; i += 2) {
+            var c = s.substr(i, 2);
+            arr.push(parseInt(c, 16));
+        }
+        return String.fromCharCode.apply(null, arr);
     }
 }
