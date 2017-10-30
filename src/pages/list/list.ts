@@ -68,7 +68,7 @@ export class ListPage {
         this.peerService.init();
         this.peerService.connect(data.peerId, () => {
             // Receive messages: step 3 in friend accept process
-            this.peerService.conn.on('data', function(data) {
+            this.peerService.conn.on('data', (data) => {
                 console.log('Received', data);
                 var relationship = JSON.parse(data);
                 this.pushTransaction(relationship);
