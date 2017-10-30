@@ -66,16 +66,16 @@ export class ListPage {
         this.peerService.rid = transaction.requested_rid;
         this.peerService.callback = this.pushTransaction;
         this.peerService.init();
-        this.peerService.connect(data.peerId, (conn) => {
+        this.peerService.connect(data.peerId, () => {
             // Receive messages: step 3 in friend accept process
-            conn.on('data', function(data) {
+            this.peerService.conn.on('data', function(data) {
                 console.log('Received', data);
                 var relationship = JSON.parse(data);
                 this.pushTransaction(relationship);
             });
 
             // Send messages: step 1 in friend accept process
-            conn.send(JSON.stringify({
+            this.peerService.conn.send(JSON.stringify({
                 bulletin_secret: this.bulletinSecretService.bulletin_secret
             }));
         });

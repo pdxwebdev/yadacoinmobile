@@ -11,7 +11,6 @@ export class GraphService {
     constructor(private storage: Storage, private http: HTTP, private bulletinSecret: BulletinSecretService) {
         this.storage.get('graphproviderAddress').then((graphproviderAddress) => {
             this.graphproviderAddress = graphproviderAddress;
-            this.getGraph(()=>{});
         });
     }
 

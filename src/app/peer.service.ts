@@ -50,7 +50,7 @@ export class PeerService {
           });
           // The `data` event is fired when data is received on the connection.
           //: step 2 in friend accept process
-          connection.on('data', function(data) {
+          connection.on('data', (data) => {
             // Append the data to body.
             console.log(data);
             var person_to_lookup = JSON.parse(data);
