@@ -99,6 +99,18 @@ export class Transaction {
                     this.transaction.challenge_code +
                     this.transaction.answer                
                 ).toString('hex')
+            } else if (this.info.confirm_friend === true) {
+                this.shared_secret = this.info.relationship.shared_secret;
+                this.transaction.answer = '';
+                this.transaction.relationship = this.shared_encrypt(this.shared_secret, uuid4()); 
+                var hash = foobar.bitcoin.crypto.sha256(
+                    this.transaction.rid +
+                    this.transaction.relationship +
+                    this.transaction.value +
+                    this.transaction.fee +
+                    this.transaction.requester_rid +
+                    this.transaction.requested_rid
+                ).toString('hex')
             } else {
                 // no relationship, attempt registration. This will also login the user.
                 this.shared_secret = this.info.relationship.shared_secret;

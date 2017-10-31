@@ -89,5 +89,10 @@ export class ListPage {
        relationship: relationship,
        blockchainurl: this.blockchainAddress
     });
+    this.navCtrl.push(Transaction, {
+       relationship: relationship,
+       blockchainurl: this.blockchainAddress,
+       confirm_friend: true
+    });
   }
 }
