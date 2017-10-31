@@ -71,6 +71,8 @@ export class ListPage {
             this.peerService.conn.on('data', (data) => {
                 console.log('Received', data);
                 var relationship = JSON.parse(data);
+                relationship.requested_rid = transaction.requested_rid;
+                relationship.requester_rid = transaction.requester_rid;
                 this.pushTransaction(relationship);
             });
 
