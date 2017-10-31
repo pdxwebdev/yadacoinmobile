@@ -61,7 +61,7 @@ export class GraphService {
 
                     }
                 }
-                var friends = {};
+                var messages = {};
                 for(var i=0; i<this.graph.messages.length; i++) {
                     var message = this.graph.messages[i];
                     for(var v=0; v<shared_secrets.length; v++) {
@@ -69,16 +69,16 @@ export class GraphService {
                             var shared_secret = shared_secrets[v];
                             var decrypted = this.shared_decrypt(shared_secret, message.relationship);
                             if(decrypted != '') {
-                                friends[message.rid] = message;
+                                messages[message.rid] = message;
                             }
                         } catch(err) {
 
                         }
                     }
                 }
-                var arr_friends = [];
-                for(let i in friends) {
-                    arr_friends.push(friends[i].rid);
+                var arr_messages = [];
+                for(let i in messages) {
+                    arr_messages.push(messages[i].rid);
                 }
                 var arr_sent_friend_requests = [];
                 for(let i in sent_friend_requests) {
@@ -88,24 +88,26 @@ export class GraphService {
                 for(let i in friend_requests) {
                     arr_friend_requests.push(friend_requests[i].rid);
                 }
-                let friendsset = new Set(arr_friends);
-                let sent_friend_requests_diff = new Set(arr_sent_friend_requests.filter(x => !friendsset.has(x)));
-                let friend_requests_diff = new Set(arr_friend_requests.filter(x => !friendsset.has(x)));
+                let messagesset = new Set(arr_messages);
+                let sent_friend_requests_diff = new Set(arr_sent_friend_requests.filter(x => !messagesset.has(x)));
+                let friend_requests_diff = new Set(arr_friend_requests.filter(x => !messagesset.has(x)));
 
-                let arr_sent_friend_request_keys = Array.from(friend_requests_diff.keys())
+                let arr_sent_friend_request_keys = Array.from(sent_friend_requests_diff.keys())
                 this.graph.sent_friend_requests = []
                 for(var i=0; i<arr_sent_friend_request_keys.length; i++) {
                     this.graph.sent_friend_requests.push(sent_friend_requests[arr_sent_friend_request_keys[i]])
                 }
 
-                let arr_friend_request_keys = Array.from(friend_requests_diff.keys())
-                this.graph.friend_requests = []
-                for(var i=0; i<arr_friend_request_keys.length; i++) {
-                    this.graph.friend_requests.push(friend_requests[arr_friend_request_keys[i]])
+                if(arr_friend_requests.length > 0) {
+                    let arr_friend_request_keys = Array.from(friend_requests_diff.keys())
+                    this.graph.friend_requests = []
+                    for(var i=0; i<arr_friend_request_keys.length; i++) {
+                        this.graph.friend_requests.push(friend_requests[arr_friend_request_keys[i]])
+                    }
                 }
 
-                for(let i in friends) {
-                    this.graph.friends.push(friends[i]);
+                for(let i in messages) {
+                    this.graph.friends.push(messages[i]);
                 }
 
                 callback();
