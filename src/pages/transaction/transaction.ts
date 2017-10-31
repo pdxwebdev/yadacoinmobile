@@ -34,10 +34,10 @@ export class Transaction {
     }
 
     registerOrLogin() {
-        var rids = [this.bulletin_secret, this.info.bulletin_secret].sort(function (a, b) {
+        var bulletin_secrets = [this.bulletin_secret, this.info.bulletin_secret].sort(function (a, b) {
             return a.toLowerCase().localeCompare(b.toLowerCase());
         });
-        this.rid = forge.sha256.create().update(rids[0] + rids[1]).digest().toHex();
+        this.rid = forge.sha256.create().update(bulletin_secrets[0] + bulletin_secrets[1]).digest().toHex();
         this.xhr = new XMLHttpRequest();
         this.xhr.open('GET', this.blockchainurl + '?rid=' + this.rid, true);
         this.xhr.onreadystatechange = () => {
@@ -50,10 +50,10 @@ export class Transaction {
         if (this.xhr.readyState === 4) {
             var transactions = JSON.parse(this.xhr.responseText);
 
-            var rids = [this.bulletin_secret, this.info.relationship.bulletin_secret].sort(function (a, b) {
+            var bulletin_secrets = [this.bulletin_secret, this.info.relationship.bulletin_secret].sort(function (a, b) {
                 return a.toLowerCase().localeCompare(b.toLowerCase());
             });
-            this.rid = foobar.bitcoin.crypto.sha256(rids[0] + rids[1]).toString('hex');
+            this.rid = foobar.bitcoin.crypto.sha256(bulletin_secrets[0] + bulletin_secrets[1]).toString('hex');
 
             var challenge_code = this.info.challenge_code != undefined ? this.info.challenge_code : '';
 

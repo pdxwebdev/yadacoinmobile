@@ -11,15 +11,20 @@
   <ion-list>
     <button ion-item *ngFor="let item of items" (click)="itemTapped($event, item)">
       <ion-icon [name]="item.icon" item-left></ion-icon>
-      {{item.transaction.requested_rid}}
-      <div class="item-note" item-right>
-        {{item.note}}
-      </div>
+      <span *ngIf="pageTitle =='Sent Requests'">{{item.transaction.requested_rid}}</span>
+      <span *ngIf="pageTitle =='Friend Requests'">{{item.transaction.requester_rid}}</span>
+      <span *ngIf="pageTitle =='Friends'">{{item.transaction.rid}}</span>
     </button>
   </ion-list>
-  <div *ngIf="selectedItem" padding>
+  <div *ngIf="selectedItem && pageTitle =='Sent Requests'" padding>
     You navigated here from <b>{{selectedItem.transaction.requested_rid}}</b>
+  </div>
+  <div *ngIf="selectedItem && pageTitle =='Friend Requests'" padding>
+    You navigated here from <b>{{selectedItem.transaction.requester_rid}}</b>
 
     <button *ngIf="pageTitle == 'Friend Requests'" ion-button secondary (click)="accept(selectedItem.transaction)">Accept Request</button>
+  </div>
+  <div *ngIf="selectedItem && pageTitle =='Friends'" padding>
+    You navigated here from <b>{{selectedItem.transaction.rid}}</b>
   </div>
 </ion-content>
