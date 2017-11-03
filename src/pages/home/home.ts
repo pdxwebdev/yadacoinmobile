@@ -18,10 +18,7 @@ export class HomePage {
   postText = null;
   createdCode = null;
   scannedCode = null;
-  public_key = null;
-  private_key = null;
-  public_key_hex = null;
-  private_key_hex = null;
+  key = null;
   blockchainAddress = null;
 
   constructor(public navCtrl: NavController, private qrScanner: QRScanner, private storage: Storage, private bulletinSecretService: BulletinSecretService, private peerService: PeerService) {
@@ -34,7 +31,8 @@ export class HomePage {
   createCode() {
     this.createdCode = JSON.stringify({
         bulletin_secret: this.bulletinSecretService.bulletin_secret,
-        shared_secret: uuid4()
+        shared_secret: uuid4(),
+        to: this.bulletinSecretService.key.getAddress()
     });
   }
 
@@ -58,7 +56,8 @@ export class HomePage {
                  requested_rid: info.requested_rid,
                  blockchainurl: this.blockchainAddress,
                  challenge_code: info.challenge_code,
-                 callbackurl: info.callbackurl
+                 callbackurl: info.callbackurl,
+                 to: info.to
              });
              this.peerService.rid = info.requester_rid;
              this.peerService.init();

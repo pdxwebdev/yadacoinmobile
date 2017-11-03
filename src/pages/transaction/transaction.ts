@@ -22,6 +22,7 @@ export class Transaction {
     blockchainurl = null;
     bulletin_secret = null;
     shared_secret = null;
+    to = null;
     constructor(public navCtrl: NavController, public navParams: NavParams, private storage: Storage, private bulletinSecretService: BulletinSecretService) {
 
         this.key = bulletinSecretService.key;
@@ -30,6 +31,7 @@ export class Transaction {
         this.info = navParams.data;
         this.blockchainurl = this.info.blockchainurl;
         this.callbackurl = this.info.callbackurl;
+        this.to = this.info.to;
         this.registerOrLogin()
     }
 
@@ -64,7 +66,8 @@ export class Transaction {
                 requester_rid: typeof this.info.requester_rid == 'undefined' ? '' : this.info.requester_rid,
                 requested_rid: typeof this.info.requested_rid == 'undefined' ? '' : this.info.requested_rid,
                 challenge_code: challenge_code,
-                answer: answer
+                answer: answer,
+                to: this.to
             };
 
             
@@ -81,15 +84,9 @@ export class Transaction {
                     }
                 }
                 var answer = this.shared_encrypt(this.shared_secret, challenge_code);
-                this.transaction = {
-                    rid: this.rid,
-                    fee: 0.1,
-                    value: 1,
-                    requester_rid: '',
-                    requested_rid: '',
-                    challenge_code: challenge_code,
-                    answer: answer
-                };
+
+                this.transaction.answer = answer;
+
                 var hash = foobar.bitcoin.crypto.sha256(
                     this.transaction.rid +
                     this.transaction.value +
@@ -97,7 +94,8 @@ export class Transaction {
                     this.transaction.requester_rid +
                     this.transaction.requested_rid +
                     this.transaction.challenge_code +
-                    this.transaction.answer                
+                    this.transaction.answer +
+                    this.transaction.to
                 ).toString('hex')
             } else if (this.info.confirm_friend === true) {
                 this.shared_secret = this.info.relationship.shared_secret;
@@ -109,7 +107,8 @@ export class Transaction {
                     this.transaction.value +
                     this.transaction.fee +
                     this.transaction.requester_rid +
-                    this.transaction.requested_rid
+                    this.transaction.requested_rid +
+                    this.transaction.to
                 ).toString('hex')
             } else {
                 // no relationship, attempt registration. This will also login the user.
@@ -129,7 +128,8 @@ export class Transaction {
                     this.transaction.requester_rid +
                     this.transaction.requested_rid +
                     this.transaction.challenge_code +
-                    this.transaction.answer          
+                    this.transaction.answer +
+                    this.transaction.to
                 ).toString('hex')
             }
             this.transaction.hash = hash
