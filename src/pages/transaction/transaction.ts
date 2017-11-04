@@ -23,6 +23,7 @@ export class Transaction {
     bulletin_secret = null;
     shared_secret = null;
     to = null;
+    attempts = null;
     constructor(public navCtrl: NavController, public navParams: NavParams, private storage: Storage, private bulletinSecretService: BulletinSecretService) {
 
         this.key = bulletinSecretService.key;
@@ -135,33 +136,48 @@ export class Transaction {
             this.transaction.hash = hash
 
             this.transaction.public_key = this.key.getPublicKeyBuffer().toString('hex');
-
-            this.transaction.id = this.get_transaction_id(hash, 4);
-            this.sendTransaction();
-            this.sendCallback();
-            this.transaction.id = this.get_transaction_id(hash, 5);
-            this.sendTransaction();
-            this.sendCallback();
-            this.transaction.id = this.get_transaction_id(hash, 12);
+            this.attempts = [12, 5, 4];
+            var attempt = this.attempts.pop();
+            this.transaction.id = this.get_transaction_id(hash, attempt);
             this.sendTransaction();
             this.sendCallback();
         }
     }
+    _this = null;
+    url = null;
+    onError() {
+        if (this._this.attempts.length > 0) {
+            var attempt = this._this.attempts.pop();
+            this._this.transaction.id = this._this.get_transaction_id(this._this.transaction.hash, attempt);
+            if (this.url == this._this.blockchainurl) {
+                this._this.sendTransaction();
+            }
+            if (this.url == this._this.callbackurl) {
+                this._this.sendCallback();
+            }
+        }
+    }
 
     sendTransaction() {
-        var xhr = new XMLHttpRequest();
-        xhr.open("POST", this.blockchainurl, true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.send(JSON.stringify(this.transaction));
+        this.xhr = new XMLHttpRequest();
+        this.xhr._this = this;
+        this.xhr.url = this.blockchainurl;
+        this.xhr.open("POST", this.blockchainurl, true);
+        this.xhr.setRequestHeader('Content-Type', 'application/json');
+        this.xhr.onerror = this.onError;
+        this.xhr.send(JSON.stringify(this.transaction));
     }
 
     sendCallback() {
-        var xhr = new XMLHttpRequest();
-        xhr.open("POST", this.callbackurl, true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.send(JSON.stringify({
+        this.xhr = new XMLHttpRequest();
+        this.xhr._this = this;
+        this.xhr.url = this.callbackurl;
+        this.xhr.open("POST", this.callbackurl, true);
+        this.xhr.setRequestHeader('Content-Type', 'application/json');
+        this.xhr.send(JSON.stringify({
             bulletin_secret: this.bulletin_secret,
-            shared_secret: this.shared_secret
+            shared_secret: this.shared_secret,
+            to: this.key.getAddress()
         }));
     }
 
