@@ -84,7 +84,8 @@ export class PeerService {
                         if(typeof shared_secret != 'undefined') {
                             connection.send(JSON.stringify({
                                 bulletin_secret: this.bulletinSecretService.bulletin_secret,
-                                shared_secret: shared_secret
+                                shared_secret: shared_secret,
+                                to: this.key.getAddress()
                             }));
                         }
                   }

@@ -75,6 +75,7 @@ export class ListPage {
                     relationship: relationship,
                     requested_rid: transaction.requested_rid,
                     requester_rid: transaction.requester_rid,
+                    to: relationship.to,
                     blockchainurl: this.blockchainAddress,
                     confirm_friend: false
                 });
@@ -82,6 +83,7 @@ export class ListPage {
                     relationship: relationship,
                     requested_rid: transaction.requested_rid,
                     requester_rid: transaction.requester_rid,
+                    to: relationship.to,
                     blockchainurl: this.blockchainAddress,
                     confirm_friend: true
                 });
