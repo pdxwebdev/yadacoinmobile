@@ -1,7 +1,9 @@
 import { Component } from '@angular/core';
 import { NavController, NavParams } from 'ionic-angular';
+import { AlertController } from 'ionic-angular';
 import { Storage } from '@ionic/storage';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
+import { WalletService } from '../../app/wallet.service';
 
 declare var forge;
 declare var foobar;
@@ -24,7 +26,14 @@ export class Transaction {
     shared_secret = null;
     to = null;
     attempts = null;
-    constructor(public navCtrl: NavController, public navParams: NavParams, private storage: Storage, private bulletinSecretService: BulletinSecretService) {
+    constructor(
+        public navCtrl: NavController,
+        public navParams: NavParams,
+        private storage: Storage,
+        private walletService: WalletService,
+        private bulletinSecretService: BulletinSecretService,
+        private alertCtrl: AlertController
+    ) {
 
         this.key = bulletinSecretService.key;
         this.bulletin_secret = bulletinSecretService.bulletin_secret;
@@ -70,8 +79,39 @@ export class Transaction {
                 answer: answer,
                 to: this.to
             };
+            var transaction_total = this.transaction.value + this.transaction.fee;
+            if (this.walletService.wallet.balance < transaction_total || this.walletService.wallet.unspent_transactions.length == 0) {
+                this.cancelTransaction()
+                return
+            } else {
+                var inputs = [];
+                var input_sum = 0
+                for (var i=0; i<this.walletService.wallet.unspent_transactions.length; i++) {
+                    var unspent_transaction = this.walletService.wallet.unspent_transactions[i];
+                    inputs.push(unspent_transaction);
+                    input_sum += parseFloat(unspent_transaction.value);
+                    if (input_sum >= transaction_total) {
+                        break;
+                    }
+                }
+            }
+            if (input_sum < transaction_total) {
+                this.cancelTransaction();
+                return
+            }
+            this.transaction.inputs = inputs;
 
-            
+            var inputs_hashes = [];
+            for(var i=0; i < inputs.length; i++) {
+                inputs_hashes.push(inputs[i].hash);
+            }
+
+            var inputs_hashes_arr = inputs_hashes.sort(function (a, b) {
+                return a.toLowerCase().localeCompare(b.toLowerCase());
+            });
+
+            var inputs_hashes_concat = inputs_hashes_arr.join('')
+
             if (transactions.length > 0) {
                 // existing relationship, attempt login
                 var found = false;
@@ -96,7 +136,8 @@ export class Transaction {
                     this.transaction.requested_rid +
                     this.transaction.challenge_code +
                     this.transaction.answer +
-                    this.transaction.to
+                    this.transaction.to +
+                    inputs_hashes_concat
                 ).toString('hex')
             } else if (this.info.confirm_friend === true) {
                 this.shared_secret = this.info.relationship.shared_secret;
@@ -109,7 +150,8 @@ export class Transaction {
                     this.transaction.fee +
                     this.transaction.requester_rid +
                     this.transaction.requested_rid +
-                    this.transaction.to
+                    this.transaction.to +
+                    inputs_hashes_concat
                 ).toString('hex')
             } else {
                 // no relationship, attempt registration. This will also login the user.
@@ -130,7 +172,8 @@ export class Transaction {
                     this.transaction.requested_rid +
                     this.transaction.challenge_code +
                     this.transaction.answer +
-                    this.transaction.to
+                    this.transaction.to +
+                    inputs_hashes_concat
                 ).toString('hex')
             }
             this.transaction.hash = hash
@@ -179,6 +222,14 @@ export class Transaction {
             shared_secret: this.shared_secret,
             to: this.key.getAddress()
         }));
+    }
+
+    cancelTransaction() {
+        let alert = this.alertCtrl.create();
+        alert.setTitle('Insufficient Funds');
+        alert.setSubTitle('You do not have enough money for this transaction.');
+        alert.addButton('Ok');
+        alert.present();
     }
 
     get_transaction_id(hash, trynum) {

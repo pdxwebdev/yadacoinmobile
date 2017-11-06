@@ -8,6 +8,7 @@ export class SettingsService {
     baseAddress = null
     blockchainAddress = null
     graphproviderAddress = null
+    walletproviderAddress = null
     constructor(private storage: Storage, private http: HTTP, private bulletinSecret: BulletinSecretService) {
         this.storage.get('baseAddress').then((baseAddress) => {
             if(baseAddress == null) {
@@ -33,11 +34,20 @@ export class SettingsService {
                 this.graphproviderAddress = graphproviderAddress;
             }
         });
+        this.storage.get('walletproviderAddress').then((walletproviderAddress) => {
+            if(walletproviderAddress == null) {
+                this.walletproviderAddress = 'http://34.237.46.10/wallet';
+                this.storage.set('walletproviderAddress', this.walletproviderAddress);
+            } else {
+                this.walletproviderAddress = walletproviderAddress;
+            }
+        });
     }
 
     save() {
         this.storage.set('baseAddress', this.baseAddress);
         this.storage.set('blockchainAddress', this.blockchainAddress);
         this.storage.set('graphproviderAddress', this.graphproviderAddress);
+        this.storage.set('walletproviderAddress', this.walletproviderAddress);
     }
 }

@@ -19,6 +19,7 @@ import { GraphService } from './graph.service';
 import { BulletinSecretService } from './bulletinSecret.service';
 import { PeerService } from './peer.service';
 import { SettingsService } from './settings.service';
+import { WalletService } from './wallet.service';
 
 @NgModule({
   declarations: [
@@ -52,6 +53,7 @@ import { SettingsService } from './settings.service';
     BulletinSecretService,
     PeerService,
     SettingsService,
+    WalletService,
     HTTP
   ]
 })

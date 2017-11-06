@@ -53,7 +53,7 @@ export class HomePage {
 
                     let alert = this.alertCtrl.create();
                     alert.setTitle('Traceability');
-                    alert.setSubTitle('You can choose whether you want others to see this relationship.')
+                    alert.setSubTitle('You can choose whether you want others to see this relationship.');
 
                     alert.addInput({
                         type: 'radio',
