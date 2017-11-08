@@ -6,6 +6,7 @@ import { Transaction } from '../transaction/transaction';
 import { Storage } from '@ionic/storage';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { PeerService } from '../../app/peer.service';
+import { WalletService } from '../../app/wallet.service';
 
 declare var forge;
 declare var elliptic;
@@ -21,19 +22,21 @@ export class HomePage {
     scannedCode = null;
     key = null;
     blockchainAddress = null;
-
+    balance = null;
     constructor(
         public navCtrl: NavController,
         private qrScanner: QRScanner,
         private storage: Storage,
         private bulletinSecretService: BulletinSecretService,
         private peerService: PeerService,
-        private alertCtrl: AlertController
+        private alertCtrl: AlertController,
+        private walletService: WalletService
         ) {
         this.storage.get('blockchainAddress').then((blockchainAddress) => {
             this.blockchainAddress = blockchainAddress;
             this.createCode();
         });
+        this.balance = walletService.wallet.balance;
     }
 
     createCode() {
