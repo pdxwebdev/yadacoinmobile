@@ -88,6 +88,7 @@ export class Transaction {
             } else {
                 var inputs = [];
                 var input_sum = 0
+                dance:
                 for (var i=0; i<this.walletService.wallet.unspent_transactions.length; i++) {
                     var unspent_transaction = this.walletService.wallet.unspent_transactions[i];
                     for (var j=0; j<unspent_transaction.outputs.length; j++) {
@@ -98,11 +99,11 @@ export class Transaction {
                             if (input_sum > transaction_total) {
                                 this.transaction.outputs.push({
                                     to: this.key.getAddress(),
-                                    value: (input_sum - transaction_total)
+                                    value: (input_sum - transaction_total).toFixed(1)
                                 })
-                                break;
+                                break dance;
                             } else if (input_sum === transaction_total) {
-                                break;
+                                break dance;
                             }
                         }
                     }
