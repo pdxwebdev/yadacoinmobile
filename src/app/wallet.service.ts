@@ -14,6 +14,10 @@ export class WalletService {
     key: any;
     constructor(private storage: Storage, private http: HTTP, private bulletinSecret: BulletinSecretService) {
         this.wallet = {};
+        this.refresh();
+    }
+
+    refresh() {
         this.storage.get('walletproviderAddress').then((walletproviderAddress) => {
             this.walletproviderAddress = walletproviderAddress;
 

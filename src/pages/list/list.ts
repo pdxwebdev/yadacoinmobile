@@ -5,6 +5,7 @@ import { Transaction } from '../transaction/transaction';
 import { GraphService } from '../../app/graph.service';
 import { PeerService } from '../../app/peer.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
+import { WalletService } from '../../app/wallet.service';
 
 @Component({
   selector: 'page-list',
@@ -16,7 +17,16 @@ export class ListPage {
   icons: string[];
   items: Array<{pageTitle: string, transaction: object}>;
   blockchainAddress: any;
-  constructor(public navCtrl: NavController, public navParams: NavParams, private storage: Storage, private graphService: GraphService, private peerService: PeerService, private bulletinSecretService: BulletinSecretService) {
+  balance: any;
+  constructor(
+    public navCtrl: NavController,
+    public navParams: NavParams,
+    private storage: Storage,
+    private graphService: GraphService,
+    private peerService: PeerService,
+    private bulletinSecretService: BulletinSecretService,
+    private walletService: WalletService
+  ) {
     // If we navigated to this page, we will have an item available as a nav param
       this.storage.get('blockchainAddress').then((blockchainAddress) => {
           this.blockchainAddress = blockchainAddress;
@@ -48,6 +58,7 @@ export class ListPage {
 
       graphService.getGraph(callback);
     }
+    this.balance = walletService.wallet.balance;
   }
 
   itemTapped(event, item) {
@@ -56,7 +67,7 @@ export class ListPage {
       item: item
     });
   }
-
+  relationship = null;
   accept(transaction) {
     var xhr = new XMLHttpRequest();
     xhr.open('GET', 'http://192.168.1.130:5000/get-peer?rid=' + transaction.requester_rid, true);
@@ -70,23 +81,15 @@ export class ListPage {
             // Receive messages: step 3 in friend accept process
             this.peerService.conn.on('data', (data) => {
                 console.log('Received', data);
-                var relationship = JSON.parse(data);
-                this.pushTransaction([{
-                    relationship: relationship,
+                this.relationship = JSON.parse(data);
+                this.pushTransaction({
+                    relationship: this.relationship,
                     requested_rid: transaction.requested_rid,
                     requester_rid: transaction.requester_rid,
-                    to: relationship.to,
+                    to: this.relationship.to,
                     blockchainurl: this.blockchainAddress,
                     confirm_friend: false
-                },
-                {
-                    relationship: relationship,
-                    requested_rid: transaction.requested_rid,
-                    requester_rid: transaction.requester_rid,
-                    to: relationship.to,
-                    blockchainurl: this.blockchainAddress,
-                    confirm_friend: true
-                }]);
+                });
             });
 
             // Send messages: step 1 in friend accept process
@@ -99,7 +102,22 @@ export class ListPage {
     xhr.send();
   }
 
+  send_receipt(transaction) {
+      this.pushTransaction({
+          relationship: this.relationship,
+          requested_rid: transaction.requested_rid,
+          requester_rid: transaction.requester_rid,
+          to: this.relationship.to,
+          blockchainurl: this.blockchainAddress,
+          confirm_friend: true
+      })
+  }
+
   pushTransaction(relationships) {
     this.navCtrl.push(Transaction, relationships);
+  }
+
+  refreshWallet() {
+     this.walletService.refresh();
   }
 }

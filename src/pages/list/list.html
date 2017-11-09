@@ -3,7 +3,8 @@
     <button ion-button menuToggle>
       <ion-icon name="menu"></ion-icon>
     </button>
-    <ion-title>{{pageTitle}}</ion-title>
+    <ion-title>{{pageTitle}} - Balance: {{balance}}</ion-title>
+    <button ion-button secondary (click)="refreshWallet()">Refresh Balance</button>
   </ion-navbar>
 </ion-header>
 
@@ -23,6 +24,8 @@
     You navigated here from <b>{{selectedItem.transaction.requester_rid}}</b>
 
     <button *ngIf="pageTitle == 'Friend Requests'" ion-button secondary (click)="accept(selectedItem.transaction)">Accept Request</button>
+
+    <button *ngIf="pageTitle == 'Friend Requests'" ion-button secondary (click)="send_receipt(selectedItem.transaction)">Send Receipt</button>
   </div>
   <div *ngIf="selectedItem && pageTitle =='Friends'" padding>
     You navigated here from <b>{{selectedItem.transaction.rid}}</b>

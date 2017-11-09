@@ -27,6 +27,7 @@ export class Transaction {
     to = null;
     attempts = null;
     prevTxn = null;
+    txns = null;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -38,23 +39,13 @@ export class Transaction {
 
         this.key = bulletinSecretService.key;
         this.bulletin_secret = bulletinSecretService.bulletin_secret;
-        if (Array.isArray(navParams.data)) {
-            var info = navParams.data;
-        } else {
-            var info = [navParams.data];
-        }
-        for(var i=0; i < info.length; i++) {
-            this.info = info[i];
-            this.blockchainurl = this.info.blockchainurl;
-            this.callbackurl = this.info.callbackurl;
-            this.to = this.info.to;
-            this.registerOrLogin();
-        }
-        this.prevTxn = null;
-    }
 
-    registerOrLogin() {
-        var bulletin_secrets = [this.bulletin_secret, this.info.bulletin_secret].sort(function (a, b) {
+        this.attempts = [12, 5, 4];
+        this.info = navParams.data;
+        this.blockchainurl = this.info.blockchainurl;
+        this.callbackurl = this.info.callbackurl;
+        this.to = this.info.to;
+        var bulletin_secrets = [this.bulletin_secret, this.info.relationship.bulletin_secret].sort(function (a, b) {
             return a.toLowerCase().localeCompare(b.toLowerCase());
         });
         this.rid = forge.sha256.create().update(bulletin_secrets[0] + bulletin_secrets[1]).digest().toHex();
@@ -70,170 +61,169 @@ export class Transaction {
         if (this.xhr.readyState === 4) {
             var transactions = JSON.parse(this.xhr.responseText);
 
-            var bulletin_secrets = [this.bulletin_secret, this.info.relationship.bulletin_secret].sort(function (a, b) {
-                return a.toLowerCase().localeCompare(b.toLowerCase());
-            });
-            this.rid = foobar.bitcoin.crypto.sha256(bulletin_secrets[0] + bulletin_secrets[1]).toString('hex');
-
-            var challenge_code = this.info.challenge_code != undefined ? this.info.challenge_code : '';
-
-            this.transaction = {
-                rid:  this.rid,
-                fee: 0.1,
-                requester_rid: typeof this.info.requester_rid == 'undefined' ? '' : this.info.requester_rid,
-                requested_rid: typeof this.info.requested_rid == 'undefined' ? '' : this.info.requested_rid,
-                challenge_code: challenge_code,
-                answer: answer,
-                outputs: [{
-                    to: this.to,
-                    value: 1
-                }]
-            };
-            var transaction_total = this.transaction.outputs[0].value + this.transaction.fee;
-            if (this.walletService.wallet.balance < transaction_total || this.walletService.wallet.unspent_transactions.length == 0) {
-                this.cancelTransaction()
-                return
-            } else {
-                var inputs = [];
-                var input_sum = 0
-                if(this.prevTxn) {
-                    var unspent_transactions = this.prevTxn;
-                } else {
-                    var unspent_transactions = this.walletService.wallet.unspent_transactions;
-                }
-                dance:
-                for (var i=0; i < unspent_transactions.length; i++) {
-                    var unspent_transaction = unspent_transactions[i];
-                    for (var j=0; j < unspent_transaction.outputs.length; j++) {
-                        var unspent_output = unspent_transaction.outputs[j];
-                        if (unspent_output.to === this.key.getAddress()) {
-                            inputs.push({id: unspent_transaction.id});
-                            input_sum += parseFloat(unspent_output.value);
-                            if (input_sum > transaction_total) {
-                                let value: any;
-                                value = (input_sum - transaction_total).toFixed(1);
-
-                                this.transaction.outputs.push({
-                                    to: this.key.getAddress(),
-                                    value: value / 1
-                                })
-                                break dance;
-                            } else if (input_sum === transaction_total) {
-                                break dance;
-                            }
-                        }
-                    }
-                }
-            }
-            if (input_sum < transaction_total) {
-                this.cancelTransaction();
-                return
-            }
-            this.transaction.inputs = inputs;
-
-            var inputs_hashes = [];
-            for(var i=0; i < inputs.length; i++) {
-                inputs_hashes.push(inputs[i].id);
-            }
-
-            var inputs_hashes_arr = inputs_hashes.sort(function (a, b) {
-                return a.toLowerCase().localeCompare(b.toLowerCase());
-            });
-
-            var inputs_hashes_concat = inputs_hashes_arr.join('')
-
-            var outputs_hashes = [];
-            for(var i=0; i < this.transaction.outputs.length; i++) {
-                if ((this.transaction.outputs[i].value+'').indexOf('.') === -1) {
-                    outputs_hashes.push(this.transaction.outputs[i].to+this.transaction.outputs[i].value.toFixed(1));
-                } else {
-                    outputs_hashes.push(this.transaction.outputs[i].to+this.transaction.outputs[i].value);
-                }
-            }
-
-            var outputs_hashes_arr = outputs_hashes.sort(function (a, b) {
-                return a.toLowerCase().localeCompare(b.toLowerCase());
-            });
-
-            var outputs_hashes_concat = outputs_hashes_arr.join('')
-
             if (transactions.length > 0) {
                 // existing relationship, attempt login
-                var found = false;
                 for (var i=0; i < transactions.length; i++) {
                     var encrypted_relationship = transactions[i].relationship;
                     var decrypted_relationship = this.decrypt(encrypted_relationship);
                     if (decrypted_relationship.data.indexOf('shared_secret') > 0) {
                         this.shared_secret = JSON.parse(decrypted_relationship.data).shared_secret;
-                        found = true;
                         break;
                     }
                 }
-                var answer = this.shared_encrypt(this.shared_secret, challenge_code);
-
-                this.transaction.answer = answer;
-
-                var hash = foobar.bitcoin.crypto.sha256(
-                    this.transaction.rid +
-                    this.transaction.fee +
-                    this.transaction.requester_rid +
-                    this.transaction.requested_rid +
-                    this.transaction.challenge_code +
-                    this.transaction.answer +
-                    inputs_hashes_concat +
-                    outputs_hashes_concat
-                ).toString('hex')
-            } else if (this.info.confirm_friend === true) {
-                this.shared_secret = this.info.relationship.shared_secret;
-                this.transaction.answer = '';
-                this.transaction.relationship = this.shared_encrypt(this.shared_secret, uuid4()); 
-                var hash = foobar.bitcoin.crypto.sha256(
-                    this.transaction.rid +
-                    this.transaction.relationship +
-                    this.transaction.fee +
-                    this.transaction.requester_rid +
-                    this.transaction.requested_rid +
-                    inputs_hashes_concat +
-                    outputs_hashes_concat
-                ).toString('hex')
-            } else {
-                // no relationship, attempt registration. This will also login the user.
-                this.shared_secret = this.info.relationship.shared_secret;
-                if (this.shared_secret != undefined) {
-                    this.transaction.answer = this.shared_encrypt(this.shared_secret, challenge_code);                    
-                } else {
-                    this.info.relationship.shared_secret = uuid4();
-                    this.transaction.answer = '';
-                }
-                this.transaction.relationship = this.encrypt()
-                var hash = foobar.bitcoin.crypto.sha256(
-                    this.transaction.rid +
-                    this.transaction.relationship +
-                    this.transaction.fee +
-                    this.transaction.requester_rid +
-                    this.transaction.requested_rid +
-                    this.transaction.challenge_code +
-                    this.transaction.answer +
-                    inputs_hashes_concat +
-                    outputs_hashes_concat
-                ).toString('hex')
             }
-            this.transaction.hash = hash
-
-            this.transaction.public_key = this.key.getPublicKeyBuffer().toString('hex');
-            this.attempts = [12, 5, 4];
-            var attempt = this.attempts.pop();
-            this.transaction.id = this.get_transaction_id(hash, attempt);
+            this.generateTransaction();
             this.sendTransaction();
             this.sendCallback();
-            this.prevTxn = this.transaction;
         }
+    }
+    generateTransaction() {
+        var challenge_code = this.info.challenge_code != undefined ? this.info.challenge_code : '';
+        this.transaction = {
+            rid:  this.rid,
+            fee: 0.1,
+            requester_rid: typeof this.info.requester_rid == 'undefined' ? '' : this.info.requester_rid,
+            requested_rid: typeof this.info.requested_rid == 'undefined' ? '' : this.info.requested_rid,
+            challenge_code: challenge_code,
+            answer: answer,
+            outputs: [{
+                to: this.to,
+                value: 1
+            }]
+        };
+        var transaction_total = this.transaction.outputs[0].value + this.transaction.fee;
+        if (this.walletService.wallet.balance < transaction_total || this.walletService.wallet.unspent_transactions.length == 0) {
+            this.cancelTransaction()
+            return
+        } else {
+            var inputs = [];
+            var input_sum = 0
+            if(this.prevTxn) {
+                var unspent_transactions = this.prevTxn;
+            } else {
+                var unspent_transactions = this.walletService.wallet.unspent_transactions;
+            }
+            dance:
+            for (var i=0; i < unspent_transactions.length; i++) {
+                var unspent_transaction = unspent_transactions[i];
+                for (var j=0; j < unspent_transaction.outputs.length; j++) {
+                    var unspent_output = unspent_transaction.outputs[j];
+                    if (unspent_output.to === this.key.getAddress()) {
+                        inputs.push({id: unspent_transaction.id});
+                        input_sum += parseFloat(unspent_output.value);
+                        if (input_sum > transaction_total) {
+                            let value: any;
+                            value = (input_sum - transaction_total).toFixed(1);
+
+                            this.transaction.outputs.push({
+                                to: this.key.getAddress(),
+                                value: value / 1
+                            })
+                            break dance;
+                        } else if (input_sum === transaction_total) {
+                            break dance;
+                        }
+                    }
+                }
+            }
+        }
+        if (input_sum < transaction_total) {
+            this.cancelTransaction();
+            return
+        }
+        this.transaction.inputs = inputs;
+
+        var inputs_hashes = [];
+        for(var i=0; i < inputs.length; i++) {
+            inputs_hashes.push(inputs[i].id);
+        }
+
+        var inputs_hashes_arr = inputs_hashes.sort(function (a, b) {
+            return a.toLowerCase().localeCompare(b.toLowerCase());
+        });
+
+        var inputs_hashes_concat = inputs_hashes_arr.join('')
+
+        var outputs_hashes = [];
+        for(var i=0; i < this.transaction.outputs.length; i++) {
+            if ((this.transaction.outputs[i].value+'').indexOf('.') === -1) {
+                outputs_hashes.push(this.transaction.outputs[i].to+this.transaction.outputs[i].value.toFixed(1));
+            } else {
+                outputs_hashes.push(this.transaction.outputs[i].to+this.transaction.outputs[i].value);
+            }
+        }
+
+        var outputs_hashes_arr = outputs_hashes.sort(function (a, b) {
+            return a.toLowerCase().localeCompare(b.toLowerCase());
+        });
+
+        var outputs_hashes_concat = outputs_hashes_arr.join('')
+        var bulletin_secrets = [this.bulletin_secret, this.info.relationship.bulletin_secret].sort(function (a, b) {
+            return a.toLowerCase().localeCompare(b.toLowerCase());
+        });
+        this.rid = foobar.bitcoin.crypto.sha256(bulletin_secrets[0] + bulletin_secrets[1]).toString('hex');
+
+        if (this.shared_secret && this.info.confirm_friend !== true) {
+            var answer = this.shared_encrypt(this.shared_secret, challenge_code);
+
+            this.transaction.answer = answer;
+
+            var hash = foobar.bitcoin.crypto.sha256(
+                this.transaction.rid +
+                this.transaction.fee +
+                this.transaction.requester_rid +
+                this.transaction.requested_rid +
+                this.transaction.challenge_code +
+                this.transaction.answer +
+                inputs_hashes_concat +
+                outputs_hashes_concat
+            ).toString('hex')
+        } else if (this.info.confirm_friend === true) {
+            this.shared_secret = this.info.relationship.shared_secret;
+            this.transaction.answer = '';
+            this.transaction.relationship = this.shared_encrypt(this.shared_secret, uuid4()); 
+            var hash = foobar.bitcoin.crypto.sha256(
+                this.transaction.rid +
+                this.transaction.relationship +
+                this.transaction.fee +
+                this.transaction.requester_rid +
+                this.transaction.requested_rid +
+                inputs_hashes_concat +
+                outputs_hashes_concat
+            ).toString('hex')
+        } else {
+            // no relationship, attempt registration. This will also login the user.
+            this.shared_secret = this.info.relationship.shared_secret;
+            if (this.shared_secret != undefined) {
+                this.transaction.answer = this.shared_encrypt(this.shared_secret, challenge_code);                    
+            } else {
+                this.info.relationship.shared_secret = uuid4();
+                this.transaction.answer = '';
+            }
+            this.transaction.relationship = this.encrypt()
+            var hash = foobar.bitcoin.crypto.sha256(
+                this.transaction.rid +
+                this.transaction.relationship +
+                this.transaction.fee +
+                this.transaction.requester_rid +
+                this.transaction.requested_rid +
+                this.transaction.challenge_code +
+                this.transaction.answer +
+                inputs_hashes_concat +
+                outputs_hashes_concat
+            ).toString('hex')
+        }
+        this.transaction.hash = hash
+        var attempt = this.attempts.pop();
+        this.transaction.id = this.get_transaction_id(this.transaction.hash, attempt);
+        this.transaction.public_key = this.key.getPublicKeyBuffer().toString('hex');
+        return this.transaction;
     }
     _this = null;
     url = null;
     onError() {
-        if (this._this.attempts.length > 0) {
-            var attempt = this._this.attempts.pop();
+        if (this.attempts.length > 0) {
+            var attempt = this.attempts.pop();
             this._this.transaction.id = this._this.get_transaction_id(this._this.transaction.hash, attempt);
             if (this.url == this._this.blockchainurl) {
                 this._this.sendTransaction();
@@ -247,6 +237,7 @@ export class Transaction {
     sendTransaction() {
         this.xhr = new XMLHttpRequest();
         this.xhr._this = this;
+        this.xhr.attempts = this.attempts;
         this.xhr.url = this.blockchainurl;
         this.xhr.open("POST", this.blockchainurl, true);
         this.xhr.setRequestHeader('Content-Type', 'application/json');
