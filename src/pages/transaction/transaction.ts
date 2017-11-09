@@ -97,9 +97,12 @@ export class Transaction {
                             inputs.push({id: unspent_transaction.id});
                             input_sum += parseFloat(unspent_output.value);
                             if (input_sum > transaction_total) {
+                                let value: any;
+                                value = (input_sum - transaction_total).toFixed(1);
+
                                 this.transaction.outputs.push({
                                     to: this.key.getAddress(),
-                                    value: (input_sum - transaction_total).toFixed(1)
+                                    value: value / 1
                                 })
                                 break dance;
                             } else if (input_sum === transaction_total) {
