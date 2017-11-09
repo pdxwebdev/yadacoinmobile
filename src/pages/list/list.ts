@@ -71,22 +71,22 @@ export class ListPage {
             this.peerService.conn.on('data', (data) => {
                 console.log('Received', data);
                 var relationship = JSON.parse(data);
-                this.pushTransaction({
+                this.pushTransaction([{
                     relationship: relationship,
                     requested_rid: transaction.requested_rid,
                     requester_rid: transaction.requester_rid,
                     to: relationship.to,
                     blockchainurl: this.blockchainAddress,
                     confirm_friend: false
-                });
-                this.pushTransaction({
+                },
+                {
                     relationship: relationship,
                     requested_rid: transaction.requested_rid,
                     requester_rid: transaction.requester_rid,
                     to: relationship.to,
                     blockchainurl: this.blockchainAddress,
                     confirm_friend: true
-                });
+                }]);
             });
 
             // Send messages: step 1 in friend accept process
@@ -99,7 +99,7 @@ export class ListPage {
     xhr.send();
   }
 
-  pushTransaction(relationship) {
-    this.navCtrl.push(Transaction, relationship);
+  pushTransaction(relationships) {
+    this.navCtrl.push(Transaction, relationships);
   }
 }

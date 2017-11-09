@@ -26,6 +26,7 @@ export class Transaction {
     shared_secret = null;
     to = null;
     attempts = null;
+    prevTxn = null;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -37,12 +38,19 @@ export class Transaction {
 
         this.key = bulletinSecretService.key;
         this.bulletin_secret = bulletinSecretService.bulletin_secret;
-
-        this.info = navParams.data;
-        this.blockchainurl = this.info.blockchainurl;
-        this.callbackurl = this.info.callbackurl;
-        this.to = this.info.to;
-        this.registerOrLogin()
+        if (Array.isArray(navParams.data)) {
+            var info = navParams.data;
+        } else {
+            var info = [navParams.data];
+        }
+        for(var i=0; i < info.length; i++) {
+            this.info = info[i];
+            this.blockchainurl = this.info.blockchainurl;
+            this.callbackurl = this.info.callbackurl;
+            this.to = this.info.to;
+            this.registerOrLogin();
+        }
+        this.prevTxn = null;
     }
 
     registerOrLogin() {
@@ -88,10 +96,15 @@ export class Transaction {
             } else {
                 var inputs = [];
                 var input_sum = 0
+                if(this.prevTxn) {
+                    var unspent_transactions = this.prevTxn;
+                } else {
+                    var unspent_transactions = this.walletService.wallet.unspent_transactions;
+                }
                 dance:
-                for (var i=0; i<this.walletService.wallet.unspent_transactions.length; i++) {
-                    var unspent_transaction = this.walletService.wallet.unspent_transactions[i];
-                    for (var j=0; j<unspent_transaction.outputs.length; j++) {
+                for (var i=0; i < unspent_transactions.length; i++) {
+                    var unspent_transaction = unspent_transactions[i];
+                    for (var j=0; j < unspent_transaction.outputs.length; j++) {
                         var unspent_output = unspent_transaction.outputs[j];
                         if (unspent_output.to === this.key.getAddress()) {
                             inputs.push({id: unspent_transaction.id});
@@ -213,6 +226,7 @@ export class Transaction {
             this.transaction.id = this.get_transaction_id(hash, attempt);
             this.sendTransaction();
             this.sendCallback();
+            this.prevTxn = this.transaction;
         }
     }
     _this = null;
