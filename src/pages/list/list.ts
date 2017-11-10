@@ -18,6 +18,7 @@ export class ListPage {
   items: Array<{pageTitle: string, transaction: object}>;
   blockchainAddress: any;
   balance: any;
+  baseAddress: any;
   constructor(
     public navCtrl: NavController,
     public navParams: NavParams,
@@ -30,6 +31,9 @@ export class ListPage {
     // If we navigated to this page, we will have an item available as a nav param
       this.storage.get('blockchainAddress').then((blockchainAddress) => {
           this.blockchainAddress = blockchainAddress;
+      });
+      this.storage.get('baseAddress').then((baseAddress) => {
+          this.baseAddress = baseAddress;
       });
     this.selectedItem = navParams.get('item');
     var pageTitle = this.selectedItem ? this.selectedItem.pageTitle : navParams.get('pageTitle').title;
@@ -70,7 +74,7 @@ export class ListPage {
   relationship = null;
   accept(transaction) {
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', 'http://192.168.1.130:5000/get-peer?rid=' + transaction.requester_rid, true);
+    xhr.open('GET', this.baseAddress + '/get-peer?rid=' + transaction.requester_rid, true);
     xhr.onreadystatechange = () => {
       if (xhr.readyState === 4) {
         var data = JSON.parse(xhr.responseText);

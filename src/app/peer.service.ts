@@ -16,6 +16,7 @@ export class PeerService {
     callback = null;
     rid = null;
     key = null;
+    baseAddress = null;
     constructor(private storage: Storage, private graphService: GraphService, private bulletinSecretService: BulletinSecretService) {
       this.storage.get('key').then((key) => {
           if(key && typeof key == 'string') {
@@ -24,6 +25,9 @@ export class PeerService {
               this.key = foobar.bitcoin.ECPair.makeRandom();
               this.storage.set('key', this.key.toWIF());
           }
+      });
+      this.storage.get('baseAddress').then((baseAddress) => {
+          this.baseAddress = baseAddress;
       });
     }
 
@@ -44,7 +48,7 @@ export class PeerService {
         });
         this.peer.on('open', (id) => {
           var xhr = new XMLHttpRequest();
-          xhr.open('GET', 'http://192.168.1.130:5000/add-peer?rid=' + this.rid + '&peer_id=' + id, true);
+          xhr.open('GET', this.baseAddress + '/add-peer?rid=' + this.rid + '&peer_id=' + id, true);
           xhr.send();
         });
         this.peer.on('connection', (connection) => {
@@ -69,7 +73,7 @@ export class PeerService {
             var testrid = foobar.bitcoin.crypto.sha256(rids[0] + rids[1]).toString('hex');
 
                 var xhr = new XMLHttpRequest();
-                xhr.open('GET', 'http://192.168.1.130:5000/transaction?rid=' + testrid, true);
+                xhr.open('GET', this.baseAddress + '/transaction?rid=' + testrid, true);
                 xhr.onreadystatechange = () => {
                   if (xhr.readyState === 4) {
                         var transactions = JSON.parse(xhr.responseText);
