@@ -4,6 +4,7 @@ import { AlertController } from 'ionic-angular';
 import { Storage } from '@ionic/storage';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { WalletService } from '../../app/wallet.service';
+import { HTTP } from '@ionic-native/http';
 
 declare var forge;
 declare var foobar;
@@ -25,7 +26,8 @@ export class Transaction {
     bulletin_secret = null;
     shared_secret = null;
     to = null;
-    attempts = null;
+    txnattempts = null;
+    cbattempts = null;
     prevTxn = null;
     txns = null;
     constructor(
@@ -34,13 +36,15 @@ export class Transaction {
         private storage: Storage,
         private walletService: WalletService,
         private bulletinSecretService: BulletinSecretService,
-        private alertCtrl: AlertController
+        private alertCtrl: AlertController,
+        private http: HTTP
     ) {
-
+        http.setDataSerializer('json');
         this.key = bulletinSecretService.key;
         this.bulletin_secret = bulletinSecretService.bulletin_secret;
 
-        this.attempts = [12, 5, 4];
+        this.txnattempts = [12, 5, 4];
+        this.cbattempts = [12, 5, 4];
         this.info = navParams.data;
         this.blockchainurl = this.info.blockchainurl;
         this.callbackurl = this.info.callbackurl;
@@ -49,17 +53,9 @@ export class Transaction {
             return a.toLowerCase().localeCompare(b.toLowerCase());
         });
         this.rid = forge.sha256.create().update(bulletin_secrets[0] + bulletin_secrets[1]).digest().toHex();
-        this.xhr = new XMLHttpRequest();
-        this.xhr.open('GET', this.blockchainurl + '?rid=' + this.rid, true);
-        this.xhr.onreadystatechange = () => {
-            this.loginReadyStateChange();
-        }
-        this.xhr.send();
-    }
-
-    loginReadyStateChange() {
-        if (this.xhr.readyState === 4) {
-            var transactions = JSON.parse(this.xhr.responseText);
+        http.get(this.blockchainurl,{rid: this.rid}, {})
+        .then((data) => {
+            var transactions = JSON.parse(data.data);
 
             if (transactions.length > 0) {
                 // existing relationship, attempt login
@@ -73,9 +69,12 @@ export class Transaction {
                 }
             }
             this.generateTransaction();
-            this.sendTransaction();
-            this.sendCallback();
-        }
+            this.walletService.get().then(() => {
+                this.sendTransaction()
+            }).then(() => {
+                this.sendCallback();
+            });
+        })
     }
     generateTransaction() {
         var challenge_code = this.info.challenge_code != undefined ? this.info.challenge_code : '';
@@ -214,48 +213,59 @@ export class Transaction {
             ).toString('hex')
         }
         this.transaction.hash = hash
-        var attempt = this.attempts.pop();
+        var attempt = this.txnattempts.pop();
+        var attempt = this.cbattempts.pop();
         this.transaction.id = this.get_transaction_id(this.transaction.hash, attempt);
         this.transaction.public_key = this.key.getPublicKeyBuffer().toString('hex');
-        return this.transaction;
     }
-    _this = null;
-    url = null;
-    onError() {
-        if (this.attempts.length > 0) {
-            var attempt = this.attempts.pop();
-            this._this.transaction.id = this._this.get_transaction_id(this._this.transaction.hash, attempt);
-            if (this.url == this._this.blockchainurl) {
-                this._this.sendTransaction();
-            }
-            if (this.url == this._this.callbackurl) {
-                this._this.sendCallback();
-            }
+
+    onTransactionError() {
+        if (this.txnattempts.length > 0) {
+            var attempt = this.txnattempts.pop();
+            this.transaction.id = this.get_transaction_id(this.transaction.hash, attempt);
+            this.sendTransaction();
+        }
+    }
+
+    onCallbackError() {
+        if (this.cbattempts.length > 0) {
+            var attempt = this.cbattempts.pop();
+            this.transaction.id = this.get_transaction_id(this.transaction.hash, attempt);
+            this.sendCallback();
         }
     }
 
     sendTransaction() {
-        this.xhr = new XMLHttpRequest();
-        this.xhr._this = this;
-        this.xhr.attempts = this.attempts;
-        this.xhr.url = this.blockchainurl;
-        this.xhr.open("POST", this.blockchainurl, true);
-        this.xhr.setRequestHeader('Content-Type', 'application/json');
-        this.xhr.onerror = this.onError;
-        this.xhr.send(JSON.stringify(this.transaction));
+        this.http.post(
+            this.blockchainurl,
+            this.transaction,
+            {'Content-Type': 'application/json'})
+        .then((data) => {
+            
+        }).catch((error) => {
+            if (this.txnattempts.length > 0) {
+                this.onTransactionError();
+            }
+        });
     }
 
     sendCallback() {
-        this.xhr = new XMLHttpRequest();
-        this.xhr._this = this;
-        this.xhr.url = this.callbackurl;
-        this.xhr.open("POST", this.callbackurl, true);
-        this.xhr.setRequestHeader('Content-Type', 'application/json');
-        this.xhr.send(JSON.stringify({
-            bulletin_secret: this.bulletin_secret,
-            shared_secret: this.shared_secret,
-            to: this.key.getAddress()
-        }));
+        this.http.post(
+            this.callbackurl,
+            {
+                bulletin_secret: this.bulletin_secret,
+                shared_secret: this.shared_secret,
+                to: this.key.getAddress()
+            }, 
+            {'Content-Type': 'application/json'})
+        .then((data) => {
+
+        })
+        .catch((error) => {
+            if (this.cbattempts.length > 0) {
+                this.onCallbackError();
+            }
+        });
     }
 
     cancelTransaction() {

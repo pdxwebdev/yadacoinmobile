@@ -15,6 +15,7 @@ export class WalletService {
     constructor(private storage: Storage, private http: HTTP, private bulletinSecret: BulletinSecretService) {
         this.wallet = {};
         this.refresh();
+        http.setDataSerializer('json');
     }
 
     refresh() {
@@ -28,15 +29,32 @@ export class WalletService {
                     this.key = foobar.bitcoin.ECPair.makeRandom();
                     this.storage.set('key', this.key.toWIF());
                 }
-                this.xhr = new XMLHttpRequest();
-                this.xhr.open('GET', this.walletproviderAddress + '?address='+this.key.getAddress(), true);
-                this.xhr.onreadystatechange = () => {
-                    if (this.xhr.readyState === 4) {
-                        this.wallet = JSON.parse(this.xhr.responseText);
+                this.http.get(
+                    this.walletproviderAddress,
+                    {
+                        address: this.key.getAddress()
+                    },
+                    {
+                        'Content-Type': 'application/json'
                     }
-                }
-                this.xhr.send();
+                ).then((data) => {
+                    this.wallet = JSON.parse(data.data);
+                });
             });
+        });
+    }
+
+    get() {
+        return this.http.get(
+            this.walletproviderAddress,
+            {
+                address: this.key.getAddress()
+            },
+            {
+                'Content-Type': 'application/json'
+            }
+        ).then((data) => {
+            this.wallet = JSON.parse(data.data);
         });
     }
 }

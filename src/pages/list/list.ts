@@ -42,7 +42,8 @@ export class ListPage {
       // Let's populate this page with some filler content for funzies
       this.icons = ['flask', 'wifi', 'beer', 'football', 'basketball', 'paper-plane',
       'american-football', 'boat', 'bluetooth', 'build'];
-      var callback = () => {
+
+      graphService.getGraph().then(() => {
         if (pageTitle == 'Friends') {
             var graphArray = graphService.graph.friends
         } else if (pageTitle == 'Friend Requests') {
@@ -58,9 +59,7 @@ export class ListPage {
             transaction: graphArray[i]
           });
         }
-      }
-
-      graphService.getGraph(callback);
+      });
     }
     this.balance = walletService.wallet.balance;
   }
@@ -122,6 +121,9 @@ export class ListPage {
   }
 
   refreshWallet() {
-     this.walletService.refresh();
+     this.walletService.get()
+     .then(() => {
+       this.balance = this.walletService.wallet.balance;
+     });
   }
 }

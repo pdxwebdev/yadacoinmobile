@@ -32,6 +32,7 @@ export class PeerService {
     }
 
     init() {
+      if (!this.peer || !this.peer.id) {
         this.peer = new Peer({
           config: {'iceServers': [
             { url: 'turn:34.237.46.10:3478', credential: 'root', username: 'user' }
@@ -72,31 +73,32 @@ export class PeerService {
             });
             var testrid = foobar.bitcoin.crypto.sha256(rids[0] + rids[1]).toString('hex');
 
-                var xhr = new XMLHttpRequest();
-                xhr.open('GET', this.baseAddress + '/transaction?rid=' + testrid, true);
-                xhr.onreadystatechange = () => {
-                  if (xhr.readyState === 4) {
-                        var transactions = JSON.parse(xhr.responseText);
-                        for (var i=0; i < transactions.length; i++) {
-                            var encrypted_relationship = transactions[i].relationship;
-                            var decrypted_relationship = this.decrypt(encrypted_relationship);
-                            if (decrypted_relationship.data.indexOf('shared_secret') > 0) {
-                                var shared_secret = JSON.parse(decrypted_relationship.data).shared_secret;
-                                break;
-                            }
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', this.baseAddress + '/transaction?rid=' + testrid, true);
+            xhr.onreadystatechange = () => {
+              if (xhr.readyState === 4) {
+                    var transactions = JSON.parse(xhr.responseText);
+                    for (var i=0; i < transactions.length; i++) {
+                        var encrypted_relationship = transactions[i].relationship;
+                        var decrypted_relationship = this.decrypt(encrypted_relationship);
+                        if (decrypted_relationship.data.indexOf('shared_secret') > 0) {
+                            var shared_secret = JSON.parse(decrypted_relationship.data).shared_secret;
+                            break;
                         }
-                        if(typeof shared_secret != 'undefined') {
-                            connection.send(JSON.stringify({
-                                bulletin_secret: this.bulletinSecretService.bulletin_secret,
-                                shared_secret: shared_secret,
-                                to: this.key.getAddress()
-                            }));
-                        }
-                  }
-                }
-                xhr.send();
+                    }
+                    if(typeof shared_secret != 'undefined') {
+                        connection.send(JSON.stringify({
+                            bulletin_secret: this.bulletinSecretService.bulletin_secret,
+                            shared_secret: shared_secret,
+                            to: this.key.getAddress()
+                        }));
+                    }
+              }
+            }
+            xhr.send();
           });
         });
+      }
     }
 
     connect(peerId, callback) {
