@@ -241,7 +241,7 @@ export class Transaction {
             this.transaction,
             {'Content-Type': 'application/json'})
         .then((data) => {
-            
+            this.walletService.get();
         }).catch((error) => {
             if (this.txnattempts.length > 0) {
                 this.onTransactionError();

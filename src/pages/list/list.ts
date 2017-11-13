@@ -6,6 +6,8 @@ import { GraphService } from '../../app/graph.service';
 import { PeerService } from '../../app/peer.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { WalletService } from '../../app/wallet.service';
+import { HTTP } from '@ionic-native/http';
+
 
 @Component({
   selector: 'page-list',
@@ -26,8 +28,10 @@ export class ListPage {
     private graphService: GraphService,
     private peerService: PeerService,
     private bulletinSecretService: BulletinSecretService,
-    private walletService: WalletService
+    private walletService: WalletService,
+    private http: HTTP
   ) {
+
     // If we navigated to this page, we will have an item available as a nav param
       this.storage.get('blockchainAddress').then((blockchainAddress) => {
           this.blockchainAddress = blockchainAddress;
@@ -72,37 +76,33 @@ export class ListPage {
   }
   relationship = null;
   accept(transaction) {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', this.baseAddress + '/get-peer?rid=' + transaction.requester_rid, true);
-    xhr.onreadystatechange = () => {
-      if (xhr.readyState === 4) {
-        var data = JSON.parse(xhr.responseText);
-        this.peerService.rid = transaction.requested_rid;
-        this.peerService.callback = this.pushTransaction;
-        this.peerService.init();
-        this.peerService.connect(data.peerId, () => {
-            // Receive messages: step 3 in friend accept process
-            this.peerService.conn.on('data', (data) => {
-                console.log('Received', data);
-                this.relationship = JSON.parse(data);
-                this.pushTransaction({
-                    relationship: this.relationship,
-                    requested_rid: transaction.requested_rid,
-                    requester_rid: transaction.requester_rid,
-                    to: this.relationship.to,
-                    blockchainurl: this.blockchainAddress,
-                    confirm_friend: false
-                });
-            });
+    this.http.get(this.baseAddress + '/get-peer', {rid: transaction.requester_rid}, {})
+    .then((res) => {
+      var data = JSON.parse(res.data);
+      this.peerService.rid = transaction.requested_rid;
+      this.peerService.callback = this.pushTransaction;
+      this.peerService.init();
+      this.peerService.connect(data.peerId, () => {
+          // Receive messages: step 3 in friend accept process
+          this.peerService.conn.on('data', (data) => {
+              console.log('Received', data);
+              this.relationship = JSON.parse(data);
+              this.pushTransaction({
+                  relationship: this.relationship,
+                  requested_rid: transaction.requested_rid,
+                  requester_rid: transaction.requester_rid,
+                  to: this.relationship.to,
+                  blockchainurl: this.blockchainAddress,
+                  confirm_friend: false
+              });
+          });
 
-            // Send messages: step 1 in friend accept process
-            this.peerService.conn.send(JSON.stringify({
-                bulletin_secret: this.bulletinSecretService.bulletin_secret
-            }));
-        });
-      }
-    }
-    xhr.send();
+          // Send messages: step 1 in friend accept process
+          this.peerService.conn.send(JSON.stringify({
+              bulletin_secret: this.bulletinSecretService.bulletin_secret
+          }));
+      });
+    });
   }
 
   send_receipt(transaction) {

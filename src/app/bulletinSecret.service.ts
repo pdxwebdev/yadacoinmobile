@@ -9,16 +9,7 @@ export class BulletinSecretService {
     key = null;
     bulletin_secret = null;
     constructor(private storage: Storage) {
-        var keyname = 'key';
-        this.storage.get(keyname).then((key) => {
-            if(key && typeof key == 'string') {
-                this.key = foobar.bitcoin.ECPair.fromWIF(key);
-            } else {
-                this.key = foobar.bitcoin.ECPair.makeRandom();
-                this.storage.set(keyname, this.key.toWIF());
-            }
-            this.bulletin_secret = foobar.bitcoin.crypto.sha256(this.shared_encrypt(this.key.toWIF(), this.key.toWIF())).toString('hex');
-        });
+        this.get();
     }
 
     shared_encrypt(shared_secret, message) {
@@ -29,5 +20,18 @@ export class BulletinSecretService {
         cipher.update(forge.util.createBuffer(iv + message));
         cipher.finish()
         return cipher.output.toHex()
+    }
+
+    get() {
+        var keyname = 'key';
+        return this.storage.get(keyname).then((key) => {
+            if(key && typeof key == 'string') {
+                this.key = foobar.bitcoin.ECPair.fromWIF(key);
+            } else {
+                this.key = foobar.bitcoin.ECPair.makeRandom();
+                this.storage.set(keyname, this.key.toWIF());
+            }
+            this.bulletin_secret = foobar.bitcoin.crypto.sha256(this.shared_encrypt(this.key.toWIF(), this.key.toWIF())).toString('hex');
+        });
     }
 }

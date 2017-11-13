@@ -12,49 +12,34 @@ export class WalletService {
     walletproviderAddress: any;
     xhr: any;
     key: any;
-    constructor(private storage: Storage, private http: HTTP, private bulletinSecret: BulletinSecretService) {
+    constructor(private storage: Storage, private http: HTTP, private bulletinSecretService: BulletinSecretService) {
         this.wallet = {};
-        this.refresh();
         http.setDataSerializer('json');
     }
 
-    refresh() {
-        this.storage.get('walletproviderAddress').then((walletproviderAddress) => {
+    get() {
+        return this.storage.get('walletproviderAddress').then((walletproviderAddress) => {
             this.walletproviderAddress = walletproviderAddress;
-
-            this.storage.get('key').then((key) => {
-                if(key && typeof key == 'string') {
-                    this.key = foobar.bitcoin.ECPair.fromWIF(key);
-                } else {
-                    this.key = foobar.bitcoin.ECPair.makeRandom();
-                    this.storage.set('key', this.key.toWIF());
-                }
-                this.http.get(
-                    this.walletproviderAddress,
-                    {
-                        address: this.key.getAddress()
-                    },
-                    {
-                        'Content-Type': 'application/json'
-                    }
-                ).then((data) => {
-                    this.wallet = JSON.parse(data.data);
+            return new Promise((resolve1, reject1) => {
+                this.bulletinSecretService.get().then(() => {
+                    return new Promise((resolve, reject) => {
+                        this.http.get(
+                            this.walletproviderAddress,
+                            {
+                                address: this.bulletinSecretService.key.getAddress()
+                            },
+                            {
+                                'Content-Type': 'application/json'
+                            }
+                        ).then((data) => {
+                            resolve(data);
+                        });
+                    }).then((data) => {
+                        this.wallet = JSON.parse(data['data']);
+                        resolve1();
+                    });
                 });
             });
-        });
-    }
-
-    get() {
-        return this.http.get(
-            this.walletproviderAddress,
-            {
-                address: this.key.getAddress()
-            },
-            {
-                'Content-Type': 'application/json'
-            }
-        ).then((data) => {
-            this.wallet = JSON.parse(data.data);
         });
     }
 }
