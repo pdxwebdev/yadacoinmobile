@@ -33,69 +33,73 @@ export class PeerService {
 
     init() {
       if (!this.peer || !this.peer.id) {
-        this.peer = new Peer({
-          config: {'iceServers': [
-            { url: 'turn:34.237.46.10:3478', credential: 'root', username: 'user' }
-          ]},
-          host:'34.237.46.10',
-          port: 9000,
-          // Set highest debug level (log everything!).
-          debug: 3,
+        this.graphService.getGraph().then(() => {
+          this.peer = new Peer({
+            config: {'iceServers': [
+              { url: 'turn:34.237.46.10:3478', credential: 'root', username: 'user' }
+            ]},
+            host:'34.237.46.10',
+            port: 9000,
+            // Set highest debug level (log everything!).
+            debug: 3,
 
-          logFunction: function() {
-            var copy = Array.prototype.slice.call(arguments).join(' ');
-            console.log(copy);
-          }
-        });
-        this.peer.on('open', (id) => {
-          var xhr = new XMLHttpRequest();
-          xhr.open('GET', this.baseAddress + '/add-peer?rid=' + this.rid + '&peer_id=' + id, true);
-          xhr.send();
-        });
-        this.peer.on('connection', (connection) => {
-          // This `connection` is a DataConnection object with which we can send
-          // data.
-          // The `open` event firing means that the connection is now ready to
-          // transmit data.onnection.
-          console.log('connected');
-          connection.on('open', function() {
-            // Send 'Hello' on the connection.
-            console.log('opened');
-          });
-          // The `data` event is fired when data is received on the connection.
-          //: step 2 in friend accept process
-          connection.on('data', (data) => {
-            // Append the data to body.
-            console.log(data);
-            var person_to_lookup = JSON.parse(data);
-            var rids = [this.bulletinSecretService.bulletin_secret, person_to_lookup.bulletin_secret].sort(function (a, b) {
-                return a.toLowerCase().localeCompare(b.toLowerCase());
-            });
-            var testrid = foobar.bitcoin.crypto.sha256(rids[0] + rids[1]).toString('hex');
-
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', this.baseAddress + '/transaction?rid=' + testrid, true);
-            xhr.onreadystatechange = () => {
-              if (xhr.readyState === 4) {
-                    var transactions = JSON.parse(xhr.responseText);
-                    for (var i=0; i < transactions.length; i++) {
-                        var encrypted_relationship = transactions[i].relationship;
-                        var decrypted_relationship = this.decrypt(encrypted_relationship);
-                        if (decrypted_relationship.data.indexOf('shared_secret') > 0) {
-                            var shared_secret = JSON.parse(decrypted_relationship.data).shared_secret;
-                            break;
-                        }
-                    }
-                    if(typeof shared_secret != 'undefined') {
-                        connection.send(JSON.stringify({
-                            bulletin_secret: this.bulletinSecretService.bulletin_secret,
-                            shared_secret: shared_secret,
-                            to: this.key.getAddress()
-                        }));
-                    }
-              }
+            logFunction: function() {
+              var copy = Array.prototype.slice.call(arguments).join(' ');
+              console.log(copy);
             }
-            xhr.send();
+          });
+          this.peer.on('open', (id) => {
+            for(var i=0; i < this.graphService.graph.friends.length; i++) {
+              var xhr = new XMLHttpRequest();
+              xhr.open('GET', this.baseAddress + '/add-peer?rid=' + this.graphService.graph.friends[i].rid + '&peer_id=' + id, true);
+              xhr.send();
+            }
+          });
+          this.peer.on('connection', (connection) => {
+            // This `connection` is a DataConnection object with which we can send
+            // data.
+            // The `open` event firing means that the connection is now ready to
+            // transmit data.onnection.
+            console.log('connected');
+            connection.on('open', function() {
+              // Send 'Hello' on the connection.
+              console.log('opened');
+            });
+            // The `data` event is fired when data is received on the connection.
+            //: step 2 in friend accept process
+            connection.on('data', (data) => {
+              // Append the data to body.
+              console.log(data);
+              var person_to_lookup = JSON.parse(data);
+              var rids = [this.bulletinSecretService.bulletin_secret, person_to_lookup.bulletin_secret].sort(function (a, b) {
+                  return a.toLowerCase().localeCompare(b.toLowerCase());
+              });
+              var testrid = foobar.bitcoin.crypto.sha256(rids[0] + rids[1]).toString('hex');
+
+              var xhr = new XMLHttpRequest();
+              xhr.open('GET', this.baseAddress + '/transaction?rid=' + testrid, true);
+              xhr.onreadystatechange = () => {
+                if (xhr.readyState === 4) {
+                      var transactions = JSON.parse(xhr.responseText);
+                      for (var i=0; i < transactions.length; i++) {
+                          var encrypted_relationship = transactions[i].relationship;
+                          var decrypted_relationship = this.decrypt(encrypted_relationship);
+                          if (decrypted_relationship.data.indexOf('shared_secret') > 0) {
+                              var shared_secret = JSON.parse(decrypted_relationship.data).shared_secret;
+                              break;
+                          }
+                      }
+                      if(typeof shared_secret != 'undefined') {
+                          connection.send(JSON.stringify({
+                              bulletin_secret: this.bulletinSecretService.bulletin_secret,
+                              shared_secret: shared_secret,
+                              to: this.key.getAddress()
+                          }));
+                      }
+                }
+              }
+              xhr.send();
+            });
           });
         });
       }

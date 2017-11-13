@@ -12,6 +12,7 @@
 
   <button ion-button secondary (click)="scan_friend()">Register / Login / Scan Friend</button> 
   <button ion-button secondary (click)="createCode()">New Code</button>
+  <button ion-button secondary (click)="addPeer()">Add Peer</button>
   <ion-card *ngIf="createdCode">
     <ngx-qrcode [qrc-value]="createdCode"></ngx-qrcode>
     <ion-card-content>

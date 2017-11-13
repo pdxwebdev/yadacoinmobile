@@ -7,6 +7,7 @@ import { Storage } from '@ionic/storage';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { PeerService } from '../../app/peer.service';
 import { WalletService } from '../../app/wallet.service';
+import { GraphService } from '../../app/graph.service';
 
 declare var forge;
 declare var elliptic;
@@ -30,7 +31,8 @@ export class HomePage {
         private bulletinSecretService: BulletinSecretService,
         private peerService: PeerService,
         private alertCtrl: AlertController,
-        private walletService: WalletService
+        private walletService: WalletService,
+        private graphService: GraphService
         ) {
         this.storage.get('blockchainAddress').then((blockchainAddress) => {
             this.blockchainAddress = blockchainAddress;
@@ -142,5 +144,9 @@ export class HomePage {
             }
 
         }).catch((e: any) => console.log('Error is', e));
+    }
+
+    addPeer() {
+        this.peerService.init();
     }
 }
