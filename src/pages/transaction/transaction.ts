@@ -30,6 +30,8 @@ export class Transaction {
     cbattempts = null;
     prevTxn = null;
     txns = null;
+    resolve = null;
+    unspent_transaction_override = null;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -46,6 +48,8 @@ export class Transaction {
         this.txnattempts = [12, 5, 4];
         this.cbattempts = [12, 5, 4];
         this.info = navParams.data;
+        this.resolve = this.info.resolve;
+        this.unspent_transaction_override = this.info.unspent_transaction;
         this.blockchainurl = this.info.blockchainurl;
         this.callbackurl = this.info.callbackurl;
         this.to = this.info.to;
@@ -68,8 +72,8 @@ export class Transaction {
                     }
                 }
             }
-            this.generateTransaction();
             this.walletService.get().then(() => {
+                this.generateTransaction();
                 this.sendTransaction()
             }).then(() => {
                 this.sendCallback();
@@ -90,17 +94,18 @@ export class Transaction {
                 value: 1
             }]
         };
-        var transaction_total = this.transaction.outputs[0].value + this.transaction.fee;
         if (this.walletService.wallet.balance < transaction_total || this.walletService.wallet.unspent_transactions.length == 0) {
             this.cancelTransaction()
             return
         } else {
+            var transaction_total = this.transaction.outputs[0].value + this.transaction.fee;
             var inputs = [];
             var input_sum = 0
-            if(this.prevTxn) {
-                var unspent_transactions = this.prevTxn;
+            let unspent_transactions: any;
+            if(this.unspent_transaction_override) {
+                unspent_transactions = [this.unspent_transaction_override];
             } else {
-                var unspent_transactions = this.walletService.wallet.unspent_transactions;
+                unspent_transactions = this.walletService.wallet.unspent_transactions;
             }
             dance:
             for (var i=0; i < unspent_transactions.length; i++) {
@@ -126,6 +131,7 @@ export class Transaction {
                 }
             }
         }
+        
         if (input_sum < transaction_total) {
             this.cancelTransaction();
             return
@@ -241,7 +247,7 @@ export class Transaction {
             this.transaction,
             {'Content-Type': 'application/json'})
         .then((data) => {
-            this.walletService.get();
+            this.resolve(JSON.parse(data.data));
         }).catch((error) => {
             if (this.txnattempts.length > 0) {
                 this.onTransactionError();

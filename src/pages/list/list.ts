@@ -78,43 +78,54 @@ export class ListPage {
   accept(transaction) {
     this.http.get(this.baseAddress + '/get-peer', {rid: transaction.requester_rid}, {})
     .then((res) => {
-      var data = JSON.parse(res.data);
-      this.peerService.rid = transaction.requested_rid;
-      this.peerService.callback = this.pushTransaction;
-      this.peerService.init().then(() => {
-        this.peerService.connect(data.peerId, () => {
+      return new Promise((resolve, reject) => {
+        var data = JSON.parse(res.data);
+        this.peerService.rid = transaction.requested_rid;
+        this.peerService.callback = this.pushTransaction;
+        this.peerService.init().then(() => {
+          this.peerService.connect(data.peerId, () => {
             // Receive messages: step 3 in friend accept process
-            this.peerService.conn.on('data', (data) => {
-                console.log('Received', data);
-                this.relationship = JSON.parse(data);
-                this.pushTransaction({
-                    relationship: this.relationship,
-                    requested_rid: transaction.requested_rid,
-                    requester_rid: transaction.requester_rid,
-                    to: this.relationship.to,
-                    blockchainurl: this.blockchainAddress,
-                    confirm_friend: false
-                });
+            this.peerService.conn.on('data', (data2) => {
+                console.log('Received', data2);
+                resolve(JSON.parse(data2));
             });
 
             // Send messages: step 1 in friend accept process
             this.peerService.conn.send(JSON.stringify({
                 bulletin_secret: this.bulletinSecretService.bulletin_secret
             }));
+          });
         });
       });
+    }).then((res) => {
+      this.relationship = res;
+      this.walletService.get().then(() => {
+        return new Promise((resolve, reject) => {
+          this.pushTransaction({
+              relationship: this.relationship,
+              requested_rid: transaction.requested_rid,
+              requester_rid: transaction.requester_rid,
+              to: this.relationship.to,
+              blockchainurl: this.blockchainAddress,
+              confirm_friend: false,
+              resolve: resolve
+          });
+        });
+      }).then((txn) => {
+        this.pushTransaction({
+            relationship: this.relationship,
+            requested_rid: transaction.requested_rid,
+            requester_rid: transaction.requester_rid,
+            to: this.relationship.to,
+            blockchainurl: this.blockchainAddress,
+            confirm_friend: true,
+            unspent_transaction: txn
+        });
+      });
+    })
+    .catch((error) => {
+      console.log(error);
     });
-  }
-
-  send_receipt(transaction) {
-      this.pushTransaction({
-          relationship: this.relationship,
-          requested_rid: transaction.requested_rid,
-          requester_rid: transaction.requester_rid,
-          to: this.relationship.to,
-          blockchainurl: this.blockchainAddress,
-          confirm_friend: true
-      })
   }
 
   pushTransaction(relationships) {
