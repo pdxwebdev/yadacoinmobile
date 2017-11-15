@@ -16,8 +16,7 @@
   <ion-card *ngIf="createdCode">
     <ngx-qrcode [qrc-value]="createdCode"></ngx-qrcode>
     <ion-card-content>
-      <p>Let a friend scan this qr code</p>
-      <p>To add another friend, tap 'new code'</p>
+      <p>{{createdCode}}</p>
     </ion-card-content>
   </ion-card>
 </ion-content>

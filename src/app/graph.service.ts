@@ -12,6 +12,7 @@ export class GraphService {
     graphproviderAddress: any;
     xhr: any;
     key: any;
+    rid: any;
     constructor(private storage: Storage, private http: HTTP, private bulletinSecret: BulletinSecretService) {
         this.storage.get('graphproviderAddress').then((graphproviderAddress) => {
             this.graphproviderAddress = graphproviderAddress;
@@ -35,6 +36,7 @@ export class GraphService {
         )
         .then((data) => {
             this.graph = JSON.parse(data.data);
+            this.rid = this.graph.rid;
             var shared_secrets = [];
             var sent_friend_requests = {};
             for(var i=0; i<this.graph.sent_friend_requests.length; i++) {

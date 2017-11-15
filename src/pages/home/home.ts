@@ -33,7 +33,7 @@ export class HomePage {
         private alertCtrl: AlertController,
         private walletService: WalletService,
         private graphService: GraphService
-        ) {
+    ) {
         this.storage.get('blockchainAddress').then((blockchainAddress) => {
             this.blockchainAddress = blockchainAddress;
             this.createCode();
@@ -44,10 +44,14 @@ export class HomePage {
     }
 
     createCode() {
-        this.createdCode = JSON.stringify({
-            bulletin_secret: this.bulletinSecretService.bulletin_secret,
-            shared_secret: uuid4(),
-            to: this.bulletinSecretService.key.getAddress()
+        this.graphService.getGraph().then(() => {
+          this.peerService.init();
+          this.createdCode = JSON.stringify({
+              bulletin_secret: this.bulletinSecretService.bulletin_secret,
+              shared_secret: uuid4(),
+              to: this.bulletinSecretService.key.getAddress(),
+              requested_rid: this.graphService.rid
+          });
         });
     }
 
@@ -97,7 +101,8 @@ export class HomePage {
                                             });
                                             var rid = forge.sha256.create().update(bulletin_secrets[0] + bulletin_secrets[1]).digest().toHex();
                                             if (!info.requester_rid) {
-                                                requester_rid = rid;
+                                                // TODO: MUST VERIFY THIS RID IS RELATED TO THE SAME NODE AS THE REQUESTED RID!!!
+                                                requester_rid = this.graphService.rid;
                                             }
                                             if (!info.requested_rid) {
                                                 requested_rid = rid;
