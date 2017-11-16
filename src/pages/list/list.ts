@@ -54,6 +54,8 @@ export class ListPage {
             var graphArray = graphService.graph.friend_requests
         } else if (pageTitle == 'Sent Requests') {
             var graphArray = graphService.graph.sent_friend_requests
+        } else if (pageTitle == 'Posts') {
+            var graphArray = graphService.graph.friend_posts
         }
 
         this.items = [];

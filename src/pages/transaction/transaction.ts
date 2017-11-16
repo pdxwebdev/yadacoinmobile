@@ -53,10 +53,14 @@ export class Transaction {
         this.blockchainurl = this.info.blockchainurl;
         this.callbackurl = this.info.callbackurl;
         this.to = this.info.to;
-        var bulletin_secrets = [this.bulletin_secret, this.info.relationship.bulletin_secret].sort(function (a, b) {
-            return a.toLowerCase().localeCompare(b.toLowerCase());
-        });
-        this.rid = forge.sha256.create().update(bulletin_secrets[0] + bulletin_secrets[1]).digest().toHex();
+        if (this.info.relationship.bulletin_secret) {
+            var bulletin_secrets = [this.bulletin_secret, this.info.relationship.bulletin_secret].sort(function (a, b) {
+                return a.toLowerCase().localeCompare(b.toLowerCase());
+            });
+            this.rid = forge.sha256.create().update(bulletin_secrets[0] + bulletin_secrets[1]).digest().toHex();
+        } else {
+            this.rid = '';
+        }
         http.get(this.blockchainurl,{rid: this.rid}, {})
         .then((data) => {
             var transactions = JSON.parse(data.data);
@@ -88,17 +92,23 @@ export class Transaction {
             requester_rid: typeof this.info.requester_rid == 'undefined' ? '' : this.info.requester_rid,
             requested_rid: typeof this.info.requested_rid == 'undefined' ? '' : this.info.requested_rid,
             challenge_code: challenge_code,
-            answer: answer,
-            outputs: [{
+            outputs: []
+        };
+        if (this.to) {
+            this.transaction.outputs.push({
                 to: this.to,
                 value: 1
-            }]
-        };
+            })
+        }
         if (this.walletService.wallet.balance < transaction_total || this.walletService.wallet.unspent_transactions.length == 0) {
             this.cancelTransaction()
             return
         } else {
-            var transaction_total = this.transaction.outputs[0].value + this.transaction.fee;
+            if (this.transaction.outputs.length > 0) {
+                var transaction_total = this.transaction.outputs[0].value + this.transaction.fee;
+            } else {
+                var transaction_total = this.transaction.fee;
+            }
             var inputs = [];
             var input_sum = 0
             let unspent_transactions: any;
@@ -196,7 +206,7 @@ export class Transaction {
                 inputs_hashes_concat +
                 outputs_hashes_concat
             ).toString('hex')
-        } else {
+        } else if (this.info.relationship.shared_secret) {
             // no relationship, attempt registration. This will also login the user.
             this.shared_secret = this.info.relationship.shared_secret;
             if (this.shared_secret != undefined) {
@@ -214,6 +224,17 @@ export class Transaction {
                 this.transaction.requested_rid +
                 this.transaction.challenge_code +
                 this.transaction.answer +
+                inputs_hashes_concat +
+                outputs_hashes_concat
+            ).toString('hex')
+        } else {
+            // no relationship, no shared secret, must be a pos
+
+            this.transaction.relationship = this.shared_encrypt(this.bulletin_secret, JSON.stringify(this.info.relationship));                    
+
+            var hash = foobar.bitcoin.crypto.sha256(
+                this.transaction.relationship +
+                this.transaction.fee +
                 inputs_hashes_concat +
                 outputs_hashes_concat
             ).toString('hex')

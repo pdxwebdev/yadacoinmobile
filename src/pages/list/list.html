@@ -15,6 +15,7 @@
       <span *ngIf="pageTitle =='Sent Requests'">{{item.transaction.requested_rid}}</span>
       <span *ngIf="pageTitle =='Friend Requests'">{{item.transaction.requester_rid}}</span>
       <span *ngIf="pageTitle =='Friends'">{{item.transaction.rid}}</span>
+      <span *ngIf="pageTitle =='Posts'">{{item.transaction.relationship.postText}}</span>
     </button>
   </ion-list>
   <div *ngIf="selectedItem && pageTitle =='Sent Requests'" padding>
@@ -29,5 +30,8 @@
   </div>
   <div *ngIf="selectedItem && pageTitle =='Friends'" padding>
     You navigated here from <b>{{selectedItem.transaction.rid}}</b>
+  </div>
+  <div *ngIf="selectedItem && pageTitle =='Posts'" padding>
+    <a href="{{selectedItem.transaction.relationship.postText}}" target="_blank">{{selectedItem.transaction.relationship.postText}}</a>
   </div>
 </ion-content>
