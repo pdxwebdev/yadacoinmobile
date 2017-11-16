@@ -95,6 +95,7 @@ export class HomePage {
                                         // camera permission was granted
                                         var requester_rid = info.requester_rid;
                                         var requested_rid = info.requested_rid;
+                                        var confirm_friend = info.confirm_friend;
                                         if (data === 'traceable') {
                                             var bulletin_secrets = [this.bulletinSecretService.bulletin_secret, this.bulletinSecretService.bulletin_secret].sort(function (a, b) {
                                                 return a.toLowerCase().localeCompare(b.toLowerCase());
@@ -121,7 +122,8 @@ export class HomePage {
                                             blockchainurl: this.blockchainAddress,
                                             challenge_code: info.challenge_code,
                                             callbackurl: info.callbackurl,
-                                            to: info.to
+                                            to: info.to,
+                                            confirm_friend: confirm_friend
                                         });
                                         this.peerService.rid = info.requester_rid;
                                         this.peerService.init();
