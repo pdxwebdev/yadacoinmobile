@@ -8,6 +8,9 @@ import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { WalletService } from '../../app/wallet.service';
 import { HTTP } from '@ionic-native/http';
 
+declare var forge;
+declare var foobar;
+declare var uuid4;
 
 @Component({
   selector: 'page-list',
@@ -21,6 +24,8 @@ export class ListPage {
   blockchainAddress: any;
   balance: any;
   baseAddress: any;
+  createdCode: any;
+  confirmCode: any;
   constructor(
     public navCtrl: NavController,
     public navParams: NavParams,
@@ -66,12 +71,31 @@ export class ListPage {
           });
         }
       });
+    } else {
+        if (pageTitle == 'Sent Requests') {
+            var decrypted = this.decrypt(this.selectedItem.transaction.relationship);
+            var relationship = JSON.parse(decrypted);
+            this.createdCode = JSON.stringify({
+                bulletin_secret: this.bulletinSecretService.bulletin_secret,
+                shared_secret: relationship.shared_secret,
+                to: this.bulletinSecretService.key.getAddress(),
+                requested_rid: this.selectedItem.transaction.requested_rid,
+                requester_rid: graphService.graph.rid,
+            });
+            this.confirmCode = JSON.stringify({
+                bulletin_secret: this.bulletinSecretService.bulletin_secret,
+                shared_secret: relationship.shared_secret,
+                to: this.bulletinSecretService.key.getAddress(),
+                requested_rid: this.selectedItem.transaction.requested_rid,
+                requester_rid: graphService.graph.rid,
+                confirm_friend: true
+            });
+        }
     }
     this.balance = walletService.wallet.balance;
   }
 
   itemTapped(event, item) {
-    // That's right, we're pushing to ourselves!
     this.navCtrl.push(ListPage, {
       item: item
     });
@@ -140,4 +164,23 @@ export class ListPage {
        this.balance = this.walletService.wallet.balance;
      });
   }
+
+    decrypt(message) {
+        var key = forge.pkcs5.pbkdf2(forge.sha256.create().update(this.bulletinSecretService.key.toWIF()).digest().toHex(), 'salt', 400, 32);
+        var decipher = forge.cipher.createDecipher('AES-CBC', key);
+        var enc = this.hexToBytes(message);
+        decipher.start({iv: enc.slice(0,16)});
+        decipher.update(forge.util.createBuffer(enc.slice(16)));
+        decipher.finish();
+        return decipher.output
+    }
+
+    hexToBytes(s) {
+        var arr = []
+        for (var i = 0; i < s.length; i += 2) {
+            var c = s.substr(i, 2);
+            arr.push(parseInt(c, 16));
+        }
+        return String.fromCharCode.apply(null, arr);
+    }
 }

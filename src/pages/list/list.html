@@ -19,7 +19,18 @@
     </button>
   </ion-list>
   <div *ngIf="selectedItem && pageTitle =='Sent Requests'" padding>
-    You navigated here from <b>{{selectedItem.transaction.requested_rid}}</b>
+    <ion-card *ngIf="createdCode">
+      <ngx-qrcode [qrc-value]="createdCode"></ngx-qrcode>
+      <ion-card-content>
+        <p>{{createdCode}}</p>
+      </ion-card-content>
+    </ion-card>
+    <ion-card *ngIf="confirmCode">
+      <ngx-qrcode [qrc-value]="confirmCode"></ngx-qrcode>
+      <ion-card-content>
+        <p>{{confirmCode}}</p>
+      </ion-card-content>
+    </ion-card>
   </div>
   <div *ngIf="selectedItem && pageTitle =='Friend Requests'" padding>
     You navigated here from <b>{{selectedItem.transaction.requester_rid}}</b>
