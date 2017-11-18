@@ -20,9 +20,9 @@ export class WalletService {
     get() {
         return this.storage.get('walletproviderAddress').then((walletproviderAddress) => {
             this.walletproviderAddress = walletproviderAddress;
-            return new Promise((resolve1, reject1) => {
+            return new Promise((resolve, reject) => {
                 this.bulletinSecretService.get().then(() => {
-                    return new Promise((resolve, reject) => {
+                    return new Promise((resolve1, reject1) => {
                         this.http.get(
                             this.walletproviderAddress,
                             {
@@ -32,11 +32,11 @@ export class WalletService {
                                 'Content-Type': 'application/json'
                             }
                         ).then((data) => {
-                            resolve(data);
+                            resolve1(data);
                         });
                     }).then((data) => {
                         this.wallet = JSON.parse(data['data']);
-                        resolve1();
+                        resolve();
                     });
                 });
             });

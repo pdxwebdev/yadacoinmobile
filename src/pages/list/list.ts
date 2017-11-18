@@ -6,6 +6,7 @@ import { GraphService } from '../../app/graph.service';
 import { PeerService } from '../../app/peer.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { WalletService } from '../../app/wallet.service';
+import { TransactionService } from '../../app/transaction.service';
 import { HTTP } from '@ionic-native/http';
 
 declare var forge;
@@ -26,6 +27,8 @@ export class ListPage {
   baseAddress: any;
   createdCode: any;
   confirmCode: any;
+  loading: any;
+  loadingBalance: any;
   constructor(
     public navCtrl: NavController,
     public navParams: NavParams,
@@ -34,16 +37,19 @@ export class ListPage {
     private peerService: PeerService,
     private bulletinSecretService: BulletinSecretService,
     private walletService: WalletService,
+    private transactionService: TransactionService,
     private http: HTTP
   ) {
+    this.loading = true;
+    this.loadingBalance = true;
 
     // If we navigated to this page, we will have an item available as a nav param
-      this.storage.get('blockchainAddress').then((blockchainAddress) => {
-          this.blockchainAddress = blockchainAddress;
-      });
-      this.storage.get('baseAddress').then((baseAddress) => {
-          this.baseAddress = baseAddress;
-      });
+    this.storage.get('blockchainAddress').then((blockchainAddress) => {
+        this.blockchainAddress = blockchainAddress;
+    });
+    this.storage.get('baseAddress').then((baseAddress) => {
+        this.baseAddress = baseAddress;
+    });
     this.selectedItem = navParams.get('item');
     var pageTitle = this.selectedItem ? this.selectedItem.pageTitle : navParams.get('pageTitle').title;
     this.pageTitle = pageTitle;
@@ -53,6 +59,7 @@ export class ListPage {
       'american-football', 'boat', 'bluetooth', 'build'];
 
       graphService.getGraph().then(() => {
+        this.loading = false;
         if (pageTitle == 'Friends') {
             var graphArray = graphService.graph.friends
         } else if (pageTitle == 'Friend Requests') {
@@ -71,7 +78,10 @@ export class ListPage {
           });
         }
       });
+      this.refreshWallet();
     } else {
+        this.loading = false;
+        this.loadingBalance = false;
         if (pageTitle == 'Sent Requests') {
             var decrypted = this.decrypt(this.selectedItem.transaction.relationship);
             var relationship = JSON.parse(decrypted);
@@ -81,14 +91,7 @@ export class ListPage {
                 to: this.bulletinSecretService.key.getAddress(),
                 requested_rid: this.selectedItem.transaction.requested_rid,
                 requester_rid: graphService.graph.rid,
-            });
-            this.confirmCode = JSON.stringify({
-                bulletin_secret: this.bulletinSecretService.bulletin_secret,
-                shared_secret: relationship.shared_secret,
-                to: this.bulletinSecretService.key.getAddress(),
-                requested_rid: this.selectedItem.transaction.requested_rid,
-                requester_rid: graphService.graph.rid,
-                confirm_friend: true
+                accept: true
             });
         }
     }
@@ -107,7 +110,7 @@ export class ListPage {
       return new Promise((resolve, reject) => {
         var data = JSON.parse(res.data);
         this.peerService.rid = transaction.requested_rid;
-        this.peerService.callback = this.pushTransaction;
+        this.peerService.callback = this.transactionService.pushTransaction;
         this.peerService.init().then(() => {
           this.peerService.connect(data.peerId, () => {
             // Receive messages: step 3 in friend accept process
@@ -127,7 +130,7 @@ export class ListPage {
       this.relationship = res;
       this.walletService.get().then(() => {
         return new Promise((resolve, reject) => {
-          this.pushTransaction({
+          this.transactionService.pushTransaction({
               relationship: this.relationship,
               requested_rid: transaction.requested_rid,
               requester_rid: transaction.requester_rid,
@@ -138,7 +141,7 @@ export class ListPage {
           });
         });
       }).then((txn) => {
-        this.pushTransaction({
+        this.transactionService.pushTransaction({
             relationship: this.relationship,
             requested_rid: transaction.requested_rid,
             requester_rid: transaction.requester_rid,
@@ -154,14 +157,12 @@ export class ListPage {
     });
   }
 
-  pushTransaction(relationships) {
-    this.navCtrl.push(Transaction, relationships);
-  }
-
   refreshWallet() {
+     this.loadingBalance = true;;
      this.walletService.get()
      .then(() => {
-       this.balance = this.walletService.wallet.balance;
+         this.loadingBalance = false;
+         this.balance = this.walletService.wallet.balance;
      });
   }
 

@@ -4,6 +4,7 @@ import { IonicApp, IonicErrorHandler, IonicModule } from 'ionic-angular';
 
 import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
+import { PostModal } from '../pages/home/postmodal';
 import { ListPage } from '../pages/list/list';
 import { Transaction } from '../pages/transaction/transaction'
 import { Settings } from '../pages/settings/settings';
@@ -20,11 +21,13 @@ import { BulletinSecretService } from './bulletinSecret.service';
 import { PeerService } from './peer.service';
 import { SettingsService } from './settings.service';
 import { WalletService } from './wallet.service';
+import { TransactionService } from './transaction.service';
 
 @NgModule({
   declarations: [
     MyApp,
     HomePage,
+    PostModal,
     ListPage,
     Transaction,
     Settings
@@ -39,6 +42,7 @@ import { WalletService } from './wallet.service';
   entryComponents: [
     MyApp,
     HomePage,
+    PostModal,
     ListPage,
     Transaction,
     Settings
@@ -54,6 +58,7 @@ import { WalletService } from './wallet.service';
     PeerService,
     SettingsService,
     WalletService,
+    TransactionService,
     HTTP
   ]
 })

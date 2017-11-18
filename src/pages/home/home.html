@@ -3,26 +3,26 @@
     <button ion-button menuToggle>
       <ion-icon name="menu"></ion-icon>
     </button>
-    <ion-title>Home - Balance: {{balance}}</ion-title>
+    <ion-title>Home - YC: {{balance}}<ion-spinner *ngIf="loadingBalance"></ion-spinner></ion-title>
   </ion-navbar>
 </ion-header>
 
 <ion-content padding>
-  <h3>Yada Coin App</h3>
-
-  <ion-item>
-    <ion-input type="text" placeholder="Shortened url (35 chars max)" [(ngModel)]="postText">
-    </ion-input>
-  </ion-item>
-  <button ion-button secondary (click)="post()">Post</button> 
-
-  <button ion-button secondary (click)="scan_friend()">Register / Login / Scan Friend</button> 
-  <button ion-button secondary (click)="createCode()">New Code</button>
-  <button ion-button secondary (click)="addPeer()">Add Peer</button>
-  <ion-card *ngIf="createdCode">
-    <ngx-qrcode [qrc-value]="createdCode"></ngx-qrcode>
-    <ion-card-content>
-      <p>{{createdCode}}</p>
-    </ion-card-content>
-  </ion-card>
+  
+  <ion-row>
+    <ion-col text-center>
+      <h3>Yada Coin App</h3>
+    </ion-col>
+  </ion-row>
+  <button ion-button color="secondary" (click)="scanFriend()">New Friend</button> 
+  <button ion-button (click)="presentModal()">New Post</button> 
+  <button ion-button (click)="refresh()">Refresh</button> 
+  <!--<button ion-button secondary (click)="addPeer()">Add Peer</button>-->
+  <h4>Recent Activity</h4>
+  <ion-spinner *ngIf="loading"></ion-spinner>
+  <ion-list [virtualScroll]="items">
+    <button ion-item *virtualItem="let item" (click)="itemTapped($event, item)">
+      <span>{{item.transaction.relationship.postText}}</span>
+    </button>
+  </ion-list>
 </ion-content>
