@@ -14,7 +14,7 @@ export class PostModal {
 	blockchainAddress = null;
 	postText = null;
 	logicalParent = null;
-    post = null;
+    post = {};
     constructor(
         public navParams: NavParams,
         public viewCtrl: ViewController,
