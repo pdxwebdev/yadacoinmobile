@@ -22,6 +22,7 @@ import { PeerService } from './peer.service';
 import { SettingsService } from './settings.service';
 import { WalletService } from './wallet.service';
 import { TransactionService } from './transaction.service';
+import { OpenGraphParserService } from './opengraphparser.service'
 
 @NgModule({
   declarations: [
@@ -59,6 +60,7 @@ import { TransactionService } from './transaction.service';
     SettingsService,
     WalletService,
     TransactionService,
+    OpenGraphParserService,
     HTTP
   ]
 })

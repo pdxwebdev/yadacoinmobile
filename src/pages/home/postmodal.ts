@@ -4,6 +4,7 @@ import { WalletService } from '../../app/wallet.service';
 import { GraphService } from '../../app/graph.service';
 import { AlertController } from 'ionic-angular';
 import { TransactionService } from '../../app/transaction.service';
+import { OpenGraphParserService } from '../../app/opengraphparser.service'
 
 @Component({
     selector: 'modal-post',
@@ -13,19 +14,29 @@ export class PostModal {
 	blockchainAddress = null;
 	postText = null;
 	logicalParent = null;
+    post = null;
     constructor(
         public navParams: NavParams,
         public viewCtrl: ViewController,
         private walletService: WalletService,
         private graphService: GraphService,
         private alertCtrl: AlertController,
-        private transactionService: TransactionService
+        private transactionService: TransactionService,
+        private openGraphParserService: OpenGraphParserService
     ) {
         this.blockchainAddress = navParams.data.blockchainAddress;
         this.logicalParent = navParams.data.logicalParent;
     }
 
-    post() {
+    change() {
+    	if (this.openGraphParserService.isURL(this.postText)) {
+    	    this.openGraphParserService.parseFromUrl(this.postText).then((data) => {
+                this.post = data;
+            });
+        }
+    }
+
+    submit() {
         this.walletService.get().then(() => {
         	return new Promise((resolve, reject) => {
 

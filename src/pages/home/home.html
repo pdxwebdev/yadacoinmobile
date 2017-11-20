@@ -21,8 +21,26 @@
   <h4>Recent Activity</h4>
   <ion-spinner *ngIf="loading"></ion-spinner>
   <ion-list [virtualScroll]="items">
-    <button ion-item *virtualItem="let item" (click)="itemTapped($event, item)">
-      <span>{{item.transaction.relationship.postText}}</span>
-    </button>
+    <ion-card ion-item *virtualItem="let item">
+      <a href="{{item.url}}">
+        <img src="{{item.image}}" *ngIf="item.image" />
+        <ion-card-content>
+          <ion-card-title>
+            {{item.title}}
+          </ion-card-title>
+          <p *ngIf="item.description">
+            {{item.description}}
+          </p>
+        </ion-card-content>
+      </a>
+      <ion-row no-padding>
+        <ion-col text-right>
+          <button ion-button clear small color="danger" icon-start (click)="share(item.url)">
+            <ion-icon name='share-alt'></ion-icon>
+            Share
+          </button>
+        </ion-col>
+      </ion-row>
+    </ion-card>
   </ion-list>
 </ion-content>

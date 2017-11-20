@@ -11,6 +11,7 @@ import { GraphService } from '../../app/graph.service';
 import { TransactionService } from '../../app/transaction.service';
 import { ListPage } from '../list/list';
 import { PostModal } from './postmodal';
+import { OpenGraphParserService } from '../../app/opengraphparser.service'
 
 declare var forge;
 declare var elliptic;
@@ -27,7 +28,7 @@ export class HomePage {
     key = null;
     blockchainAddress = null;
     balance = null;
-    items = null;
+    items = [];
     loading = true;
     loadingBalance = true;
     constructor(
@@ -40,7 +41,8 @@ export class HomePage {
         private alertCtrl: AlertController,
         private walletService: WalletService,
         private graphService: GraphService,
-        private transactionService: TransactionService
+        private transactionService: TransactionService,
+        private openGraphParserService: OpenGraphParserService
     ) {
         this.refresh();
     }
@@ -60,9 +62,11 @@ export class HomePage {
 
             this.items = [];
             for (let i = 0; i < graphArray.length; i++) {
-                this.items.push({
-                    transaction: graphArray[i]
-                });
+                if (this.openGraphParserService.isURL(graphArray[i].relationship.postText)) {
+                    this.openGraphParserService.parseFromUrl(graphArray[i].relationship.postText).then((data) => {
+                        this.items.push(data);
+                    });
+                }
             }
             this.loading = false;
         });
@@ -193,5 +197,33 @@ export class HomePage {
 
     addPeer() {
         this.peerService.init();
+    }
+
+    share(url) {
+        this.walletService.get().then(() => {
+            return new Promise((resolve, reject) => {
+
+                console.log(status);
+
+                let alert = this.alertCtrl.create();
+                alert.setTitle('Approve Transaction');
+                alert.setSubTitle('You are about to spend 0.01 coins ( 0.01 fee)');
+                alert.addButton('Cancel');
+                alert.addButton({
+                    text: 'Confirm',
+                    handler: (data: any) => {
+                        // camera permission was granted
+                        this.transactionService.pushTransaction({
+                            relationship: {
+                                postText: url 
+                            },
+                            blockchainurl: this.blockchainAddress,
+                            resolve: resolve
+                        });
+                    }
+                });
+                alert.present();
+            });
+        });
     }
 }
