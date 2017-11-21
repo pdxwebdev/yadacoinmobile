@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
 import { NavController, NavParams } from 'ionic-angular';
 import { Storage } from '@ionic/storage';
-import { Transaction } from '../transaction/transaction';
 import { GraphService } from '../../app/graph.service';
 import { PeerService } from '../../app/peer.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';

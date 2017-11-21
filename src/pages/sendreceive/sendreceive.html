@@ -1,0 +1,30 @@
+<ion-header>
+  <ion-navbar>
+    <button ion-button menuToggle>
+      <ion-icon name="menu"></ion-icon>
+    </button>
+    <ion-title>Send / Receive - YC: {{balance}}<ion-spinner *ngIf="loadingBalance"></ion-spinner></ion-title>
+    <button ion-button secondary (click)="refreshWallet()">Refresh Balance</button>
+  </ion-navbar>
+</ion-header>
+<ion-content padding>
+  <button ion-button color="secondary" (click)="scan()" full>Scan Address</button>
+  <ion-item>
+    <ion-label color="primary" stacked>Address</ion-label>
+    <ion-input type="text" placeholder="Recipient address..." [(ngModel)]="address">
+    </ion-input>
+  </ion-item>
+  <ion-item>
+    <ion-label color="primary" fixed>Amount</ion-label>
+    <ion-input type="number" placeholder="Amount..." [(ngModel)]="value">
+    </ion-input>
+  </ion-item>
+  <button ion-button secondary (click)="submit()">Send</button>
+  <h4>My Receive Address</h4>
+  <ion-card *ngIf="createdCode">
+    <ngx-qrcode [qrc-value]="createdCode"></ngx-qrcode>
+    <ion-card-content>
+      <p>{{createdCode}}</p>
+    </ion-card-content>
+  </ion-card>
+</ion-content>

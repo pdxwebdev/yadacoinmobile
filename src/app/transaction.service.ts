@@ -27,6 +27,7 @@ export class TransactionService {
     txns = null;
     resolve = null;
     unspent_transaction_override = null;
+    value = null;
     constructor(
         private walletService: WalletService,
         private bulletinSecretService: BulletinSecretService,
@@ -47,7 +48,8 @@ export class TransactionService {
         this.blockchainurl = this.info.blockchainurl;
         this.callbackurl = this.info.callbackurl;
         this.to = this.info.to;
-        if (this.info.relationship.bulletin_secret) {
+        this.value = this.info.value;
+        if (this.info.relationship && this.info.relationship.bulletin_secret) {
             var bulletin_secrets = [this.bulletin_secret, this.info.relationship.bulletin_secret].sort(function (a, b) {
                 return a.toLowerCase().localeCompare(b.toLowerCase());
             });
@@ -92,7 +94,7 @@ export class TransactionService {
         if (this.to) {
             this.transaction.outputs.push({
                 to: this.to,
-                value: 1
+                value: this.value || 1
             })
         }
         if (this.walletService.wallet.balance < transaction_total || this.walletService.wallet.unspent_transactions.length == 0) {
@@ -166,12 +168,16 @@ export class TransactionService {
         var outputs_hashes_arr = outputs_hashes.sort(function (a, b) {
             return a.toLowerCase().localeCompare(b.toLowerCase());
         });
+        var outputs_hashes_concat = outputs_hashes_arr.join('');
 
-        var outputs_hashes_concat = outputs_hashes_arr.join('')
-        var bulletin_secrets = [this.bulletin_secret, this.info.relationship.bulletin_secret].sort(function (a, b) {
-            return a.toLowerCase().localeCompare(b.toLowerCase());
-        });
-        this.rid = foobar.bitcoin.crypto.sha256(bulletin_secrets[0] + bulletin_secrets[1]).toString('hex');
+        if (this.info.relationship) {
+            var bulletin_secrets = [this.bulletin_secret, this.info.relationship.bulletin_secret].sort(function (a, b) {
+                return a.toLowerCase().localeCompare(b.toLowerCase());
+            });
+            this.rid = foobar.bitcoin.crypto.sha256(bulletin_secrets[0] + bulletin_secrets[1]).toString('hex');
+        } else {
+            this.info.relationship = {};
+        }
 
         if (this.shared_secret && this.info.confirm_friend !== true) {
             var answer = this.shared_encrypt(this.shared_secret, challenge_code);
@@ -222,8 +228,8 @@ export class TransactionService {
                 inputs_hashes_concat +
                 outputs_hashes_concat
             ).toString('hex')
-        } else {
-            // no relationship, no shared secret, must be a pos
+        } else if (this.info.relationship.postText) {
+            // post
 
             this.transaction.relationship = this.shared_encrypt(this.bulletin_secret, JSON.stringify(this.info.relationship));                    
 
@@ -233,7 +239,15 @@ export class TransactionService {
                 inputs_hashes_concat +
                 outputs_hashes_concat
             ).toString('hex')
+        } else {
+            //straight transaction
+            var hash = foobar.bitcoin.crypto.sha256(
+                this.transaction.fee +
+                inputs_hashes_concat +
+                outputs_hashes_concat
+            ).toString('hex');            
         }
+
         this.transaction.hash = hash
         var attempt = this.txnattempts.pop();
         var attempt = this.cbattempts.pop();

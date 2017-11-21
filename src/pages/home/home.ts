@@ -2,7 +2,6 @@ import { Component } from '@angular/core';
 import { NavController, ModalController } from 'ionic-angular';
 import { AlertController } from 'ionic-angular';
 import { QRScanner, QRScannerStatus } from '@ionic-native/qr-scanner';
-import { Transaction } from '../transaction/transaction';
 import { Storage } from '@ionic/storage';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { PeerService } from '../../app/peer.service';

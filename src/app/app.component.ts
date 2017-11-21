@@ -10,6 +10,7 @@ import { WalletService } from './wallet.service';
 import { HomePage } from '../pages/home/home';
 import { ListPage } from '../pages/list/list';
 import { Settings } from '../pages/settings/settings';
+import { SendReceive } from '../pages/sendreceive/sendreceive';
 
 @Component({
   templateUrl: 'app.html'
@@ -29,6 +30,7 @@ export class MyApp {
     // used for an example of ngFor and navigation
     this.pages = [
       { title: 'Home', component: HomePage },
+      { title: 'Send / Receive', component: SendReceive },
       { title: 'Friends', component: ListPage },
       { title: 'Friend Requests', component: ListPage },
       { title: 'Sent Requests', component: ListPage },

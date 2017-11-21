@@ -6,7 +6,6 @@ import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
 import { PostModal } from '../pages/home/postmodal';
 import { ListPage } from '../pages/list/list';
-import { Transaction } from '../pages/transaction/transaction'
 import { Settings } from '../pages/settings/settings';
 
 import { StatusBar } from '@ionic-native/status-bar';
@@ -23,6 +22,7 @@ import { SettingsService } from './settings.service';
 import { WalletService } from './wallet.service';
 import { TransactionService } from './transaction.service';
 import { OpenGraphParserService } from './opengraphparser.service'
+import { SendReceive } from '../pages/sendreceive/sendreceive';
 
 @NgModule({
   declarations: [
@@ -30,8 +30,8 @@ import { OpenGraphParserService } from './opengraphparser.service'
     HomePage,
     PostModal,
     ListPage,
-    Transaction,
-    Settings
+    Settings,
+    SendReceive
   ],
   imports: [
     BrowserModule,
@@ -45,8 +45,8 @@ import { OpenGraphParserService } from './opengraphparser.service'
     HomePage,
     PostModal,
     ListPage,
-    Transaction,
-    Settings
+    Settings,
+    SendReceive
   ],
   providers: [
     StatusBar,
