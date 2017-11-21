@@ -207,11 +207,11 @@ export class TransactionService {
                 inputs_hashes_concat +
                 outputs_hashes_concat
             ).toString('hex')
-        } else if (this.info.relationship.shared_secret && this.rid) {
+        } else if (this.info.relationship.bulletin_secret && this.rid) {
             // no relationship, attempt registration. This will also login the user.
-            this.shared_secret = this.info.relationship.shared_secret;
-            if (this.shared_secret != undefined) {
-                this.transaction.answer = this.shared_encrypt(this.shared_secret, challenge_code);                    
+
+            if (this.info.relationship.shared_secret != undefined) {
+                this.transaction.answer = this.shared_encrypt(this.info.relationship.shared_secret, challenge_code);                    
             } else {
                 this.info.relationship.shared_secret = uuid4();
                 this.transaction.answer = '';
