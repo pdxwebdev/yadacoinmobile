@@ -209,13 +209,14 @@ export class TransactionService {
             ).toString('hex')
         } else if (this.info.relationship.bulletin_secret && this.rid) {
             // no relationship, attempt registration. This will also login the user.
-
             if (this.info.relationship.shared_secret != undefined) {
                 this.transaction.answer = this.shared_encrypt(this.info.relationship.shared_secret, challenge_code);                    
             } else {
                 this.info.relationship.shared_secret = uuid4();
                 this.transaction.answer = '';
             }
+
+            this.shared_secret = this.info.relationship.shared_secret;
             this.transaction.relationship = this.encrypt()
             var hash = foobar.bitcoin.crypto.sha256(
                 this.transaction.rid +
