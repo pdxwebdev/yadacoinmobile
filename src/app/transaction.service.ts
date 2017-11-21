@@ -179,7 +179,7 @@ export class TransactionService {
             this.info.relationship = {};
         }
 
-        if (this.shared_secret && this.info.confirm_friend !== true) {
+        if (this.shared_secret && this.info.confirm_friend !== true && !this.info.relationship) {
             var answer = this.shared_encrypt(this.shared_secret, challenge_code);
 
             this.transaction.answer = answer;
@@ -207,7 +207,7 @@ export class TransactionService {
                 inputs_hashes_concat +
                 outputs_hashes_concat
             ).toString('hex')
-        } else if (this.info.relationship.shared_secret) {
+        } else if (this.info.relationship.shared_secret && this.rid) {
             // no relationship, attempt registration. This will also login the user.
             this.shared_secret = this.info.relationship.shared_secret;
             if (this.shared_secret != undefined) {
