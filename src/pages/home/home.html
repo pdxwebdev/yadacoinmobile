@@ -12,9 +12,15 @@
   <ion-row>
     <ion-col text-center>
       <h3>Yada Coin App</h3>
+      <ion-item>
+        <ion-label color="primary" stacked>Add Phrase:</ion-label>
+        <ion-input type="text" [(ngModel)]="graphService.humanHash">
+        </ion-input>
+        <button ion-button outline item-end (click)="sharePhrase()">share&nbsp;<ion-icon name="share"></ion-icon></button>
+      </ion-item>
     </ion-col>
   </ion-row>
-  <button ion-button color="secondary" (click)="scanFriend()">New Friend</button> 
+  <button ion-button color="secondary" (click)="addFriend()">New Friend</button> 
   <button ion-button (click)="presentModal()">New Post</button> 
   <button ion-button (click)="refresh()">Refresh</button> 
   <!--<button ion-button secondary (click)="addPeer()">Add Peer</button>-->

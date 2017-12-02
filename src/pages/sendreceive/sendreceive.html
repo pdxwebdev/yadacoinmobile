@@ -20,11 +20,15 @@
     </ion-input>
   </ion-item>
   <button ion-button secondary (click)="submit()">Send</button>
-  <h4>My Receive Address</h4>
-  <ion-card *ngIf="createdCode">
-    <ngx-qrcode [qrc-value]="createdCode"></ngx-qrcode>
+  <h4>Receive Yada Coins</h4>
+  <ion-item>
+    <ion-label color="primary" stacked>Your Address:</ion-label>
+    <ion-input type="text" [(ngModel)]="createdCode"></ion-input>
+  </ion-item>
+  <button ion-button outline item-end (click)="shareAddress()">share address&nbsp;<ion-icon name="share"></ion-icon></button>
+  <ion-card>
     <ion-card-content>
-      <p>{{createdCode}}</p>
+      <ngx-qrcode [qrc-value]="createdCode"></ngx-qrcode>
     </ion-card-content>
   </ion-card>
 </ion-content>

@@ -23,6 +23,8 @@ import { WalletService } from './wallet.service';
 import { TransactionService } from './transaction.service';
 import { OpenGraphParserService } from './opengraphparser.service'
 import { SendReceive } from '../pages/sendreceive/sendreceive';
+import { Clipboard } from '@ionic-native/clipboard';
+import { SocialSharing } from '@ionic-native/social-sharing';
 
 @NgModule({
   declarations: [
@@ -61,7 +63,9 @@ import { SendReceive } from '../pages/sendreceive/sendreceive';
     WalletService,
     TransactionService,
     OpenGraphParserService,
-    HTTP
+    HTTP,
+    Clipboard,
+    SocialSharing
   ]
 })
 export class AppModule {}

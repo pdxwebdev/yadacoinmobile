@@ -11,6 +11,10 @@ import { TransactionService } from '../../app/transaction.service';
 import { ListPage } from '../list/list';
 import { PostModal } from './postmodal';
 import { OpenGraphParserService } from '../../app/opengraphparser.service'
+import { Clipboard } from '@ionic-native/clipboard';
+import { SocialSharing } from '@ionic-native/social-sharing';
+import { HTTP } from '@ionic-native/http';
+import { SettingsService } from '../../app/settings.service';
 
 declare var forge;
 declare var elliptic;
@@ -41,7 +45,11 @@ export class HomePage {
         private walletService: WalletService,
         private graphService: GraphService,
         private transactionService: TransactionService,
-        private openGraphParserService: OpenGraphParserService
+        private openGraphParserService: OpenGraphParserService,
+        private clipboard: Clipboard,
+        private socialSharing: SocialSharing,
+        private http: HTTP,
+        private settingsService: SettingsService
     ) {
         this.refresh();
     }
@@ -71,6 +79,10 @@ export class HomePage {
         });
     }
 
+    sharePhrase() {
+        this.socialSharing.share(this.graphService.humanHash, "Add me on Yada Coin!");
+    }
+
     createCode() {
         this.graphService.getGraph().then(() => {
             this.peerService.init();
@@ -83,82 +95,54 @@ export class HomePage {
         });
     }
 
+    addFriend() {
+        let alert = this.alertCtrl.create();
+        alert.setTitle('Request Friend');
+        alert.setSubTitle('How do you want to request this friend?');
+        alert.addButton({
+            text: 'Paste Phrase',
+            handler: () => {
+                this.pasteFriend();
+            }
+        });
+        alert.addButton({
+            text: 'Scan',
+            handler: () => {
+                this.scanFriend();
+            }
+        });
+        alert.present();
+    }
+
+    pasteFriend() {
+        this.clipboard.paste().then((phrase) => {
+            return new Promise((resolve, reject) => {
+                this.http.get(this.settingsService.baseAddress + '/search', {phrase: phrase, bulletin_secret: this.bulletinSecretService.bulletin_secret}, {})
+                .then((res) => {
+                    resolve(JSON.parse(res.data));
+                });
+            });
+        }).then((data) => {
+            this.alertRoutine(data);
+        });
+    }
+
     scanFriend() {
+        if (this.walletService.wallet.balance < 1.01) {
+            let alert = this.alertCtrl.create();
+            alert.setTitle('Insuficient Funds');
+            alert.setSubTitle('You need at least 1.01 YC');
+            alert.addButton('OK');
+            alert.present();
+            return
+        }
         this.qrScanner.prepare().then((status: QRScannerStatus) => {
             console.log(status);
             if (status.authorized) {
                 // start scanning
                 let scanSub = this.qrScanner.scan().subscribe((text: string) => {
-
-                    let alert = this.alertCtrl.create();
-                    alert.setTitle('Approve Transaction');
-                    alert.setSubTitle('You are about to spend 1.01 coins (1 coin + 0.01 fee)');
-                    alert.addButton('Cancel');
-                    alert.addButton({
-                        text: 'Confirm',
-                        handler: (data: any) => {
-                            console.log('Scanned something', text);
-                            let info = JSON.parse(text);
-                            // camera permission was granted
-                            var requester_rid = info.requester_rid;
-                            var requested_rid = info.requested_rid;
-                            var confirm_friend = info.confirm_friend;
-                            if (requester_rid && requested_rid) {
-                                var bulletin_secrets = [this.bulletinSecretService.bulletin_secret, this.bulletinSecretService.bulletin_secret].sort(function (a, b) {
-                                    return a.toLowerCase().localeCompare(b.toLowerCase());
-                                });
-                                var rid = forge.sha256.create().update(bulletin_secrets[0] + bulletin_secrets[1]).digest().toHex();
-                                if (!info.requester_rid) {
-                                    // TODO: MUST VERIFY THIS RID IS RELATED TO THE SAME NODE AS THE REQUESTED RID!!!
-                                    requester_rid = this.graphService.rid;
-                                }
-                                if (!info.requested_rid) {
-                                    requested_rid = rid;
-                                }
-                            } else {
-                                requester_rid = '';
-                                requested_rid = '';
-                            }
-
-                            this.walletService.get().then(() => {
-                                return new Promise((resolve, reject) => {
-                                    this.transactionService.pushTransaction({
-                                        relationship: {
-                                            bulletin_secret: info.bulletin_secret,
-                                            shared_secret: info.shared_secret
-                                        },
-                                        requested_rid: info.requested_rid,
-                                        requester_rid: info.requester_rid,
-                                        blockchainurl: this.blockchainAddress,
-                                        challenge_code: info.challenge_code,
-                                        callbackurl: info.callbackurl,
-                                        to: info.to,
-                                        confirm_friend: false,
-                                        resolve: resolve
-                                    });
-                                });
-                            }).then((txn) => {
-                                if(info.accept && txn) {
-                                    this.transactionService.pushTransaction({
-                                        relationship: {
-                                            bulletin_secret: info.bulletin_secret,
-                                            shared_secret: info.shared_secret
-                                        },
-                                        requested_rid: info.requested_rid,
-                                        requester_rid: info.requester_rid,
-                                        to: info.to,
-                                        blockchainurl: this.blockchainAddress,
-                                        confirm_friend: true,
-                                        unspent_transaction: txn
-                                    });
-                                }
-                            });
-
-                            this.peerService.rid = info.requester_rid;
-                            this.peerService.init();
-                        }
-                    });
-                    alert.present();
+                    console.log('Scanned something', text);
+                    this.alertRoutine(JSON.parse(text));
                     this.qrScanner.hide(); // hide camera preview
                     scanSub.unsubscribe(); // stop scanning
                     window.document.querySelector('ion-app').classList.remove('transparentBody');
@@ -180,6 +164,84 @@ export class HomePage {
             }
 
         }).catch((e: any) => console.log('Error is', e));
+    }
+
+    alertRoutine(info) {
+        if (info.requester_rid === info.requested_rid) {
+            let alert = this.alertCtrl.create();
+            alert.setTitle('Oops!');
+            alert.setSubTitle('You are trying to request yourself. :)');
+            alert.addButton('Cancel');
+            alert.present();
+            return
+        }
+        let alert = this.alertCtrl.create();
+        alert.setTitle('Approve Transaction');
+        alert.setSubTitle('You are about to spend 1.01 coins (1 coin + 0.01 fee)');
+        alert.addButton('Cancel');
+        alert.addButton({
+            text: 'Confirm',
+            handler: (data: any) => {
+                // camera permission was granted
+                var requester_rid = info.requester_rid;
+                var requested_rid = info.requested_rid;
+                var confirm_friend = info.confirm_friend;
+                if (requester_rid && requested_rid) {
+                    var bulletin_secrets = [this.bulletinSecretService.bulletin_secret, this.bulletinSecretService.bulletin_secret].sort(function (a, b) {
+                        return a.toLowerCase().localeCompare(b.toLowerCase());
+                    });
+                    var rid = forge.sha256.create().update(bulletin_secrets[0] + bulletin_secrets[1]).digest().toHex();
+                    if (!info.requester_rid) {
+                        // TODO: MUST VERIFY THIS RID IS RELATED TO THE SAME NODE AS THE REQUESTED RID!!!
+                        requester_rid = this.graphService.rid;
+                    }
+                    if (!info.requested_rid) {
+                        requested_rid = rid;
+                    }
+                } else {
+                    requester_rid = '';
+                    requested_rid = '';
+                }
+
+                this.walletService.get().then(() => {
+                    return new Promise((resolve, reject) => {
+                        this.transactionService.pushTransaction({
+                            relationship: {
+                                bulletin_secret: info.bulletin_secret,
+                                shared_secret: info.shared_secret
+                            },
+                            requested_rid: info.requested_rid,
+                            requester_rid: info.requester_rid,
+                            blockchainurl: this.blockchainAddress,
+                            challenge_code: info.challenge_code,
+                            callbackurl: info.callbackurl,
+                            to: info.to,
+                            confirm_friend: false,
+                            resolve: resolve
+                        });
+                    });
+                }).then((txn) => {
+                    if(info.accept && txn) {
+                        this.transactionService.pushTransaction({
+                            relationship: {
+                                bulletin_secret: info.bulletin_secret,
+                                shared_secret: info.shared_secret
+                            },
+                            requested_rid: info.requested_rid,
+                            requester_rid: info.requester_rid,
+                            to: info.to,
+                            blockchainurl: this.blockchainAddress,
+                            confirm_friend: true,
+                            unspent_transaction: txn
+                        });
+                    }
+                });
+
+                this.peerService.rid = info.requester_rid;
+                this.peerService.init();
+            }
+        });
+        alert.present();
     }
 
     itemTapped(event, item) {

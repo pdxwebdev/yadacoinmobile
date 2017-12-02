@@ -31,6 +31,7 @@ export class BulletinSecretService {
                 this.key = foobar.bitcoin.ECPair.makeRandom();
                 this.storage.set(keyname, this.key.toWIF());
             }
+             
             this.bulletin_secret = foobar.bitcoin.crypto.sha256(this.shared_encrypt(this.key.toWIF(), this.key.toWIF())).toString('hex');
         });
     }

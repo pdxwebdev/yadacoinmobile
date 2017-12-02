@@ -13,6 +13,7 @@ export class GraphService {
     xhr: any;
     key: any;
     rid: any;
+    humanHash: any;
     constructor(
         private storage: Storage,
         private http: HTTP,
@@ -35,6 +36,7 @@ export class GraphService {
                             this.graph = JSON.parse(data.data);
                             this.graph.friend_posts.reverse();
                             this.rid = this.graph.rid;
+                            this.humanHash = this.graph.human_hash;
                             var shared_secrets = [];
                             var sent_friend_requests = {};
                             for(var i=0; i<this.graph.sent_friend_requests.length; i++) {

@@ -6,7 +6,7 @@ import { TransactionService } from '../../app/transaction.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service'
 import { QRScanner, QRScannerStatus } from '@ionic-native/qr-scanner';
 import { SettingsService } from '../../app/settings.service';
-
+import { SocialSharing } from '@ionic-native/social-sharing';
 
 @Component({
   selector: 'page-sendreceive',
@@ -25,6 +25,7 @@ export class SendReceive {
         private alertCtrl: AlertController,
         private bulletinSecretService: BulletinSecretService,
         private walletService: WalletService,
+        private socialSharing: SocialSharing,
         private settingsService: SettingsService
     ) {
         this.createdCode = bulletinSecretService.key.getAddress();
@@ -54,6 +55,20 @@ export class SendReceive {
     submit() {
         var value = parseFloat(this.value)
         var total = value + 0.01;
+        if (!this.address) {
+            var alert = this.alertCtrl.create();
+            alert.setTitle('Enter an address');
+            alert.addButton('Ok');
+            alert.present();
+            return
+        }
+        if (!value) {
+            var alert = this.alertCtrl.create();
+            alert.setTitle('Enter an amount');
+            alert.addButton('Ok');
+            alert.present();
+            return
+        }
         var alert = this.alertCtrl.create();
         alert.setTitle('Approve Transaction');
         alert.setSubTitle('You are about to spend ' + total + ' coins (' + this.value + ' coin + 0.01 fee)');
@@ -89,5 +104,9 @@ export class SendReceive {
             this.loadingBalance = false;
             this.balance = this.walletService.wallet.balance;
         });
+    }
+
+    shareAddress() {
+        this.socialSharing.share(this.bulletinSecretService.key.getAddress(), "Send Yada Coin to this address!");
     }
 }
