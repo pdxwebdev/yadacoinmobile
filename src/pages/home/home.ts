@@ -177,7 +177,7 @@ export class HomePage {
 
     alertRoutine(info) {
         this.loadingModal.present();
-        if (info.requester_rid === info.requested_rid) {
+        if (info.requester_rid && info.requested_rid && info.requester_rid === info.requested_rid) {
             let alert = this.alertCtrl.create();
             alert.setTitle('Oops!');
             alert.setSubTitle('You are trying to request yourself. :)');
