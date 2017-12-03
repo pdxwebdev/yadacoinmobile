@@ -108,28 +108,27 @@ export class HomePage {
                     name: 'phrase',
                     placeholder: 'Type phrase here...'
                 }
-            ]
+            ],
+            buttons: [{
+                text: 'Use Phrase',
+                handler: (data) => {
+                    this.pasteFriend(data.phrase);
+                }
+            },{
+                text: 'Scan',
+                handler: () => {
+                    this.scanFriend();
+                }
+            }]
         });
         alert.setTitle('Request Friend');
         alert.setSubTitle('How do you want to request this friend?');
-        alert.addButton({
-            text: 'Use Phrase',
-            handler: (data) => {
-                this.pasteFriend(data.phrase);
-            }
-        });
-        alert.addButton({
-            text: 'Scan',
-            handler: () => {
-                this.scanFriend();
-            }
-        });
         alert.present();
     }
 
     pasteFriend(phrase) {
         this.loadingModal.present();
-        this.http.get(this.settingsService.baseAddress + '/search', {phrase: this.phrase, bulletin_secret: this.bulletinSecretService.bulletin_secret}, {})
+        this.http.get(this.settingsService.baseAddress + '/search', {phrase: phrase, bulletin_secret: this.bulletinSecretService.bulletin_secret}, {})
         .then((res) => {
             this.loadingModal.dismiss();
             this.alertRoutine(JSON.parse(res.data));

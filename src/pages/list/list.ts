@@ -7,6 +7,7 @@ import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { WalletService } from '../../app/wallet.service';
 import { TransactionService } from '../../app/transaction.service';
 import { HTTP } from '@ionic-native/http';
+import { SocialSharing } from '@ionic-native/social-sharing';
 
 declare var forge;
 declare var foobar;
@@ -37,7 +38,8 @@ export class ListPage {
     private bulletinSecretService: BulletinSecretService,
     private walletService: WalletService,
     private transactionService: TransactionService,
-    private http: HTTP
+    private http: HTTP,
+    private socialSharing: SocialSharing
   ) {
     this.loading = true;
     this.loadingBalance = true;
@@ -163,6 +165,10 @@ export class ListPage {
          this.loadingBalance = false;
          this.balance = this.walletService.wallet.balance;
      });
+  }
+
+  share(code) {
+    this.socialSharing.share(code);
   }
 
     decrypt(message) {
