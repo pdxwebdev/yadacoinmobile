@@ -96,11 +96,18 @@ export class HomePage {
     }
 
     addFriend() {
-        let alert = this.alertCtrl.create();
+        let alert = this.alertCtrl.create({
+            inputs: [
+                {
+                    name: 'phrase',
+                    placeholder: 'Type phrase here...'
+                }
+            ]
+        });
         alert.setTitle('Request Friend');
         alert.setSubTitle('How do you want to request this friend?');
         alert.addButton({
-            text: 'Paste Phrase',
+            text: 'Use Phrase',
             handler: () => {
                 this.pasteFriend();
             }
