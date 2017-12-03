@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { NavController, ModalController } from 'ionic-angular';
-import { AlertController } from 'ionic-angular';
+import { AlertController, LoadingController } from 'ionic-angular';
 import { QRScanner, QRScannerStatus } from '@ionic-native/qr-scanner';
 import { Storage } from '@ionic/storage';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
@@ -34,6 +34,8 @@ export class HomePage {
     items = [];
     loading = true;
     loadingBalance = true;
+    loadingModal = null;
+    phrase = null;
     constructor(
         public navCtrl: NavController,
         public modalCtrl: ModalController,
@@ -49,8 +51,12 @@ export class HomePage {
         private clipboard: Clipboard,
         private socialSharing: SocialSharing,
         private http: HTTP,
-        private settingsService: SettingsService
+        private settingsService: SettingsService,
+        public loadingCtrl: LoadingController
     ) {
+        this.loadingModal = this.loadingCtrl.create({
+            content: 'Please wait...'
+        });
         this.refresh();
     }
 
@@ -108,8 +114,8 @@ export class HomePage {
         alert.setSubTitle('How do you want to request this friend?');
         alert.addButton({
             text: 'Use Phrase',
-            handler: () => {
-                this.pasteFriend();
+            handler: (data) => {
+                this.pasteFriend(data.phrase);
             }
         });
         alert.addButton({
@@ -121,16 +127,12 @@ export class HomePage {
         alert.present();
     }
 
-    pasteFriend() {
-        this.clipboard.paste().then((phrase) => {
-            return new Promise((resolve, reject) => {
-                this.http.get(this.settingsService.baseAddress + '/search', {phrase: phrase, bulletin_secret: this.bulletinSecretService.bulletin_secret}, {})
-                .then((res) => {
-                    resolve(JSON.parse(res.data));
-                });
-            });
-        }).then((data) => {
-            this.alertRoutine(data);
+    pasteFriend(phrase) {
+        this.loadingModal.present();
+        this.http.get(this.settingsService.baseAddress + '/search', {phrase: this.phrase, bulletin_secret: this.bulletinSecretService.bulletin_secret}, {})
+        .then((res) => {
+            this.loadingModal.dismiss();
+            this.alertRoutine(JSON.parse(res.data));
         });
     }
 
@@ -174,6 +176,7 @@ export class HomePage {
     }
 
     alertRoutine(info) {
+        this.loadingModal.present();
         if (info.requester_rid === info.requested_rid) {
             let alert = this.alertCtrl.create();
             alert.setTitle('Oops!');
@@ -229,19 +232,30 @@ export class HomePage {
                     });
                 }).then((txn) => {
                     if(info.accept && txn) {
-                        this.transactionService.pushTransaction({
-                            relationship: {
-                                bulletin_secret: info.bulletin_secret,
-                                shared_secret: info.shared_secret
-                            },
-                            requested_rid: info.requested_rid,
-                            requester_rid: info.requester_rid,
-                            to: info.to,
-                            blockchainurl: this.blockchainAddress,
-                            confirm_friend: true,
-                            unspent_transaction: txn
+                        return new Promise((resolve, reject) => {
+                            this.transactionService.pushTransaction({
+                                relationship: {
+                                    bulletin_secret: info.bulletin_secret,
+                                    shared_secret: info.shared_secret
+                                },
+                                requested_rid: info.requested_rid,
+                                requester_rid: info.requester_rid,
+                                to: info.to,
+                                blockchainurl: this.blockchainAddress,
+                                confirm_friend: true,
+                                unspent_transaction: txn,
+                                resolve: resolve
+                            });
                         });
                     }
+                }).then(() => {
+                    this.loadingModal.dismiss()
+                    var alert = this.alertCtrl.create();
+                    alert.setTitle('Friend Request Sent');
+                    alert.setSubTitle('Your Friend Request has been sent succefully.');
+                    alert.addButton('Ok');
+                    alert.present();
+                    this.refresh();
                 });
 
                 this.peerService.rid = info.requester_rid;
