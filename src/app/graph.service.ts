@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HTTP } from '@ionic-native/http';
 import { Storage } from '@ionic/storage';
 import { BulletinSecretService } from './bulletinSecret.service';
+import { Badge } from '@ionic-native/badge';
 
 declare var forge;
 declare var foobar;
@@ -17,7 +18,8 @@ export class GraphService {
     constructor(
         private storage: Storage,
         private http: HTTP,
-        private bulletinSecretService: BulletinSecretService
+        private bulletinSecretService: BulletinSecretService,
+        private badge: Badge
     ) {
         http.setDataSerializer('json');
     }
@@ -110,6 +112,8 @@ export class GraphService {
                                     this.graph.friend_requests.push(friend_requests[arr_friend_request_keys[i]])
                                 }
                             }
+
+                            this.badge.set(this.graph.friend_requests.length);
 
                             for(let i in messages) {
                                 this.graph.friends.push(messages[i]);

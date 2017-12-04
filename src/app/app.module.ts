@@ -25,6 +25,7 @@ import { OpenGraphParserService } from './opengraphparser.service'
 import { SendReceive } from '../pages/sendreceive/sendreceive';
 import { Clipboard } from '@ionic-native/clipboard';
 import { SocialSharing } from '@ionic-native/social-sharing';
+import { Badge } from '@ionic-native/badge';
 
 @NgModule({
   declarations: [
@@ -65,7 +66,8 @@ import { SocialSharing } from '@ionic-native/social-sharing';
     OpenGraphParserService,
     HTTP,
     Clipboard,
-    SocialSharing
+    SocialSharing,
+    Badge
   ]
 })
 export class AppModule {}
