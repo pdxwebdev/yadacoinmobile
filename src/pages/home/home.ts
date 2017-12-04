@@ -36,6 +36,7 @@ export class HomePage {
     loadingBalance = true;
     loadingModal = null;
     phrase = null;
+    color = null;
     constructor(
         public navCtrl: NavController,
         public modalCtrl: ModalController,
@@ -71,6 +72,7 @@ export class HomePage {
             this.loadingBalance = false;
         });
         this.graphService.getGraph().then(() => {
+            this.color = this.graphService.graph.friend_requests.length > 0 ? 'danger' : '';
             var graphArray = this.graphService.graph.friend_posts
 
             this.items = [];

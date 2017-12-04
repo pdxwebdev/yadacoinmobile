@@ -20,23 +20,24 @@ export class MyApp {
 
   rootPage: any = HomePage;
 
-  pages: Array<{title: string, component: any}>;
+  pages: Array<{title: string, component: any, count: any, color: any}>;
 
   graph: any;
 
   constructor(public platform: Platform, public statusBar: StatusBar, public splashScreen: SplashScreen, private settingsService: SettingsService, private walletService: WalletService, private graphService: GraphService, private bulletinSecretService: BulletinSecretService) {
     this.initializeApp();
-
-    // used for an example of ngFor and navigation
-    this.pages = [
-      { title: 'Home', component: HomePage },
-      { title: 'Send / Receive', component: SendReceive },
-      { title: 'Friends', component: ListPage },
-      { title: 'Friend Requests', component: ListPage },
-      { title: 'Sent Requests', component: ListPage },
-      { title: 'Posts', component: ListPage },
-      { title: 'Settings', component: Settings }
-    ];
+    this.graphService.getGraph().then(() => {
+      // used for an example of ngFor and navigation
+      this.pages = [
+        { title: 'Home', component: HomePage, count: false, color: '' },
+        { title: 'Send / Receive', component: SendReceive, count: false, color: '' },
+        { title: 'Friends', component: ListPage, count: this.graphService.graph.friends.length, color: '' },
+        { title: 'Friend Requests', component: ListPage, count: this.graphService.graph.friend_requests.length, color: 'danger' },
+        { title: 'Sent Requests', component: ListPage, count: this.graphService.graph.sent_friend_requests.length, color: '' },
+        { title: 'Posts', component: ListPage, count: false, color: '' },
+        { title: 'Settings', component: Settings, count: false, color: '' }
+      ];
+    });
   }
 
   initializeApp() {
