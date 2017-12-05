@@ -21,7 +21,7 @@
   <div *ngIf="selectedItem && pageTitle =='Sent Requests'" padding>
     <ion-card *ngIf="createdCode">
       <ion-item>
-        <button ion-button outline item-end (click)="share(createdCode)">share&nbsp;<ion-icon name="share"></ion-icon></button>
+        <button ion-button outline item-end (click)="share(createdCodeEncoded)">share&nbsp;<ion-icon name="share"></ion-icon></button>
       </ion-item>
       <ngx-qrcode [qrc-value]="createdCode"></ngx-qrcode>
       <ion-card-content>

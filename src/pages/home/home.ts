@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { NavController, ModalController } from 'ionic-angular';
+import { NavController, NavParams, ModalController } from 'ionic-angular';
 import { AlertController, LoadingController } from 'ionic-angular';
 import { QRScanner, QRScannerStatus } from '@ionic-native/qr-scanner';
 import { Storage } from '@ionic/storage';
@@ -39,6 +39,7 @@ export class HomePage {
     color = null;
     constructor(
         public navCtrl: NavController,
+        public navParams: NavParams,
         public modalCtrl: ModalController,
         private qrScanner: QRScanner,
         private storage: Storage,
@@ -55,6 +56,9 @@ export class HomePage {
         private settingsService: SettingsService,
         public loadingCtrl: LoadingController
     ) {
+        if (this.navParams.get('txnData')) {
+            this.alertRoutine(JSON.parse(decodeURI(this.navParams.get('txnData'))));
+        }
         this.loadingModal = this.loadingCtrl.create({
             content: 'Please wait...'
         });
