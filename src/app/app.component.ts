@@ -2,6 +2,7 @@ import { Component, ViewChild } from '@angular/core';
 import { Nav, Platform } from 'ionic-angular';
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
+import { Deeplinks } from '@ionic-native/deeplinks';
 import { GraphService } from './graph.service';
 import { BulletinSecretService } from './bulletinSecret.service';
 import { SettingsService } from './settings.service';
@@ -24,7 +25,16 @@ export class MyApp {
 
   graph: any;
 
-  constructor(public platform: Platform, public statusBar: StatusBar, public splashScreen: SplashScreen, private settingsService: SettingsService, private walletService: WalletService, private graphService: GraphService, private bulletinSecretService: BulletinSecretService) {
+  constructor(
+    public platform: Platform,
+    public statusBar: StatusBar,
+    public splashScreen: SplashScreen,
+    private settingsService: SettingsService,
+    private walletService: WalletService,
+    private graphService: GraphService,
+    private bulletinSecretService: BulletinSecretService,
+    private deeplinks: Deeplinks
+  ) {
     this.initializeApp();
     this.graphService.getGraph().then(() => {
       // used for an example of ngFor and navigation
@@ -37,6 +47,20 @@ export class MyApp {
         { title: 'Posts', component: ListPage, count: false, color: '' },
         { title: 'Settings', component: Settings, count: false, color: '' }
       ];
+    });
+  }
+
+  ngAfterViewInit() {
+    this.deeplinks.routeWithNavController(this.nav, {
+      '/:txnData': HomePage
+    }).subscribe((match) => {
+      // match.$route - the route we matched, which is the matched entry from the arguments to route()
+      // match.$args - the args passed in the link
+      // match.$link - the full link data
+      console.log('Successfully matched route', match);
+    }, (nomatch) => {
+      // nomatch.$link - the full link data
+      console.error('Got a deeplink that didn\'t match', nomatch);
     });
   }
 

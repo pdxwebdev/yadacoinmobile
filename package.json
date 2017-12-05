@@ -25,6 +25,7 @@
         "@ionic-native/camera": "^4.4.0",
         "@ionic-native/clipboard": "^4.4.2",
         "@ionic-native/core": "3.12.1",
+        "@ionic-native/deeplinks": "^4.4.2",
         "@ionic-native/http": "^4.3.1",
         "@ionic-native/qr-scanner": "^4.3.0",
         "@ionic-native/social-sharing": "^4.4.2",
@@ -52,6 +53,7 @@
         "cordova-sqlite-storage": "^2.0.4",
         "es6-promise-plugin": "^4.1.0",
         "ionic-angular": "3.7.1",
+        "ionic-plugin-deeplinks": "^1.0.15",
         "ionic-plugin-keyboard": "^2.2.1",
         "ionicons": "3.0.0",
         "metascraper": "^1.0.7",
@@ -82,7 +84,25 @@
             "cordova-plugin-camera": {},
             "cordova-clipboard": {},
             "cordova-plugin-x-socialsharing": {},
-            "cordova-plugin-badge": {}
+            "cordova-plugin-badge": {},
+            "ionic-plugin-deeplinks": {
+                "URL_SCHEME": "myapp",
+                "DEEPLINK_SCHEME": "https",
+                "DEEPLINK_HOST": "example.com",
+                "ANDROID_PATH_PREFIX": "/",
+                "ANDROID_2_PATH_PREFIX": "/",
+                "ANDROID_3_PATH_PREFIX": "/",
+                "ANDROID_4_PATH_PREFIX": "/",
+                "ANDROID_5_PATH_PREFIX": "/",
+                "DEEPLINK_2_SCHEME": " ",
+                "DEEPLINK_2_HOST": " ",
+                "DEEPLINK_3_SCHEME": " ",
+                "DEEPLINK_3_HOST": " ",
+                "DEEPLINK_4_SCHEME": " ",
+                "DEEPLINK_4_HOST": " ",
+                "DEEPLINK_5_SCHEME": " ",
+                "DEEPLINK_5_HOST": " "
+            }
         },
         "platforms": [
             "android",

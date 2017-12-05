@@ -26,6 +26,7 @@ import { SendReceive } from '../pages/sendreceive/sendreceive';
 import { Clipboard } from '@ionic-native/clipboard';
 import { SocialSharing } from '@ionic-native/social-sharing';
 import { Badge } from '@ionic-native/badge';
+import { Deeplinks } from '@ionic-native/deeplinks';
 
 @NgModule({
   declarations: [
@@ -67,7 +68,8 @@ import { Badge } from '@ionic-native/badge';
     HTTP,
     Clipboard,
     SocialSharing,
-    Badge
+    Badge,
+    Deeplinks
   ]
 })
 export class AppModule {}
