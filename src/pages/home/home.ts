@@ -56,13 +56,13 @@ export class HomePage {
         private settingsService: SettingsService,
         public loadingCtrl: LoadingController
     ) {
-        if (this.navParams.get('txnData')) {
-            this.alertRoutine(JSON.parse(decodeURI(this.navParams.get('txnData'))));
-        }
         this.loadingModal = this.loadingCtrl.create({
             content: 'Please wait...'
         });
         this.refresh();
+        if (this.navParams.get('txnData')) {
+            this.alertRoutine(JSON.parse(decodeURIComponent(this.navParams.get('txnData'))));
+        }
     }
 
     refresh() {
@@ -186,14 +186,24 @@ export class HomePage {
             let alert = this.alertCtrl.create();
             alert.setTitle('Oops!');
             alert.setSubTitle('You are trying to request yourself. :)');
-            alert.addButton('Cancel');
+            alert.addButton({
+                text: 'Cancel',
+                handler: (data: any) => {
+                    this.loadingModal.dismiss();
+                }
+            });
             alert.present();
             return
         }
         let alert = this.alertCtrl.create();
         alert.setTitle('Approve Transaction');
         alert.setSubTitle('You are about to spend 1.01 coins (1 coin + 0.01 fee)');
-        alert.addButton('Cancel');
+        alert.addButton({
+            text: 'Cancel',
+            handler: (data: any) => {
+                this.loadingModal.dismiss();
+            }
+        });
         alert.addButton({
             text: 'Confirm',
             handler: (data: any) => {

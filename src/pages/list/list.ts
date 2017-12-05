@@ -95,7 +95,7 @@ export class ListPage {
                 requester_rid: graphService.graph.rid,
                 accept: true
             });
-            this.createdCodeEncoded = 'myapp://' + encodeURI(this.createdCode);
+            this.createdCodeEncoded = 'http://71.237.161.227:5000/deeplink?txn=' + encodeURIComponent(this.createdCode);
         }
     }
     this.balance = walletService.wallet.balance;
