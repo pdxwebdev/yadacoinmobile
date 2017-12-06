@@ -29,6 +29,7 @@ export class ListPage {
   confirmCode: any;
   loading: any;
   loadingBalance: any;
+  createdCodeEncoded: any;
   constructor(
     public navCtrl: NavController,
     public navParams: NavParams,
@@ -94,6 +95,7 @@ export class ListPage {
                 requester_rid: graphService.graph.rid,
                 accept: true
             });
+            this.createdCodeEncoded = 'http://71.237.161.227:5000/deeplink?txn=' + encodeURIComponent(this.createdCode);
         }
     }
     this.balance = walletService.wallet.balance;

@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { NavController, ModalController } from 'ionic-angular';
+import { NavController, NavParams, ModalController } from 'ionic-angular';
 import { AlertController, LoadingController } from 'ionic-angular';
 import { QRScanner, QRScannerStatus } from '@ionic-native/qr-scanner';
 import { Storage } from '@ionic/storage';
@@ -39,6 +39,7 @@ export class HomePage {
     color = null;
     constructor(
         public navCtrl: NavController,
+        public navParams: NavParams,
         public modalCtrl: ModalController,
         private qrScanner: QRScanner,
         private storage: Storage,
@@ -59,6 +60,9 @@ export class HomePage {
             content: 'Please wait...'
         });
         this.refresh();
+        if (this.navParams.get('txnData')) {
+            this.alertRoutine(JSON.parse(decodeURIComponent(this.navParams.get('txnData'))));
+        }
     }
 
     refresh() {
@@ -182,14 +186,24 @@ export class HomePage {
             let alert = this.alertCtrl.create();
             alert.setTitle('Oops!');
             alert.setSubTitle('You are trying to request yourself. :)');
-            alert.addButton('Cancel');
+            alert.addButton({
+                text: 'Cancel',
+                handler: (data: any) => {
+                    this.loadingModal.dismiss();
+                }
+            });
             alert.present();
             return
         }
         let alert = this.alertCtrl.create();
         alert.setTitle('Approve Transaction');
         alert.setSubTitle('You are about to spend 1.01 coins (1 coin + 0.01 fee)');
-        alert.addButton('Cancel');
+        alert.addButton({
+            text: 'Cancel',
+            handler: (data: any) => {
+                this.loadingModal.dismiss();
+            }
+        });
         alert.addButton({
             text: 'Confirm',
             handler: (data: any) => {

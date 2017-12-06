@@ -3,6 +3,7 @@ import { Nav, Platform } from 'ionic-angular';
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
 import { Deeplinks } from '@ionic-native/deeplinks';
+import { FCM } from '@ionic-native/fcm';
 import { GraphService } from './graph.service';
 import { BulletinSecretService } from './bulletinSecret.service';
 import { SettingsService } from './settings.service';
@@ -33,7 +34,8 @@ export class MyApp {
     private walletService: WalletService,
     private graphService: GraphService,
     private bulletinSecretService: BulletinSecretService,
-    private deeplinks: Deeplinks
+    private deeplinks: Deeplinks,
+    private fcm: FCM
   ) {
     this.initializeApp();
     this.graphService.getGraph().then(() => {
@@ -48,6 +50,23 @@ export class MyApp {
         { title: 'Settings', component: Settings, count: false, color: '' }
       ];
     });
+    fcm.subscribeToTopic('marketing');
+
+    fcm.getToken().then(token=>{
+      console.log(token);
+    })
+
+    fcm.onNotification().subscribe(data=>{
+      if(data.wasTapped){
+        console.log("Received in background");
+      } else {
+        console.log("Received in foreground");
+      };
+    })
+
+    fcm.onTokenRefresh().subscribe(token=>{
+      console.log(token);
+    })
   }
 
   ngAfterViewInit() {

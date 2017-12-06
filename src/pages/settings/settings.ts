@@ -21,10 +21,10 @@ export class Settings {
     }
 
     dev_reset() {
-        this.baseAddress = 'http://192.168.1.130:5000';
-        this.blockchainAddress = 'http://192.168.1.130:5000/transaction';
-        this.graphproviderAddress = 'http://192.168.1.130:5000/get-graph-mobile';
-        this.walletproviderAddress = 'http://192.168.1.130:5000/wallet';
+        this.baseAddress = 'http://71.237.161.227:5000/';
+        this.blockchainAddress = this.baseAddress + 'transaction';
+        this.graphproviderAddress = this.baseAddress + 'get-graph-mobile';
+        this.walletproviderAddress = this.baseAddress + 'wallet';
     }
 
     prod_reset() {
