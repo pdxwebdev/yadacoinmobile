@@ -27,6 +27,7 @@ import { Clipboard } from '@ionic-native/clipboard';
 import { SocialSharing } from '@ionic-native/social-sharing';
 import { Badge } from '@ionic-native/badge';
 import { Deeplinks } from '@ionic-native/deeplinks';
+import { FCM } from '@ionic-native/fcm';
 
 @NgModule({
   declarations: [
@@ -69,7 +70,8 @@ import { Deeplinks } from '@ionic-native/deeplinks';
     Clipboard,
     SocialSharing,
     Badge,
-    Deeplinks
+    Deeplinks,
+    FCM
   ]
 })
 export class AppModule {}

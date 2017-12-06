@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "805178314562",
+    "firebase_url": "https://yadacoin-bcaae.firebaseio.com",
+    "project_id": "yadacoin-bcaae",
+    "storage_bucket": "yadacoin-bcaae.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:805178314562:android:7e1a51ea2fcd8415",
+        "android_client_info": {
+          "package_name": "io.yadacoin.mobile"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "805178314562-o8ggh4htaop6dl6qiiee3hfu5fllkg92.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAcJWjePVMBkEF8A3M-7oY_lT0MMXRDrpA"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
