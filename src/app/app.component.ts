@@ -3,7 +3,7 @@ import { Nav, Platform } from 'ionic-angular';
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
 import { Deeplinks } from '@ionic-native/deeplinks';
-import { FCM } from '@ionic-native/fcm';
+import { Firebase } from '@ionic-native/firebase';
 import { GraphService } from './graph.service';
 import { BulletinSecretService } from './bulletinSecret.service';
 import { SettingsService } from './settings.service';
@@ -13,6 +13,8 @@ import { HomePage } from '../pages/home/home';
 import { ListPage } from '../pages/list/list';
 import { Settings } from '../pages/settings/settings';
 import { SendReceive } from '../pages/sendreceive/sendreceive';
+
+declare var FirebasePlugin;
 
 @Component({
   templateUrl: 'app.html'
@@ -35,38 +37,42 @@ export class MyApp {
     private graphService: GraphService,
     private bulletinSecretService: BulletinSecretService,
     private deeplinks: Deeplinks,
-    private fcm: FCM
+    private firebase: Firebase
   ) {
     this.initializeApp();
-    this.graphService.getGraph().then(() => {
-      // used for an example of ngFor and navigation
-      this.pages = [
-        { title: 'Home', component: HomePage, count: false, color: '' },
-        { title: 'Send / Receive', component: SendReceive, count: false, color: '' },
-        { title: 'Friends', component: ListPage, count: this.graphService.graph.friends.length, color: '' },
-        { title: 'Friend Requests', component: ListPage, count: this.graphService.graph.friend_requests.length, color: 'danger' },
-        { title: 'Sent Requests', component: ListPage, count: this.graphService.graph.sent_friend_requests.length, color: '' },
-        { title: 'Posts', component: ListPage, count: false, color: '' },
-        { title: 'Settings', component: Settings, count: false, color: '' }
-      ];
+    this.platform.ready().then(() => {
+      this.firebase.grantPermission()
+      .then(() => {
+        this.firebase.getToken()
+        .then((token) => {
+            console.log(`The token is ${token}`)
+        })
+        .catch((error) => {
+            console.error('Error getting token', error)
+        });
+
+        this.firebase.onTokenRefresh()
+        .subscribe((token: string) => {
+            console.log(`Got a new token ${token}`)
+        });
+
+        this.firebase.onNotificationOpen().subscribe(notification => {
+          console.log(notification);
+        });
+        this.graphService.getGraph().then(() => {
+          // used for an example of ngFor and navigation
+          this.pages = [
+            { title: 'Home', component: HomePage, count: false, color: '' },
+            { title: 'Send / Receive', component: SendReceive, count: false, color: '' },
+            { title: 'Friends', component: ListPage, count: this.graphService.graph.friends.length, color: '' },
+            { title: 'Friend Requests', component: ListPage, count: this.graphService.graph.friend_requests.length, color: 'danger' },
+            { title: 'Sent Requests', component: ListPage, count: this.graphService.graph.sent_friend_requests.length, color: '' },
+            { title: 'Posts', component: ListPage, count: false, color: '' },
+            { title: 'Settings', component: Settings, count: false, color: '' }
+          ];
+        });
+      });
     });
-    fcm.subscribeToTopic('marketing');
-
-    fcm.getToken().then(token=>{
-      console.log(token);
-    })
-
-    fcm.onNotification().subscribe(data=>{
-      if(data.wasTapped){
-        console.log("Received in background");
-      } else {
-        console.log("Received in foreground");
-      };
-    })
-
-    fcm.onTokenRefresh().subscribe(token=>{
-      console.log(token);
-    })
   }
 
   ngAfterViewInit() {
