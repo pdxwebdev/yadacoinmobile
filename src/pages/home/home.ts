@@ -262,6 +262,10 @@ export class HomePage {
                                 resolve: resolve
                             });
                         });
+                    } else {
+                        return new Promise((resolve, reject) => {
+                            resolve(txn);
+                        });
                     }
                 }).then((txn) => {
                     this.loadingModal.dismiss()

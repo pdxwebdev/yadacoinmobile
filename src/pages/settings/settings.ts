@@ -22,16 +22,16 @@ export class Settings {
 
     dev_reset() {
         this.baseAddress = 'http://71.237.161.227:5000';
-        this.blockchainAddress = this.baseAddress + 'transaction';
-        this.graphproviderAddress = this.baseAddress + 'get-graph-mobile';
-        this.walletproviderAddress = this.baseAddress + 'wallet';
+        this.blockchainAddress = this.baseAddress + '/transaction';
+        this.graphproviderAddress = this.baseAddress + '/get-graph-mobile';
+        this.walletproviderAddress = this.baseAddress + '/wallet';
     }
 
     prod_reset() {
         this.baseAddress = 'http://34.237.46.10';
-        this.blockchainAddress = 'http://34.237.46.10/transaction';
-        this.graphproviderAddress = 'http://34.237.46.10/get-graph-mobile';
-        this.walletproviderAddress = 'http://34.237.46.10/wallet';
+        this.blockchainAddress = this.baseAddress + '/transaction';
+        this.graphproviderAddress = this.baseAddress + '/get-graph-mobile';
+        this.walletproviderAddress = this.baseAddress + '/wallet';
     }
 
     save() {
