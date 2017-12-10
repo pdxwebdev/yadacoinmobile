@@ -112,6 +112,11 @@ export class MyApp {
             { title: 'Posts', component: ListPage, count: false, color: '' },
             { title: 'Settings', component: Settings, count: false, color: '' }
           ];
+          notification.relationship = {
+            shared_secret: notification.shared_secret,
+            bulletin_secret: notification.bulletin_secret
+          }
+          this.nav.setRoot(HomePage, {txnData: encodeURIComponent(JSON.stringify(notification))});
         });
       });
       // used for an example of ngFor and navigation
