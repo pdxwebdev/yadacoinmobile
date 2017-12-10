@@ -289,10 +289,14 @@ export class HomePage {
                     if (!friend.relationship.shared_secret) {
                         return;
                     }
+                    var relationship = JSON.parse(this.decrypt(txn['relationship']));
+                    txn['shared_secret'] = relationship.shared_secret;
+                    txn['bulletin_secret'] = this.bulletinSecretService.bulletin_secret;
                     this.http.post(this.settingsService.baseAddress + '/request-notification', {
                         rid: friend.rid,
+                        shared_secret: friend.relationship.shared_secret,
                         requested_rid: txn['requested_rid'],
-                        shared_secret: friend.relationship.shared_secret
+                        data: JSON.stringify(txn)
                     }, {'Content-Type': 'application/json'});
                 });
 
