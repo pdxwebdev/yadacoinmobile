@@ -263,7 +263,7 @@ export class HomePage {
                             });
                         });
                     }
-                }).then(() => {
+                }).then((txn) => {
                     this.loadingModal.dismiss()
                     var alert = this.alertCtrl.create();
                     alert.setTitle('Friend Request Sent');
@@ -271,6 +271,25 @@ export class HomePage {
                     alert.addButton('Ok');
                     alert.present();
                     this.refresh();
+                    for (var i=0; i < this.graphService.graph.friends.length; i++) {
+                        var friend = this.graphService.graph.friends[i];
+                        if (this.graphService.graph.rid = friend.rid) {
+                          try {
+                            friend.relationship = JSON.parse(this.decrypt(friend.relationship));
+                            break;
+                          } catch(error) {
+
+                          }
+                        }
+                    }
+                    if (!friend.relationship.shared_secret) {
+                        return;
+                    }
+                    this.http.post(this.settingsService.baseAddress + '/request-notification', {
+                        rid: friend.rid,
+                        requested_rid: txn['requested_rid'],
+                        shared_secret: friend.relationship.shared_secret
+                    }, {'Content-Type': 'application/json'});
                 });
 
                 this.peerService.rid = info.requester_rid;
@@ -322,5 +341,24 @@ export class HomePage {
                 alert.present();
             });
         });
+    }
+
+    decrypt(message) {
+        var key = forge.pkcs5.pbkdf2(forge.sha256.create().update(this.bulletinSecretService.key.toWIF()).digest().toHex(), 'salt', 400, 32);
+        var decipher = forge.cipher.createDecipher('AES-CBC', key);
+        var enc = this.hexToBytes(message);
+        decipher.start({iv: enc.slice(0,16)});
+        decipher.update(forge.util.createBuffer(enc.slice(16)));
+        decipher.finish();
+        return decipher.output
+    }
+
+    hexToBytes(s) {
+        var arr = []
+        for (var i = 0; i < s.length; i += 2) {
+            var c = s.substr(i, 2);
+            arr.push(parseInt(c, 16));
+        }
+        return String.fromCharCode.apply(null, arr);
     }
 }

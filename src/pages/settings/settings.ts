@@ -21,7 +21,7 @@ export class Settings {
     }
 
     dev_reset() {
-        this.baseAddress = 'http://71.237.161.227:5000/';
+        this.baseAddress = 'http://71.237.161.227:5000';
         this.blockchainAddress = this.baseAddress + 'transaction';
         this.graphproviderAddress = this.baseAddress + 'get-graph-mobile';
         this.walletproviderAddress = this.baseAddress + 'wallet';
