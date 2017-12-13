@@ -5,6 +5,7 @@ import { GraphService } from '../../app/graph.service';
 import { PeerService } from '../../app/peer.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { WalletService } from '../../app/wallet.service';
+import { SettingsService } from '../../app/settings.service';
 import { TransactionService } from '../../app/transaction.service';
 import { HTTP } from '@ionic-native/http';
 import { SocialSharing } from '@ionic-native/social-sharing';
@@ -40,7 +41,8 @@ export class ListPage {
     private walletService: WalletService,
     private transactionService: TransactionService,
     private http: HTTP,
-    private socialSharing: SocialSharing
+    private socialSharing: SocialSharing,
+    private settingsService: SettingsService
   ) {
     this.loading = true;
     this.loadingBalance = true;
@@ -158,6 +160,31 @@ export class ListPage {
     .catch((error) => {
       console.log(error);
     });
+  }
+
+  sendFriendRequestNotification(txn) {
+    for (var i=0; i < this.graphService.graph.friends.length; i++) {
+        var friend = this.graphService.graph.friends[i];
+        if (this.graphService.graph.rid = friend.rid) {
+          try {
+            friend.relationship = JSON.parse(this.decrypt(friend.relationship));
+            break;
+          } catch(error) {
+
+          }
+        }
+    }
+    if (!friend.relationship.shared_secret) {
+        return;
+    }
+    var txn = JSON.parse(txn);
+    txn['accept'] = true;
+    this.http.post(this.settingsService.baseAddress + '/request-notification', {
+        rid: friend.rid,
+        shared_secret: friend.relationship.shared_secret,
+        requested_rid: txn['requested_rid'],
+        data: JSON.stringify(txn)
+    }, {'Content-Type': 'application/json'});
   }
 
   refreshWallet() {

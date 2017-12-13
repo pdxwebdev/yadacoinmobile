@@ -292,6 +292,7 @@ export class HomePage {
                     var relationship = JSON.parse(this.decrypt(txn['relationship']));
                     txn['shared_secret'] = relationship.shared_secret;
                     txn['bulletin_secret'] = this.bulletinSecretService.bulletin_secret;
+                    txn['accept'] = true;
                     this.http.post(this.settingsService.baseAddress + '/request-notification', {
                         rid: friend.rid,
                         shared_secret: friend.relationship.shared_secret,

@@ -39,7 +39,7 @@ export class GraphService {
                             this.graph.friend_posts.reverse();
                             this.rid = this.graph.rid;
                             this.humanHash = this.graph.human_hash;
-                            var shared_secrets = [];
+                            var shared_secrets = {};
                             var sent_friend_requests = {};
                             for(var i=0; i<this.graph.sent_friend_requests.length; i++) {
                                 var sent_friend_request = this.graph.sent_friend_requests[i];
@@ -47,7 +47,7 @@ export class GraphService {
                                     var decrypted = this.decrypt(sent_friend_request.relationship);
                                     var relationship = JSON.parse(decrypted);
                                     if(relationship.shared_secret != null) {
-                                        shared_secrets.push(relationship.shared_secret);
+                                        shared_secrets[sent_friend_request.rid] = relationship.shared_secret;
                                         sent_friend_requests[sent_friend_request.rid] = sent_friend_request;
                                     }
                                 } catch(err) {
@@ -61,7 +61,7 @@ export class GraphService {
                                     var decrypted = this.decrypt(friend_request.relationship);
                                     var relationship = JSON.parse(decrypted);
                                     if(relationship.shared_secret != null) {
-                                        shared_secrets.push(relationship.shared_secret);
+                                        shared_secrets[friend_request.rid] = relationship.shared_secret;
                                         friend_requests[friend_request.rid] = friend_request;
                                     }
                                 } catch(err) {
@@ -71,16 +71,14 @@ export class GraphService {
                             var messages = {};
                             for(var i=0; i<this.graph.messages.length; i++) {
                                 var message = this.graph.messages[i];
-                                for(var v=0; v<shared_secrets.length; v++) {
-                                    try {
-                                        var shared_secret = shared_secrets[v];
-                                        var decrypted = this.shared_decrypt(shared_secret, message.relationship);
-                                        if(decrypted != '') {
-                                            messages[message.rid] = message;
-                                        }
-                                    } catch(err) {
-
+                                try {
+                                    var shared_secret = shared_secrets[message.rid];
+                                    var decrypted = this.shared_decrypt(shared_secret, message.relationship);
+                                    if(decrypted != '') {
+                                        messages[message.rid] = message;
                                     }
+                                } catch(err) {
+
                                 }
                             }
                             var arr_messages = [];
