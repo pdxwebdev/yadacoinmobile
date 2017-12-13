@@ -289,16 +289,25 @@ export class HomePage {
                     if (!friend.relationship.shared_secret) {
                         return;
                     }
-                    var relationship = JSON.parse(this.decrypt(txn['relationship']));
-                    txn['shared_secret'] = relationship.shared_secret;
-                    txn['bulletin_secret'] = this.bulletinSecretService.bulletin_secret;
-                    txn['accept'] = true;
-                    this.http.post(this.settingsService.baseAddress + '/request-notification', {
-                        rid: friend.rid,
-                        shared_secret: friend.relationship.shared_secret,
-                        requested_rid: txn['requested_rid'],
-                        data: JSON.stringify(txn)
-                    }, {'Content-Type': 'application/json'});
+                    if (info.accept) {
+                        this.http.post(this.settingsService.baseAddress + '/request-notification', {
+                            rid: friend.rid,
+                            shared_secret: friend.relationship.shared_secret,
+                            requested_rid: txn['requester_rid'],
+                            data: JSON.stringify({accept: true})
+                        }, {'Content-Type': 'application/json'});
+                    } else {
+                        var relationship = JSON.parse(this.decrypt(txn['relationship']));
+                        txn['shared_secret'] = relationship.shared_secret;
+                        txn['bulletin_secret'] = this.bulletinSecretService.bulletin_secret;
+                        txn['accept'] = true;
+                        this.http.post(this.settingsService.baseAddress + '/request-notification', {
+                            rid: friend.rid,
+                            shared_secret: friend.relationship.shared_secret,
+                            requested_rid: txn['requested_rid'],
+                            data: JSON.stringify(txn)
+                        }, {'Content-Type': 'application/json'});
+                    }
                 });
 
                 this.peerService.rid = info.requester_rid;
