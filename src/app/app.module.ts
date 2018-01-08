@@ -22,6 +22,7 @@ import { SettingsService } from './settings.service';
 import { WalletService } from './wallet.service';
 import { TransactionService } from './transaction.service';
 import { OpenGraphParserService } from './opengraphparser.service'
+import { FirebaseService } from './firebase.service'
 import { SendReceive } from '../pages/sendreceive/sendreceive';
 import { Clipboard } from '@ionic-native/clipboard';
 import { SocialSharing } from '@ionic-native/social-sharing';
@@ -71,7 +72,8 @@ import { Firebase } from '@ionic-native/firebase';
     SocialSharing,
     Badge,
     Deeplinks,
-    Firebase
+    Firebase,
+    FirebaseService
   ]
 })
 export class AppModule {}

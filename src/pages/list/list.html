@@ -42,7 +42,17 @@
     </ion-card>
   </div>
   <div *ngIf="selectedItem && pageTitle =='Friend Requests'" padding>
-    You navigated here from <b>{{selectedItem.transaction.requester_rid}}</b>
+
+    <ion-card *ngIf="friend_request">
+      <button ion-button secondary (click)="accept()">Accept</button>
+      <ngx-qrcode [qrc-value]="friend_request"></ngx-qrcode>
+      <ion-card-content>
+        <p>{{friend_request}}</p>
+      </ion-card-content>
+    </ion-card>
+    <ion-card *ngIf="!friend_request">
+      This friend request is submitted to the blockchain but your device didn't recieve it. Ask your friend to resend the request from the sent requests secrion.
+    </ion-card>
     <!-- for now, we can't do p2p on WKWebView
     <button *ngIf="pageTitle == 'Friend Requests'" ion-button secondary (click)="accept(selectedItem.transaction)">Accept Request</button>
 

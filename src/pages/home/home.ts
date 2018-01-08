@@ -68,6 +68,7 @@ export class HomePage {
     refresh() {
         this.loading = true;
         this.loadingBalance = true;
+        this.loadingModal.present();
         this.storage.get('blockchainAddress').then((blockchainAddress) => {
             this.blockchainAddress = blockchainAddress;
         });
@@ -78,16 +79,28 @@ export class HomePage {
         this.graphService.getGraph().then(() => {
             this.color = this.graphService.graph.friend_requests.length > 0 ? 'danger' : '';
             var graphArray = this.graphService.graph.friend_posts
-
+            if (graphArray.length == 0) {
+                this.loading = false;
+                this.loadingModal.dismiss();
+            }
             this.items = [];
             for (let i = 0; i < graphArray.length; i++) {
                 if (this.openGraphParserService.isURL(graphArray[i].relationship.postText)) {
                     this.openGraphParserService.parseFromUrl(graphArray[i].relationship.postText).then((data) => {
                         this.items.push(data);
+                        if ((graphArray.length - 1) == i) {
+                            this.loading = false;
+                            this.loadingModal.dismiss();
+                        }
                     });
+                } else {
+                    this.items.push(graphArray[i].relationship.postText);
+                    if ((graphArray.length - 1) == i) {
+                        this.loading = false;
+                        this.loadingModal.dismiss();
+                    }
                 }
             }
-            this.loading = false;
         });
     }
 
@@ -255,7 +268,6 @@ export class HomePage {
                                 },
                                 requested_rid: info.requested_rid,
                                 requester_rid: info.requester_rid,
-                                to: info.to,
                                 blockchainurl: this.blockchainAddress,
                                 confirm_friend: true,
                                 unspent_transaction: txn,
@@ -271,7 +283,7 @@ export class HomePage {
                     this.loadingModal.dismiss()
                     var alert = this.alertCtrl.create();
                     alert.setTitle('Friend Request Sent');
-                    alert.setSubTitle('Your Friend Request has been sent succefully.');
+                    alert.setSubTitle('Your Friend Request has been sent successfully.');
                     alert.addButton('Ok');
                     alert.present();
                     this.refresh();
@@ -294,6 +306,7 @@ export class HomePage {
                             rid: friend.rid,
                             shared_secret: friend.relationship.shared_secret,
                             requested_rid: txn['requester_rid'],
+                            to: this.bulletinSecretService.key.getAddress(),
                             data: JSON.stringify({accept: true})
                         }, {'Content-Type': 'application/json'});
                     } else {
@@ -305,6 +318,7 @@ export class HomePage {
                             rid: friend.rid,
                             shared_secret: friend.relationship.shared_secret,
                             requested_rid: txn['requested_rid'],
+                            to: this.bulletinSecretService.key.getAddress(),
                             data: JSON.stringify(txn)
                         }, {'Content-Type': 'application/json'});
                     }

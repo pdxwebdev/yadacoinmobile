@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { NavController, NavParams } from 'ionic-angular';
+import { AlertController, LoadingController } from 'ionic-angular';
 import { Storage } from '@ionic/storage';
 import { GraphService } from '../../app/graph.service';
 import { PeerService } from '../../app/peer.service';
@@ -30,7 +31,9 @@ export class ListPage {
   confirmCode: any;
   loading: any;
   loadingBalance: any;
+  loadingModal: any;
   createdCodeEncoded: any;
+  friend_request: any;
   constructor(
     public navCtrl: NavController,
     public navParams: NavParams,
@@ -42,10 +45,15 @@ export class ListPage {
     private transactionService: TransactionService,
     private http: HTTP,
     private socialSharing: SocialSharing,
-    private settingsService: SettingsService
+    private settingsService: SettingsService,
+    private alertCtrl: AlertController,
+    public loadingCtrl: LoadingController
   ) {
     this.loading = true;
     this.loadingBalance = true;
+    this.loadingModal = this.loadingCtrl.create({
+        content: 'Please wait...'
+    });
 
     // If we navigated to this page, we will have an item available as a nav param
     this.storage.get('blockchainAddress').then((blockchainAddress) => {
@@ -62,7 +70,8 @@ export class ListPage {
       this.icons = ['flask', 'wifi', 'beer', 'football', 'basketball', 'paper-plane',
       'american-football', 'boat', 'bluetooth', 'build'];
 
-      graphService.getGraph().then(() => {
+      graphService.getGraph()
+      .then(() => {
         this.loading = false;
         if (pageTitle == 'Friends') {
             var graphArray = graphService.graph.friends
@@ -73,7 +82,6 @@ export class ListPage {
         } else if (pageTitle == 'Posts') {
             var graphArray = graphService.graph.friend_posts
         }
-
         this.items = [];
         for (let i = 0; i < graphArray.length; i++) {
           this.items.push({
@@ -87,7 +95,7 @@ export class ListPage {
         this.loading = false;
         this.loadingBalance = false;
         if (pageTitle == 'Sent Requests') {
-            var decrypted = this.decrypt(this.selectedItem.transaction.relationship);
+            var decrypted = this.bulletinSecretService.decrypt(this.selectedItem.transaction.relationship);
             var relationship = JSON.parse(decrypted);
             this.createdCode = JSON.stringify({
                 bulletin_secret: this.bulletinSecretService.bulletin_secret,
@@ -99,6 +107,21 @@ export class ListPage {
             });
             this.createdCodeEncoded = 'http://71.237.161.227:5000/deeplink?txn=' + encodeURIComponent(this.createdCode);
         }
+        else if (pageTitle == 'Friend Requests') {
+          var friend_requests = {};
+          this.storage.forEach((value, key) => {
+            if (key.substr(0, 'friend_request'.length) === 'friend_request') {
+              try {
+                var parsed = JSON.parse(value);
+                if (key.substr('friend_request-'.length) === this.navParams.get('item').transaction.requester_rid+this.navParams.get('item').transaction.requested_rid) {
+                  this.friend_request = parsed;
+                }
+              } catch(error) {
+
+              }
+            }
+          });
+        }
     }
     this.balance = walletService.wallet.balance;
   }
@@ -108,8 +131,10 @@ export class ListPage {
       item: item
     });
   }
+  /*
+  //not doing peer to peer accept for now
   relationship = null;
-  accept(transaction) {
+  accept_peer(transaction) {
     this.http.get(this.baseAddress + '/get-peer', {rid: transaction.requester_rid}, {})
     .then((res) => {
       return new Promise((resolve, reject) => {
@@ -161,13 +186,75 @@ export class ListPage {
       console.log(error);
     });
   }
+  */
+
+  accept() {
+    let alert = this.alertCtrl.create();
+    alert.setTitle('Approve Transaction');
+    alert.setSubTitle('You are about to spend 2.02 coins.');
+    alert.addButton({
+        text: 'Cancel',
+        handler: (data: any) => {
+            this.loadingModal.dismiss();
+        }
+    });
+    alert.addButton({
+      text: 'Confirm',
+      handler: (data: any) => {
+        this.loadingModal.present();
+        this.walletService.get().then(() => {
+          return new Promise((resolve, reject) => {
+            this.transactionService.pushTransaction({
+              relationship: {
+                bulletin_secret: this.friend_request.bulletin_secret,
+                shared_secret: this.friend_request.shared_secret
+              },
+              requested_rid: this.friend_request.requested_rid,
+              requester_rid: this.friend_request.requester_rid,
+              to: this.friend_request.to,
+              blockchainurl: this.blockchainAddress,
+              confirm_friend: false,
+              resolve: resolve
+            });
+          });
+        }).then((txn) => {
+          return new Promise((resolve, reject) => {
+            this.transactionService.pushTransaction({
+              relationship: {
+                bulletin_secret: this.friend_request.bulletin_secret,
+                shared_secret: this.friend_request.shared_secret
+              },
+              requested_rid: this.friend_request.requested_rid,
+              requester_rid: this.friend_request.requester_rid,
+              to: this.friend_request.to,
+              blockchainurl: this.blockchainAddress,
+              confirm_friend: true,
+              unspent_transaction: txn,
+              resolve: resolve
+            });
+          });
+        }).then((txn) => {
+          this.loadingModal.dismiss();
+          var alert = this.alertCtrl.create();
+          alert.setTitle('Friend Request Sent');
+          alert.setSubTitle('Your Friend Request has been sent successfully.');
+          alert.addButton('Ok');
+          alert.present();
+        });
+      }
+    });
+    alert.present();
+  }
 
   sendFriendRequestNotification(txn) {
     for (var i=0; i < this.graphService.graph.friends.length; i++) {
         var friend = this.graphService.graph.friends[i];
         if (this.graphService.graph.rid = friend.rid) {
           try {
-            friend.relationship = JSON.parse(this.decrypt(friend.relationship));
+            if (friend.relationship.shared_secret) {
+                break;
+            }
+            friend.relationship = JSON.parse(this.bulletinSecretService.decrypt(friend.relationship));
             break;
           } catch(error) {
 
@@ -178,7 +265,6 @@ export class ListPage {
         return;
     }
     var txn = JSON.parse(txn);
-    txn['accept'] = true;
     this.http.post(this.settingsService.baseAddress + '/request-notification', {
         rid: friend.rid,
         shared_secret: friend.relationship.shared_secret,
@@ -199,23 +285,4 @@ export class ListPage {
   share(code) {
     this.socialSharing.share(code);
   }
-
-    decrypt(message) {
-        var key = forge.pkcs5.pbkdf2(forge.sha256.create().update(this.bulletinSecretService.key.toWIF()).digest().toHex(), 'salt', 400, 32);
-        var decipher = forge.cipher.createDecipher('AES-CBC', key);
-        var enc = this.hexToBytes(message);
-        decipher.start({iv: enc.slice(0,16)});
-        decipher.update(forge.util.createBuffer(enc.slice(16)));
-        decipher.finish();
-        return decipher.output
-    }
-
-    hexToBytes(s) {
-        var arr = []
-        for (var i = 0; i < s.length; i += 2) {
-            var c = s.substr(i, 2);
-            arr.push(parseInt(c, 16));
-        }
-        return String.fromCharCode.apply(null, arr);
-    }
 }

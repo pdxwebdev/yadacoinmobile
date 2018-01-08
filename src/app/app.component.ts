@@ -9,6 +9,8 @@ import { GraphService } from './graph.service';
 import { BulletinSecretService } from './bulletinSecret.service';
 import { SettingsService } from './settings.service';
 import { WalletService } from './wallet.service';
+import { Storage } from '@ionic/storage';
+import { FirebaseService } from './firebase.service';
 
 import { HomePage } from '../pages/home/home';
 import { ListPage } from '../pages/list/list';
@@ -39,17 +41,19 @@ export class MyApp {
     private bulletinSecretService: BulletinSecretService,
     private deeplinks: Deeplinks,
     private firebase: Firebase,
-    private http: HTTP
+    private http: HTTP,
+    private storage: Storage,
+    private firebaseService: FirebaseService
   ) {
     this.initializeApp();
     this.platform.ready().then(() => {
       if(this.platform.is('ios')) {
         this.firebase.grantPermission()
         .then(() => {
-          this.initFirebase();
+          this.firebaseService.initFirebase();
         });
       } else {
-        this.initFirebase();
+        this.firebaseService.initFirebase();
       }
     });
     this.pages = [
@@ -61,75 +65,6 @@ export class MyApp {
       { title: 'Posts', component: ListPage, count: false, color: '' },
       { title: 'Settings', component: Settings, count: false, color: '' }
     ];
-  }
-
-  initFirebase() {
-    this.graphService.getGraph().then(() => {
-      for (var i=0; i < this.graphService.graph.friends.length; i++) {
-          var friend = this.graphService.graph.friends[i];
-          if (this.graphService.graph.rid = friend.rid) {
-            try {
-              friend.relationship = JSON.parse(this.decrypt(friend.relationship));
-              break;
-            } catch(error) {
-
-            }
-          }
-      }
-      if (!friend.relationship.shared_secret) {
-        return;
-      }
-      this.firebase.getToken()
-      .then((token) => {
-          this.http.post(this.settingsService.baseAddress + '/fcm-token', {
-            rid: friend.rid,
-            token: token,
-            shared_secret: friend.relationship.shared_secret
-          }, {'Content-Type': 'application/json'})
-      })
-      .catch((error) => {
-          console.error('Error getting token', error)
-      });
-
-      this.firebase.onTokenRefresh()
-      .subscribe((token: string) => {
-          this.http.post(this.settingsService.baseAddress + '/fcm-token', {
-            rid: friend.rid,
-            token: token,
-            shared_secret: friend.relationship.shared_secret
-          }, {'Content-Type': 'application/json'})
-      });
-
-      this.firebase.onNotificationOpen().subscribe(notification => {
-        this.graphService.getGraph().then(() => {
-          // used for an example of ngFor and navigation
-          this.pages = [
-            { title: 'Home', component: HomePage, count: false, color: '' },
-            { title: 'Send / Receive', component: SendReceive, count: false, color: '' },
-            { title: 'Friends', component: ListPage, count: this.graphService.graph.friends.length, color: '' },
-            { title: 'Friend Requests', component: ListPage, count: this.graphService.graph.friend_requests.length, color: 'danger' },
-            { title: 'Sent Requests', component: ListPage, count: this.graphService.graph.sent_friend_requests.length, color: '' },
-            { title: 'Posts', component: ListPage, count: false, color: '' },
-            { title: 'Settings', component: Settings, count: false, color: '' }
-          ];
-          notification.relationship = {
-            shared_secret: notification.shared_secret,
-            bulletin_secret: notification.bulletin_secret
-          }
-          this.nav.setRoot(HomePage, {txnData: encodeURIComponent(JSON.stringify(notification))});
-        });
-      });
-      // used for an example of ngFor and navigation
-      this.pages = [
-        { title: 'Home', component: HomePage, count: false, color: '' },
-        { title: 'Send / Receive', component: SendReceive, count: false, color: '' },
-        { title: 'Friends', component: ListPage, count: this.graphService.graph.friends.length, color: '' },
-        { title: 'Friend Requests', component: ListPage, count: this.graphService.graph.friend_requests.length, color: 'danger' },
-        { title: 'Sent Requests', component: ListPage, count: this.graphService.graph.sent_friend_requests.length, color: '' },
-        { title: 'Posts', component: ListPage, count: false, color: '' },
-        { title: 'Settings', component: Settings, count: false, color: '' }
-      ];
-    });
   }
 
   ngAfterViewInit() {

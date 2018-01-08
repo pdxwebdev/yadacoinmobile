@@ -65,7 +65,7 @@ export class GraphService {
                                         friend_requests[friend_request.rid] = friend_request;
                                     }
                                 } catch(err) {
-
+                                    friend_requests[friend_request.rid] = friend_request;
                                 }
                             }
                             var messages = {};

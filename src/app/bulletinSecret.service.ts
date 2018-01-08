@@ -1,14 +1,24 @@
 import { Injectable } from '@angular/core';
+import { HTTP } from '@ionic-native/http';
+import { SettingsService } from './settings.service';
 import { Storage } from '@ionic/storage';
 
 declare var foobar;
 declare var forge;
+declare var uuid4;
 
 @Injectable()
 export class BulletinSecretService {
     key = null;
     bulletin_secret = null;
-    constructor(private storage: Storage) {
+    keyname = null;
+    keykeys = null;
+    constructor(
+        private settingsService: SettingsService,
+        private storage: Storage,
+        private http: HTTP,
+    ) {
+        this.keyname = 'key';
         this.get();
     }
 
@@ -23,7 +33,7 @@ export class BulletinSecretService {
     }
 
     get() {
-        var keyname = 'key';
+        var keyname = this.keyname;
         return this.storage.get(keyname).then((key) => {
             if(key && typeof key == 'string') {
                 this.key = foobar.bitcoin.ECPair.fromWIF(key);
@@ -33,6 +43,58 @@ export class BulletinSecretService {
             }
              
             this.bulletin_secret = foobar.bitcoin.crypto.sha256(this.shared_encrypt(this.key.toWIF(), this.key.toWIF())).toString('hex');
+            this.http.get(this.settingsService.baseAddress + '/faucet', {'address': this.key.getAddress()}, {})
         });
+    }
+
+    set(key) {
+        return new Promise((resolve, reject) => {
+
+            this.keyname = key;
+            this.get().
+            then(() => {
+                resolve();
+            });
+        });
+    }
+
+    create() {
+        var key = this.keyname;
+        this.keyname = 'key-' + uuid4();
+        this.get();
+        this.keyname = key;
+    }
+
+    all() {
+        this.keykeys = [];
+        return new Promise((resolve, reject) => {
+            this.storage.forEach((value, key) => {
+                if (key.substr(0, 3) === 'key') {
+                    this.keykeys.push(key);
+                }
+            })
+            .then(() => {
+                resolve(this.keykeys);
+            });
+        });
+    }
+
+    decrypt(message) {
+        var key = forge.pkcs5.pbkdf2(forge.sha256.create().update(this.key.toWIF()).digest().toHex(), 'salt', 400, 32);
+        var decipher = forge.cipher.createDecipher('AES-CBC', key);
+        var enc = this.hexToBytes(message);
+        decipher.start({iv: enc.slice(0,16)});
+        decipher.update(forge.util.createBuffer(enc.slice(16)));
+        decipher.finish();
+        return decipher.output
+    }
+
+    hexToBytes(s) {
+        var arr = []
+        for (var i = 0; i < s.length; i += 2) {
+            var c = s.substr(i, 2);
+            arr.push(parseInt(c, 16));
+        }
+        return String.fromCharCode.apply(null, arr);
     }
 }

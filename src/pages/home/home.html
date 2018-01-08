@@ -28,7 +28,7 @@
   <ion-spinner *ngIf="loading"></ion-spinner>
   <ion-list [virtualScroll]="items">
     <ion-card ion-item *virtualItem="let item">
-      <a href="{{item.url}}">
+      <a href="{{item.url}}" *ngIf="item.url">
         <img src="{{item.image}}" *ngIf="item.image" />
         <ion-card-content>
           <ion-card-title>
@@ -39,6 +39,7 @@
           </p>
         </ion-card-content>
       </a>
+      <span *ngIf="!item.url">{{item}}</span>
       <ion-row no-padding>
         <ion-col text-right>
           <button ion-button clear small color="danger" icon-start (click)="share(item.url)">

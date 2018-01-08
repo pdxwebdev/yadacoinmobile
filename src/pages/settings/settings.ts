@@ -2,6 +2,8 @@ import { Component } from '@angular/core';
 import { NavController, NavParams } from 'ionic-angular';
 import { Storage } from '@ionic/storage';
 import { SettingsService } from '../../app/settings.service';
+import { BulletinSecretService } from '../../app/bulletinSecret.service';
+import { FirebaseService } from '../../app/firebase.service';
 
 @Component({
   selector: 'page-settings',
@@ -13,11 +15,33 @@ export class Settings {
     blockchainAddress = null
     graphproviderAddress = null
     walletproviderAddress = null
-    constructor(public navCtrl: NavController, public navParams: NavParams, private settingsService: SettingsService) {
+    keys = null;
+    constructor(
+        public navCtrl: NavController,
+        public navParams: NavParams,
+        private settingsService: SettingsService,
+        private bulletinSecretService: BulletinSecretService,
+        private firebaseService: FirebaseService
+    ) {
+        this.keys = [];
         this.baseAddress = settingsService.baseAddress;
         this.blockchainAddress = settingsService.blockchainAddress;
         this.graphproviderAddress = settingsService.graphproviderAddress;
         this.walletproviderAddress = settingsService.walletproviderAddress;
+        bulletinSecretService.all().then((keys) => {
+            this.keys = keys;
+        });
+    }
+
+    createKey() {
+        this.bulletinSecretService.create();
+    }
+
+    set(key) {
+        this.bulletinSecretService.set(key)
+        .then(() => {
+            this.firebaseService.initFirebase();
+        });
     }
 
     dev_reset() {

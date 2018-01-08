@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HTTP } from '@ionic-native/http';
 import { Storage } from '@ionic/storage';
-import { BulletinSecretService } from './bulletinSecret.service';
 
 @Injectable()
 export class SettingsService {
@@ -9,7 +8,7 @@ export class SettingsService {
     blockchainAddress = null
     graphproviderAddress = null
     walletproviderAddress = null
-    constructor(private storage: Storage, private http: HTTP, private bulletinSecret: BulletinSecretService) {
+    constructor(private storage: Storage, private http: HTTP) {
         this.storage.get('baseAddress').then((baseAddress) => {
             if(baseAddress == null) {
                 this.baseAddress = 'http://71.237.161.227:5000';

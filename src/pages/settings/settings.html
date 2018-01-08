@@ -9,6 +9,12 @@
 
 <ion-content padding>
   <h3>Settings</h3>
+  <ion-list>
+    <button ion-item *ngFor="let key of keys" (click)="set(key)">
+      <span>{{key}}</span>
+    </button>
+  </ion-list>
+  <button ion-button secondary (click)="createKey()">Create Key</button>
 
   <ion-item>
     <ion-input type="text" placeholder="Base URL" [(ngModel)]="baseAddress">

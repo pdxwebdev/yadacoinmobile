@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="io.yadacoin.mobile" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget id="io.yadacoin.mobile" version="0.0.3" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <name>YadaCoin</name>
     <description>An awesome Ionic/Cordova app.</description>
     <author email="hi@ionicframework" href="http://ionicframework.com/">Ionic Framework Team</author>
@@ -83,6 +83,8 @@
     </platform>
     <allow-navigation href="http://10.232.25.206:8100" />
     <allow-navigation href="http://10.8.0.1:8100" />
+    <engine name="ios" spec="^4.4.0" />
+    <engine name="android" spec="~6.3.0" />
     <plugin name="cordova-plugin-qrscanner" spec="^2.5.0" />
     <plugin name="cordova-plugin-device" spec="^1.1.6" />
     <plugin name="cordova-plugin-splashscreen" spec="^4.0.3" />
@@ -94,10 +96,7 @@
     <plugin name="cordova-plugin-camera" spec="^3.0.0" />
     <plugin name="cordova-clipboard" spec="^1.1.1" />
     <plugin name="cordova-plugin-x-socialsharing" spec="^5.2.1" />
-    <engine name="ios" spec="~4.4.0" />
     <plugin name="cordova-plugin-badge" spec="^0.8.5" />
-    <plugin name="cordova-plugin-firebase" spec="^0.1.25" />
-    <engine name="android" spec="~6.2.3" />
     <plugin name="ionic-plugin-deeplinks" spec="^1.0.15">
         <variable name="URL_SCHEME" value="myapp" />
         <variable name="DEEPLINK_SCHEME" value="https" />
@@ -116,4 +115,5 @@
         <variable name="DEEPLINK_5_SCHEME" value=" " />
         <variable name="DEEPLINK_5_HOST" value=" " />
     </plugin>
+    <plugin name="cordova-plugin-firebase" spec="^0.1.25" />
 </widget>
