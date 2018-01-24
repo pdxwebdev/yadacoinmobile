@@ -7,6 +7,8 @@ import { BulletinSecretService } from './bulletinSecret.service';
 import { SettingsService } from './settings.service';
 import { WalletService } from './wallet.service';
 import { Storage } from '@ionic/storage';
+import { Http } from '@angular/http';
+import { Platform } from 'ionic-angular';
 
 declare var foobar;
 declare var forge;
@@ -22,9 +24,13 @@ export class FirebaseService {
     private deeplinks: Deeplinks,
     private firebase: Firebase,
     private http: HTTP,
-    private storage: Storage
+    private storage: Storage,
+    private platform: Platform,
+    private ahttp: Http
   ) {
-    http.setDataSerializer('json');
+    if(this.platform.is('cordova')) {
+      http.setDataSerializer('json');
+    }
   }
 
   initFirebase() {
@@ -52,11 +58,19 @@ export class FirebaseService {
       }
       this.firebase.getToken()
       .then((token) => {
+        if(this.platform.is('cordova')) {
           this.http.post(this.settingsService.baseAddress + '/fcm-token', {
             rid: friend.rid,
             token: token,
             shared_secret: friend.relationship.shared_secret
-          }, {'Content-Type': 'application/json'})
+          }, {'Content-Type': 'application/json'});
+        } else {
+          this.ahttp.post(this.settingsService.baseAddress + '/fcm-token', {
+            rid: friend.rid,
+            token: token,
+            shared_secret: friend.relationship.shared_secret
+          }).subscribe(() => {});
+        }
       })
       .catch((error) => {
           console.error('Error getting token', error)
@@ -64,11 +78,19 @@ export class FirebaseService {
 
       this.firebase.onTokenRefresh()
       .subscribe((token: string) => {
+        if(this.platform.is('cordova')) {
           this.http.post(this.settingsService.baseAddress + '/fcm-token', {
             rid: friend.rid,
             token: token,
             shared_secret: friend.relationship.shared_secret
-          }, {'Content-Type': 'application/json'})
+          }, {'Content-Type': 'application/json'});
+        } else {
+          this.ahttp.post(this.settingsService.baseAddress + '/fcm-token', {
+            rid: friend.rid,
+            token: token,
+            shared_secret: friend.relationship.shared_secret
+          }).subscribe(() => {});
+        }
       });
 
       this.firebase.onNotificationOpen().subscribe(notification => {

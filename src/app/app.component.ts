@@ -47,13 +47,15 @@ export class MyApp {
   ) {
     this.initializeApp();
     this.platform.ready().then(() => {
-      if(this.platform.is('ios')) {
-        this.firebase.grantPermission()
-        .then(() => {
+      if(this.platform.is('cordova')) {
+        if(this.platform.is('ios')) {
+          this.firebase.grantPermission()
+          .then(() => {
+            this.firebaseService.initFirebase();
+          });
+        } else {
           this.firebaseService.initFirebase();
-        });
-      } else {
-        this.firebaseService.initFirebase();
+        }
       }
     });
     this.pages = [
@@ -68,25 +70,30 @@ export class MyApp {
   }
 
   ngAfterViewInit() {
-    this.deeplinks.routeWithNavController(this.nav, {
-      '/:txnData': HomePage
-    }).subscribe((match) => {
-      // match.$route - the route we matched, which is the matched entry from the arguments to route()
-      // match.$args - the args passed in the link
-      // match.$link - the full link data
-      console.log('Successfully matched route', match);
-    }, (nomatch) => {
-      // nomatch.$link - the full link data
-      console.error('Got a deeplink that didn\'t match', nomatch);
-    });
+    if (this.platform.is('cordova')) {
+      this.deeplinks.routeWithNavController(this.nav, {
+        '/:txnData': HomePage
+      }).subscribe((match) => {
+        // match.$route - the route we matched, which is the matched entry from the arguments to route()
+        // match.$args - the args passed in the link
+        // match.$link - the full link data
+        console.log('Successfully matched route', match);
+      }, (nomatch) => {
+        // nomatch.$link - the full link data
+        console.error('Got a deeplink that didn\'t match', nomatch);
+      });
+      
+    }
   }
 
   initializeApp() {
     this.platform.ready().then(() => {
       // Okay, so the platform is ready and our plugins are available.
       // Here you can do any higher level native things you might need.
-      this.statusBar.styleDefault();
-      this.splashScreen.hide();
+      if (this.platform.is('cordova')) {
+        this.statusBar.styleDefault();
+        this.splashScreen.hide();
+      }
     });
   }
 

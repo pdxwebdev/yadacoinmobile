@@ -16,38 +16,51 @@
         <ion-label color="primary" stacked>My Phrase:</ion-label>
         <ion-input type="text" [(ngModel)]="graphService.humanHash">
         </ion-input>
-        <button ion-button outline item-end (click)="sharePhrase()">share&nbsp;<ion-icon name="share"></ion-icon></button>
+        <button *ngIf="isCordova" ion-button outline item-end (click)="sharePhrase()">share&nbsp;<ion-icon name="share"></ion-icon></button>
       </ion-item>
     </ion-col>
   </ion-row>
-  <button ion-button color="secondary" (click)="addFriend()">New Friend</button> 
-  <button ion-button (click)="presentModal()">New Post</button> 
-  <button ion-button (click)="refresh()">Refresh</button> 
+  <div *ngIf="balance == 0" class="danger">Please wait while tokens are deposited into your wallet.</div>
+  <button *ngIf="balance > 0 && graphService.graph && graphService.graph.friends.length == 0" ion-button color="danger" (click)="register()">For Demo Purposes, You Must Register</button> 
+  <button *ngIf="balance > 0 && graphService.graph && graphService.graph.friends.length > 0" ion-button color="secondary" (click)="addFriend()">New Friend</button> 
+  <button *ngIf="balance > 0 && graphService.graph && graphService.graph.friends.length > 0" ion-button (click)="presentModal()">New Post</button> 
+  <button *ngIf="balance > 0 && graphService.graph && graphService.graph.friends.length > 0" ion-button (click)="refresh()">Refresh</button> 
   <!--<button ion-button secondary (click)="addPeer()">Add Peer</button>-->
-  <h4>Recent Activity</h4>
+  <h4 *ngIf="balance > 0">Recent Activity</h4>
   <ion-spinner *ngIf="loading"></ion-spinner>
   <ion-list [virtualScroll]="items">
-    <ion-card ion-item *virtualItem="let item">
-      <a href="{{item.url}}" *ngIf="item.url">
-        <img src="{{item.image}}" *ngIf="item.image" />
-        <ion-card-content>
-          <ion-card-title>
-            {{item.title}}
-          </ion-card-title>
-          <p *ngIf="item.description">
-            {{item.description}}
-          </p>
-        </ion-card-content>
-      </a>
-      <span *ngIf="!item.url">{{item}}</span>
-      <ion-row no-padding>
-        <ion-col text-right>
-          <button ion-button clear small color="danger" icon-start (click)="share(item.url)">
-            <ion-icon name='share-alt'></ion-icon>
-            Share
-          </button>
-        </ion-col>
-      </ion-row>
-    </ion-card>
+    <ion-item *virtualItem="let item">
+      <ion-card>
+        <a href="{{item.url}}" *ngIf="item.url">
+          <ion-img width="400" height="200" [src]="item.image" *ngIf="item.image"></ion-img>
+          <ion-card-content>
+            <ion-card-title style="text-overflow:ellipsis;">
+              {{item.title}}
+            </ion-card-title>
+            <p *ngIf="item.description" style="text-overflow:ellipsis;">
+              {{item.description}}
+            </p>
+          </ion-card-content>
+        </a>
+        <div *ngIf="!item.url">
+          <ion-card-content>
+            <ion-card-title style="text-overflow:ellipsis;">
+              {{item.title}}
+            </ion-card-title>
+            <p *ngIf="item.description" style="text-overflow:ellipsis;">
+              {{item.description}}
+            </p>
+          </ion-card-content>
+        </div>
+        <ion-row no-padding>
+          <ion-col text-right>
+            <button ion-button clear small color="danger" icon-start (click)="share(item.url)" *ngIf="isCordova">
+              <ion-icon name='share-alt'></ion-icon>
+              Share
+            </button>
+          </ion-col>
+        </ion-row>
+      </ion-card>
+    </ion-item>
   </ion-list>
 </ion-content>

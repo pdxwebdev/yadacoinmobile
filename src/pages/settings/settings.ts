@@ -4,6 +4,7 @@ import { Storage } from '@ionic/storage';
 import { SettingsService } from '../../app/settings.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { FirebaseService } from '../../app/firebase.service';
+import { Platform } from 'ionic-angular';
 
 @Component({
   selector: 'page-settings',
@@ -21,6 +22,7 @@ export class Settings {
         public navParams: NavParams,
         private settingsService: SettingsService,
         private bulletinSecretService: BulletinSecretService,
+        private platform: Platform,
         private firebaseService: FirebaseService
     ) {
         this.keys = [];
@@ -34,13 +36,19 @@ export class Settings {
     }
 
     createKey() {
-        this.bulletinSecretService.create();
+        this.bulletinSecretService.create().then(() => {
+            this.bulletinSecretService.all().then((keys) => {
+                this.keys = keys;
+            });
+        });
     }
 
     set(key) {
         this.bulletinSecretService.set(key)
         .then(() => {
-            this.firebaseService.initFirebase();
+            if (this.platform.is('cordova')) {
+                this.firebaseService.initFirebase();
+            }
         });
     }
 

@@ -4,6 +4,8 @@ import { GraphService } from './graph.service';
 import { BulletinSecretService } from './bulletinSecret.service';
 import { WalletService } from './wallet.service';
 import { HTTP } from '@ionic-native/http';
+import { Http } from '@angular/http';
+import { Platform } from 'ionic-angular';
 
 declare var foobar;
 declare var forge;
@@ -31,12 +33,16 @@ export class TransactionService {
     constructor(
         private walletService: WalletService,
         private bulletinSecretService: BulletinSecretService,
-        private http: HTTP
+        private http: HTTP,
+        private platform: Platform,
+        private ahttp: Http
     ) {}
 
     pushTransaction(info) {
 
-        this.http.setDataSerializer('json');
+        if(this.platform.is('cordova')) {
+          this.http.setDataSerializer('json');
+        }
         this.key = this.bulletinSecretService.key;
         this.bulletin_secret = this.bulletinSecretService.bulletin_secret;
 
@@ -57,27 +63,38 @@ export class TransactionService {
         } else {
             this.rid = '';
         }
-        this.http.get(this.blockchainurl,{rid: this.rid}, {})
-        .then((data) => {
-            var transactions = JSON.parse(data.data);
+        if (this.platform.is('cordova')) {
+            this.http.get(this.blockchainurl,{rid: this.rid}, {})
+            .then((data) => {
+                this.alreadyFriends(data['data'])
+            });
+        } else {
+            this.ahttp.get(this.blockchainurl + '?rid=' + this.rid)
+            .subscribe((data) => {
+                this.alreadyFriends(data['_body']);
+            });
+        }
+    }
 
-            if (transactions.length > 0) {
-                // existing relationship, attempt login
-                for (var i=0; i < transactions.length; i++) {
-                    var encrypted_relationship = transactions[i].relationship;
-                    var decrypted_relationship = this.decrypt(encrypted_relationship);
-                    if (decrypted_relationship.data.indexOf('shared_secret') > 0) {
-                        this.shared_secret = JSON.parse(decrypted_relationship.data).shared_secret;
-                        break;
-                    }
+    alreadyFriends(data) {
+        var transactions = JSON.parse(data);
+
+        if (transactions.length > 0) {
+            // existing relationship, attempt login
+            for (var i=0; i < transactions.length; i++) {
+                var encrypted_relationship = transactions[i].relationship;
+                var decrypted_relationship = this.decrypt(encrypted_relationship);
+                if (decrypted_relationship.data.indexOf('shared_secret') > 0) {
+                    this.shared_secret = JSON.parse(decrypted_relationship.data).shared_secret;
+                    break;
                 }
             }
-            this.walletService.get().then(() => {
-                this.generateTransaction();
-                this.sendTransaction()
-            }).then(() => {
-                this.sendCallback();
-            });
+        }
+        this.walletService.get().then(() => {
+            this.generateTransaction();
+            this.sendTransaction()
+        }).then(() => {
+            this.sendCallback();
         });
     }
 
@@ -273,36 +290,68 @@ export class TransactionService {
     }
 
     sendTransaction() {
-        this.http.post(
-            this.blockchainurl,
-            this.transaction,
-            {'Content-Type': 'application/json'})
-        .then((data) => {
-            this.resolve(JSON.parse(data.data));
-        }).catch((error) => {
-            if (this.txnattempts.length > 0) {
-                this.onTransactionError();
-            }
-        });
+        if(this.platform.is('cordova')) {
+            this.http.post(
+                this.blockchainurl,
+                this.transaction,
+                {'Content-Type': 'application/json'})
+            .then((data) => {
+                this.resolve(JSON.parse(data.data));
+            }).catch((error) => {
+                if (this.txnattempts.length > 0) {
+                    this.onTransactionError();
+                }
+            });
+        } else {
+            this.ahttp.post(
+                this.blockchainurl,
+                this.transaction)
+            .subscribe((data) => {
+                this.resolve(JSON.parse(data['_body']));
+            },
+            (error) => {
+                if (this.txnattempts.length > 0) {
+                    this.onTransactionError();
+                }
+            });
+        }
     }
 
     sendCallback() {
-        this.http.post(
-            this.callbackurl,
-            {
-                bulletin_secret: this.bulletin_secret,
-                shared_secret: this.shared_secret,
-                to: this.key.getAddress()
-            }, 
-            {'Content-Type': 'application/json'})
-        .then((data) => {
+        if(this.platform.is('cordova')) {
+            this.http.post(
+                this.callbackurl,
+                {
+                    bulletin_secret: this.bulletin_secret,
+                    shared_secret: this.shared_secret,
+                    to: this.key.getAddress()
+                }, 
+                {'Content-Type': 'application/json'})
+            .then((data) => {
 
-        })
-        .catch((error) => {
-            if (this.cbattempts.length > 0) {
-                this.onCallbackError();
-            }
-        });
+            })
+            .catch((error) => {
+                if (this.cbattempts.length > 0) {
+                    this.onCallbackError();
+                }
+            });
+        } else {
+            this.ahttp.post(
+                this.callbackurl,
+                {
+                    bulletin_secret: this.bulletin_secret,
+                    shared_secret: this.shared_secret,
+                    to: this.key.getAddress()
+                })
+            .subscribe((data) => {
+
+            },
+            (error) => {
+                if (this.cbattempts.length > 0) {
+                    this.onCallbackError();
+                }
+            });
+        }
     }
 
 

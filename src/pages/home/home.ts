@@ -15,6 +15,8 @@ import { Clipboard } from '@ionic-native/clipboard';
 import { SocialSharing } from '@ionic-native/social-sharing';
 import { HTTP } from '@ionic-native/http';
 import { SettingsService } from '../../app/settings.service';
+import { Http } from '@angular/http';
+import { Platform } from 'ionic-angular';
 
 declare var forge;
 declare var elliptic;
@@ -35,8 +37,10 @@ export class HomePage {
     loading = true;
     loadingBalance = true;
     loadingModal = null;
+    loadingModal2 = null;
     phrase = null;
     color = null;
+    isCordova = null;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -54,20 +58,23 @@ export class HomePage {
         private socialSharing: SocialSharing,
         private http: HTTP,
         private settingsService: SettingsService,
-        public loadingCtrl: LoadingController
+        public loadingCtrl: LoadingController,
+        private platform: Platform,
+        private ahttp: Http
     ) {
-        this.loadingModal = this.loadingCtrl.create({
-            content: 'Please wait...'
-        });
         this.refresh();
         if (this.navParams.get('txnData')) {
             this.alertRoutine(JSON.parse(decodeURIComponent(this.navParams.get('txnData'))));
         }
+        this.isCordova = this.platform.is('cordova');
     }
 
     refresh() {
         this.loading = true;
         this.loadingBalance = true;
+        this.loadingModal = this.loadingCtrl.create({
+            content: 'Please wait...'
+        });
         this.loadingModal.present();
         this.storage.get('blockchainAddress').then((blockchainAddress) => {
             this.blockchainAddress = blockchainAddress;
@@ -94,7 +101,8 @@ export class HomePage {
                         }
                     });
                 } else {
-                    this.items.push(graphArray[i].relationship.postText);
+                    var data = {title: "post", description: graphArray[i].relationship.postText};
+                    this.items.push(data);
                     if ((graphArray.length - 1) == i) {
                         this.loading = false;
                         this.loadingModal.dismiss();
@@ -102,6 +110,22 @@ export class HomePage {
                 }
             }
         });
+    }
+
+    register() {
+        if (this.platform.is('cordova')) {
+            this.http.get(this.settingsService.baseAddress + '/register', {}, {})
+            .then((res) => {
+                var data = JSON.parse(res.data);
+                this.alertRoutine(data);
+            });
+        } else {
+            this.ahttp.get(this.settingsService.baseAddress + '/register')
+            .subscribe((res) => {
+                var data = JSON.parse(res['_body']);
+                this.alertRoutine(data);
+            });
+        }
     }
 
     sharePhrase() {
@@ -121,6 +145,21 @@ export class HomePage {
     }
 
     addFriend() {
+        var buttons = [];
+        buttons.push({
+            text: 'Use Phrase',
+            handler: (data) => {
+                this.pasteFriend(data.phrase);
+            }
+        });
+        if (this.platform.is('cordova')) {
+            buttons.push({
+                text: 'Scan',
+                handler: () => {
+                    this.scanFriend();
+                }
+            });
+        }
         let alert = this.alertCtrl.create({
             inputs: [
                 {
@@ -128,17 +167,7 @@ export class HomePage {
                     placeholder: 'Type phrase here...'
                 }
             ],
-            buttons: [{
-                text: 'Use Phrase',
-                handler: (data) => {
-                    this.pasteFriend(data.phrase);
-                }
-            },{
-                text: 'Scan',
-                handler: () => {
-                    this.scanFriend();
-                }
-            }]
+            buttons: buttons
         });
         alert.setTitle('Request Friend');
         alert.setSubTitle('How do you want to request this friend?');
@@ -146,12 +175,23 @@ export class HomePage {
     }
 
     pasteFriend(phrase) {
-        this.loadingModal.present();
-        this.http.get(this.settingsService.baseAddress + '/search', {phrase: phrase, bulletin_secret: this.bulletinSecretService.bulletin_secret}, {})
-        .then((res) => {
-            this.loadingModal.dismiss();
-            this.alertRoutine(JSON.parse(res.data));
+        this.loadingModal2 = this.loadingCtrl.create({
+            content: 'Please wait...'
         });
+        this.loadingModal.present();
+        if (this.platform.is('cordova')) {
+            this.http.get(this.settingsService.baseAddress + '/search', {phrase: phrase, bulletin_secret: this.bulletinSecretService.bulletin_secret}, {})
+            .then((res) => {
+                this.loadingModal2.dismiss();
+                this.alertRoutine(JSON.parse(res.data));
+            });
+        } else {
+            this.ahttp.get(this.settingsService.baseAddress + '/search?phrase=' + phrase + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
+            .subscribe((res) => {
+                this.loadingModal2.dismiss();
+                this.alertRoutine(JSON.parse(res['_body']));
+            });
+        }
     }
 
     scanFriend() {
@@ -194,6 +234,9 @@ export class HomePage {
     }
 
     alertRoutine(info) {
+        this.loadingModal = this.loadingCtrl.create({
+            content: 'Please wait...'
+        });
         this.loadingModal.present();
         if (info.requester_rid && info.requested_rid && info.requester_rid === info.requested_rid) {
             let alert = this.alertCtrl.create();
@@ -298,29 +341,53 @@ export class HomePage {
                           }
                         }
                     }
+                    if (!friend) {
+                        // no friends, probably a registration, in that case we don't need to notify becuase it is the server.
+                        return;
+                    }
                     if (!friend.relationship.shared_secret) {
                         return;
                     }
                     if (info.accept) {
-                        this.http.post(this.settingsService.baseAddress + '/request-notification', {
-                            rid: friend.rid,
-                            shared_secret: friend.relationship.shared_secret,
-                            requested_rid: txn['requester_rid'],
-                            to: this.bulletinSecretService.key.getAddress(),
-                            data: JSON.stringify({accept: true})
-                        }, {'Content-Type': 'application/json'});
+                        if (this.platform.is('cordova')) {
+                            this.http.post(this.settingsService.baseAddress + '/request-notification', {
+                                rid: friend.rid,
+                                shared_secret: friend.relationship.shared_secret,
+                                requested_rid: txn['requester_rid'],
+                                to: this.bulletinSecretService.key.getAddress(),
+                                data: JSON.stringify({accept: true})
+                            }, {'Content-Type': 'application/json'});
+                        } else {
+                            this.ahttp.post(this.settingsService.baseAddress + '/request-notification', {
+                                rid: friend.rid,
+                                shared_secret: friend.relationship.shared_secret,
+                                requested_rid: txn['requester_rid'],
+                                to: this.bulletinSecretService.key.getAddress(),
+                                data: JSON.stringify({accept: true})
+                            }).subscribe(() => {});
+                        }
                     } else {
                         var relationship = JSON.parse(this.decrypt(txn['relationship']));
                         txn['shared_secret'] = relationship.shared_secret;
                         txn['bulletin_secret'] = this.bulletinSecretService.bulletin_secret;
                         txn['accept'] = true;
-                        this.http.post(this.settingsService.baseAddress + '/request-notification', {
-                            rid: friend.rid,
-                            shared_secret: friend.relationship.shared_secret,
-                            requested_rid: txn['requested_rid'],
-                            to: this.bulletinSecretService.key.getAddress(),
-                            data: JSON.stringify(txn)
-                        }, {'Content-Type': 'application/json'});
+                        if (this.platform.is('cordova')) {
+                            this.http.post(this.settingsService.baseAddress + '/request-notification', {
+                                rid: friend.rid,
+                                shared_secret: friend.relationship.shared_secret,
+                                requested_rid: txn['requested_rid'],
+                                to: this.bulletinSecretService.key.getAddress(),
+                                data: JSON.stringify(txn)
+                            }, {'Content-Type': 'application/json'});
+                        } else {
+                            this.ahttp.post(this.settingsService.baseAddress + '/request-notification', {
+                                rid: friend.rid,
+                                shared_secret: friend.relationship.shared_secret,
+                                requested_rid: txn['requested_rid'],
+                                to: this.bulletinSecretService.key.getAddress(),
+                                data: JSON.stringify(txn)
+                            }).subscribe(() => {});
+                        }
                     }
                 });
 

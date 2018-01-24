@@ -1,6 +1,7 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { ErrorHandler, NgModule } from '@angular/core';
 import { IonicApp, IonicErrorHandler, IonicModule } from 'ionic-angular';
+import { HttpModule } from '@angular/http';
 
 import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
@@ -43,7 +44,8 @@ import { Firebase } from '@ionic-native/firebase';
     BrowserModule,
     IonicModule.forRoot(MyApp),
     IonicStorageModule.forRoot(),
-    NgxQRCodeModule
+    NgxQRCodeModule,
+    HttpModule
   ],
   bootstrap: [IonicApp],
   entryComponents: [

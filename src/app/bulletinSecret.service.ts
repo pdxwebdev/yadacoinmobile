@@ -2,6 +2,9 @@ import { Injectable } from '@angular/core';
 import { HTTP } from '@ionic-native/http';
 import { SettingsService } from './settings.service';
 import { Storage } from '@ionic/storage';
+import { Http } from '@angular/http';
+import { Platform } from 'ionic-angular';
+
 
 declare var foobar;
 declare var forge;
@@ -17,6 +20,8 @@ export class BulletinSecretService {
         private settingsService: SettingsService,
         private storage: Storage,
         private http: HTTP,
+        private platform: Platform,
+        private ahttp: Http
     ) {
         this.keyname = 'key';
         this.get();
@@ -43,7 +48,11 @@ export class BulletinSecretService {
             }
              
             this.bulletin_secret = foobar.bitcoin.crypto.sha256(this.shared_encrypt(this.key.toWIF(), this.key.toWIF())).toString('hex');
-            this.http.get(this.settingsService.baseAddress + '/faucet', {'address': this.key.getAddress()}, {})
+            if (this.platform.is('cordova')) {
+                this.http.get(this.settingsService.baseAddress + '/faucet', {'address': this.key.getAddress()}, {});
+            } else {
+                this.ahttp.get(this.settingsService.baseAddress + '/faucet?address=' + this.key.getAddress()).subscribe(()=>{});
+            }
         });
     }
 
@@ -61,8 +70,9 @@ export class BulletinSecretService {
     create() {
         var key = this.keyname;
         this.keyname = 'key-' + uuid4();
-        this.get();
+        var res = this.get();
         this.keyname = key;
+        return res;
     }
 
     all() {

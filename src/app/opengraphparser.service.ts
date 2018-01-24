@@ -1,11 +1,17 @@
 import { Injectable } from '@angular/core';
 import { HTTP } from '@ionic-native/http';
+import { Platform } from 'ionic-angular';
+import { Http } from '@angular/http';
 
 @Injectable()
 export class OpenGraphParserService {
     html = null
     attrs = null;
-    constructor(private http: HTTP) {
+    constructor(
+        private http: HTTP,
+        private ahttp: Http,
+        private platform: Platform
+    ) {
         this.attrs = {
             "title": "title",
             "document.title": "title",
@@ -25,25 +31,29 @@ export class OpenGraphParserService {
     	this.html = '';
         return new Promise((resolve, reject) => {
             if (this.isURL(url)) {
-                this.http.get(url, {}, {}).then((data) => {
-                    this.html = data.data;
-                }).then(() => {
-                    if (this.isYouTubeURL(url)) {
-                        var YTID = this.getYouTubeID(url);
-                        output['image'] = 'https://img.youtube.com/vi/' + YTID + '/0.jpg'
-                    }
-
-                    for (var key in this.attrs) {
-                        var attr = this.getAttr(key);
-
-                        if (attr) {
-                            var escape = document.createElement('textarea');
-                            escape.innerHTML = attr;
-                            output[this.attrs[key]] = escape.textContent;
+                if (this.platform.is('cordova')) {
+                    this.http.get(url, {}, {}).then((data) => {
+                        this.html = data.data;
+                    }).then(() => {
+                        if (this.isYouTubeURL(url)) {
+                            var YTID = this.getYouTubeID(url);
+                            output['image'] = 'https://img.youtube.com/vi/' + YTID + '/0.jpg'
                         }
-                    }
-                    resolve(output);
-                });
+
+                        for (var key in this.attrs) {
+                            var attr = this.getAttr(key);
+
+                            if (attr) {
+                                var escape = document.createElement('textarea');
+                                escape.innerHTML = attr;
+                                output[this.attrs[key]] = escape.textContent;
+                            }
+                        }
+                        resolve(output);
+                    });
+                } else {
+                    resolve(url);
+                }
             } else {
                 resolve(false);
             }
