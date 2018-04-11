@@ -72,7 +72,10 @@ export class GraphService {
                 var decrypted = this.decrypt(sent_friend_request.relationship);
                 var relationship = JSON.parse(decrypted);
                 if(relationship.shared_secret != null) {
-                    shared_secrets[sent_friend_request.rid] = relationship.shared_secret;
+                    if (!shared_secrets[sent_friend_request.rid]) {
+                        shared_secrets[sent_friend_request.rid] = [];
+                    }
+                    shared_secrets[sent_friend_request.rid].push(relationship.shared_secret);
                     sent_friend_requests[sent_friend_request.rid] = sent_friend_request;
                 }
             } catch(err) {
@@ -86,7 +89,10 @@ export class GraphService {
                 var decrypted = this.decrypt(friend_request.relationship);
                 var relationship = JSON.parse(decrypted);
                 if(relationship.shared_secret != null) {
-                    shared_secrets[friend_request.rid] = relationship.shared_secret;
+                    if (!shared_secrets[friend_request.rid]) {
+                        shared_secrets[friend_request.rid] = [];
+                    }
+                    shared_secrets[friend_request.rid].push(relationship.shared_secret);
                     friend_requests[friend_request.rid] = friend_request;
                 }
             } catch(err) {
@@ -94,18 +100,31 @@ export class GraphService {
             }
         }
         var messages = {};
+        var chats = {};
         for(var i=0; i<this.graph.messages.length; i++) {
             var message = this.graph.messages[i];
-            try {
-                var shared_secret = shared_secrets[message.rid];
-                var decrypted = this.shared_decrypt(shared_secret, message.relationship);
-                if(decrypted != '') {
-                    messages[message.rid] = message;
-                }
-            } catch(err) {
+            if (!message.rid) continue;
+            for(var j=0; j<shared_secrets[message.rid].length; j++) {
+                var shared_secret = shared_secrets[message.rid][j];
+                try {
+                    var decrypted = this.shared_decrypt(shared_secret, message.relationship);
+                    if(decrypted != '') {
+                        messages[message.rid] = message;
+                        if (!chats[message.rid]) {
+                            chats[message.rid] = [];
+                        }
+                        var messageJson = JSON.parse(decrypted)
+                        if(messageJson.chatText) {
+                            message.relationship = messageJson;
+                            chats[message.rid].push(message);
+                        }
+                    }
+                } catch(err) {
 
+                }
             }
         }
+        this.graph.chats = chats;
         var arr_messages = [];
         for(let i in messages) {
             arr_messages.push(messages[i].rid);

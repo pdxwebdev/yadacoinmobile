@@ -5,6 +5,7 @@ import { SettingsService } from '../../app/settings.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { FirebaseService } from '../../app/firebase.service';
 import { Platform } from 'ionic-angular';
+import { ListPage } from '../list/list';
 
 @Component({
   selector: 'page-settings',
@@ -25,12 +26,16 @@ export class Settings {
         private platform: Platform,
         private firebaseService: FirebaseService
     ) {
+        this.refresh();
+    }
+
+    refresh() {
         this.keys = [];
-        this.baseAddress = settingsService.baseAddress;
-        this.blockchainAddress = settingsService.blockchainAddress;
-        this.graphproviderAddress = settingsService.graphproviderAddress;
-        this.walletproviderAddress = settingsService.walletproviderAddress;
-        bulletinSecretService.all().then((keys) => {
+        this.baseAddress = this.settingsService.baseAddress;
+        this.blockchainAddress = this.settingsService.blockchainAddress;
+        this.graphproviderAddress = this.settingsService.graphproviderAddress;
+        this.walletproviderAddress = this.settingsService.walletproviderAddress;
+        this.bulletinSecretService.all().then((keys) => {
             this.keys = keys;
         });
     }
@@ -72,5 +77,15 @@ export class Settings {
         this.settingsService.graphproviderAddress = this.graphproviderAddress;
         this.settingsService.walletproviderAddress = this.walletproviderAddress;
         this.settingsService.save()
+    }
+
+    showChat() {
+      var item = {pageTitle: {title:"Chat"}};
+      this.navCtrl.push(ListPage, item);
+    }
+
+    showFriendRequests() {
+      var item = {pageTitle: {title:"Friend Requests"}};
+      this.navCtrl.push(ListPage, item);
     }
 }

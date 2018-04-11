@@ -7,6 +7,7 @@ import { BulletinSecretService } from '../../app/bulletinSecret.service'
 import { QRScanner, QRScannerStatus } from '@ionic-native/qr-scanner';
 import { SettingsService } from '../../app/settings.service';
 import { SocialSharing } from '@ionic-native/social-sharing';
+import { ListPage } from '../list/list';
 
 @Component({
   selector: 'page-sendreceive',
@@ -20,6 +21,7 @@ export class SendReceive {
     loadingBalance: any;
     balance = null;
     constructor(
+        private navCtrl: NavController,
         private qrScanner: QRScanner,
         private transactionService: TransactionService,
         private alertCtrl: AlertController,
@@ -108,5 +110,15 @@ export class SendReceive {
 
     shareAddress() {
         this.socialSharing.share(this.bulletinSecretService.key.getAddress(), "Send Yada Coin to this address!");
+    }
+
+    showChat() {
+      var item = {pageTitle: {title:"Chat"}};
+      this.navCtrl.push(ListPage, item);
+    }
+
+    showFriendRequests() {
+      var item = {pageTitle: {title:"Friend Requests"}};
+      this.navCtrl.push(ListPage, item);
     }
 }

@@ -1,0 +1,26 @@
+<ion-header>
+  <ion-navbar>
+    <button ion-button menuToggle color="{{color}}">
+      <ion-icon name="menu"></ion-icon>
+    </button>
+    <button ion-button color="{{chatColor}}" title="Friend Requests" (click)="showFriendRequests()">
+      <ion-icon name="contacts"></ion-icon>
+    </button>
+    <button ion-button color="{{chatColor}}" title="Messages" (click)="showChat()">
+      <ion-icon name="chatboxes"></ion-icon>
+    </button>
+    <button ion-button color="{{chatColor}}" title="Refresh" (click)="refresh()">
+      <ion-icon name="refresh"></ion-icon>
+    </button>
+  </ion-navbar>
+</ion-header>
+<ion-content>
+	<div *ngFor="let item of chats">
+		{{item.relationship.chatText}}
+	</div>
+	<ion-item>
+		<ion-label color="primary" floating>Chat text</ion-label>
+		<ion-input [(ngModel)]="chatText"></ion-input>
+	</ion-item>
+	<button ion-button (click)="send()">Send</button>
+</ion-content>

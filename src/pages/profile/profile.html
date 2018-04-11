@@ -1,0 +1,28 @@
+<ion-header>
+  <ion-navbar>
+    <button ion-button menuToggle color="{{color}}">
+      <ion-icon name="menu"></ion-icon>
+    </button>
+    <button ion-button color="{{chatColor}}" title="Friend Requests" (click)="showFriendRequests()">
+      <ion-icon name="contacts"></ion-icon>
+    </button>
+    <button ion-button color="{{chatColor}}" title="Messages" (click)="showChat()">
+      <ion-icon name="chatboxes"></ion-icon>
+    </button>
+    <button ion-button color="{{chatColor}}" title="Refresh" (click)="refresh()">
+      <ion-icon name="refresh"></ion-icon>
+    </button>
+  </ion-navbar>
+</ion-header>
+<ion-content padding>
+  <ion-row>
+    <ion-col text-center>
+      <ion-item>
+        <ion-label color="primary" stacked>My Phrase:</ion-label>
+        <ion-input type="text" [(ngModel)]="graphService.humanHash">
+        </ion-input>
+        <button *ngIf="isCordova" ion-button outline item-end (click)="sharePhrase()">share&nbsp;<ion-icon name="share"></ion-icon></button>
+      </ion-item>
+    </ion-col>
+  </ion-row>
+</ion-content>

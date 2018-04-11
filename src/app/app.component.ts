@@ -15,6 +15,7 @@ import { FirebaseService } from './firebase.service';
 import { HomePage } from '../pages/home/home';
 import { ListPage } from '../pages/list/list';
 import { Settings } from '../pages/settings/settings';
+import { ProfilePage } from '../pages/profile/profile';
 import { SendReceive } from '../pages/sendreceive/sendreceive';
 
 declare var forge;
@@ -59,12 +60,13 @@ export class MyApp {
       }
     });
     this.pages = [
-      { title: 'Home', component: HomePage, count: false, color: '' },
-      { title: 'Send / Receive', component: SendReceive, count: false, color: '' },
+      { title: 'Me', component: ProfilePage, count: false, color: '' },
+      { title: 'News Feed', component: HomePage, count: false, color: '' },
+      { title: 'Chat', component: ListPage, count: false, color: '' },
       { title: 'Friends', component: ListPage, count: 0, color: '' },
       { title: 'Friend Requests', component: ListPage, count: 0, color: '' },
       { title: 'Sent Requests', component: ListPage, count: 0, color: '' },
-      { title: 'Posts', component: ListPage, count: false, color: '' },
+      { title: 'Coins', component: SendReceive, count: false, color: '' },
       { title: 'Settings', component: Settings, count: false, color: '' }
     ];
   }

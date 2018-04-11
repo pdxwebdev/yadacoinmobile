@@ -32,6 +32,7 @@ export class HomePage {
     scannedCode = null;
     key = null;
     blockchainAddress = null;
+    baseAddress = null;
     balance = null;
     items = [];
     loading = true;
@@ -69,6 +70,16 @@ export class HomePage {
         this.isCordova = this.platform.is('cordova');
     }
 
+    showChat() {
+      var item = {pageTitle: {title:"Chat"}};
+      this.navCtrl.push(ListPage, item);
+    }
+
+    showFriendRequests() {
+      var item = {pageTitle: {title:"Friend Requests"}};
+      this.navCtrl.push(ListPage, item);
+    }
+
     refresh() {
         this.loading = true;
         this.loadingBalance = true;
@@ -78,6 +89,9 @@ export class HomePage {
         this.loadingModal.present();
         this.storage.get('blockchainAddress').then((blockchainAddress) => {
             this.blockchainAddress = blockchainAddress;
+        });
+        this.storage.get('baseAddress').then((baseAddress) => {
+            this.baseAddress = baseAddress;
         });
         this.walletService.get().then(() => {
             this.balance = this.walletService.wallet.balance;
@@ -93,13 +107,23 @@ export class HomePage {
             this.items = [];
             for (let i = 0; i < graphArray.length; i++) {
                 if (this.openGraphParserService.isURL(graphArray[i].relationship.postText)) {
-                    this.openGraphParserService.parseFromUrl(graphArray[i].relationship.postText).then((data) => {
-                        this.items.push(data);
-                        if ((graphArray.length - 1) == i) {
-                            this.loading = false;
-                            this.loadingModal.dismiss();
-                        }
-                    });
+                    if (this.platform.is('cordova')) {
+                        this.openGraphParserService.parseFromUrl(graphArray[i].relationship.postText).then((data) => {
+                            this.items.push(data);
+                            if ((graphArray.length - 1) == i) {
+                                this.loading = false;
+                                this.loadingModal.dismiss();
+                            }
+                        });
+                    } else {
+                        this.openGraphParserService.parseFromUrl(this.baseAddress + '/get-url?url=' + encodeURIComponent(graphArray[i].relationship.postText)).then((data) => {
+                            this.items.push(data);
+                            if ((graphArray.length - 1) == i) {
+                                this.loading = false;
+                                this.loadingModal.dismiss();
+                            }
+                        });
+                    }
                 } else {
                     var data = {title: "post", description: graphArray[i].relationship.postText};
                     this.items.push(data);
@@ -175,10 +199,10 @@ export class HomePage {
     }
 
     pasteFriend(phrase) {
-        this.loadingModal2 = this.loadingCtrl.create({
-            content: 'Please wait...'
-        });
-        this.loadingModal.present();
+        //this.loadingModal2 = this.loadingCtrl.create({
+        //    content: 'Please wait...'
+        //});
+        //this.loadingModal.present();
         if (this.platform.is('cordova')) {
             this.http.get(this.settingsService.baseAddress + '/search', {phrase: phrase, bulletin_secret: this.bulletinSecretService.bulletin_secret}, {})
             .then((res) => {
@@ -188,7 +212,7 @@ export class HomePage {
         } else {
             this.ahttp.get(this.settingsService.baseAddress + '/search?phrase=' + phrase + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
             .subscribe((res) => {
-                this.loadingModal2.dismiss();
+                //this.loadingModal2.dismiss();
                 this.alertRoutine(JSON.parse(res['_body']));
             });
         }
@@ -234,10 +258,10 @@ export class HomePage {
     }
 
     alertRoutine(info) {
-        this.loadingModal = this.loadingCtrl.create({
-            content: 'Please wait...'
-        });
-        this.loadingModal.present();
+        //this.loadingModal = this.loadingCtrl.create({
+        //    content: 'Please wait...'
+        //});
+        //this.loadingModal.present();
         if (info.requester_rid && info.requested_rid && info.requester_rid === info.requested_rid) {
             let alert = this.alertCtrl.create();
             alert.setTitle('Oops!');

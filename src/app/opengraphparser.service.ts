@@ -52,7 +52,25 @@ export class OpenGraphParserService {
                         resolve(output);
                     });
                 } else {
-                    resolve(url);
+                    this.ahttp.get(url)
+                    .subscribe((res) => {
+                        this.html = res['_body'];
+                        if (this.isYouTubeURL(url)) {
+                            var YTID = this.getYouTubeID(url);
+                            output['image'] = 'https://img.youtube.com/vi/' + YTID + '/0.jpg'
+                        }
+
+                        for (var key in this.attrs) {
+                            var attr = this.getAttr(key);
+
+                            if (attr) {
+                                var escape = document.createElement('textarea');
+                                escape.innerHTML = attr;
+                                output[this.attrs[key]] = escape.textContent;
+                            }
+                        }
+                        resolve(output);
+                    });
                 }
             } else {
                 resolve(false);

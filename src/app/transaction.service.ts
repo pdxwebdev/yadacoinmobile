@@ -55,8 +55,16 @@ export class TransactionService {
         this.callbackurl = this.info.callbackurl;
         this.to = this.info.to;
         this.value = this.info.value;
-        if (this.info.relationship && this.info.relationship.bulletin_secret) {
+        if (this.info.rid) {
+            this.rid = this.info.rid;
+        }
+        else if (this.info.relationship && this.info.relationship.bulletin_secret) {
             var bulletin_secrets = [this.bulletin_secret, this.info.relationship.bulletin_secret].sort(function (a, b) {
+                return a.toLowerCase().localeCompare(b.toLowerCase());
+            });
+            this.rid = forge.sha256.create().update(bulletin_secrets[0] + bulletin_secrets[1]).digest().toHex();
+        } else if (this.info.bulletin_secret) {
+            var bulletin_secrets = [this.bulletin_secret, this.info.bulletin_secret].sort(function (a, b) {
                 return a.toLowerCase().localeCompare(b.toLowerCase());
             });
             this.rid = forge.sha256.create().update(bulletin_secrets[0] + bulletin_secrets[1]).digest().toHex();
@@ -252,6 +260,18 @@ export class TransactionService {
             this.transaction.relationship = this.shared_encrypt(this.bulletin_secret, JSON.stringify(this.info.relationship));                    
 
             var hash = foobar.bitcoin.crypto.sha256(
+                this.transaction.relationship +
+                this.transaction.fee +
+                inputs_hashes_concat +
+                outputs_hashes_concat
+            ).toString('hex')
+        } else if (this.info.relationship.chatText) {
+            // post
+
+            this.transaction.relationship = this.shared_encrypt(this.shared_secret, JSON.stringify(this.info.relationship));                    
+
+            var hash = foobar.bitcoin.crypto.sha256(
+                this.transaction.rid +
                 this.transaction.relationship +
                 this.transaction.fee +
                 inputs_hashes_concat +

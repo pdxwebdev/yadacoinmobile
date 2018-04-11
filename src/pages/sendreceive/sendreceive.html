@@ -1,10 +1,17 @@
 <ion-header>
   <ion-navbar>
-    <button ion-button menuToggle>
+    <button ion-button menuToggle color="{{color}}">
       <ion-icon name="menu"></ion-icon>
     </button>
-    <ion-title>Send / Receive - YC: {{balance}}<ion-spinner *ngIf="loadingBalance"></ion-spinner></ion-title>
-    <button ion-button secondary (click)="refreshWallet()">Refresh Balance</button>
+    <button ion-button color="{{chatColor}}" title="Friend Requests" (click)="showFriendRequests()">
+      <ion-icon name="contacts"></ion-icon>
+    </button>
+    <button ion-button color="{{chatColor}}" title="Messages" (click)="showChat()">
+      <ion-icon name="chatboxes"></ion-icon>
+    </button>
+    <button ion-button color="{{chatColor}}" title="Refresh" (click)="refreshWallet()">
+      <ion-icon name="refresh"></ion-icon>
+    </button>
   </ion-navbar>
 </ion-header>
 <ion-content padding>

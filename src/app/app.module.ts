@@ -8,6 +8,8 @@ import { HomePage } from '../pages/home/home';
 import { PostModal } from '../pages/home/postmodal';
 import { ListPage } from '../pages/list/list';
 import { Settings } from '../pages/settings/settings';
+import { ChatPage } from '../pages/chat/chat';
+import { ProfilePage } from '../pages/profile/profile';
 
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
@@ -38,7 +40,9 @@ import { Firebase } from '@ionic-native/firebase';
     PostModal,
     ListPage,
     Settings,
-    SendReceive
+    SendReceive,
+    ChatPage,
+    ProfilePage
   ],
   imports: [
     BrowserModule,
@@ -54,7 +58,9 @@ import { Firebase } from '@ionic-native/firebase';
     PostModal,
     ListPage,
     Settings,
-    SendReceive
+    SendReceive,
+    ChatPage,
+    ProfilePage
   ],
   providers: [
     StatusBar,
