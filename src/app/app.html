@@ -2,7 +2,14 @@
   <ion-menu [content]="content">
     <ion-header>
       <ion-toolbar>
-        <ion-title>YadaCoin</ion-title>
+        <ion-title>
+      <ion-note item-start>
+        
+      </ion-note>
+      YadaCoin
+      <ion-note item-end>
+        {{walletService.wallet.balance}}
+      </ion-note></ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -10,6 +17,9 @@
       <ion-list>
         <button menuClose ion-item *ngFor="let p of pages" (click)="openPage(p)">
           {{p.title}}<ion-badge *ngIf="p.count" color="{{p.color}}" item-right>{{p.count}}</ion-badge>
+        </button>
+        <button menuClose ion-item>
+          v0.0.5
         </button>
       </ion-list>
     </ion-content>

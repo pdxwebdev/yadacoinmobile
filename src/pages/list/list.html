@@ -22,9 +22,11 @@
       No items to display.
     </ion-card>
     <button ion-item *ngFor="let item of items" (click)="itemTapped($event, item)">
-      <span *ngIf="pageTitle =='Sent Requests'">{{item.transaction.requested_rid}}</span>
+      <span *ngIf="pageTitle =='Sent Requests' && !item.transaction.username">{{item.transaction.requested_rid}}</span>
+      <span *ngIf="pageTitle =='Sent Requests' && item.transaction.username">{{item.transaction.username}}</span>
       <span *ngIf="pageTitle =='Friend Requests'">{{item.transaction.requester_rid}}</span>
-      <span *ngIf="pageTitle =='Chat'">{{item.transaction.rid}}</span>
+      <span *ngIf="pageTitle =='Chat' && !item.transaction.username">{{item.transaction.rid}}</span>
+      <span *ngIf="pageTitle =='Chat' && item.transaction.username">{{item.transaction.username}}</span>
       <span *ngIf="pageTitle =='Friends'">{{item.transaction.rid}}</span>
       <span *ngIf="pageTitle =='Posts'">{{item.transaction.relationship.postText}}</span>
     </button>

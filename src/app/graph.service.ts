@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HTTP } from '@ionic-native/http';
 import { Storage } from '@ionic/storage';
 import { BulletinSecretService } from './bulletinSecret.service';
+import { SettingsService } from './settings.service';
 import { Badge } from '@ionic-native/badge';
 import { Http } from '@angular/http';
 import { Platform } from 'ionic-angular';
@@ -22,31 +23,31 @@ export class GraphService {
         private storage: Storage,
         private http: HTTP,
         private bulletinSecretService: BulletinSecretService,
+        private settingsService: SettingsService,
         private badge: Badge,
         private platform: Platform,
         private ahttp: Http
     ) {
-        if(this.platform.is('cordova')) {
+        if(this.platform.is('android') || this.platform.is('ios')) {
           http.setDataSerializer('json');
         }
     }
 
     getGraph() {
-        return this.storage.get('graphproviderAddress').then((graphproviderAddress) => {
-            this.graphproviderAddress = graphproviderAddress;
+        return this.settingsService.refresh().then(() => {
             return new Promise((resolve, reject) => {
                 this.bulletinSecretService.get().then(() => {
                     return new Promise((resolve1, reject1) => {
-                        if (this.platform.is('cordova')) {
+                        if (this.platform.is('android') || this.platform.is('ios')) {
                             this.http.get(
-                                this.graphproviderAddress,
+                                this.settingsService.graphproviderAddress,
                                 {bulletin_secret: this.bulletinSecretService.bulletin_secret},
                                 {'Content-Type': 'application/json'}
                             ).then((data) => {
                                 this.graphParser(data['data'], resolve1);
                             });
                         } else {
-                            this.ahttp.get(this.graphproviderAddress + '?bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
+                            this.ahttp.get(this.settingsService.graphproviderAddress + '?bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
                             .subscribe((data) => {
                                 this.graphParser(data['_body'], resolve1);
                             });
@@ -104,6 +105,7 @@ export class GraphService {
         for(var i=0; i<this.graph.messages.length; i++) {
             var message = this.graph.messages[i];
             if (!message.rid) continue;
+            if (!shared_secrets[message.rid]) continue;
             for(var j=0; j<shared_secrets[message.rid].length; j++) {
                 var shared_secret = shared_secrets[message.rid][j];
                 try {
@@ -126,12 +128,16 @@ export class GraphService {
         }
         this.graph.chats = chats;
         var arr_messages = [];
+        var usernames = {};
         for(let i in messages) {
             arr_messages.push(messages[i].rid);
         }
         var arr_sent_friend_requests = [];
         for(let i in sent_friend_requests) {
             arr_sent_friend_requests.push(sent_friend_requests[i].rid);
+            if (sent_friend_requests[i].username) {
+                usernames[sent_friend_requests[i].rid] = sent_friend_requests[i].username
+            }
         }
         var arr_friend_requests = [];
         for(let i in friend_requests) {
@@ -154,11 +160,14 @@ export class GraphService {
                 this.graph.friend_requests.push(friend_requests[arr_friend_request_keys[i]])
             }
         }
-        if (this.platform.is('cordova')) {
+        if (this.platform.is('android') || this.platform.is('ios')) {
             this.badge.set(this.graph.friend_requests.length);
         }
 
         for(let i in messages) {
+            if (usernames[messages[i].rid]) {
+                messages[i].username = usernames[messages[i].rid];
+            }
             this.graph.friends.push(messages[i]);
         }
         resolve1();

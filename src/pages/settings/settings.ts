@@ -4,6 +4,7 @@ import { Storage } from '@ionic/storage';
 import { SettingsService } from '../../app/settings.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { FirebaseService } from '../../app/firebase.service';
+import { PushService } from '../../app/push.service';
 import { Platform } from 'ionic-angular';
 import { ListPage } from '../list/list';
 
@@ -24,17 +25,18 @@ export class Settings {
         private settingsService: SettingsService,
         private bulletinSecretService: BulletinSecretService,
         private platform: Platform,
-        private firebaseService: FirebaseService
+        private firebaseService: FirebaseService,
+        private pushService: PushService
     ) {
         this.refresh();
     }
 
     refresh() {
         this.keys = [];
-        this.baseAddress = this.settingsService.baseAddress;
-        this.blockchainAddress = this.settingsService.blockchainAddress;
-        this.graphproviderAddress = this.settingsService.graphproviderAddress;
-        this.walletproviderAddress = this.settingsService.walletproviderAddress;
+        this.baseAddress = this.settingsService.baseAddress || 'http://71.237.161.227:5000';
+        this.blockchainAddress = this.settingsService.blockchainAddress || this.baseAddress + '/transaction';
+        this.graphproviderAddress = this.settingsService.graphproviderAddress || this.baseAddress + '/get-graph-mobile';
+        this.walletproviderAddress = this.settingsService.walletproviderAddress || this.baseAddress + '/wallet';
         this.bulletinSecretService.all().then((keys) => {
             this.keys = keys;
         });
@@ -51,8 +53,10 @@ export class Settings {
     set(key) {
         this.bulletinSecretService.set(key)
         .then(() => {
-            if (this.platform.is('cordova')) {
+            if (this.platform.is('android') || this.platform.is('ios')) {
                 this.firebaseService.initFirebase();
+            } else {
+                this.pushService.initPush();
             }
         });
     }

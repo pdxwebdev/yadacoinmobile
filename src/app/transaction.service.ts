@@ -40,7 +40,7 @@ export class TransactionService {
 
     pushTransaction(info) {
 
-        if(this.platform.is('cordova')) {
+        if(this.platform.is('android') || this.platform.is('ios')) {
           this.http.setDataSerializer('json');
         }
         this.key = this.bulletinSecretService.key;
@@ -71,7 +71,7 @@ export class TransactionService {
         } else {
             this.rid = '';
         }
-        if (this.platform.is('cordova')) {
+        if (this.platform.is('android') || this.platform.is('ios')) {
             this.http.get(this.blockchainurl,{rid: this.rid}, {})
             .then((data) => {
                 this.alreadyFriends(data['data'])
@@ -122,15 +122,15 @@ export class TransactionService {
                 value: this.value || 1
             })
         }
-        if (this.walletService.wallet.balance < transaction_total || this.walletService.wallet.unspent_transactions.length == 0) {
+        if (this.transaction.outputs.length > 0) {
+            var transaction_total = this.transaction.outputs[0].value + this.transaction.fee;
+        } else {
+            var transaction_total = this.transaction.fee;
+        }
+        if (this.walletService.wallet.balance < (this.transaction.outputs[0].value + this.transaction.fee) || this.walletService.wallet.unspent_transactions.length == 0) {
             this.resolve(false);
             return
         } else {
-            if (this.transaction.outputs.length > 0) {
-                var transaction_total = this.transaction.outputs[0].value + this.transaction.fee;
-            } else {
-                var transaction_total = this.transaction.fee;
-            }
             var inputs = [];
             var input_sum = 0
             let unspent_transactions: any;
@@ -176,7 +176,11 @@ export class TransactionService {
         }
 
         var inputs_hashes_arr = inputs_hashes.sort(function (a, b) {
-            return a.toLowerCase().localeCompare(b.toLowerCase());
+            if (a.toLowerCase() < b.toLowerCase())
+              return -1
+            if ( a.toLowerCase() > b.toLowerCase())
+              return 1
+            return 0
         });
 
         var inputs_hashes_concat = inputs_hashes_arr.join('')
@@ -191,7 +195,11 @@ export class TransactionService {
         }
 
         var outputs_hashes_arr = outputs_hashes.sort(function (a, b) {
-            return a.toLowerCase().localeCompare(b.toLowerCase());
+            if (a.toLowerCase() < b.toLowerCase())
+              return -1
+            if ( a.toLowerCase() > b.toLowerCase())
+              return 1
+            return 0
         });
         var outputs_hashes_concat = outputs_hashes_arr.join('');
 
@@ -266,7 +274,7 @@ export class TransactionService {
                 outputs_hashes_concat
             ).toString('hex')
         } else if (this.info.relationship.chatText) {
-            // post
+            // chat
 
             this.transaction.relationship = this.shared_encrypt(this.shared_secret, JSON.stringify(this.info.relationship));                    
 
@@ -310,7 +318,7 @@ export class TransactionService {
     }
 
     sendTransaction() {
-        if(this.platform.is('cordova')) {
+        if(this.platform.is('android') || this.platform.is('ios')) {
             this.http.post(
                 this.blockchainurl,
                 this.transaction,
@@ -338,7 +346,7 @@ export class TransactionService {
     }
 
     sendCallback() {
-        if(this.platform.is('cordova')) {
+        if(this.platform.is('android') || this.platform.is('ios')) {
             this.http.post(
                 this.callbackurl,
                 {

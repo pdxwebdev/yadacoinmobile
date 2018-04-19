@@ -28,7 +28,7 @@ export class FirebaseService {
     private platform: Platform,
     private ahttp: Http
   ) {
-    if(this.platform.is('cordova')) {
+    if(this.platform.is('android') || this.platform.is('ios')) {
       http.setDataSerializer('json');
     }
   }
@@ -37,7 +37,7 @@ export class FirebaseService {
     this.graphService.getGraph().then(() => {
       for (var i=0; i < this.graphService.graph.friends.length; i++) {
           var friend = this.graphService.graph.friends[i];
-          if (this.graphService.graph.rid = friend.rid) {
+          if (this.graphService.graph.rid == friend.rid) {
             try {
               if (friend.relationship.shared_secret) {
                   break;
@@ -58,7 +58,7 @@ export class FirebaseService {
       }
       this.firebase.getToken()
       .then((token) => {
-        if(this.platform.is('cordova')) {
+        if(this.platform.is('android') || this.platform.is('ios')) {
           this.http.post(this.settingsService.baseAddress + '/fcm-token', {
             rid: friend.rid,
             token: token,
@@ -78,7 +78,7 @@ export class FirebaseService {
 
       this.firebase.onTokenRefresh()
       .subscribe((token: string) => {
-        if(this.platform.is('cordova')) {
+        if(this.platform.is('android') || this.platform.is('ios')) {
           this.http.post(this.settingsService.baseAddress + '/fcm-token', {
             rid: friend.rid,
             token: token,

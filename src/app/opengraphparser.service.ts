@@ -31,7 +31,7 @@ export class OpenGraphParserService {
     	this.html = '';
         return new Promise((resolve, reject) => {
             if (this.isURL(url)) {
-                if (this.platform.is('cordova')) {
+                if (this.platform.is('android') || this.platform.is('ios')) {
                     this.http.get(url, {}, {}).then((data) => {
                         this.html = data.data;
                     }).then(() => {

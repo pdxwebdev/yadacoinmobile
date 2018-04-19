@@ -21,6 +21,7 @@ import { Platform } from 'ionic-angular';
 declare var forge;
 declare var elliptic;
 declare var uuid4;
+declare var diffiehelman;
 
 @Component({
     selector: 'page-home',
@@ -42,6 +43,10 @@ export class HomePage {
     phrase = null;
     color = null;
     isCordova = null;
+    toggled = {};
+    reacts = {};
+    comments = {};
+    commentInputs = {};
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -68,6 +73,71 @@ export class HomePage {
             this.alertRoutine(JSON.parse(decodeURIComponent(this.navParams.get('txnData'))));
         }
         this.isCordova = this.platform.is('cordova');
+    }
+
+    react(e, item) {
+        if (this.platform.is('android') || this.platform.is('ios')) {
+            this.http.post(
+                this.baseAddress + '/react', 
+                {
+                    'react': e.char,
+                    'txn_id': item.id,
+                    'bulletin_secret': this.bulletinSecretService.bulletin_secret
+                },
+                {}
+            )
+            .then((data) => {
+                this.reacts[item.id] = this.reacts[item.id] + e.char;
+            });
+        } else {
+            this.ahttp.post(
+                this.baseAddress + '/react',
+                {
+                    'react': e.char,
+                    'txn_id': item.id,
+                    'bulletin_secret': this.bulletinSecretService.bulletin_secret
+                }
+            )
+            .subscribe((res) => {
+                this.reacts[item.id] = this.reacts[item.id] + e.char;
+            });
+        }
+    }
+
+    comment(item) {
+        if (this.platform.is('android') || this.platform.is('ios')) {
+            this.http.post(
+                this.baseAddress + '/comment', 
+                {
+                    'comment': this.commentInputs[item.id],
+                    'txn_id': item.id,
+                    'bulletin_secret': this.bulletinSecretService.bulletin_secret
+                },
+                {}
+            )
+            .then((data) => {
+                if(!this.commentInputs[item.id]) {
+                    this.commentInputs[item.id] = [];
+                }
+                this.comments[item.id].push(this.commentInputs[item.id]);
+            });
+        } else {
+            this.ahttp.post(
+                this.baseAddress + '/comment',
+                {
+                    'comment': this.commentInputs[item.id],
+                    'txn_id': item.id,
+                    'bulletin_secret': this.bulletinSecretService.bulletin_secret
+                }
+            )
+            .subscribe((res) => {
+                if(!this.commentInputs[item.id]) {
+                    this.commentInputs[item.id] = [];
+                }
+                this.comments[item.id].push(this.commentInputs[item.id]);
+                this.commentInputs[item.id] = '';
+            });
+        }
     }
 
     showChat() {
@@ -104,11 +174,14 @@ export class HomePage {
                 this.loading = false;
                 this.loadingModal.dismiss();
             }
+            var ids_to_get = [];
             this.items = [];
             for (let i = 0; i < graphArray.length; i++) {
+                ids_to_get.push(graphArray[i].id);
                 if (this.openGraphParserService.isURL(graphArray[i].relationship.postText)) {
-                    if (this.platform.is('cordova')) {
+                    if (this.platform.is('android') || this.platform.is('ios')) {
                         this.openGraphParserService.parseFromUrl(graphArray[i].relationship.postText).then((data) => {
+                            data['id'] = graphArray[i].id;
                             this.items.push(data);
                             if ((graphArray.length - 1) == i) {
                                 this.loading = false;
@@ -117,6 +190,7 @@ export class HomePage {
                         });
                     } else {
                         this.openGraphParserService.parseFromUrl(this.baseAddress + '/get-url?url=' + encodeURIComponent(graphArray[i].relationship.postText)).then((data) => {
+                            data['id'] = graphArray[i].id;
                             this.items.push(data);
                             if ((graphArray.length - 1) == i) {
                                 this.loading = false;
@@ -133,11 +207,48 @@ export class HomePage {
                     }
                 }
             }
+            if (this.platform.is('android') || this.platform.is('ios')) {
+                this.http.post(
+                    this.settingsService.baseAddress + '/get-reacts',
+                    {'txn_ids': ids_to_get},
+                    {}
+                )
+                .then((res) => {
+                    var data = JSON.parse(res.data);
+                    this.reacts = data;
+                });
+                this.http.post(
+                    this.settingsService.baseAddress + '/get-comments',
+                    {'txn_ids': ids_to_get},
+                    {}
+                )
+                .then((res) => {
+                    var data = JSON.parse(res.data);
+                    this.comments = data;
+                });
+            } else {
+                this.ahttp.post(
+                    this.settingsService.baseAddress + '/get-reacts',
+                    {'txn_ids': ids_to_get}
+                )
+                .subscribe((res) => {
+                    var data = JSON.parse(res['_body']);
+                    this.reacts = data;
+                });
+                this.ahttp.post(
+                    this.settingsService.baseAddress + '/get-comments',
+                    {'txn_ids': ids_to_get}
+                )
+                .subscribe((res) => {
+                    var data = JSON.parse(res['_body']);
+                    this.comments = data;
+                });
+            }
         });
     }
 
     register() {
-        if (this.platform.is('cordova')) {
+        if (this.platform.is('android') || this.platform.is('ios')) {
             this.http.get(this.settingsService.baseAddress + '/register', {}, {})
             .then((res) => {
                 var data = JSON.parse(res.data);
@@ -176,7 +287,7 @@ export class HomePage {
                 this.pasteFriend(data.phrase);
             }
         });
-        if (this.platform.is('cordova')) {
+        if (this.platform.is('android') || this.platform.is('ios')) {
             buttons.push({
                 text: 'Scan',
                 handler: () => {
@@ -203,10 +314,10 @@ export class HomePage {
         //    content: 'Please wait...'
         //});
         //this.loadingModal.present();
-        if (this.platform.is('cordova')) {
+        if (this.platform.is('android') || this.platform.is('ios')) {
             this.http.get(this.settingsService.baseAddress + '/search', {phrase: phrase, bulletin_secret: this.bulletinSecretService.bulletin_secret}, {})
             .then((res) => {
-                this.loadingModal2.dismiss();
+                //this.loadingModal2.dismiss();
                 this.alertRoutine(JSON.parse(res.data));
             });
         } else {
@@ -258,6 +369,14 @@ export class HomePage {
     }
 
     alertRoutine(info) {
+        if (this.walletService.wallet.balance < 1.01) {
+            let alert = this.alertCtrl.create();
+            alert.setTitle('Insuficient Funds');
+            alert.setSubTitle('You need at least 1.01 YadaCoins');
+            alert.addButton('OK');
+            alert.present();
+            return
+        }
         //this.loadingModal = this.loadingCtrl.create({
         //    content: 'Please wait...'
         //});
@@ -373,7 +492,7 @@ export class HomePage {
                         return;
                     }
                     if (info.accept) {
-                        if (this.platform.is('cordova')) {
+                        if (this.platform.is('android') || this.platform.is('ios')) {
                             this.http.post(this.settingsService.baseAddress + '/request-notification', {
                                 rid: friend.rid,
                                 shared_secret: friend.relationship.shared_secret,
@@ -395,7 +514,7 @@ export class HomePage {
                         txn['shared_secret'] = relationship.shared_secret;
                         txn['bulletin_secret'] = this.bulletinSecretService.bulletin_secret;
                         txn['accept'] = true;
-                        if (this.platform.is('cordova')) {
+                        if (this.platform.is('android') || this.platform.is('ios')) {
                             this.http.post(this.settingsService.baseAddress + '/request-notification', {
                                 rid: friend.rid,
                                 shared_secret: friend.relationship.shared_secret,

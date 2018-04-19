@@ -71,11 +71,11 @@ export class ChatPage {
 
     showChat() {
       var item = {pageTitle: {title:"Chat"}};
-      this.nav.push(ListPage, item);
+      this.navCtrl.push(ListPage, item);
     }
 
     showFriendRequests() {
       var item = {pageTitle: {title:"Friend Requests"}};
-      this.nav.push(ListPage, item);
+      this.navCtrl.push(ListPage, item);
     }
 }

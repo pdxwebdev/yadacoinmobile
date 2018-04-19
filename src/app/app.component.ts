@@ -11,6 +11,7 @@ import { SettingsService } from './settings.service';
 import { WalletService } from './wallet.service';
 import { Storage } from '@ionic/storage';
 import { FirebaseService } from './firebase.service';
+import { PushService } from './push.service';
 
 import { HomePage } from '../pages/home/home';
 import { ListPage } from '../pages/list/list';
@@ -18,7 +19,9 @@ import { Settings } from '../pages/settings/settings';
 import { ProfilePage } from '../pages/profile/profile';
 import { SendReceive } from '../pages/sendreceive/sendreceive';
 
+
 declare var forge;
+declare var diffiehellman;
 
 @Component({
   templateUrl: 'app.html'
@@ -44,7 +47,8 @@ export class MyApp {
     private firebase: Firebase,
     private http: HTTP,
     private storage: Storage,
-    private firebaseService: FirebaseService
+    private firebaseService: FirebaseService,
+    private pushService: PushService
   ) {
     this.initializeApp();
     this.platform.ready().then(() => {
@@ -57,6 +61,8 @@ export class MyApp {
         } else {
           this.firebaseService.initFirebase();
         }
+      } else {
+        this.pushService.initPush();
       }
     });
     this.pages = [
@@ -69,10 +75,11 @@ export class MyApp {
       { title: 'Coins', component: SendReceive, count: false, color: '' },
       { title: 'Settings', component: Settings, count: false, color: '' }
     ];
+    this.walletService.get();
   }
 
   ngAfterViewInit() {
-    if (this.platform.is('cordova')) {
+    if (this.platform.is('android') || this.platform.is('ios')) {
       this.deeplinks.routeWithNavController(this.nav, {
         '/:txnData': HomePage
       }).subscribe((match) => {
@@ -92,7 +99,7 @@ export class MyApp {
     this.platform.ready().then(() => {
       // Okay, so the platform is ready and our plugins are available.
       // Here you can do any higher level native things you might need.
-      if (this.platform.is('cordova')) {
+      if (this.platform.is('android') || this.platform.is('ios')) {
         this.statusBar.styleDefault();
         this.splashScreen.hide();
       }

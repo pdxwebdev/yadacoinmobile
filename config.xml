@@ -85,6 +85,7 @@
     <allow-navigation href="http://10.8.0.1:8100" />
     <engine name="ios" spec="^4.4.0" />
     <engine name="android" spec="~6.3.0" />
+    <engine name="browser" spec="~5.0.3" />
     <plugin name="cordova-plugin-qrscanner" spec="^2.5.0" />
     <plugin name="cordova-plugin-device" spec="^1.1.6" />
     <plugin name="cordova-plugin-splashscreen" spec="^4.0.3" />
@@ -116,4 +117,8 @@
         <variable name="DEEPLINK_5_HOST" value=" " />
     </plugin>
     <plugin name="cordova-plugin-firebase" spec="^0.1.25" />
+    <plugin name="phonegap-plugin-push" spec="^2.1.3">
+        <variable name="FCM_VERSION" value="11.6.2" />
+        <variable name="SENDER_ID" value="1:805178314562:android:7e1a51ea2fcd8415" />
+    </plugin>
 </widget>

@@ -18,11 +18,15 @@
   <ion-row>
     <ion-col text-center>
       <ion-item>
-        <ion-label color="primary" stacked>My Phrase:</ion-label>
+        <ion-label color="primary" stacked>Username:</ion-label>
         <ion-input type="text" [(ngModel)]="graphService.humanHash">
         </ion-input>
         <button *ngIf="isCordova" ion-button outline item-end (click)="sharePhrase()">share&nbsp;<ion-icon name="share"></ion-icon></button>
       </ion-item>
+    <button ion-button title="Save" (click)="save()">
+      <ion-icon name="save"></ion-icon>
+      Save
+    </button>
     </ion-col>
   </ion-row>
 </ion-content>

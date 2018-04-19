@@ -25,13 +25,16 @@ import { SettingsService } from './settings.service';
 import { WalletService } from './wallet.service';
 import { TransactionService } from './transaction.service';
 import { OpenGraphParserService } from './opengraphparser.service'
-import { FirebaseService } from './firebase.service'
+import { FirebaseService } from './firebase.service';
+import { PushService } from './push.service';
 import { SendReceive } from '../pages/sendreceive/sendreceive';
 import { Clipboard } from '@ionic-native/clipboard';
 import { SocialSharing } from '@ionic-native/social-sharing';
 import { Badge } from '@ionic-native/badge';
 import { Deeplinks } from '@ionic-native/deeplinks';
 import { Firebase } from '@ionic-native/firebase';
+import { EmojiPickerModule } from '@ionic-tools/emoji-picker';
+import { Push, PushObject, PushOptions } from '@ionic-native/push';
 
 @NgModule({
   declarations: [
@@ -47,9 +50,13 @@ import { Firebase } from '@ionic-native/firebase';
   imports: [
     BrowserModule,
     IonicModule.forRoot(MyApp),
-    IonicStorageModule.forRoot(),
+    IonicStorageModule.forRoot({
+      name: '__mydb',
+         driverOrder: ['sqlite', 'websql', 'indexeddb']
+    }),
     NgxQRCodeModule,
-    HttpModule
+    HttpModule,
+    EmojiPickerModule.forRoot()
   ],
   bootstrap: [IonicApp],
   entryComponents: [
@@ -81,7 +88,9 @@ import { Firebase } from '@ionic-native/firebase';
     Badge,
     Deeplinks,
     Firebase,
-    FirebaseService
+    FirebaseService,
+    PushService,
+    Push
   ]
 })
 export class AppModule {}

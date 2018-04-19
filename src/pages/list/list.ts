@@ -78,6 +78,7 @@ export class ListPage {
 
       this.graphService.getGraph()
       .then(() => {
+
         this.loading = false;
         if (pageTitle == 'Friends') {
             var graphArray = this.graphService.graph.friends
@@ -203,9 +204,10 @@ export class ListPage {
   }
 
   sendFriendRequestNotification(txn) {
-    for (var i=0; i < this.graphService.graph.friends.length; i++) {
-        var friend = this.graphService.graph.friends[i];
-        if (this.graphService.graph.rid = friend.rid) {
+    var sent_request = JSON.parse(txn);
+    for (var i=0; i < this.graphService.graph.sent_friend_requests.length; i++) {
+        var friend = this.graphService.graph.sent_friend_requests[i];
+        if (sent_request.requested_rid == friend.requested_rid) {
           try {
             if (friend.relationship.shared_secret) {
                 break;
@@ -221,11 +223,12 @@ export class ListPage {
         return;
     }
     var txn = JSON.parse(txn);
+    friend.accept = true;
     this.http.post(this.settingsService.baseAddress + '/request-notification', {
         rid: friend.rid,
         shared_secret: friend.relationship.shared_secret,
         requested_rid: txn['requested_rid'],
-        data: JSON.stringify(txn)
+        data: JSON.stringify(friend)
     }, {'Content-Type': 'application/json'});
   }
 
