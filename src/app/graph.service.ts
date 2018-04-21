@@ -10,6 +10,7 @@ import { Platform } from 'ionic-angular';
 
 declare var forge;
 declare var foobar;
+declare var diffiehellman;
 
 @Injectable()
 export class GraphService {
@@ -70,8 +71,11 @@ export class GraphService {
         for(var i=0; i<this.graph.sent_friend_requests.length; i++) {
             var sent_friend_request = this.graph.sent_friend_requests[i];
             try {
-                var decrypted = this.decrypt(sent_friend_request.relationship);
-                var relationship = JSON.parse(decrypted);
+                var dh = diffiehellman.getDiffieHellman('modp18')
+                var p = dh.getPrime().toString('hex');
+                dh.generateKeys();
+                var pubk2 = sent_friend_request.dhpkey
+                var pub1 = dh.computeSecret(pubk2).toString('hex'); //this is the actual shared secret
                 if(relationship.shared_secret != null) {
                     if (!shared_secrets[sent_friend_request.rid]) {
                         shared_secrets[sent_friend_request.rid] = [];
@@ -98,6 +102,23 @@ export class GraphService {
                 }
             } catch(err) {
                 friend_requests[friend_request.rid] = friend_request;
+            }
+        }
+        var friends = {};
+        for(var i=0; i<this.graph.friends.length; i++) {
+            var friend = this.graph.friends[i];
+            try {
+                var decrypted = this.decrypt(friend.relationship);
+                var relationship = JSON.parse(decrypted);
+                if(relationship.dh_private_key != null) {
+                    if (!shared_secrets[friend.rid]) {
+                        shared_secrets[friend.rid] = [];
+                    }
+                    shared_secrets[friend.rid].push(relationship.dh_private_key);
+                    friends[friend.rid] = friend;
+                }
+            } catch(err) {
+
             }
         }
         var messages = {};
@@ -143,9 +164,14 @@ export class GraphService {
         for(let i in friend_requests) {
             arr_friend_requests.push(friend_requests[i].rid);
         }
+        var arr_friends = [];
+        for(let i in friends) {
+            arr_friends.push(friends[i].rid);
+        }
         let messagesset = new Set(arr_messages);
         let sent_friend_requests_diff = new Set(arr_sent_friend_requests.filter(x => !messagesset.has(x)));
         let friend_requests_diff = new Set(arr_friend_requests.filter(x => !messagesset.has(x)));
+        let friends_diff = new Set(arr_friends);
 
         let arr_sent_friend_request_keys = Array.from(sent_friend_requests_diff.keys())
         this.graph.sent_friend_requests = []
@@ -160,15 +186,19 @@ export class GraphService {
                 this.graph.friend_requests.push(friend_requests[arr_friend_request_keys[i]])
             }
         }
+
+        if(arr_friends.length > 0) {
+            let arr_friends_keys = Array.from(friends_diff.keys())
+            this.graph.friends = []
+            for(var i=0; i<arr_friends_keys.length; i++) {
+                if (usernames[arr_friends_keys[i]]) {
+                    messages[i].username = usernames[arr_friends_keys[i]];
+                }
+                this.graph.friends.push(friends[arr_friends_keys[i]])
+            }
+        }
         if (this.platform.is('android') || this.platform.is('ios')) {
             this.badge.set(this.graph.friend_requests.length);
-        }
-
-        for(let i in messages) {
-            if (usernames[messages[i].rid]) {
-                messages[i].username = usernames[messages[i].rid];
-            }
-            this.graph.friends.push(messages[i]);
         }
         resolve1();
     }

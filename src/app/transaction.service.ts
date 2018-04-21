@@ -10,6 +10,7 @@ import { Platform } from 'ionic-angular';
 declare var foobar;
 declare var forge;
 declare var uuid4;
+declare var diffiehellman;
 
 @Injectable()
 export class TransactionService {
@@ -88,15 +89,8 @@ export class TransactionService {
         var transactions = JSON.parse(data);
 
         if (transactions.length > 0) {
-            // existing relationship, attempt login
-            for (var i=0; i < transactions.length; i++) {
-                var encrypted_relationship = transactions[i].relationship;
-                var decrypted_relationship = this.decrypt(encrypted_relationship);
-                if (decrypted_relationship.data.indexOf('shared_secret') > 0) {
-                    this.shared_secret = JSON.parse(decrypted_relationship.data).shared_secret;
-                    break;
-                }
-            }
+            // existing relationship, exit
+            return;
         }
         this.walletService.get().then(() => {
             this.generateTransaction();
@@ -107,15 +101,17 @@ export class TransactionService {
     }
 
     generateTransaction() {
-        var challenge_code = this.info.challenge_code != undefined ? this.info.challenge_code : '';
+
         this.transaction = {
             rid:  this.rid,
             fee: 0.1,
             requester_rid: typeof this.info.requester_rid == 'undefined' ? '' : this.info.requester_rid,
             requested_rid: typeof this.info.requested_rid == 'undefined' ? '' : this.info.requested_rid,
-            challenge_code: challenge_code,
             outputs: []
         };
+        if (this.info.dh_public_key) {
+            this.transaction.dh_public_key = this.info.dh_public_key;
+        }
         if (this.to) {
             this.transaction.outputs.push({
                 to: this.to,
@@ -212,53 +208,16 @@ export class TransactionService {
             this.info.relationship = {};
         }
 
-        if (this.shared_secret && this.info.confirm_friend !== true && !this.info.relationship) {
-            var answer = this.shared_encrypt(this.shared_secret, challenge_code);
-
-            this.transaction.answer = answer;
-
-            var hash = foobar.bitcoin.crypto.sha256(
-                this.transaction.rid +
-                this.transaction.fee +
-                this.transaction.requester_rid +
-                this.transaction.requested_rid +
-                this.transaction.challenge_code +
-                this.transaction.answer +
-                inputs_hashes_concat +
-                outputs_hashes_concat
-            ).toString('hex')
-        } else if (this.info.confirm_friend === true) {
-            this.shared_secret = this.info.relationship.shared_secret;
-            this.transaction.answer = '';
-            this.transaction.relationship = this.shared_encrypt(this.shared_secret, uuid4()); 
-            var hash = foobar.bitcoin.crypto.sha256(
-                this.transaction.rid +
-                this.transaction.relationship +
-                this.transaction.fee +
-                this.transaction.requester_rid +
-                this.transaction.requested_rid +
-                inputs_hashes_concat +
-                outputs_hashes_concat
-            ).toString('hex')
-        } else if (this.info.relationship.bulletin_secret && this.rid) {
-            // no relationship, attempt registration. This will also login the user.
-            if (this.info.relationship.shared_secret != undefined) {
-                this.transaction.answer = this.shared_encrypt(this.info.relationship.shared_secret, challenge_code);                    
-            } else {
-                this.info.relationship.shared_secret = uuid4();
-                this.transaction.answer = '';
-            }
-
-            this.shared_secret = this.info.relationship.shared_secret;
+        if (this.info.dh_public_key && this.info.relationship.dh_private_key) {
+            // creating new relationship
             this.transaction.relationship = this.encrypt()
             var hash = foobar.bitcoin.crypto.sha256(
+                this.transaction.dh_public_key +
                 this.transaction.rid +
                 this.transaction.relationship +
                 this.transaction.fee +
                 this.transaction.requester_rid +
                 this.transaction.requested_rid +
-                this.transaction.challenge_code +
-                this.transaction.answer +
                 inputs_hashes_concat +
                 outputs_hashes_concat
             ).toString('hex')

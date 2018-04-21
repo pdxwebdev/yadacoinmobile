@@ -4,6 +4,7 @@ var generatePrime = require('./lib/generatePrime')
 var primes = require('./lib/primes.json')
 
 var DH = require('./lib/dh')
+var BN = require('bn.js')
 
 function getDiffieHellman (mod) {
   var prime = new Buffer(primes[mod].prime, 'hex')
@@ -42,9 +43,10 @@ function createDiffieHellman (prime, enc, generator, genc) {
 
 exports.DiffieHellmanGroup = exports.createDiffieHellmanGroup = exports.getDiffieHellman = getDiffieHellman
 exports.createDiffieHellman = exports.DiffieHellman = createDiffieHellman
+exports.BN = BN
 
 }).call(this,require("buffer").Buffer)
-},{"./lib/dh":2,"./lib/generatePrime":3,"./lib/primes.json":4,"buffer":12}],2:[function(require,module,exports){
+},{"./lib/dh":2,"./lib/generatePrime":3,"./lib/primes.json":4,"bn.js":5,"buffer":12}],2:[function(require,module,exports){
 (function (Buffer){
 var BN = require('bn.js');
 var MillerRabin = require('miller-rabin');

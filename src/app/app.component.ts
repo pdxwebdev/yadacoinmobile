@@ -51,20 +51,6 @@ export class MyApp {
     private pushService: PushService
   ) {
     this.initializeApp();
-    this.platform.ready().then(() => {
-      if(this.platform.is('cordova')) {
-        if(this.platform.is('ios')) {
-          this.firebase.grantPermission()
-          .then(() => {
-            this.firebaseService.initFirebase();
-          });
-        } else {
-          this.firebaseService.initFirebase();
-        }
-      } else {
-        this.pushService.initPush();
-      }
-    });
     this.pages = [
       { title: 'Me', component: ProfilePage, count: false, color: '' },
       { title: 'News Feed', component: HomePage, count: false, color: '' },

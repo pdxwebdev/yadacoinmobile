@@ -22,10 +22,14 @@
 </ion-header>
 
 <ion-content padding>
-  <div *ngIf="balance < 1.1" class="danger">Please wait while tokens are deposited into your wallet.</div>
-  <button *ngIf="balance > 1.1 && graphService.graph && graphService.graph.friends.length == 0" ion-button color="danger" (click)="register()">For Demo Purposes, You Must Register</button> 
-  <!--<button ion-button secondary (click)="addPeer()">Add Peer</button>-->
-  <h4 *ngIf="balance > 1.1">Recent Activity</h4>
+  <div *ngIf="walletService.wallet.balance < 1.1 && graphService.graph && !graphService.graph.registered" class="danger">Status: Waiting for tokens...</div>
+  <div *ngIf="walletService.wallet.balance > 1.1 && graphService.graph && !graphService.graph.registered" class="danger">
+    Status: Waiting to register...
+  </div>
+  <div *ngIf="walletService.wallet.balance > 1.1 && graphService.graph && !graphService.graph.registered && graphService.graph.pending_registration" class="danger">
+    Status: Processing registration...
+  </div>
+  <h4 *ngIf="balance > 1.1 && graphService.graph && graphService.graph.registered">Recent Activity</h4>
   <ion-spinner *ngIf="loading"></ion-spinner>
   <ion-list col-lg-7>
     <ion-item *ngFor="let item of items">

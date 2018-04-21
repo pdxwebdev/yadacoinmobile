@@ -23,10 +23,8 @@ export class BulletinSecretService {
         private platform: Platform,
         private ahttp: Http
     ) {
-        settingsService.refresh().then(() => {
-            this.keyname = 'key';
-            this.get();
-        });
+        this.keyname = 'key';
+        this.get();
     }
 
     shared_encrypt(shared_secret, message) {
@@ -41,20 +39,25 @@ export class BulletinSecretService {
 
     get() {
         var keyname = this.keyname;
-        return this.storage.get(keyname).then((key) => {
-            if(key && typeof key == 'string') {
-                this.key = foobar.bitcoin.ECPair.fromWIF(key);
-            } else {
-                this.key = foobar.bitcoin.ECPair.makeRandom();
-                this.storage.set(keyname, this.key.toWIF());
-            }
-             
-            this.bulletin_secret = foobar.bitcoin.crypto.sha256(this.shared_encrypt(this.key.toWIF(), this.key.toWIF())).toString('hex');
-            if (this.platform.is('android') || this.platform.is('ios')) {
-                this.http.get(this.settingsService.baseAddress + '/faucet', {'address': this.key.getAddress()}, {});
-            } else {
-                this.ahttp.get(this.settingsService.baseAddress + '/faucet?address=' + this.key.getAddress()).subscribe(()=>{});
-            }
+        return this.settingsService.refresh().then(() => {
+            return new Promise((resolve, reject) => {
+                this.storage.get(keyname).then((key) => {
+                    if(key && typeof key == 'string') {
+                        this.key = foobar.bitcoin.ECPair.fromWIF(key);
+                    } else {
+                        this.key = foobar.bitcoin.ECPair.makeRandom();
+                        this.storage.set(keyname, this.key.toWIF());
+                    }
+                     
+                    this.bulletin_secret = foobar.bitcoin.crypto.sha256(this.shared_encrypt(this.key.toWIF(), this.key.toWIF())).toString('hex');
+                    if (this.platform.is('android') || this.platform.is('ios')) {
+                        this.http.get(this.settingsService.baseAddress + '/faucet', {'address': this.key.getAddress()}, {});
+                    } else {
+                        this.ahttp.get(this.settingsService.baseAddress + '/faucet?address=' + this.key.getAddress()).subscribe(()=>{});
+                    }
+                    resolve();
+                });
+            });
         });
     }
 

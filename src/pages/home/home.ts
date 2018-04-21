@@ -17,11 +17,13 @@ import { HTTP } from '@ionic-native/http';
 import { SettingsService } from '../../app/settings.service';
 import { Http } from '@angular/http';
 import { Platform } from 'ionic-angular';
+import { FirebaseService } from '../../app/firebase.service';
+import { PushService } from '../../app/push.service';
 
 declare var forge;
 declare var elliptic;
 declare var uuid4;
-declare var diffiehelman;
+declare var diffiehellman;
 
 @Component({
     selector: 'page-home',
@@ -36,7 +38,7 @@ export class HomePage {
     baseAddress = null;
     balance = null;
     items = [];
-    loading = true;
+    loading = false;
     loadingBalance = true;
     loadingModal = null;
     loadingModal2 = null;
@@ -66,9 +68,32 @@ export class HomePage {
         private settingsService: SettingsService,
         public loadingCtrl: LoadingController,
         private platform: Platform,
-        private ahttp: Http
+        private ahttp: Http,
+        private firebaseService: FirebaseService,
+        private pushService: PushService
     ) {
-        this.refresh();
+        this.platform.ready().then(() => {
+          if(this.platform.is('cordova')) {
+            if(this.platform.is('ios')) {
+              this.firebase.grantPermission()
+              .then(() => {
+                this.firebaseService.initFirebase();
+              });
+            } else {
+              this.firebaseService.initFirebase();
+            }
+          } else {
+            this.pushService.initPush();
+          }
+        });
+        this.task = setInterval(() => {
+            if (this.loading === true) return;
+            if (this.graphService.graph && this.graphService.graph.registered) {
+                clearInterval(this.task);
+                return;
+            }
+            this.refresh();
+        }, 6000);
         if (this.navParams.get('txnData')) {
             this.alertRoutine(JSON.parse(decodeURIComponent(this.navParams.get('txnData'))));
         }
@@ -168,6 +193,12 @@ export class HomePage {
             this.loadingBalance = false;
         });
         this.graphService.getGraph().then(() => {
+            if(this.graphService.graph && !this.graphService.graph.registered && !this.graphService.graph.pending_registration) {
+                this.register();
+            }
+            ////////////////////////////////////////////
+            // all friend post operations from here down
+            ////////////////////////////////////////////
             this.color = this.graphService.graph.friend_requests.length > 0 ? 'danger' : '';
             var graphArray = this.graphService.graph.friend_posts
             if (graphArray.length == 0) {
@@ -248,19 +279,43 @@ export class HomePage {
     }
 
     register() {
-        if (this.platform.is('android') || this.platform.is('ios')) {
-            this.http.get(this.settingsService.baseAddress + '/register', {}, {})
-            .then((res) => {
-                var data = JSON.parse(res.data);
-                this.alertRoutine(data);
-            });
-        } else {
-            this.ahttp.get(this.settingsService.baseAddress + '/register')
-            .subscribe((res) => {
-                var data = JSON.parse(res['_body']);
-                this.alertRoutine(data);
-            });
-        }
+        var dh = diffiehellman.getDiffieHellman('modp17')
+        dh.generateKeys()
+        this.walletService.get().then(() => {
+            if (this.platform.is('android') || this.platform.is('ios')) {
+                this.http.get(this.settingsService.baseAddress + '/register', {}, {})
+                .then((res) => {
+                    var data = JSON.parse(res.data);
+                    data.private_key = dh.getPrivateKey().toString('hex');
+                    data.public_key = dh.getPublicKey().toString('hex');
+                    this.getTransaction(data);
+                });
+            } else {
+                this.ahttp.get(this.settingsService.baseAddress + '/register')
+                .subscribe((res) => {
+                    var data = JSON.parse(res['_body']);
+                    data.private_key = dh.getPrivateKey().toString('hex');
+                    data.public_key = dh.getPublicKey().toString('hex');
+                    this.getTransaction(data);
+                });
+            }
+        })
+    }
+
+    getTransaction(info, resolve) {
+        return this.transactionService.pushTransaction({
+            relationship: {
+                bulletin_secret: info.bulletin_secret,
+                dh_private_key: info.private_key
+            },
+            dh_public_key: info.public_key,
+            requested_rid: info.requested_rid,
+            requester_rid: info.requester_rid,
+            blockchainurl: this.blockchainAddress,
+            callbackurl: info.callbackurl,
+            to: info.to,
+            resolve: resolve
+        });
     }
 
     sharePhrase() {
@@ -409,63 +464,40 @@ export class HomePage {
                 // camera permission was granted
                 var requester_rid = info.requester_rid;
                 var requested_rid = info.requested_rid;
-                var confirm_friend = info.confirm_friend;
                 if (requester_rid && requested_rid) {
+                    // get rid from bulletin secrets
                     var bulletin_secrets = [this.bulletinSecretService.bulletin_secret, this.bulletinSecretService.bulletin_secret].sort(function (a, b) {
                         return a.toLowerCase().localeCompare(b.toLowerCase());
                     });
                     var rid = forge.sha256.create().update(bulletin_secrets[0] + bulletin_secrets[1]).digest().toHex();
-                    if (!info.requester_rid) {
-                        // TODO: MUST VERIFY THIS RID IS RELATED TO THE SAME NODE AS THE REQUESTED RID!!!
-                        requester_rid = this.graphService.rid;
-                    }
-                    if (!info.requested_rid) {
-                        requested_rid = rid;
-                    }
                 } else {
                     requester_rid = '';
                     requested_rid = '';
                 }
-
+                //////////////////////////////////////////////////////////////////////////
+                // create and send transaction to create the relationship on the blockchain
+                //////////////////////////////////////////////////////////////////////////
                 this.walletService.get().then(() => {
                     return new Promise((resolve, reject) => {
                         this.transactionService.pushTransaction({
                             relationship: {
                                 bulletin_secret: info.bulletin_secret,
-                                shared_secret: info.shared_secret
+                                dh_private_key: info.private_key
                             },
+                            dh_public_key: info.public_key,
                             requested_rid: info.requested_rid,
                             requester_rid: info.requester_rid,
                             blockchainurl: this.blockchainAddress,
-                            challenge_code: info.challenge_code,
                             callbackurl: info.callbackurl,
                             to: info.to,
-                            confirm_friend: false,
                             resolve: resolve
                         });
                     });
-                }).then((txn) => {
-                    if(info.accept && txn) {
-                        return new Promise((resolve, reject) => {
-                            this.transactionService.pushTransaction({
-                                relationship: {
-                                    bulletin_secret: info.bulletin_secret,
-                                    shared_secret: info.shared_secret
-                                },
-                                requested_rid: info.requested_rid,
-                                requester_rid: info.requester_rid,
-                                blockchainurl: this.blockchainAddress,
-                                confirm_friend: true,
-                                unspent_transaction: txn,
-                                resolve: resolve
-                            });
-                        });
-                    } else {
-                        return new Promise((resolve, reject) => {
-                            resolve(txn);
-                        });
-                    }
-                }).then((txn) => {
+                }).then(() => {
+                    ///////////////////////////////////////////////////////////////
+                    // this "thenable" is for notifications
+                    // here, we notify the recipient of an inbound friend request
+                    ///////////////////////////////////////////////////////////////
                     this.loadingModal.dismiss()
                     var alert = this.alertCtrl.create();
                     alert.setTitle('Friend Request Sent');
@@ -488,49 +520,27 @@ export class HomePage {
                         // no friends, probably a registration, in that case we don't need to notify becuase it is the server.
                         return;
                     }
-                    if (!friend.relationship.shared_secret) {
+                    if (!friend.relationship.private_key) {
                         return;
                     }
-                    if (info.accept) {
-                        if (this.platform.is('android') || this.platform.is('ios')) {
-                            this.http.post(this.settingsService.baseAddress + '/request-notification', {
-                                rid: friend.rid,
-                                shared_secret: friend.relationship.shared_secret,
-                                requested_rid: txn['requester_rid'],
-                                to: this.bulletinSecretService.key.getAddress(),
-                                data: JSON.stringify({accept: true})
-                            }, {'Content-Type': 'application/json'});
-                        } else {
-                            this.ahttp.post(this.settingsService.baseAddress + '/request-notification', {
-                                rid: friend.rid,
-                                shared_secret: friend.relationship.shared_secret,
-                                requested_rid: txn['requester_rid'],
-                                to: this.bulletinSecretService.key.getAddress(),
-                                data: JSON.stringify({accept: true})
-                            }).subscribe(() => {});
-                        }
+                    var relationship = JSON.parse(this.decrypt(txn['relationship']));
+                    txn['shared_secret'] = relationship.shared_secret;
+                    txn['bulletin_secret'] = this.bulletinSecretService.bulletin_secret;
+                    txn['accept'] = true;
+                    if (this.platform.is('android') || this.platform.is('ios')) {
+                        this.http.post(this.settingsService.baseAddress + '/request-notification', {
+                            rid: friend.rid,
+                            requested_rid: txn['requested_rid'],
+                            to: this.bulletinSecretService.key.getAddress(),
+                            data: JSON.stringify(txn)
+                        }, {'Content-Type': 'application/json'});
                     } else {
-                        var relationship = JSON.parse(this.decrypt(txn['relationship']));
-                        txn['shared_secret'] = relationship.shared_secret;
-                        txn['bulletin_secret'] = this.bulletinSecretService.bulletin_secret;
-                        txn['accept'] = true;
-                        if (this.platform.is('android') || this.platform.is('ios')) {
-                            this.http.post(this.settingsService.baseAddress + '/request-notification', {
-                                rid: friend.rid,
-                                shared_secret: friend.relationship.shared_secret,
-                                requested_rid: txn['requested_rid'],
-                                to: this.bulletinSecretService.key.getAddress(),
-                                data: JSON.stringify(txn)
-                            }, {'Content-Type': 'application/json'});
-                        } else {
-                            this.ahttp.post(this.settingsService.baseAddress + '/request-notification', {
-                                rid: friend.rid,
-                                shared_secret: friend.relationship.shared_secret,
-                                requested_rid: txn['requested_rid'],
-                                to: this.bulletinSecretService.key.getAddress(),
-                                data: JSON.stringify(txn)
-                            }).subscribe(() => {});
-                        }
+                        this.ahttp.post(this.settingsService.baseAddress + '/request-notification', {
+                            rid: friend.rid,
+                            requested_rid: txn['requested_rid'],
+                            to: this.bulletinSecretService.key.getAddress(),
+                            data: JSON.stringify(txn)
+                        }).subscribe(() => {});
                     }
                 });
 
