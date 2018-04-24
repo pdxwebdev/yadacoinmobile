@@ -86,14 +86,7 @@ export class HomePage {
             this.pushService.initPush();
           }
         });
-        this.task = setInterval(() => {
-            if (this.loading === true) return;
-            if (this.graphService.graph && this.graphService.graph.registered) {
-                clearInterval(this.task);
-                return;
-            }
-            this.refresh();
-        }, 6000);
+        this.refresh();
         if (this.navParams.get('txnData')) {
             this.alertRoutine(JSON.parse(decodeURIComponent(this.navParams.get('txnData'))));
         }
@@ -193,7 +186,7 @@ export class HomePage {
             this.loadingBalance = false;
         });
         this.graphService.getGraph().then(() => {
-            if(this.graphService.graph && !this.graphService.graph.registered && !this.graphService.graph.pending_registration) {
+            if(this.graphService.graph && !this.graphService.graph.registered && !this.graphService.graph.pending_registration && this.walletService.wallet.balance > 1.01) {
                 this.register();
             }
             ////////////////////////////////////////////
@@ -279,27 +272,29 @@ export class HomePage {
     }
 
     register() {
-        var dh = diffiehellman.getDiffieHellman('modp17')
-        dh.generateKeys()
-        this.walletService.get().then(() => {
-            if (this.platform.is('android') || this.platform.is('ios')) {
-                this.http.get(this.settingsService.baseAddress + '/register', {}, {})
-                .then((res) => {
-                    var data = JSON.parse(res.data);
-                    data.private_key = dh.getPrivateKey().toString('hex');
-                    data.public_key = dh.getPublicKey().toString('hex');
-                    this.getTransaction(data);
-                });
-            } else {
-                this.ahttp.get(this.settingsService.baseAddress + '/register')
-                .subscribe((res) => {
-                    var data = JSON.parse(res['_body']);
-                    data.private_key = dh.getPrivateKey().toString('hex');
-                    data.public_key = dh.getPublicKey().toString('hex');
-                    this.getTransaction(data);
-                });
-            }
-        })
+        return new Promise((resolve, reject) => {
+            var dh = diffiehellman.getDiffieHellman('modp17')
+            dh.generateKeys()
+            this.walletService.get().then(() => {
+                if (this.platform.is('android') || this.platform.is('ios')) {
+                    this.http.get(this.settingsService.baseAddress + '/register', {}, {})
+                    .then((res) => {
+                        var data = JSON.parse(res.data);
+                        data.private_key = dh.getPrivateKey().toString('hex');
+                        data.public_key = dh.getPublicKey().toString('hex');
+                        this.getTransaction(data, resolve);
+                    });
+                } else {
+                    this.ahttp.get(this.settingsService.baseAddress + '/register')
+                    .subscribe((res) => {
+                        var data = JSON.parse(res['_body']);
+                        data.private_key = dh.getPrivateKey().toString('hex');
+                        data.public_key = dh.getPublicKey().toString('hex');
+                        this.getTransaction(data, resolve);
+                    });
+                }
+            });
+        });
     }
 
     getTransaction(info, resolve) {

@@ -88,7 +88,7 @@ export class TransactionService {
     alreadyFriends(data) {
         var transactions = JSON.parse(data);
 
-        if (transactions.length > 0) {
+        if (transactions.length > 0 && this.info.relationship.dh_private_key) {
             // existing relationship, exit
             return;
         }
@@ -109,7 +109,7 @@ export class TransactionService {
             requested_rid: typeof this.info.requested_rid == 'undefined' ? '' : this.info.requested_rid,
             outputs: []
         };
-        if (this.info.dh_public_key) {
+        if (this.info.dh_public_key && this.info.relationship.dh_private_key) {
             this.transaction.dh_public_key = this.info.dh_public_key;
         }
         if (this.to) {
@@ -123,8 +123,8 @@ export class TransactionService {
         } else {
             var transaction_total = this.transaction.fee;
         }
-        if (this.walletService.wallet.balance < (this.transaction.outputs[0].value + this.transaction.fee) || this.walletService.wallet.unspent_transactions.length == 0) {
-            this.resolve(false);
+        if ((this.info.relationship.dh_private_key && this.walletService.wallet.balance < (this.transaction.outputs[0].value + this.transaction.fee)) || this.walletService.wallet.unspent_transactions.length == 0) {
+            if (this.resolve) this.resolve(false);
             return
         } else {
             var inputs = [];
@@ -161,7 +161,7 @@ export class TransactionService {
         }
         
         if (input_sum < transaction_total) {
-            this.resolve(false);
+            if (this.resolve) this.resolve(false);
             return
         }
         this.transaction.inputs = inputs;
@@ -234,8 +234,14 @@ export class TransactionService {
             ).toString('hex')
         } else if (this.info.relationship.chatText) {
             // chat
-
-            this.transaction.relationship = this.shared_encrypt(this.shared_secret, JSON.stringify(this.info.relationship));                    
+            var dh = diffiehellman.getDiffieHellman('modp17');
+            var dh1 = diffiehellman.createDiffieHellman(dh.getPrime(), dh.getGenerator());
+            var pubk2 = this.hexToBytes(this.info.dh_public_key);
+            dh1.setPublicKey(pubk2);
+            dh1.setPrivateKey(this.hexToBytes(this.info.dh_private_key));
+            var shared_secret = dh1.computeSecret(pubk2).toString('hex'); //this is the actual shared secret
+            this.storage.set('shared_secret-' + this.info.dh_public_key.substr(0, 25) + this.info.dh_private_key.substr(0, 25), shared_secret);
+            this.transaction.relationship = this.shared_encrypt(shared_secret, JSON.stringify(this.info.relationship));                    
 
             var hash = foobar.bitcoin.crypto.sha256(
                 this.transaction.rid +
@@ -283,7 +289,7 @@ export class TransactionService {
                 this.transaction,
                 {'Content-Type': 'application/json'})
             .then((data) => {
-                this.resolve(JSON.parse(data.data));
+                if (this.resolve) this.resolve(JSON.parse(data.data));
             }).catch((error) => {
                 if (this.txnattempts.length > 0) {
                     this.onTransactionError();
@@ -294,7 +300,7 @@ export class TransactionService {
                 this.blockchainurl,
                 this.transaction)
             .subscribe((data) => {
-                this.resolve(JSON.parse(data['_body']));
+                if (this.resolve) this.resolve(JSON.parse(data['_body']));
             },
             (error) => {
                 if (this.txnattempts.length > 0) {

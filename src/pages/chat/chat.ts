@@ -43,7 +43,8 @@ export class ChatPage {
         	return new Promise((resolve, reject) => {
 
 	            console.log(status);
-
+	            var dh_public_key = this.graphService.graph.keys[this.rid].dh_public_keys[0];
+	            var dh_private_key = this.graphService.graph.keys[this.rid].dh_private_keys[0];
 	            let alert = this.alertCtrl.create();
 	            alert.setTitle('Approve Transaction');
 	            alert.setSubTitle('You are about to spend 0.01 coins ( 0.01 fee)');
@@ -53,6 +54,8 @@ export class ChatPage {
 	                handler: (data: any) => {
 	                    // camera permission was granted
 	                    this.transactionService.pushTransaction({
+	                    	dh_public_key: dh_public_key,
+	                    	dh_private_key: dh_private_key,
 	                        relationship: {
 	                            chatText: this.chatText 
 	                        },

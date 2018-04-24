@@ -23,7 +23,7 @@
 
 <ion-content padding>
   <div *ngIf="walletService.wallet.balance < 1.1 && graphService.graph && !graphService.graph.registered" class="danger">Status: Waiting for tokens...</div>
-  <div *ngIf="walletService.wallet.balance > 1.1 && graphService.graph && !graphService.graph.registered" class="danger">
+  <div *ngIf="walletService.wallet.balance > 1.1 && graphService.graph && !graphService.graph.registered && !graphService.graph.pending_registration" class="danger">
     Status: Waiting to register...
   </div>
   <div *ngIf="walletService.wallet.balance > 1.1 && graphService.graph && !graphService.graph.registered && graphService.graph.pending_registration" class="danger">

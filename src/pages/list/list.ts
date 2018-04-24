@@ -15,6 +15,7 @@ import { ChatPage } from '../chat/chat';
 declare var forge;
 declare var foobar;
 declare var uuid4;
+declare var diffiehellman;
 
 @Component({
   selector: 'page-list',
@@ -161,32 +162,19 @@ export class ListPage {
         this.loadingModal.present();
         this.walletService.get().then(() => {
           return new Promise((resolve, reject) => {
+            var dh = diffiehellman.getDiffieHellman('modp17')
+            dh.generateKeys()
             this.transactionService.pushTransaction({
               relationship: {
                 bulletin_secret: this.friend_request.bulletin_secret,
-                shared_secret: this.friend_request.shared_secret
+                dh_private_key: dh.getPrivateKey().toString('hex')
               },
+              dh_public_key: dh.getPublicKey().toString('hex'),
               requested_rid: this.friend_request.requested_rid,
               requester_rid: this.friend_request.requester_rid,
               to: this.friend_request.to,
               blockchainurl: this.blockchainAddress,
               confirm_friend: false,
-              resolve: resolve
-            });
-          });
-        }).then((txn) => {
-          return new Promise((resolve, reject) => {
-            this.transactionService.pushTransaction({
-              relationship: {
-                bulletin_secret: this.friend_request.bulletin_secret,
-                shared_secret: this.friend_request.shared_secret
-              },
-              requested_rid: this.friend_request.requested_rid,
-              requester_rid: this.friend_request.requester_rid,
-              to: this.friend_request.to,
-              blockchainurl: this.blockchainAddress,
-              confirm_friend: true,
-              unspent_transaction: txn,
               resolve: resolve
             });
           });
@@ -233,7 +221,7 @@ export class ListPage {
   }
 
   refreshWallet() {
-     this.loadingBalance = true;;
+     this.loadingBalance = true;
      this.walletService.get()
      .then(() => {
          this.loadingBalance = false;
