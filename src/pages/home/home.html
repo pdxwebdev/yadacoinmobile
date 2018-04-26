@@ -24,12 +24,13 @@
 <ion-content padding>
   <div *ngIf="walletService.wallet.balance < 1.1 && graphService.graph && !graphService.graph.registered" class="danger">Status: Waiting for tokens...</div>
   <div *ngIf="walletService.wallet.balance > 1.1 && graphService.graph && !graphService.graph.registered && !graphService.graph.pending_registration" class="danger">
-    Status: Waiting to register...
+    Status: Waiting to register... Tap the refresh button in a couple minutes
   </div>
   <div *ngIf="walletService.wallet.balance > 1.1 && graphService.graph && !graphService.graph.registered && graphService.graph.pending_registration" class="danger">
-    Status: Processing registration...
+    Status: Processing registration... Tap the refresh button in a couple minutes
   </div>
   <h4 *ngIf="balance > 1.1 && graphService.graph && graphService.graph.registered">Recent Activity</h4>
+  <div *ngIf="!items.length && balance > 1.1 && graphService.graph && graphService.graph.registered">No activity yet! Add a friend using the Add Friend button above and then share some links using the New Post button.</div>
   <ion-spinner *ngIf="loading"></ion-spinner>
   <ion-list col-lg-7>
     <ion-item *ngFor="let item of items">

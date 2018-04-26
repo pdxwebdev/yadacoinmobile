@@ -6,6 +6,7 @@ import { WalletService } from './wallet.service';
 import { HTTP } from '@ionic-native/http';
 import { Http } from '@angular/http';
 import { Platform } from 'ionic-angular';
+import { Storage } from '@ionic/storage';
 
 declare var foobar;
 declare var forge;
@@ -36,6 +37,7 @@ export class TransactionService {
         private bulletinSecretService: BulletinSecretService,
         private http: HTTP,
         private platform: Platform,
+        private storage: Storage,
         private ahttp: Http
     ) {}
 

@@ -22,7 +22,7 @@ export class FirebaseService {
     private graphService: GraphService,
     private bulletinSecretService: BulletinSecretService,
     private deeplinks: Deeplinks,
-    private firebase: Firebase,
+    public firebase: Firebase,
     private http: HTTP,
     private storage: Storage,
     private platform: Platform,

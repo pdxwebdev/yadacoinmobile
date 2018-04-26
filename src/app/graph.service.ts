@@ -93,7 +93,7 @@ export class GraphService {
                     };
                 }
                 try {
-                    var decrypted = this.decrypt(sent_friend_requests.relationship);
+                    var decrypted = this.decrypt(sent_friend_requests['relationship']);
                     var relationship = JSON.parse(decrypted);
                     sent_friend_requests[sent_friend_request.rid] = sent_friend_request;
                     dh_private_keys[sent_friend_request.rid].dh_private_keys.push(relationship.dh_private_key);

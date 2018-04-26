@@ -75,7 +75,7 @@ export class HomePage {
         this.platform.ready().then(() => {
           if(this.platform.is('cordova')) {
             if(this.platform.is('ios')) {
-              this.firebase.grantPermission()
+              this.firebaseService.firebase.grantPermission()
               .then(() => {
                 this.firebaseService.initFirebase();
               });
@@ -332,7 +332,7 @@ export class HomePage {
     addFriend() {
         var buttons = [];
         buttons.push({
-            text: 'Use Phrase',
+            text: 'Add',
             handler: (data) => {
                 this.pasteFriend(data.phrase);
             }
@@ -349,7 +349,7 @@ export class HomePage {
             inputs: [
                 {
                     name: 'phrase',
-                    placeholder: 'Type phrase here...'
+                    placeholder: 'Type username here...'
                 }
             ],
             buttons: buttons
@@ -488,7 +488,7 @@ export class HomePage {
                             resolve: resolve
                         });
                     });
-                }).then(() => {
+                }).then((txn) => {
                     ///////////////////////////////////////////////////////////////
                     // this "thenable" is for notifications
                     // here, we notify the recipient of an inbound friend request
