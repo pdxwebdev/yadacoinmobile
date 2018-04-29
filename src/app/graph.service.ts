@@ -169,7 +169,7 @@ export class GraphService {
                                 message.relationship = messageJson;
                                 chats[message.rid].push(message);
                             }
-                            break dance;
+                            continue dance;
                         }
                     }
                 }

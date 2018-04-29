@@ -35,7 +35,15 @@ export class ChatPage {
         this.storage.get('blockchainAddress').then((blockchainAddress) => {
             this.blockchainAddress = blockchainAddress;
         });
-        this.chats = graphService.graph.chats[this.rid];
+        
+        var chats = graphService.graph.chats[this.rid].sort(function (a, b) {
+            if (a.block_height < b.block_height)
+              return -1
+            if (a.block_height > b.block_height)
+              return 1
+            return 0
+        });
+        this.chats = chats;
     }
 
     send() {

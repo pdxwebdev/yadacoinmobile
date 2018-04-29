@@ -42,10 +42,6 @@ export class TransactionService {
     ) {}
 
     pushTransaction(info) {
-
-        if(this.platform.is('android') || this.platform.is('ios')) {
-          this.http.setDataSerializer('json');
-        }
         this.key = this.bulletinSecretService.key;
         this.bulletin_secret = this.bulletinSecretService.bulletin_secret;
 
@@ -74,17 +70,10 @@ export class TransactionService {
         } else {
             this.rid = '';
         }
-        if (this.platform.is('android') || this.platform.is('ios')) {
-            this.http.get(this.blockchainurl,{rid: this.rid}, {})
-            .then((data) => {
-                this.alreadyFriends(data['data'])
-            });
-        } else {
-            this.ahttp.get(this.blockchainurl + '?rid=' + this.rid)
-            .subscribe((data) => {
-                this.alreadyFriends(data['_body']);
-            });
-        }
+        this.ahttp.get(this.blockchainurl + '?rid=' + this.rid)
+        .subscribe((data) => {
+            this.alreadyFriends(data['_body']);
+        });
     }
 
     alreadyFriends(data) {
@@ -289,68 +278,35 @@ export class TransactionService {
     }
 
     sendTransaction() {
-        if(this.platform.is('android') || this.platform.is('ios')) {
-            this.http.post(
-                this.blockchainurl,
-                this.transaction,
-                {'Content-Type': 'application/json'})
-            .then((data) => {
-                if (this.resolve) this.resolve(JSON.parse(data.data));
-            }).catch((error) => {
-                if (this.txnattempts.length > 0) {
-                    this.onTransactionError();
-                }
-            });
-        } else {
-            this.ahttp.post(
-                this.blockchainurl,
-                this.transaction)
-            .subscribe((data) => {
-                if (this.resolve) this.resolve(JSON.parse(data['_body']));
-            },
-            (error) => {
-                if (this.txnattempts.length > 0) {
-                    this.onTransactionError();
-                }
-            });
-        }
+        this.ahttp.post(
+            this.blockchainurl,
+            this.transaction)
+        .subscribe((data) => {
+            if (this.resolve) this.resolve(JSON.parse(data['_body']));
+        },
+        (error) => {
+            if (this.txnattempts.length > 0) {
+                this.onTransactionError();
+            }
+        });
     }
 
     sendCallback() {
-        if(this.platform.is('android') || this.platform.is('ios')) {
-            this.http.post(
-                this.callbackurl,
-                {
-                    bulletin_secret: this.bulletin_secret,
-                    shared_secret: this.shared_secret,
-                    to: this.key.getAddress()
-                }, 
-                {'Content-Type': 'application/json'})
-            .then((data) => {
-
+        this.ahttp.post(
+            this.callbackurl,
+            {
+                bulletin_secret: this.bulletin_secret,
+                shared_secret: this.shared_secret,
+                to: this.key.getAddress()
             })
-            .catch((error) => {
-                if (this.cbattempts.length > 0) {
-                    this.onCallbackError();
-                }
-            });
-        } else {
-            this.ahttp.post(
-                this.callbackurl,
-                {
-                    bulletin_secret: this.bulletin_secret,
-                    shared_secret: this.shared_secret,
-                    to: this.key.getAddress()
-                })
-            .subscribe((data) => {
+        .subscribe((data) => {
 
-            },
-            (error) => {
-                if (this.cbattempts.length > 0) {
-                    this.onCallbackError();
-                }
-            });
-        }
+        },
+        (error) => {
+            if (this.cbattempts.length > 0) {
+                this.onCallbackError();
+            }
+        });
     }
 
 
