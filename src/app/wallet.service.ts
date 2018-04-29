@@ -23,9 +23,6 @@ export class WalletService {
         private settingsService: SettingsService,
         private platform: Platform    ) {
         this.wallet = {};
-        if(this.platform.is('android') || this.platform.is('ios')) {
-          http.setDataSerializer('json');
-        }
     }
 
     get() {
@@ -33,24 +30,10 @@ export class WalletService {
             return new Promise((resolve, reject) => {
                 this.bulletinSecretService.get().then(() => {
                     return new Promise((resolve1, reject1) => {
-                        if(this.platform.is('android') || this.platform.is('ios')) {
-                            this.http.get(
-                                this.settingsService.walletproviderAddress,
-                                {
-                                    address: this.bulletinSecretService.key.getAddress()
-                                },
-                                {
-                                    'Content-Type': 'application/json'
-                                }
-                            ).then((data) => {
-                                resolve1(data['data']);
-                            });
-                        } else {
-                            this.ahttp.get(this.settingsService.walletproviderAddress + '?address=' + this.bulletinSecretService.key.getAddress()).
-                            subscribe((data) => {
-                                resolve1(data['_body'])
-                            });
-                        }
+                        this.ahttp.get(this.settingsService.walletproviderAddress + '?address=' + this.bulletinSecretService.key.getAddress()).
+                        subscribe((data) => {
+                            resolve1(data['_body'])
+                        });
                     }).then((data: any) => {
                         this.wallet = JSON.parse(data);
                         resolve();

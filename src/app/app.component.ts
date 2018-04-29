@@ -65,7 +65,7 @@ export class MyApp {
   }
 
   ngAfterViewInit() {
-    if (this.platform.is('android') || this.platform.is('ios')) {
+    if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
       this.deeplinks.routeWithNavController(this.nav, {
         '/:txnData': HomePage
       }).subscribe((match) => {

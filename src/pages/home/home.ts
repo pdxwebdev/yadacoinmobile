@@ -90,72 +90,38 @@ export class HomePage {
         if (this.navParams.get('txnData')) {
             this.alertRoutine(JSON.parse(decodeURIComponent(this.navParams.get('txnData'))));
         }
-        this.isCordova = this.platform.is('cordova');
     }
 
     react(e, item) {
-        if (this.platform.is('android') || this.platform.is('ios')) {
-            this.http.post(
-                this.baseAddress + '/react', 
-                {
-                    'react': e.char,
-                    'txn_id': item.id,
-                    'bulletin_secret': this.bulletinSecretService.bulletin_secret
-                },
-                {}
-            )
-            .then((data) => {
-                this.reacts[item.id] = this.reacts[item.id] + e.char;
-            });
-        } else {
-            this.ahttp.post(
-                this.baseAddress + '/react',
-                {
-                    'react': e.char,
-                    'txn_id': item.id,
-                    'bulletin_secret': this.bulletinSecretService.bulletin_secret
-                }
-            )
-            .subscribe((res) => {
-                this.reacts[item.id] = this.reacts[item.id] + e.char;
-            });
-        }
+        this.ahttp.post(
+            this.baseAddress + '/react',
+            {
+                'react': e.char,
+                'txn_id': item.id,
+                'bulletin_secret': this.bulletinSecretService.bulletin_secret
+            }
+        )
+        .subscribe((res) => {
+            this.reacts[item.id] = this.reacts[item.id] + e.char;
+        });
     }
 
     comment(item) {
-        if (this.platform.is('android') || this.platform.is('ios')) {
-            this.http.post(
-                this.baseAddress + '/comment', 
-                {
-                    'comment': this.commentInputs[item.id],
-                    'txn_id': item.id,
-                    'bulletin_secret': this.bulletinSecretService.bulletin_secret
-                },
-                {}
-            )
-            .then((data) => {
-                if(!this.commentInputs[item.id]) {
-                    this.commentInputs[item.id] = [];
-                }
-                this.comments[item.id].push(this.commentInputs[item.id]);
-            });
-        } else {
-            this.ahttp.post(
-                this.baseAddress + '/comment',
-                {
-                    'comment': this.commentInputs[item.id],
-                    'txn_id': item.id,
-                    'bulletin_secret': this.bulletinSecretService.bulletin_secret
-                }
-            )
-            .subscribe((res) => {
-                if(!this.commentInputs[item.id]) {
-                    this.commentInputs[item.id] = [];
-                }
-                this.comments[item.id].push(this.commentInputs[item.id]);
-                this.commentInputs[item.id] = '';
-            });
-        }
+        this.ahttp.post(
+            this.baseAddress + '/comment',
+            {
+                'comment': this.commentInputs[item.id],
+                'txn_id': item.id,
+                'bulletin_secret': this.bulletinSecretService.bulletin_secret
+            }
+        )
+        .subscribe((res) => {
+            if(!this.commentInputs[item.id]) {
+                this.commentInputs[item.id] = [];
+            }
+            this.comments[item.id].push(this.commentInputs[item.id]);
+            this.commentInputs[item.id] = '';
+        });
     }
 
     showChat() {
@@ -203,7 +169,7 @@ export class HomePage {
             for (let i = 0; i < graphArray.length; i++) {
                 ids_to_get.push(graphArray[i].id);
                 if (this.openGraphParserService.isURL(graphArray[i].relationship.postText)) {
-                    if (this.platform.is('android') || this.platform.is('ios')) {
+                    if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
                         this.openGraphParserService.parseFromUrl(graphArray[i].relationship.postText).then((data) => {
                             data['id'] = graphArray[i].id;
                             this.items.push(data);
@@ -231,43 +197,22 @@ export class HomePage {
                     }
                 }
             }
-            if (this.platform.is('android') || this.platform.is('ios')) {
-                this.http.post(
-                    this.settingsService.baseAddress + '/get-reacts',
-                    {'txn_ids': ids_to_get},
-                    {}
-                )
-                .then((res) => {
-                    var data = JSON.parse(res.data);
-                    this.reacts = data;
-                });
-                this.http.post(
-                    this.settingsService.baseAddress + '/get-comments',
-                    {'txn_ids': ids_to_get},
-                    {}
-                )
-                .then((res) => {
-                    var data = JSON.parse(res.data);
-                    this.comments = data;
-                });
-            } else {
-                this.ahttp.post(
-                    this.settingsService.baseAddress + '/get-reacts',
-                    {'txn_ids': ids_to_get}
-                )
-                .subscribe((res) => {
-                    var data = JSON.parse(res['_body']);
-                    this.reacts = data;
-                });
-                this.ahttp.post(
-                    this.settingsService.baseAddress + '/get-comments',
-                    {'txn_ids': ids_to_get}
-                )
-                .subscribe((res) => {
-                    var data = JSON.parse(res['_body']);
-                    this.comments = data;
-                });
-            }
+            this.ahttp.post(
+                this.settingsService.baseAddress + '/get-reacts',
+                {'txn_ids': ids_to_get}
+            )
+            .subscribe((res) => {
+                var data = JSON.parse(res['_body']);
+                this.reacts = data;
+            });
+            this.ahttp.post(
+                this.settingsService.baseAddress + '/get-comments',
+                {'txn_ids': ids_to_get}
+            )
+            .subscribe((res) => {
+                var data = JSON.parse(res['_body']);
+                this.comments = data;
+            });
         });
     }
 
@@ -276,23 +221,13 @@ export class HomePage {
             var dh = diffiehellman.getDiffieHellman('modp17')
             dh.generateKeys()
             this.walletService.get().then(() => {
-                if (this.platform.is('android') || this.platform.is('ios')) {
-                    this.http.get(this.settingsService.baseAddress + '/register', {}, {})
-                    .then((res) => {
-                        var data = JSON.parse(res.data);
-                        data.private_key = dh.getPrivateKey().toString('hex');
-                        data.public_key = dh.getPublicKey().toString('hex');
-                        this.getTransaction(data, resolve);
-                    });
-                } else {
-                    this.ahttp.get(this.settingsService.baseAddress + '/register')
-                    .subscribe((res) => {
-                        var data = JSON.parse(res['_body']);
-                        data.private_key = dh.getPrivateKey().toString('hex');
-                        data.public_key = dh.getPublicKey().toString('hex');
-                        this.getTransaction(data, resolve);
-                    });
-                }
+                this.ahttp.get(this.settingsService.baseAddress + '/register')
+                .subscribe((res) => {
+                    var data = JSON.parse(res['_body']);
+                    data.private_key = dh.getPrivateKey().toString('hex');
+                    data.public_key = dh.getPublicKey().toString('hex');
+                    this.getTransaction(data, resolve);
+                });
             });
         });
     }
@@ -364,19 +299,11 @@ export class HomePage {
         //    content: 'Please wait...'
         //});
         //this.loadingModal.present();
-        if (this.platform.is('android') || this.platform.is('ios')) {
-            this.http.get(this.settingsService.baseAddress + '/search', {phrase: phrase, bulletin_secret: this.bulletinSecretService.bulletin_secret}, {})
-            .then((res) => {
-                //this.loadingModal2.dismiss();
-                this.alertRoutine(JSON.parse(res.data));
-            });
-        } else {
-            this.ahttp.get(this.settingsService.baseAddress + '/search?phrase=' + phrase + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
-            .subscribe((res) => {
-                //this.loadingModal2.dismiss();
-                this.alertRoutine(JSON.parse(res['_body']));
-            });
-        }
+        this.ahttp.get(this.settingsService.baseAddress + '/search?phrase=' + phrase + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
+        .subscribe((res) => {
+            //this.loadingModal2.dismiss();
+            this.alertRoutine(JSON.parse(res['_body']));
+        });
     }
 
     scanFriend() {
@@ -427,6 +354,11 @@ export class HomePage {
             alert.present();
             return
         }
+
+        var dh = diffiehellman.getDiffieHellman('modp17')
+        dh.generateKeys()
+        info.dh_private_key = dh.getPrivateKey().toString('hex');
+        info.dh_public_key = dh.getPublicKey().toString('hex');
         //this.loadingModal = this.loadingCtrl.create({
         //    content: 'Please wait...'
         //});
@@ -477,9 +409,9 @@ export class HomePage {
                         this.transactionService.pushTransaction({
                             relationship: {
                                 bulletin_secret: info.bulletin_secret,
-                                dh_private_key: info.private_key
+                                dh_private_key: info.dh_private_key
                             },
-                            dh_public_key: info.public_key,
+                            dh_public_key: info.dh_public_key,
                             requested_rid: info.requested_rid,
                             requester_rid: info.requester_rid,
                             blockchainurl: this.blockchainAddress,
@@ -522,21 +454,12 @@ export class HomePage {
                     txn['shared_secret'] = relationship.shared_secret;
                     txn['bulletin_secret'] = this.bulletinSecretService.bulletin_secret;
                     txn['accept'] = true;
-                    if (this.platform.is('android') || this.platform.is('ios')) {
-                        this.http.post(this.settingsService.baseAddress + '/request-notification', {
-                            rid: friend.rid,
-                            requested_rid: txn['requested_rid'],
-                            to: this.bulletinSecretService.key.getAddress(),
-                            data: JSON.stringify(txn)
-                        }, {'Content-Type': 'application/json'});
-                    } else {
-                        this.ahttp.post(this.settingsService.baseAddress + '/request-notification', {
-                            rid: friend.rid,
-                            requested_rid: txn['requested_rid'],
-                            to: this.bulletinSecretService.key.getAddress(),
-                            data: JSON.stringify(txn)
-                        }).subscribe(() => {});
-                    }
+                    this.ahttp.post(this.settingsService.baseAddress + '/request-notification', {
+                        rid: friend.rid,
+                        requested_rid: txn['requested_rid'],
+                        to: this.bulletinSecretService.key.getAddress(),
+                        data: JSON.stringify(txn)
+                    }).subscribe(() => {});
                 });
 
                 this.peerService.rid = info.requester_rid;

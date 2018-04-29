@@ -24,11 +24,12 @@
     <button ion-item *ngFor="let item of items" (click)="itemTapped($event, item)">
       <span *ngIf="pageTitle =='Sent Requests' && !item.transaction.username">{{item.transaction.requested_rid}}</span>
       <span *ngIf="pageTitle =='Sent Requests' && item.transaction.username">{{item.transaction.username}}</span>
-      <span *ngIf="pageTitle =='Friend Requests'">{{item.transaction.requester_rid}}</span>
+      <span *ngIf="pageTitle =='Friend Requests' && !item.transaction.username">{{item.transaction.requester_rid}}</span>
+      <span *ngIf="pageTitle =='Friend Requests' && item.transaction.username">{{item.transaction.username}}</span>
       <span *ngIf="pageTitle =='Chat' && !item.transaction.username">{{item.transaction.rid}}</span>
       <span *ngIf="pageTitle =='Chat' && item.transaction.username">{{item.transaction.username}}</span>
-      <span *ngIf="pageTitle =='Friends'">{{item.transaction.rid}}</span>
-      <span *ngIf="pageTitle =='Posts'">{{item.transaction.relationship.postText}}</span>
+      <span *ngIf="pageTitle =='Friends' && !item.transaction.username">{{item.transaction.rid}}</span>
+      <span *ngIf="pageTitle =='Friends' && item.transaction.username">{{item.transaction.username}}</span>
     </button>
   </ion-list>
   <div *ngIf="selectedItem && pageTitle =='Sent Requests'" padding>
@@ -39,7 +40,7 @@
       <ion-item>
         <button ion-button outline item-end (click)="share(createdCodeEncoded)">share&nbsp;<ion-icon name="share"></ion-icon></button>
       </ion-item>
-      <ngx-qrcode [qrc-value]="createdCode"></ngx-qrcode>
+      <ngx-qrcode *ngIf="createdCode" [qrc-value]="createdCode"></ngx-qrcode>
       <ion-card-content>
         <p>{{createdCode}}</p>
       </ion-card-content>
@@ -60,11 +61,8 @@
       <button ion-button secondary (click)="accept()">Accept</button>
       <ngx-qrcode [qrc-value]="friend_request"></ngx-qrcode>
       <ion-card-content>
-        <p>{{friend_request}}</p>
+        <p>{{friend_request.username}}</p>
       </ion-card-content>
-    </ion-card>
-    <ion-card *ngIf="!friend_request">
-      This friend request is submitted to the blockchain but your device didn't recieve it. Ask your friend to resend the request from the sent requests section.
     </ion-card>
     <!-- for now, we can't do p2p on WKWebView
     <button *ngIf="pageTitle == 'Friend Requests'" ion-button secondary (click)="accept(selectedItem.transaction)">Accept Request</button>

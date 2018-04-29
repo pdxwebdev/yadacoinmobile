@@ -41,20 +41,10 @@ export class GraphService {
             return new Promise((resolve, reject) => {
                 this.bulletinSecretService.get().then(() => {
                     return new Promise((resolve1, reject1) => {
-                        if (this.platform.is('android') || this.platform.is('ios')) {
-                            this.http.get(
-                                this.settingsService.graphproviderAddress,
-                                {bulletin_secret: this.bulletinSecretService.bulletin_secret},
-                                {'Content-Type': 'application/json'}
-                            ).then((data) => {
-                                this.graphParser(data['data'], resolve1);
-                            });
-                        } else {
-                            this.ahttp.get(this.settingsService.graphproviderAddress + '?bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
-                            .subscribe((data) => {
-                                this.graphParser(data['_body'], resolve1);
-                            });
-                        }
+                        this.ahttp.get(this.settingsService.graphproviderAddress + '?bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
+                        .subscribe((data) => {
+                            this.graphParser(data['_body'], resolve1);
+                        });
                     }).then(() => {
                         resolve();
                     });
@@ -84,6 +74,7 @@ export class GraphService {
             this.humanHash = this.graph.human_hash;
             var dh_private_keys = {};
             var sent_friend_requests = {};
+            var friends = {};
             for(var i=0; i<this.graph.sent_friend_requests.length; i++) {
                 var sent_friend_request = this.graph.sent_friend_requests[i];
                 if (!dh_private_keys[sent_friend_request.rid]) {
@@ -92,34 +83,35 @@ export class GraphService {
                         dh_public_keys: []
                     };
                 }
-                try {
-                    var decrypted = this.decrypt(sent_friend_requests['relationship']);
+                var decrypted = this.decrypt(sent_friend_request['relationship']);
+                if (decrypted.indexOf('{') === 0) {
                     var relationship = JSON.parse(decrypted);
                     sent_friend_requests[sent_friend_request.rid] = sent_friend_request;
+                    friends[sent_friend_request.rid] = sent_friend_request;
                     dh_private_keys[sent_friend_request.rid].dh_private_keys.push(relationship.dh_private_key);
-                } catch(err) {
+                } else {
                     dh_private_keys[sent_friend_request.rid].dh_public_keys.push(sent_friend_request.dh_public_key);
                 }
             }
             var friend_requests = {};
             for(var i=0; i<this.graph.friend_requests.length; i++) {
                 var friend_request = this.graph.friend_requests[i];
-                if (!dh_private_keys[sent_friend_request.rid]) {
-                    dh_private_keys[sent_friend_request.rid] = {
+                if (!dh_private_keys[friend_request.rid]) {
+                    dh_private_keys[friend_request.rid] = {
                         dh_private_keys: [],
                         dh_public_keys: []
                     };
                 }
-                try {
-                    var decrypted = this.decrypt(friend_request.relationship);
+                var decrypted = this.decrypt(friend_request.relationship);
+                if (decrypted.indexOf('{') === 0) {
                     var relationship = JSON.parse(decrypted);
-                    friend_requests[friend_request.rid] = friend_request;
+                    friends[friend_request.rid] = friend_request;
                     dh_private_keys[friend_request.rid].dh_private_keys.push(relationship.dh_private_key);
-                } catch(err) {
+                } else {
+                    friend_requests[friend_request.rid] = friend_request;
                     dh_private_keys[friend_request.rid].dh_public_keys.push(friend_request.dh_public_key);
                 }
             }
-            var friends = {};
             for(var i=0; i<this.graph.friends.length; i++) {
                 var friend = this.graph.friends[i];
                 if (!dh_private_keys[friend.rid]) {
@@ -128,20 +120,20 @@ export class GraphService {
                         dh_public_keys: []
                     };
                 }
-                try {
-                    var decrypted = this.decrypt(friend.relationship);
+                var decrypted = this.decrypt(friend.relationship);
+                if (decrypted.indexOf('{') === 0) {
                     var relationship = JSON.parse(decrypted);
                     friends[friend.rid] = friend;
                     dh_private_keys[friend.rid].dh_private_keys.push(relationship.dh_private_key);
-                } catch(err) {
+                } else {
                     dh_private_keys[friend.rid].dh_public_keys.push(friend.dh_public_key);
                 }
             }
             var messages = {};
             var chats = {};
             dance:
-            for(var i=0; i<this.graph.friends.length; i++) {
-                var message = this.graph.friends[i];
+            for(var i=0; i<this.graph.messages.length; i++) {
+                var message = this.graph.messages[i];
                 if (!message.rid) continue;
                 if (!dh_private_keys[message.rid]) continue;
                 if (message.dh_public_key) continue;
@@ -149,33 +141,35 @@ export class GraphService {
                     var dh_private_key = dh_private_keys[message.rid].dh_private_keys[j];
                     for(var k=0; k<dh_private_keys[message.rid].dh_public_keys.length; k++) {
                         var dh_public_key = dh_private_keys[message.rid].dh_public_keys[j];
-                        try {
-                            if (this.stored_secrets['shared_secret-' + dh_public_key.substr(0, 25) + dh_private_key.substr(0, 25)]) {
-                                var shared_secret = this.stored_secrets['shared_secret-' + dh_public_key.substr(0, 25) + dh_private_key.substr(0, 25)];
-                            } else {
-                                var dh = diffiehellman.getDiffieHellman('modp17');
-                                var dh1 = diffiehellman.createDiffieHellman(dh.getPrime(), dh.getGenerator());
-                                var pubk2 = this.hexToBytes(dh_public_key);
-                                dh1.setPublicKey(pubk2);
-                                dh1.setPrivateKey(this.hexToBytes(dh_private_key));
-                                var shared_secret = dh1.computeSecret(pubk2).toString('hex'); //this is the actual shared secret
-                                this.storage.set('shared_secret-' + dh_public_key.substr(0, 25) + dh_private_key.substr(0, 25), shared_secret);
+                        var key = 'shared_secret-' + dh_public_key.slice(0, 26) + dh_private_key.slice(0, 26);
+                        if (this.stored_secrets[key]) {
+                            var shared_secret = this.stored_secrets[key];
+                        } else {
+                            var dh = diffiehellman.getDiffieHellman('modp17');
+                            var dh1 = diffiehellman.createDiffieHellman(dh.getPrime(), dh.getGenerator());
+                            var privk = new Uint8Array(dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
+                              return parseInt(h, 16)
+                            }));
+                            dh1.setPrivateKey(privk);
+                            var pubk2 = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
+                              return parseInt(h, 16)
+                            }));
+                            var shared_secret = dh1.computeSecret(pubk2).toString('hex'); //this is the actual shared secret
+                            this.storage.set(key, shared_secret);
+                            this.stored_secrets[key] = shared_secret;
+                        }
+                        var decrypted = this.shared_decrypt(shared_secret, message.relationship);
+                        if(decrypted.indexOf('{') === 0) {
+                            messages[message.rid] = message;
+                            if (!chats[message.rid]) {
+                                chats[message.rid] = [];
                             }
-                            var decrypted = this.shared_decrypt(shared_secret, message.relationship);
-                            if(decrypted != '') {
-                                messages[message.rid] = message;
-                                if (!chats[message.rid]) {
-                                    chats[message.rid] = [];
-                                }
-                                var messageJson = JSON.parse(decrypted)
-                                if(messageJson.chatText) {
-                                    message.relationship = messageJson;
-                                    chats[message.rid].push(message);
-                                }
-                                break dance;
+                            var messageJson = JSON.parse(decrypted)
+                            if(messageJson.chatText) {
+                                message.relationship = messageJson;
+                                chats[message.rid].push(message);
                             }
-                        } catch(err) {
-
+                            break dance;
                         }
                     }
                 }
@@ -225,7 +219,7 @@ export class GraphService {
                 this.graph.friends = []
                 for(var i=0; i<arr_friends_keys.length; i++) {
                     if (usernames[arr_friends_keys[i]]) {
-                        messages[i].username = usernames[arr_friends_keys[i]];
+                        //messages[i].username = usernames[arr_friends_keys[i]];
                     }
                     this.graph.friends.push(friends[arr_friends_keys[i]])
                 }
@@ -245,7 +239,7 @@ export class GraphService {
         decipher.start({iv: enc.slice(0,16)});
         decipher.update(forge.util.createBuffer(enc.slice(16)));
         decipher.finish();
-        return decipher.output
+        return decipher.output.data
     }
 
     shared_decrypt(shared_secret, message) {
@@ -255,7 +249,7 @@ export class GraphService {
         decipher.start({iv: enc.slice(0,16)});
         decipher.update(forge.util.createBuffer(enc.slice(16)));
         decipher.finish();
-        return decipher.output
+        return decipher.output.data
     }
 
     hexToBytes(s) {

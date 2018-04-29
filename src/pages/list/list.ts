@@ -11,6 +11,8 @@ import { TransactionService } from '../../app/transaction.service';
 import { HTTP } from '@ionic-native/http';
 import { SocialSharing } from '@ionic-native/social-sharing';
 import { ChatPage } from '../chat/chat';
+import { Platform } from 'ionic-angular';
+
 
 declare var forge;
 declare var foobar;
@@ -49,9 +51,17 @@ export class ListPage {
     private socialSharing: SocialSharing,
     private settingsService: SettingsService,
     private alertCtrl: AlertController,
+    private platform: Platform,
     public loadingCtrl: LoadingController
   ) {
     this.refresh();
+    this.platform.ready().then(() => {
+      if(this.platform.is('cordova')) {
+        if(this.platform.is('android') || this.platform.is('ios')) {
+          this.http.setDataSerializer('json');
+        }
+      }
+    });
   }
 
   refresh() {
@@ -116,19 +126,7 @@ export class ListPage {
             this.createdCodeEncoded = 'http://71.237.161.227:5000/deeplink?txn=' + encodeURIComponent(this.createdCode);
         }
         else if (pageTitle == 'Friend Requests') {
-          var friend_requests = {};
-          this.storage.forEach((value, key) => {
-            if (key.substr(0, 'friend_request'.length) === 'friend_request') {
-              try {
-                var parsed = JSON.parse(value);
-                if (key.substr('friend_request-'.length) === this.navParams.get('item').transaction.requester_rid+this.navParams.get('item').transaction.requested_rid) {
-                  this.friend_request = parsed;
-                }
-              } catch(error) {
-
-              }
-            }
-          });
+          this.friend_request = this.navParams.get('item').transaction;
         }
     }
     this.balance = this.walletService.wallet.balance;
@@ -149,7 +147,7 @@ export class ListPage {
   accept() {
     let alert = this.alertCtrl.create();
     alert.setTitle('Approve Transaction');
-    alert.setSubTitle('You are about to spend 2.02 coins.');
+    alert.setSubTitle('You are about to spend 1.01 coins.');
     alert.addButton({
         text: 'Cancel',
         handler: (data: any) => {
@@ -162,6 +160,13 @@ export class ListPage {
         this.loadingModal.present();
         this.walletService.get().then(() => {
           return new Promise((resolve, reject) => {
+            var to = '';
+            for (var i=0; i < this.friend_request.outputs.length; i++) {
+              var output = this.friend_request.outputs[i];
+              if (output.to != this.bulletinSecretService.key.getAddress()) {
+                to = output.to;
+              }
+            }
             var dh = diffiehellman.getDiffieHellman('modp17')
             dh.generateKeys()
             this.transactionService.pushTransaction({
@@ -172,17 +177,16 @@ export class ListPage {
               dh_public_key: dh.getPublicKey().toString('hex'),
               requested_rid: this.friend_request.requested_rid,
               requester_rid: this.friend_request.requester_rid,
-              to: this.friend_request.to,
+              to: to,
               blockchainurl: this.blockchainAddress,
-              confirm_friend: false,
               resolve: resolve
             });
           });
         }).then((txn) => {
           this.loadingModal.dismiss();
           var alert = this.alertCtrl.create();
-          alert.setTitle('Friend Request Sent');
-          alert.setSubTitle('Your Friend Request has been sent successfully.');
+          alert.setTitle('Friend Accept Sent');
+          alert.setSubTitle('Your Friend Request acceptance has been submitted successfully.');
           alert.addButton('Ok');
           alert.present();
         });

@@ -50,11 +50,9 @@ export class BulletinSecretService {
                     }
                      
                     this.bulletin_secret = foobar.bitcoin.crypto.sha256(this.shared_encrypt(this.key.toWIF(), this.key.toWIF())).toString('hex');
-                    if (this.platform.is('android') || this.platform.is('ios')) {
-                        this.http.get(this.settingsService.baseAddress + '/faucet', {'address': this.key.getAddress()}, {});
-                    } else {
-                        this.ahttp.get(this.settingsService.baseAddress + '/faucet?address=' + this.key.getAddress()).subscribe(()=>{});
-                    }
+
+                    this.ahttp.get(this.settingsService.baseAddress + '/faucet?address=' + this.key.getAddress()).subscribe(()=>{});
+
                     resolve();
                 });
             });

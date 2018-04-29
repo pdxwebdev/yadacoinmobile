@@ -58,19 +58,11 @@ export class FirebaseService {
       }
       this.firebase.getToken()
       .then((token) => {
-        if(this.platform.is('android') || this.platform.is('ios')) {
-          this.http.post(this.settingsService.baseAddress + '/fcm-token', {
-            rid: friend.rid,
-            token: token,
-            shared_secret: friend.relationship.shared_secret
-          }, {'Content-Type': 'application/json'});
-        } else {
-          this.ahttp.post(this.settingsService.baseAddress + '/fcm-token', {
-            rid: friend.rid,
-            token: token,
-            shared_secret: friend.relationship.shared_secret
-          }).subscribe(() => {});
-        }
+        this.ahttp.post(this.settingsService.baseAddress + '/fcm-token', {
+          rid: friend.rid,
+          token: token,
+          shared_secret: friend.relationship.shared_secret
+        }).subscribe(() => {});
       })
       .catch((error) => {
           console.error('Error getting token', error)
@@ -78,19 +70,11 @@ export class FirebaseService {
 
       this.firebase.onTokenRefresh()
       .subscribe((token: string) => {
-        if(this.platform.is('android') || this.platform.is('ios')) {
-          this.http.post(this.settingsService.baseAddress + '/fcm-token', {
-            rid: friend.rid,
-            token: token,
-            shared_secret: friend.relationship.shared_secret
-          }, {'Content-Type': 'application/json'});
-        } else {
-          this.ahttp.post(this.settingsService.baseAddress + '/fcm-token', {
-            rid: friend.rid,
-            token: token,
-            shared_secret: friend.relationship.shared_secret
-          }).subscribe(() => {});
-        }
+        this.ahttp.post(this.settingsService.baseAddress + '/fcm-token', {
+          rid: friend.rid,
+          token: token,
+          shared_secret: friend.relationship.shared_secret
+        }).subscribe(() => {});
       });
 
       this.firebase.onNotificationOpen().subscribe(notification => {

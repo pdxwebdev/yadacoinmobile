@@ -92,7 +92,7 @@ export class TransactionService {
 
         if (transactions.length > 0 && this.info.relationship.dh_private_key) {
             // existing relationship, exit
-            return;
+            //return;
         }
         this.walletService.get().then(() => {
             this.generateTransaction();
@@ -238,11 +238,15 @@ export class TransactionService {
             // chat
             var dh = diffiehellman.getDiffieHellman('modp17');
             var dh1 = diffiehellman.createDiffieHellman(dh.getPrime(), dh.getGenerator());
-            var pubk2 = this.hexToBytes(this.info.dh_public_key);
-            dh1.setPublicKey(pubk2);
-            dh1.setPrivateKey(this.hexToBytes(this.info.dh_private_key));
+            var privk = new Uint8Array(this.info.dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
+              return parseInt(h, 16)
+            }));
+            dh1.setPrivateKey(privk);
+            var pubk2 = new Uint8Array(this.info.dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
+              return parseInt(h, 16)
+            }));
             var shared_secret = dh1.computeSecret(pubk2).toString('hex'); //this is the actual shared secret
-            this.storage.set('shared_secret-' + this.info.dh_public_key.substr(0, 25) + this.info.dh_private_key.substr(0, 25), shared_secret);
+            this.storage.set('shared_secret-' + this.info.dh_public_key.substr(0, 26) + this.info.dh_private_key.substr(0, 26), shared_secret);
             this.transaction.relationship = this.shared_encrypt(shared_secret, JSON.stringify(this.info.relationship));                    
 
             var hash = foobar.bitcoin.crypto.sha256(
