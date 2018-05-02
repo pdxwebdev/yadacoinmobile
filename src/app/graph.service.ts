@@ -69,7 +69,6 @@ export class GraphService {
     graphParser(data, resolve1) {
         this.getStoredSecrets().then(() => {
             this.graph = JSON.parse(data);
-            this.graph.friend_posts.reverse();
             this.rid = this.graph.rid;
             this.humanHash = this.graph.human_hash;
             var dh_private_keys = {};

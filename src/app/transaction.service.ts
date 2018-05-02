@@ -311,16 +311,16 @@ export class TransactionService {
 
 
     get_transaction_id(hash, trynum) {
-        var combine = new Uint8Array(hash.length + 2);
-        combine[0] = 0;
-        combine[1] = 64;
+        var combine = new Uint8Array(hash.length);
+        //combine[0] = 0;
+        //combine[1] = 64;
         for (var i = 0; i < hash.length; i++) {
-            combine[i+2] = hash.charCodeAt(i)
+            combine[i] = hash.charCodeAt(i)
         }
-        var shaMessage = foobar.bitcoin.crypto.sha256(foobar.bitcoin.crypto.sha256(combine));
+        var shaMessage = foobar.bitcoin.crypto.sha256(combine);
         var signature = this.key.sign(shaMessage);
-        var compact = signature.toCompact(trynum, false);
-        return foobar.base64.fromByteArray(compact);
+        var der = signature.toDER();
+        return foobar.base64.fromByteArray(der);
     }
 
     direct_message(data) {

@@ -159,7 +159,7 @@ export class HomePage {
             // all friend post operations from here down
             ////////////////////////////////////////////
             this.color = this.graphService.graph.friend_requests.length > 0 ? 'danger' : '';
-            var graphArray = this.graphService.graph.friend_posts
+            var graphArray = this.graphService.graph.posts
             if (graphArray.length == 0) {
                 this.loading = false;
                 this.loadingModal.dismiss();
