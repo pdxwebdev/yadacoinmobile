@@ -8,6 +8,7 @@ import { ListPage } from '../list/list';
 import { HTTP } from '@ionic-native/http';
 import { Http } from '@angular/http';
 import { Platform } from 'ionic-angular';
+import { AlertController, LoadingController } from 'ionic-angular';
 
 
 @Component({
@@ -16,6 +17,8 @@ import { Platform } from 'ionic-angular';
 })
 export class ProfilePage {
     baseAddress: any;
+    loadingModal: any;
+    prev_name: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -25,8 +28,10 @@ export class ProfilePage {
         private platform: Platform,
         public graphService: GraphService,
         private bulletinSecretService: BulletinSecretService,
-        private ahttp: Http
+        private ahttp: Http,
+        public loadingCtrl: LoadingController
     ) {
+        this.prev_name = graphService.graph.human_hash;
         this.refresh();
     }
 
@@ -36,38 +41,48 @@ export class ProfilePage {
         });
     }
 
+    change() {
+        this.graphService.graph.human_hash = this.graphService.graph.human_hash.toLocaleLowerCase();
+    }
+
     save() {
-        if (this.platform.is('android') || this.platform.is('ios')) {
-            this.http.post(
-                this.baseAddress + '/change-username',
-                {
-                    rid: this.graphService.rid,
-                    username: this.graphService.humanHash,
-                    relationship: {
-                        bulletin_secret: this.bulletinSecretService.bulletin_secret
-                    },
-                    to: this.bulletinSecretService.key.getAddress()
+        this.loadingModal = this.loadingCtrl.create({
+            content: 'Please wait...'
+        });
+        this.loadingModal.present();
+        this.ahttp.post(
+            this.baseAddress + '/change-username',
+            {
+                rid: this.graphService.rid,
+                username: this.graphService.graph.human_hash,
+                relationship: {
+                    bulletin_secret: this.bulletinSecretService.bulletin_secret
                 },
-                {'Content-Type': 'application/json'}
-            ).then((data) => {
-                return;
+                to: this.bulletinSecretService.key.getAddress()
+            }
+        )
+        .subscribe((data) => {
+            return new Promise((resolve, reject) => {
+                this.storage.get('usernames-' + this.prev_name)
+                .then((key) => {
+                    this.storage.remove('usernames-' + this.prev_name)
+                    .then(() => {
+                        this.storage.set('usernames-' + this.graphService.graph.human_hash, key)
+                        .then(() => {
+                            this.prev_name = this.graphService.graph.human_hash;
+                            this.bulletinSecretService.set('usernames-' + this.graphService.graph.human_hash)
+                            .then(() => {
+                                resolve();
+                            });
+                        });
+                    });
+                });
+            })
+            .then(() => {
+                this.loadingModal.dismiss();
+                alert('saved!');
             });
-        } else {
-            this.ahttp.post(
-                this.baseAddress + '/change-username',
-                {
-                    rid: this.graphService.rid,
-                    username: this.graphService.humanHash,
-                    relationship: {
-                        bulletin_secret: this.bulletinSecretService.bulletin_secret
-                    },
-                    to: this.bulletinSecretService.key.getAddress()
-                }
-            )
-            .subscribe((data) => {
-                return;
-            });
-        }
+        });
     }
 
     showChat() {

@@ -19,7 +19,7 @@
     <ion-col text-center>
       <ion-item>
         <ion-label color="primary" stacked>Username:</ion-label>
-        <ion-input type="text" [(ngModel)]="graphService.humanHash">
+        <ion-input type="text" [(ngModel)]="graphService.graph.human_hash" (ionChange)="change()">
         </ion-input>
         <button *ngIf="isCordova" ion-button outline item-end (click)="sharePhrase()">share&nbsp;<ion-icon name="share"></ion-icon></button>
       </ion-item>

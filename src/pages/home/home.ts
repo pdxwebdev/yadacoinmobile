@@ -249,12 +249,11 @@ export class HomePage {
     }
 
     sharePhrase() {
-        this.socialSharing.share(this.graphService.humanHash, "Add me on Yada Coin!");
+        this.socialSharing.share(this.graphService.graph.human_hash, "Add me on Yada Coin!");
     }
 
     createCode() {
         this.graphService.getGraph().then(() => {
-            this.peerService.init();
             this.createdCode = JSON.stringify({
                 bulletin_secret: this.bulletinSecretService.bulletin_secret,
                 shared_secret: uuid4(),
@@ -354,15 +353,15 @@ export class HomePage {
             alert.present();
             return
         }
+        this.loadingModal = this.loadingCtrl.create({
+            content: 'Please wait...'
+        });
+        this.loadingModal.present();
 
         var dh = diffiehellman.getDiffieHellman('modp17')
         dh.generateKeys()
         info.dh_private_key = dh.getPrivateKey().toString('hex');
         info.dh_public_key = dh.getPublicKey().toString('hex');
-        //this.loadingModal = this.loadingCtrl.create({
-        //    content: 'Please wait...'
-        //});
-        //this.loadingModal.present();
         if (info.requester_rid && info.requested_rid && info.requester_rid === info.requested_rid) {
             let alert = this.alertCtrl.create();
             alert.setTitle('Oops!');
@@ -461,9 +460,6 @@ export class HomePage {
                         data: JSON.stringify(txn)
                     }).subscribe(() => {});
                 });
-
-                this.peerService.rid = info.requester_rid;
-                this.peerService.init();
             }
         });
         alert.present();
@@ -479,10 +475,6 @@ export class HomePage {
     presentModal() {
         let modal = this.modalCtrl.create(PostModal, {blockchainAddress: this.blockchainAddress, logicalParent: this});
         modal.present();
-    }
-
-    addPeer() {
-        this.peerService.init();
     }
 
     share(url) {

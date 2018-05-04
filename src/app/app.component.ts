@@ -50,6 +50,7 @@ export class MyApp {
     private firebaseService: FirebaseService,
     private pushService: PushService
   ) {
+    this.graphService.graph = {}
     this.initializeApp();
     this.pages = [
       { title: 'Me', component: ProfilePage, count: false, color: '' },

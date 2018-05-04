@@ -2,6 +2,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { ErrorHandler, NgModule } from '@angular/core';
 import { IonicApp, IonicErrorHandler, IonicModule } from 'ionic-angular';
 import { HttpModule } from '@angular/http';
+import { CommonModule } from '@angular/common';
 
 import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
@@ -56,7 +57,8 @@ import { Push, PushObject, PushOptions } from '@ionic-native/push';
     }),
     NgxQRCodeModule,
     HttpModule,
-    EmojiPickerModule.forRoot()
+    EmojiPickerModule.forRoot(),
+    CommonModule
   ],
   bootstrap: [IonicApp],
   entryComponents: [

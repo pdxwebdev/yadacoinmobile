@@ -19,7 +19,6 @@ export class GraphService {
     xhr: any;
     key: any;
     rid: any;
-    humanHash: any;
     stored_secrets: any;
     constructor(
         private storage: Storage,
@@ -43,11 +42,27 @@ export class GraphService {
                     return new Promise((resolve1, reject1) => {
                         this.ahttp.get(this.settingsService.graphproviderAddress + '?bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
                         .subscribe((data) => {
-                            this.graphParser(data['_body'], resolve1);
+                            this.graphParser(data['_body'])
+                            .then(() => {
+                                resolve1();
+                            });
                         });
                     }).then(() => {
                         resolve();
                     });
+                });
+            })
+            .then(() => {
+                var currentWif = this.bulletinSecretService.key.toWIF();
+                this.storage.forEach((value, key) => {
+                    if(value === currentWif) {
+                        this.storage.remove(key).then(() => {
+                            this.storage.set('usernames-' + this.graph.human_hash, currentWif);
+                        });
+                    }
+                })
+                .then(() => {
+                    this.storage.set('usernames-' + this.graph.human_hash, currentWif);
                 });
             });
         });
@@ -66,11 +81,10 @@ export class GraphService {
         });
     }
 
-    graphParser(data, resolve1) {
-        this.getStoredSecrets().then(() => {
+    graphParser(data) {
+        return this.getStoredSecrets().then(() => {
             this.graph = JSON.parse(data);
             this.rid = this.graph.rid;
-            this.humanHash = this.graph.human_hash;
             var dh_private_keys = {};
             var sent_friend_requests = {};
             var friends = {};
@@ -227,7 +241,6 @@ export class GraphService {
                 this.badge.set(this.graph.friend_requests.length);
             }
             this.graph.keys = dh_private_keys;
-            resolve1();
         });
     }
 

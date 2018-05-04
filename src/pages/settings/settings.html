@@ -16,14 +16,16 @@
 </ion-header>
 
 <ion-content padding>
-  <h3>Settings</h3>
+  <h3>Identities</h3>
   <ion-list>
-    <button ion-item *ngFor="let key of keys" (click)="set(key)">
-      <span>{{key}}</span>
+    <button ion-item *ngFor="let key of keys" (click)="set(key.username)" [color]="key.active ? 'secondary' : 'light'">
+      <span *ngIf="key.key && !key.username">{{key.key}}</span>
+      <span *ngIf="key.username">{{key.username}}</span>
     </button>
   </ion-list>
-  <button ion-button secondary (click)="createKey()">Create Key</button>
-
+  <button ion-button secondary (click)="createKey()">Create New Identity</button>
+  <hr/>
+  <h4>Settings (Advanced)</h4>
   <ion-item>
     <ion-input type="text" placeholder="Base URL" [(ngModel)]="baseAddress">
     </ion-input>

@@ -18,17 +18,11 @@ export class PeerService {
     key = null;
     baseAddress = null;
     constructor(private storage: Storage, private graphService: GraphService, private bulletinSecretService: BulletinSecretService) {
-      this.storage.get('key').then((key) => {
-          if(key && typeof key == 'string') {
-              this.key = foobar.bitcoin.ECPair.fromWIF(key);
-          } else {
-              this.key = foobar.bitcoin.ECPair.makeRandom();
-              this.storage.set('key', this.key.toWIF());
-          }
-      });
+      /*
       this.storage.get('baseAddress').then((baseAddress) => {
           this.baseAddress = baseAddress;
       });
+      */
     }
 
     init() {
