@@ -58,11 +58,13 @@ export class GraphService {
                     if(value === currentWif) {
                         this.storage.remove(key).then(() => {
                             this.storage.set('usernames-' + this.graph.human_hash, currentWif);
+                            this.bulletinSecretService.set('usernames-' + this.graph.human_hash);
                         });
                     }
                 })
                 .then(() => {
                     this.storage.set('usernames-' + this.graph.human_hash, currentWif);
+                    this.bulletinSecretService.set('usernames-' + this.graph.human_hash);
                 });
             });
         });
