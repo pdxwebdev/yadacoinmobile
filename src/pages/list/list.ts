@@ -38,6 +38,7 @@ export class ListPage {
   loadingModal: any;
   createdCodeEncoded: any;
   friend_request: any;
+  cryptoGenModal: any;
   constructor(
     public navCtrl: NavController,
     public navParams: NavParams,
@@ -54,6 +55,12 @@ export class ListPage {
     private platform: Platform,
     public loadingCtrl: LoadingController
   ) {
+    this.loadingModal = this.loadingCtrl.create({
+        content: 'Please wait...'
+    });
+    this.cryptoGenModal = this.loadingCtrl.create({
+        content: 'Generating encryption, please wait... (could take several minutes)'
+    });
     this.refresh();
     this.platform.ready().then(() => {
       if(this.platform.is('cordova')) {
@@ -65,71 +72,71 @@ export class ListPage {
   }
 
   refresh() {
+    return new Promise((resolve, reject) => {
+      this.loading = true;
+      this.loadingBalance = true;
 
-    this.loading = true;
-    this.loadingBalance = true;
-    this.loadingModal = this.loadingCtrl.create({
-        content: 'Please wait...'
-    });
-
-    // If we navigated to this page, we will have an item available as a nav param
-    this.storage.get('blockchainAddress').then((blockchainAddress) => {
-        this.blockchainAddress = blockchainAddress;
-    });
-    this.storage.get('baseAddress').then((baseAddress) => {
-        this.baseAddress = baseAddress;
-    });
-    this.selectedItem = this.navParams.get('item');
-    var pageTitle = this.selectedItem ? this.selectedItem.pageTitle : this.navParams.get('pageTitle').title;
-    this.pageTitle = pageTitle;
-    if(!this.selectedItem) {
-      // Let's populate this page with some filler content for funzies
-      this.icons = ['flask', 'wifi', 'beer', 'football', 'basketball', 'paper-plane',
-      'american-football', 'boat', 'bluetooth', 'build'];
-
-      this.graphService.getGraph()
-      .then(() => {
-
-        this.loading = false;
-        if (pageTitle == 'Friends') {
-            var graphArray = this.graphService.graph.friends
-        } else if (pageTitle == 'Chat') {
-            var graphArray = this.graphService.graph.friends
-        } else if (pageTitle == 'Friend Requests') {
-            var graphArray = this.graphService.graph.friend_requests
-        } else if (pageTitle == 'Sent Requests') {
-            var graphArray = this.graphService.graph.sent_friend_requests
-        }
-        this.items = [];
-        for (let i = 0; i < graphArray.length; i++) {
-          this.items.push({
-            pageTitle: pageTitle,
-            transaction: graphArray[i]
-          });
-        }
+      // If we navigated to this page, we will have an item available as a nav param
+      this.storage.get('blockchainAddress').then((blockchainAddress) => {
+          this.blockchainAddress = blockchainAddress;
       });
-      this.refreshWallet();
-    } else {
-        this.loading = false;
-        this.loadingBalance = false;
-        if (pageTitle == 'Sent Requests') {
-            var decrypted = this.bulletinSecretService.decrypt(this.selectedItem.transaction.relationship);
-            var relationship = JSON.parse(decrypted);
-            this.createdCode = JSON.stringify({
-                bulletin_secret: this.bulletinSecretService.bulletin_secret,
-                shared_secret: relationship.shared_secret,
-                to: this.bulletinSecretService.key.getAddress(),
-                requested_rid: this.selectedItem.transaction.requested_rid,
-                requester_rid: this.graphService.graph.rid,
-                accept: true
+      this.storage.get('baseAddress').then((baseAddress) => {
+          this.baseAddress = baseAddress;
+      });
+      this.selectedItem = this.navParams.get('item');
+      var pageTitle = this.selectedItem ? this.selectedItem.pageTitle : this.navParams.get('pageTitle').title;
+      this.pageTitle = pageTitle;
+      if(!this.selectedItem) {
+        // Let's populate this page with some filler content for funzies
+        this.icons = ['flask', 'wifi', 'beer', 'football', 'basketball', 'paper-plane',
+        'american-football', 'boat', 'bluetooth', 'build'];
+
+        this.graphService.getGraph()
+        .then(() => {
+
+          this.loading = false;
+          if (pageTitle == 'Friends') {
+              var graphArray = this.graphService.graph.friends
+          } else if (pageTitle == 'Chat') {
+              var graphArray = this.graphService.graph.friends
+          } else if (pageTitle == 'Friend Requests') {
+              var graphArray = this.graphService.graph.friend_requests
+          } else if (pageTitle == 'Sent Requests') {
+              var graphArray = this.graphService.graph.sent_friend_requests
+          }
+          this.items = [];
+          for (let i = 0; i < graphArray.length; i++) {
+            this.items.push({
+              pageTitle: pageTitle,
+              transaction: graphArray[i]
             });
-            this.createdCodeEncoded = 'http://71.237.161.227:5000/deeplink?txn=' + encodeURIComponent(this.createdCode);
-        }
-        else if (pageTitle == 'Friend Requests') {
-          this.friend_request = this.navParams.get('item').transaction;
-        }
-    }
-    this.balance = this.walletService.wallet.balance;
+          }
+          resolve();
+        });
+        this.refreshWallet();
+      } else {
+          this.loading = false;
+          this.loadingBalance = false;
+          if (pageTitle == 'Sent Requests') {
+              var decrypted = this.bulletinSecretService.decrypt(this.selectedItem.transaction.relationship);
+              var relationship = JSON.parse(decrypted);
+              this.createdCode = JSON.stringify({
+                  bulletin_secret: this.bulletinSecretService.bulletin_secret,
+                  shared_secret: relationship.shared_secret,
+                  to: this.bulletinSecretService.key.getAddress(),
+                  requested_rid: this.selectedItem.transaction.requested_rid,
+                  requester_rid: this.graphService.graph.rid,
+                  accept: true
+              });
+              this.createdCodeEncoded = 'http://71.237.161.227:5000/deeplink?txn=' + encodeURIComponent(this.createdCode);
+          }
+          else if (pageTitle == 'Friend Requests') {
+            this.friend_request = this.navParams.get('item').transaction;
+          }
+          resolve();
+      }
+      this.balance = this.walletService.wallet.balance;
+    });
   }
 
   itemTapped(event, item) {
@@ -151,13 +158,13 @@ export class ListPage {
     alert.addButton({
         text: 'Cancel',
         handler: (data: any) => {
-            this.loadingModal.dismiss();
+            alert.dismiss();
         }
     });
     alert.addButton({
       text: 'Confirm',
       handler: (data: any) => {
-        this.loadingModal.present();
+        this.cryptoGenModal.present();
         this.walletService.get().then(() => {
           return new Promise((resolve, reject) => {
             var to = '';
@@ -169,6 +176,8 @@ export class ListPage {
             }
             var dh = diffiehellman.getDiffieHellman('modp17')
             dh.generateKeys()
+            this.cryptoGenModal.dismiss();
+            this.loadingModal.present();
             this.transactionService.pushTransaction({
               relationship: {
                 bulletin_secret: this.friend_request.bulletin_secret,
@@ -189,6 +198,11 @@ export class ListPage {
           alert.setSubTitle('Your Friend Request acceptance has been submitted successfully.');
           alert.addButton('Ok');
           alert.present();
+          this.storage.set('accepted-' + this.friend_request.id, this.friend_request.id);
+          
+          this.refresh().then(() => {
+            this.navCtrl.pop();
+          });
         });
       }
     });

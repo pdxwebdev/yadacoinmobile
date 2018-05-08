@@ -42,6 +42,7 @@ export class HomePage {
     loadingBalance = true;
     loadingModal = null;
     loadingModal2 = null;
+    cryptoGenModal = null;
     phrase = null;
     color = null;
     isCordova = null;
@@ -137,6 +138,7 @@ export class HomePage {
     refresh() {
         this.loading = true;
         this.loadingBalance = true;
+
         this.loadingModal = this.loadingCtrl.create({
             content: 'Please wait...'
         });
@@ -217,16 +219,21 @@ export class HomePage {
     }
 
     register() {
+        this.cryptoGenModal = this.loadingCtrl.create({
+            content: 'Generating encryption, please wait... (could take several minutes)'
+        });
+        this.cryptoGenModal.present();
         return new Promise((resolve, reject) => {
-            var dh = diffiehellman.getDiffieHellman('modp17')
-            dh.generateKeys()
             this.walletService.get().then(() => {
                 this.ahttp.get(this.settingsService.baseAddress + '/register')
                 .subscribe((res) => {
                     var data = JSON.parse(res['_body']);
-                    data.private_key = dh.getPrivateKey().toString('hex');
-                    data.public_key = dh.getPublicKey().toString('hex');
+                    var dh = diffiehellman.getDiffieHellman('modp17')
+                    dh.generateKeys()
+                    data.dh_private_key = dh.getPrivateKey().toString('hex');
+                    data.dh_public_key = dh.getPublicKey().toString('hex');
                     this.getTransaction(data, resolve);
+                    this.cryptoGenModal.dismiss();
                 });
             });
         });
@@ -236,9 +243,9 @@ export class HomePage {
         return this.transactionService.pushTransaction({
             relationship: {
                 bulletin_secret: info.bulletin_secret,
-                dh_private_key: info.private_key
+                dh_private_key: info.dh_private_key
             },
-            dh_public_key: info.public_key,
+            dh_public_key: info.dh_public_key,
             requested_rid: info.requested_rid,
             requester_rid: info.requester_rid,
             blockchainurl: this.blockchainAddress,
@@ -353,15 +360,6 @@ export class HomePage {
             alert.present();
             return
         }
-        this.loadingModal = this.loadingCtrl.create({
-            content: 'Please wait...'
-        });
-        this.loadingModal.present();
-
-        var dh = diffiehellman.getDiffieHellman('modp17')
-        dh.generateKeys()
-        info.dh_private_key = dh.getPrivateKey().toString('hex');
-        info.dh_public_key = dh.getPublicKey().toString('hex');
         if (info.requester_rid && info.requested_rid && info.requester_rid === info.requested_rid) {
             let alert = this.alertCtrl.create();
             alert.setTitle('Oops!');
@@ -382,11 +380,16 @@ export class HomePage {
             text: 'Cancel',
             handler: (data: any) => {
                 this.loadingModal.dismiss();
+                this.cryptoGenModal.dismiss();
             }
         });
         alert.addButton({
             text: 'Confirm',
             handler: (data: any) => {
+                this.cryptoGenModal = this.loadingCtrl.create({
+                    content: 'Generating encryption, please wait... (could take several minutes)'
+                });
+                this.cryptoGenModal.present();
                 // camera permission was granted
                 var requester_rid = info.requester_rid;
                 var requested_rid = info.requested_rid;
@@ -405,6 +408,11 @@ export class HomePage {
                 //////////////////////////////////////////////////////////////////////////
                 this.walletService.get().then(() => {
                     return new Promise((resolve, reject) => {
+                        var dh = diffiehellman.getDiffieHellman('modp17')
+                        dh.generateKeys()
+                        info.dh_private_key = dh.getPrivateKey().toString('hex');
+                        info.dh_public_key = dh.getPublicKey().toString('hex');
+                        this.cryptoGenModal.dismiss();
                         this.transactionService.pushTransaction({
                             relationship: {
                                 bulletin_secret: info.bulletin_secret,
@@ -430,7 +438,6 @@ export class HomePage {
                     alert.setSubTitle('Your Friend Request has been sent successfully.');
                     alert.addButton('Ok');
                     alert.present();
-                    this.refresh();
                     for (var i=0; i < this.graphService.graph.friends.length; i++) {
                         var friend = this.graphService.graph.friends[i];
                         if (this.graphService.graph.rid = friend.rid) {

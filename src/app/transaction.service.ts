@@ -174,11 +174,7 @@ export class TransactionService {
 
         var outputs_hashes = [];
         for(var i=0; i < this.transaction.outputs.length; i++) {
-            if ((this.transaction.outputs[i].value+'').indexOf('.') === -1) {
-                outputs_hashes.push(this.transaction.outputs[i].to+this.transaction.outputs[i].value.toFixed(1));
-            } else {
-                outputs_hashes.push(this.transaction.outputs[i].to+this.transaction.outputs[i].value);
-            }
+            outputs_hashes.push(this.transaction.outputs[i].to+this.transaction.outputs[i].value.toFixed(8));
         }
 
         var outputs_hashes_arr = outputs_hashes.sort(function (a, b) {

@@ -20,6 +20,7 @@ export class GraphService {
     key: any;
     rid: any;
     stored_secrets: any;
+    accepted_friend_requests: any;
     constructor(
         private storage: Storage,
         private http: HTTP,
@@ -33,6 +34,7 @@ export class GraphService {
           http.setDataSerializer('json');
         }
         this.stored_secrets = {};
+        this.accepted_friend_requests = [];
     }
 
     getGraph() {
@@ -60,6 +62,9 @@ export class GraphService {
                             this.storage.set('usernames-' + this.graph.human_hash, currentWif);
                             this.bulletinSecretService.set('usernames-' + this.graph.human_hash);
                         });
+                    }
+                    if (key.indexOf('accepted-') === 0) {
+                        this.accepted_friend_requests.push(value);
                     }
                 })
                 .then(() => {
@@ -121,6 +126,7 @@ export class GraphService {
                 if (decrypted.indexOf('{') === 0) {
                     var relationship = JSON.parse(decrypted);
                     friends[friend_request.rid] = friend_request;
+                    delete friend_requests[friend_request.rid];
                     dh_private_keys[friend_request.rid].dh_private_keys.push(relationship.dh_private_key);
                 } else {
                     friend_requests[friend_request.rid] = friend_request;
@@ -227,6 +233,8 @@ export class GraphService {
                 for(var i=0; i<arr_friend_request_keys.length; i++) {
                     this.graph.friend_requests.push(friend_requests[arr_friend_request_keys[i]])
                 }
+            } else {
+                this.graph.friend_requests = [];
             }
 
             if(arr_friends.length > 0) {
