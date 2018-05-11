@@ -36,6 +36,7 @@ export class WalletService {
                         });
                     }).then((data: any) => {
                         this.wallet = JSON.parse(data);
+                        this.wallet.balancePretty = this.wallet.balance.toFixed(2);
                         resolve();
                     });
                 });

@@ -128,7 +128,7 @@ export class ListPage {
                   requester_rid: this.graphService.graph.rid,
                   accept: true
               });
-              this.createdCodeEncoded = 'http://71.237.161.227:5000/deeplink?txn=' + encodeURIComponent(this.createdCode);
+              this.createdCodeEncoded = 'https://yadacoin.io/deeplink?txn=' + encodeURIComponent(this.createdCode);
           }
           else if (pageTitle == 'Friend Requests') {
             this.friend_request = this.navParams.get('item').transaction;

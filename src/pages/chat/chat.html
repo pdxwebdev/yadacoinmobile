@@ -15,9 +15,12 @@
   </ion-navbar>
 </ion-header>
 <ion-content>
-	<div *ngFor="let item of chats">
-		{{item.relationship.chatText}}
-	</div>
+<ion-spinner *ngIf="loading"></ion-spinner>
+	<ion-list>
+	  <ion-item *ngFor="let item of chats" text-wrap [ngClass]="(item.public_key == public_key) ? 'speech-bubble-right' : 'speech-bubble-left'">
+			{{item.relationship.chatText}}
+	  </ion-item>
+	</ion-list>
 	<ion-item>
 		<ion-label color="primary" floating>Chat text</ion-label>
 		<ion-input [(ngModel)]="chatText"></ion-input>

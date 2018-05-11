@@ -13,6 +13,7 @@ import { Platform } from 'ionic-angular';
 declare var foobar;
 declare var forge;
 declare var uuid4;
+declare var firebase;
 
 @Injectable()
 export class FirebaseService {
@@ -35,45 +36,24 @@ export class FirebaseService {
 
   initFirebase() {
     this.graphService.getGraph().then(() => {
-      for (var i=0; i < this.graphService.graph.friends.length; i++) {
-          var friend = this.graphService.graph.friends[i];
-          if (this.graphService.graph.rid == friend.rid) {
-            try {
-              if (friend.relationship.shared_secret) {
-                  break;
-              }
-              friend.relationship = JSON.parse(this.bulletinSecretService.decrypt(friend.relationship));
-              break;
-            } catch(error) {
-
-            }
-          }
-      }
-      if (!friend) {
-        // not registered
-        return;
-      }
-      if (!friend.relationship.shared_secret) {
-        return;
-      }
       this.firebase.getToken()
       .then((token) => {
+        console.log(token);
         this.ahttp.post(this.settingsService.baseAddress + '/fcm-token', {
-          rid: friend.rid,
+          rid: this.graphService.graph.rid,
           token: token,
-          shared_secret: friend.relationship.shared_secret
         }).subscribe(() => {});
       })
       .catch((error) => {
-          console.error('Error getting token', error)
+          console.log('Error getting token', error)
       });
 
       this.firebase.onTokenRefresh()
       .subscribe((token: string) => {
+        console.log(token);
         this.ahttp.post(this.settingsService.baseAddress + '/fcm-token', {
-          rid: friend.rid,
-          token: token,
-          shared_secret: friend.relationship.shared_secret
+          rid: this.graphService.graph.rid,
+          token: token
         }).subscribe(() => {});
       });
 

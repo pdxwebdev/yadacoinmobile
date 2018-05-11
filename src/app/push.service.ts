@@ -29,47 +29,27 @@ export class PushService {
 
   initPush() {
     this.graphService.getGraph().then(() => {
-      for (var i=0; i < this.graphService.graph.friends.length; i++) {
-          var friend = this.graphService.graph.friends[i];
-          if (this.graphService.graph.rid == friend.rid) {
-            try {
-              if (friend.relationship.shared_secret) {
-                  break;
-              }
-              friend.relationship = JSON.parse(this.bulletinSecretService.decrypt(friend.relationship));
-              break;
-            } catch(error) {
-
-            }
-          }
-      }
-      if (!friend) {
-        // not registered
-        return;
-      }
-      if (!friend.relationship.shared_secret) {
-        return;
-      }
-
       const options: PushOptions = {
          android: {
-           senderID: '805178314562'
+           senderID: '805178314562',
          },
          ios: {},
          windows: {},
          browser: {
-             pushServiceURL: 'http://push.api.phonegap.com/v1/push'
+             pushServiceURL: 'http://push.api.phonegap.com/v1/push',
+             applicationServerKey: 'BLuv1UWDqzAyTtK5xlNaY4tFOz6vKbjuutTQ0KmBRG5btvVbydsrMTA-UeyMqY4oCC1Gu3sDwLfsg-iWtAg6IB0'
          }
       };
       const pushObject: PushObject = this.push.init(options);
-      
+      var hey = this.push.hasPermission();
       pushObject.on('registration').subscribe((registration: any) => {
         console.log('Device registered', registration);
         this.ahttp.post(this.settingsService.baseAddress + '/fcm-token', {
-          rid: friend.rid,
-          token: registration.registrationId,
-          shared_secret: friend.relationship.shared_secret
+          rid: this.graphService.graph.rid,
+          token: registration.registrationId
         }).subscribe(() => {});
+      }, (error) => {
+        console.log(error);
       });
 
 
@@ -81,7 +61,6 @@ export class PushService {
       pushObject.on('notification').subscribe(notification => {
         console.log('Received a notification', notification);
         // used for an example of ngFor and navigation
-        this.storage.set('friend_request-' + notification['requester_rid']+notification['requested_rid'], JSON.stringify(notification));
       });
     });
   }

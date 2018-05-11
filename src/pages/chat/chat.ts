@@ -11,6 +11,7 @@ import { ListPage } from '../list/list';
 declare var forge;
 declare var elliptic;
 declare var uuid4;
+declare var diffiehellman;
 
 @Component({
     selector: 'page-chat',
@@ -22,6 +23,9 @@ export class ChatPage {
 	blockchainAddress: any;
 	chats: any;
 	rid: any;
+	cryptoGenModal: any;
+	public_key: any;
+	loading: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -29,14 +33,21 @@ export class ChatPage {
         public walletService: WalletService,
         public transactionService: TransactionService,
         public alertCtrl: AlertController,
-        public graphService: GraphService
+        public graphService: GraphService,
+        public loadingCtrl: LoadingController,
+        public bulletinSecretService: BulletinSecretService
     ) {
     	this.rid = navParams.data.item.transaction.rid;
         this.storage.get('blockchainAddress').then((blockchainAddress) => {
             this.blockchainAddress = blockchainAddress;
         });
-        if(graphService.graph.chats[this.rid]) {
-	        var chats = graphService.graph.chats[this.rid].sort(function (a, b) {
+        this.public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
+        this.parseChats();
+    }
+
+    parseChats() {
+        if(this.graphService.graph.chats[this.rid]) {
+	        var chats = this.graphService.graph.chats[this.rid].sort(function (a, b) {
 	            if (a.block_height < b.block_height)
 	              return -1
 	            if (a.block_height > b.block_height)
@@ -49,38 +60,79 @@ export class ChatPage {
         }
     }
 
-    send() {
-        this.walletService.get().then(() => {
-        	return new Promise((resolve, reject) => {
+    refresh() {
+    	this.loading = true;
+    	this.graphService.getGraph()
+    	.then(() => {
+    		this.parseChats();
+    		this.loading = false;
+    	});
+    }
 
-	            console.log(status);
-	            var dh_public_key = this.graphService.graph.keys[this.rid].dh_public_keys[0];
-	            var dh_private_key = this.graphService.graph.keys[this.rid].dh_private_keys[0];
-	            let alert = this.alertCtrl.create();
-	            alert.setTitle('Approve Transaction');
-	            alert.setSubTitle('You are about to spend 0.01 coins ( 0.01 fee)');
-	            alert.addButton('Cancel');
-	            alert.addButton({
-	                text: 'Confirm',
-	                handler: (data: any) => {
-	                    // camera permission was granted
-	                    this.transactionService.pushTransaction({
-	                    	dh_public_key: dh_public_key,
-	                    	dh_private_key: dh_private_key,
-	                        relationship: {
-	                            chatText: this.chatText 
-	                        },
-	                        blockchainurl: this.blockchainAddress,
-	                        resolve: resolve,
-	                        rid: this.rid
-	                    });
-	                }
-	            });
-	            alert.present();
-        	}).then(() => {
-        		alert('sent');
-        	});
+    send() {
+	    let alert = this.alertCtrl.create();
+	    alert.setTitle('Approve transaction');
+	    alert.setSubTitle('You are about to spend 0.01 coins ( 0.01 fee)');
+	    alert.addButton('Cancel');
+	    alert.addButton({
+	        text: 'Confirm',
+	        handler: (data: any) => {
+                this.cryptoGenModal = this.loadingCtrl.create({
+                    content: 'Generating encryption, please wait... (could take several minutes)'
+                });
+                this.cryptoGenModal.present();
+		        this.walletService.get().then(() => {
+		        	return new Promise((resolve, reject) => {
+			            var dh_public_key = this.graphService.graph.keys[this.rid].dh_public_keys[0];
+			            var dh_private_key = this.graphService.graph.keys[this.rid].dh_private_keys[0];
+			        	if(dh_public_key && dh_private_key) {
+				            var dh = diffiehellman.getDiffieHellman('modp17');
+				            var dh1 = diffiehellman.createDiffieHellman(dh.getPrime(), dh.getGenerator());
+				            var privk = new Uint8Array(dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
+				              return parseInt(h, 16)
+				            }));
+				            dh1.setPrivateKey(privk);
+				            var pubk2 = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
+				              return parseInt(h, 16)
+				            }));
+				            var shared_secret = dh1.computeSecret(pubk2).toString('hex'); //this is the actual shared secret
+				            this.storage.set('shared_secret-' + dh_public_key.substr(0, 26) + dh_private_key.substr(0, 26), shared_secret);
+
+		                    // camera permission was granted
+		                    this.transactionService.pushTransaction({
+		                    	dh_public_key: dh_public_key,
+		                    	dh_private_key: dh_private_key,
+		                        relationship: {
+		                            chatText: this.chatText 
+		                        },
+		                        shared_secret: shared_secret,
+		                        blockchainurl: this.blockchainAddress,
+		                        resolve: resolve,
+		                        rid: this.rid
+		                    });
+			            } else {
+				            let alert = this.alertCtrl.create();
+				            alert.setTitle('Friendship not yet processed');
+				            alert.setSubTitle('Please wait a few minutes and try again');
+				            alert.addButton('Ok');
+				            alert.present();
+				            resolve(false);	            	
+			            }
+		            });
+	        	}).then((result) => {
+			        this.cryptoGenModal.dismiss();
+			        if (result) {
+					    let alert = this.alertCtrl.create();
+					    alert.setTitle('Message sent');
+					    alert.setSubTitle('Your message has been sent successfully');
+					    alert.addButton('Ok');
+					    alert.present();
+			        }
+			        this.navCtrl.pop();
+	        	});
+	       	}
         });
+		alert.present();
     }
 
     showChat() {

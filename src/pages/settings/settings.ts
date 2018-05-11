@@ -47,7 +47,7 @@ export class Settings {
         });
         this.loadingModal.present();
         this.keys = [];
-        this.baseAddress = this.settingsService.baseAddress || 'http://71.237.161.227:5000';
+        this.baseAddress = this.settingsService.baseAddress || 'https://yadacoin.io';
         this.blockchainAddress = this.settingsService.blockchainAddress || this.baseAddress + '/transaction';
         this.graphproviderAddress = this.settingsService.graphproviderAddress || this.baseAddress + '/get-graph-mobile';
         this.walletproviderAddress = this.settingsService.walletproviderAddress || this.baseAddress + '/wallet';
@@ -108,6 +108,7 @@ export class Settings {
     }
 
     set(key) {
+        this.storage.set('last-keyname', this.prefix + key)
         this.loadingModal = this.loadingCtrl.create({
             content: 'Please wait...'
         });
@@ -121,10 +122,10 @@ export class Settings {
             });
         })
         .then(() => {
-            if (this.platform.is('android') || this.platform.is('ios')) {
-                this.firebaseService.initFirebase();
-            } else {
+            if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
                 this.pushService.initPush();
+            } else {
+                this.firebaseService.initFirebase();
             }
             this.loadingModal.dismiss();
             alert("Identity set to: " + key)
@@ -133,14 +134,14 @@ export class Settings {
     }
 
     dev_reset() {
-        this.baseAddress = 'http://71.237.161.227:5000';
+        this.baseAddress = 'https://yadacoin.io';
         this.blockchainAddress = this.baseAddress + '/transaction';
         this.graphproviderAddress = this.baseAddress + '/get-graph-mobile';
         this.walletproviderAddress = this.baseAddress + '/wallet';
     }
 
     prod_reset() {
-        this.baseAddress = 'http://34.237.46.10';
+        this.baseAddress = 'https://yadacoin.io';
         this.blockchainAddress = this.baseAddress + '/transaction';
         this.graphproviderAddress = this.baseAddress + '/get-graph-mobile';
         this.walletproviderAddress = this.baseAddress + '/wallet';

@@ -216,6 +216,9 @@ export class HomePage {
                 this.comments = data;
             });
         });
+        
+        this.firebaseService.initFirebase();
+        this.pushService.initPush();
     }
 
     register() {

@@ -47,7 +47,13 @@ export class BulletinSecretService {
                     return 0
                 });
                 if (!this.keyname) {
-                    this.keyname = keys[0].idx
+                    this.storage.get('last-keyname').then((key) => {
+                        if(key && typeof key == 'string') {
+                            this.keyname = key;
+                        } else {
+                            this.keyname = keys[0].idx
+                        }
+                    });
                 }
             }
             return this.settingsService.refresh().then(() => {

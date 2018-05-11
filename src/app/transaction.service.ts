@@ -221,18 +221,7 @@ export class TransactionService {
             ).toString('hex')
         } else if (this.info.relationship.chatText) {
             // chat
-            var dh = diffiehellman.getDiffieHellman('modp17');
-            var dh1 = diffiehellman.createDiffieHellman(dh.getPrime(), dh.getGenerator());
-            var privk = new Uint8Array(this.info.dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
-              return parseInt(h, 16)
-            }));
-            dh1.setPrivateKey(privk);
-            var pubk2 = new Uint8Array(this.info.dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
-              return parseInt(h, 16)
-            }));
-            var shared_secret = dh1.computeSecret(pubk2).toString('hex'); //this is the actual shared secret
-            this.storage.set('shared_secret-' + this.info.dh_public_key.substr(0, 26) + this.info.dh_private_key.substr(0, 26), shared_secret);
-            this.transaction.relationship = this.shared_encrypt(shared_secret, JSON.stringify(this.info.relationship));                    
+            this.transaction.relationship = this.shared_encrypt(this.info.shared_secret, JSON.stringify(this.info.relationship));                    
 
             var hash = foobar.bitcoin.crypto.sha256(
                 this.transaction.rid +
@@ -275,7 +264,7 @@ export class TransactionService {
 
     sendTransaction() {
         this.ahttp.post(
-            this.blockchainurl,
+            this.blockchainurl + '?bulletin_secret=' + this.bulletin_secret,
             this.transaction)
         .subscribe((data) => {
             if (this.resolve) this.resolve(JSON.parse(data['_body']));
@@ -292,7 +281,6 @@ export class TransactionService {
             this.callbackurl,
             {
                 bulletin_secret: this.bulletin_secret,
-                shared_secret: this.shared_secret,
                 to: this.key.getAddress()
             })
         .subscribe((data) => {

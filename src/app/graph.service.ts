@@ -160,8 +160,10 @@ export class GraphService {
                 if (message.dh_public_key) continue;
                 for(var j=0; j<dh_private_keys[message.rid].dh_private_keys.length; j++) {
                     var dh_private_key = dh_private_keys[message.rid].dh_private_keys[j];
+                    if (!dh_private_key) continue;
                     for(var k=0; k<dh_private_keys[message.rid].dh_public_keys.length; k++) {
                         var dh_public_key = dh_private_keys[message.rid].dh_public_keys[j];
+                        if (!dh_public_key) continue;
                         var key = 'shared_secret-' + dh_public_key.slice(0, 26) + dh_private_key.slice(0, 26);
                         if (this.stored_secrets[key]) {
                             var shared_secret = this.stored_secrets[key];
