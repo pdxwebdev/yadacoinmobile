@@ -19,6 +19,7 @@ export class ProfilePage {
     baseAddress: any;
     loadingModal: any;
     prev_name: any;
+    username: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -32,6 +33,7 @@ export class ProfilePage {
         public loadingCtrl: LoadingController
     ) {
         this.prev_name = graphService.graph.human_hash;
+        this.username = graphService.graph.human_hash;
         this.refresh();
     }
 
@@ -42,7 +44,7 @@ export class ProfilePage {
     }
 
     change() {
-        this.graphService.graph.human_hash = this.graphService.graph.human_hash.toLocaleLowerCase();
+        this.username = this.username.toLocaleLowerCase();
     }
 
     save() {
@@ -54,7 +56,7 @@ export class ProfilePage {
             this.baseAddress + '/change-username',
             {
                 rid: this.graphService.rid,
-                username: this.graphService.graph.human_hash,
+                username: this.username,
                 relationship: {
                     bulletin_secret: this.bulletinSecretService.bulletin_secret
                 },
@@ -62,6 +64,7 @@ export class ProfilePage {
             }
         )
         .subscribe((data) => {
+            this.graphService.graph.human_hash = this.username;
             return new Promise((resolve, reject) => {
                 this.storage.get('usernames-' + this.prev_name)
                 .then((key) => {
@@ -82,6 +85,11 @@ export class ProfilePage {
                 this.loadingModal.dismiss();
                 alert('saved!');
             });
+        }, 
+        (error) => {
+            this.graphService.graph.human_hash = this.username;
+            this.loadingModal.dismiss();
+            alert('That username is taken, try again.');
         });
     }
 
