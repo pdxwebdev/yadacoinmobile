@@ -46,11 +46,11 @@ export class ChatPage {
     }
 
     parseChats() {
-        if(this.graphService.graph.chats[this.rid]) {
-	        var chats = this.graphService.graph.chats[this.rid].sort(function (a, b) {
-	            if (a.block_height < b.block_height)
+        if(this.graphService.graph.messages[this.rid]) {
+	        var chats = this.graphService.graph.messages[this.rid].sort(function (a, b) {
+	            if (a.height < b.height)
 	              return -1
-	            if (a.block_height > b.block_height)
+	            if (a.height > b.height)
 	              return 1
 	            return 0
 	        });
@@ -62,7 +62,7 @@ export class ChatPage {
 
     refresh() {
     	this.loading = true;
-    	this.graphService.getGraph()
+    	this.graphService.getMessages()
     	.then(() => {
     		this.parseChats();
     		this.loading = false;
@@ -83,41 +83,44 @@ export class ChatPage {
                 this.cryptoGenModal.present();
 		        this.walletService.get().then(() => {
 		        	return new Promise((resolve, reject) => {
-			            var dh_public_key = this.graphService.graph.keys[this.rid].dh_public_keys[0];
-			            var dh_private_key = this.graphService.graph.keys[this.rid].dh_private_keys[0];
-			        	if(dh_public_key && dh_private_key) {
-				            var dh = diffiehellman.getDiffieHellman('modp17');
-				            var dh1 = diffiehellman.createDiffieHellman(dh.getPrime(), dh.getGenerator());
-				            var privk = new Uint8Array(dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
-				              return parseInt(h, 16)
-				            }));
-				            dh1.setPrivateKey(privk);
-				            var pubk2 = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
-				              return parseInt(h, 16)
-				            }));
-				            var shared_secret = dh1.computeSecret(pubk2).toString('hex'); //this is the actual shared secret
-				            this.storage.set('shared_secret-' + dh_public_key.substr(0, 26) + dh_private_key.substr(0, 26), shared_secret);
+		        		this.graphService.getFriends()
+		        		.then(() => {
+				            var dh_public_key = this.graphService.keys[this.rid].dh_public_keys[0];
+				            var dh_private_key = this.graphService.keys[this.rid].dh_private_keys[0];
+				        	if(dh_public_key && dh_private_key) {
+					            var dh = diffiehellman.getDiffieHellman('modp17');
+					            var dh1 = diffiehellman.createDiffieHellman(dh.getPrime(), dh.getGenerator());
+					            var privk = new Uint8Array(dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
+					              return parseInt(h, 16)
+					            }));
+					            dh1.setPrivateKey(privk);
+					            var pubk2 = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
+					              return parseInt(h, 16)
+					            }));
+					            var shared_secret = dh1.computeSecret(pubk2).toString('hex'); //this is the actual shared secret
+					            this.storage.set('shared_secret-' + dh_public_key.substr(0, 26) + dh_private_key.substr(0, 26), shared_secret);
 
-		                    // camera permission was granted
-		                    this.transactionService.pushTransaction({
-		                    	dh_public_key: dh_public_key,
-		                    	dh_private_key: dh_private_key,
-		                        relationship: {
-		                            chatText: this.chatText 
-		                        },
-		                        shared_secret: shared_secret,
-		                        blockchainurl: this.blockchainAddress,
-		                        resolve: resolve,
-		                        rid: this.rid
-		                    });
-			            } else {
-				            let alert = this.alertCtrl.create();
-				            alert.setTitle('Friendship not yet processed');
-				            alert.setSubTitle('Please wait a few minutes and try again');
-				            alert.addButton('Ok');
-				            alert.present();
-				            resolve(false);	            	
-			            }
+			                    // camera permission was granted
+			                    this.transactionService.pushTransaction({
+			                    	dh_public_key: dh_public_key,
+			                    	dh_private_key: dh_private_key,
+			                        relationship: {
+			                            chatText: this.chatText 
+			                        },
+			                        shared_secret: shared_secret,
+			                        blockchainurl: this.blockchainAddress,
+			                        resolve: resolve,
+			                        rid: this.rid
+			                    });
+				            } else {
+					            let alert = this.alertCtrl.create();
+					            alert.setTitle('Friendship not yet processed');
+					            alert.setSubTitle('Please wait a few minutes and try again');
+					            alert.addButton('Ok');
+					            alert.present();
+					            resolve(false);	            	
+				            }
+		        		});
 		            });
 	        	}).then((result) => {
 			        this.cryptoGenModal.dismiss();

@@ -19,6 +19,7 @@ import { Http } from '@angular/http';
 import { Platform } from 'ionic-angular';
 import { FirebaseService } from '../../app/firebase.service';
 import { PushService } from '../../app/push.service';
+import { EmojiPickerModule } from '@ionic-tools/emoji-picker';
 
 declare var forge;
 declare var elliptic;
@@ -50,6 +51,7 @@ export class HomePage {
     reacts = {};
     comments = {};
     commentInputs = {};
+    ids_to_get = [];
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -71,7 +73,8 @@ export class HomePage {
         private platform: Platform,
         private ahttp: Http,
         private firebaseService: FirebaseService,
-        private pushService: PushService
+        private pushService: PushService,
+        private emojiPickerModule: EmojiPickerModule
     ) {
         this.platform.ready().then(() => {
           if(this.platform.is('cordova')) {
@@ -103,7 +106,8 @@ export class HomePage {
             }
         )
         .subscribe((res) => {
-            this.reacts[item.id] = this.reacts[item.id] + e.char;
+            var existing = this.reacts[item.id] || '';
+            this.reacts[item.id] = existing + e.char;
         });
     }
 
@@ -120,8 +124,19 @@ export class HomePage {
             if(!this.commentInputs[item.id]) {
                 this.commentInputs[item.id] = [];
             }
-            this.comments[item.id].push(this.commentInputs[item.id]);
+            if(!this.comments[item.id]) {
+                this.comments[item.id] = [];
+            }
             this.commentInputs[item.id] = '';
+
+            this.ahttp.post(
+                this.settingsService.baseAddress + '/get-comments',
+                {'txn_ids': this.ids_to_get}
+            )
+            .subscribe((res) => {
+                var data = JSON.parse(res['_body']);
+                this.comments = data;
+            });
         });
     }
 
@@ -133,6 +148,18 @@ export class HomePage {
     showFriendRequests() {
       var item = {pageTitle: {title:"Friend Requests"}};
       this.navCtrl.push(ListPage, item);
+    }
+
+    reactsDetail(item) {
+        this.ahttp.post(
+            this.settingsService.baseAddress + '/get-reacts-detail',
+            {'txn_id': item.id}
+        )
+        .subscribe((res) => {
+            var data = JSON.parse(res['_body']);
+            var item = {pageTitle: {title:"Reacts Detail"}, detail: data};
+            this.navCtrl.push(ListPage, item);
+        });
     }
 
     refresh() {
@@ -149,76 +176,95 @@ export class HomePage {
         this.storage.get('baseAddress').then((baseAddress) => {
             this.baseAddress = baseAddress;
         });
+
+        //update our wallet
         this.walletService.get().then(() => {
             this.balance = this.walletService.wallet.balance;
             this.loadingBalance = false;
         });
-        this.graphService.getGraph().then(() => {
+
+        //check for friend requests
+        this.graphService.getFriendRequests()
+        .then(() => {
+            //put ourselves in the faucet
+            this.ahttp.get(this.settingsService.baseAddress + '/faucet?address=' + this.bulletinSecretService.key.getAddress()).subscribe(()=>{});
+            this.color = this.graphService.graph.friend_requests.length > 0 ? 'danger' : '';
+        });
+
+        //this is our blocking procedure, update our posts for the main feed
+        this.graphService.getPosts().then(() => {
             if(this.graphService.graph && !this.graphService.graph.registered && !this.graphService.graph.pending_registration && this.walletService.wallet.balance > 1.01) {
                 this.register();
             }
-            ////////////////////////////////////////////
-            // all friend post operations from here down
-            ////////////////////////////////////////////
-            this.color = this.graphService.graph.friend_requests.length > 0 ? 'danger' : '';
-            var graphArray = this.graphService.graph.posts
-            if (graphArray.length == 0) {
-                this.loading = false;
-                this.loadingModal.dismiss();
-            }
-            var ids_to_get = [];
-            this.items = [];
-            for (let i = 0; i < graphArray.length; i++) {
-                ids_to_get.push(graphArray[i].id);
-                if (this.openGraphParserService.isURL(graphArray[i].relationship.postText)) {
-                    if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
-                        this.openGraphParserService.parseFromUrl(graphArray[i].relationship.postText).then((data) => {
-                            data['id'] = graphArray[i].id;
-                            this.items.push(data);
-                            if ((graphArray.length - 1) == i) {
-                                this.loading = false;
-                                this.loadingModal.dismiss();
-                            }
-                        });
-                    } else {
-                        this.openGraphParserService.parseFromUrl(this.baseAddress + '/get-url?url=' + encodeURIComponent(graphArray[i].relationship.postText)).then((data) => {
-                            data['id'] = graphArray[i].id;
-                            this.items.push(data);
-                            if ((graphArray.length - 1) == i) {
-                                this.loading = false;
-                                this.loadingModal.dismiss();
-                            }
-                        });
-                    }
+            this.generateFeed();
+        });
+    }
+
+    generateFeed() {
+        ////////////////////////////////////////////
+        // all friend post operations
+        ////////////////////////////////////////////
+        var graphArray = this.graphService.graph.posts;
+        if (graphArray.length == 0) {
+            this.loading = false;
+            this.loadingModal.dismiss();
+        }
+        graphArray.sort(function (a, b) {
+          if (a.height < b.height)
+            return 1
+          if ( a.height > b.height)
+            return -1
+          return 0
+        });
+        this.ids_to_get = [];
+        this.items = [];
+        for (let i = 0; i < graphArray.length; i++) {
+            this.ids_to_get.push(graphArray[i].id);
+            if (this.openGraphParserService.isURL(graphArray[i].relationship.postText)) {
+                if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
+                    this.openGraphParserService.parseFromUrl(graphArray[i].relationship.postText).then((data) => {
+                        data['id'] = graphArray[i].id;
+                        this.items.push(data);
+                        if ((graphArray.length - 1) == i) {
+                            this.loading = false;
+                            this.loadingModal.dismiss();
+                        }
+                    });
                 } else {
-                    var data = {title: "post", description: graphArray[i].relationship.postText};
-                    this.items.push(data);
-                    if ((graphArray.length - 1) == i) {
-                        this.loading = false;
-                        this.loadingModal.dismiss();
-                    }
+                    this.openGraphParserService.parseFromUrl(this.baseAddress + '/get-url?url=' + encodeURIComponent(graphArray[i].relationship.postText)).then((data) => {
+                        data['id'] = graphArray[i].id;
+                        this.items.push(data);
+                        if ((graphArray.length - 1) == i) {
+                            this.loading = false;
+                            this.loadingModal.dismiss();
+                        }
+                    });
+                }
+            } else {
+                var data = {title: "post", description: graphArray[i].relationship.postText, id: graphArray[i].id};
+                this.items.push(data);
+                if ((graphArray.length - 1) == i) {
+                    this.loading = false;
+                    this.loadingModal.dismiss();
                 }
             }
-            this.ahttp.post(
-                this.settingsService.baseAddress + '/get-reacts',
-                {'txn_ids': ids_to_get}
-            )
-            .subscribe((res) => {
-                var data = JSON.parse(res['_body']);
-                this.reacts = data;
-            });
-            this.ahttp.post(
-                this.settingsService.baseAddress + '/get-comments',
-                {'txn_ids': ids_to_get}
-            )
-            .subscribe((res) => {
-                var data = JSON.parse(res['_body']);
-                this.comments = data;
-            });
+        }
+        this.ahttp.post(
+            this.settingsService.baseAddress + '/get-reacts',
+            {'txn_ids': this.ids_to_get}
+        )
+        .subscribe((res) => {
+            var data = JSON.parse(res['_body']);
+            this.reacts = data;
         });
-        
-        this.firebaseService.initFirebase();
-        this.pushService.initPush();
+        this.ahttp.post(
+            this.settingsService.baseAddress + '/get-comments',
+            {'txn_ids': this.ids_to_get}
+        )
+        .subscribe((res) => {
+            var data = JSON.parse(res['_body']);
+            this.comments = data;
+        });
     }
 
     register() {
@@ -260,17 +306,6 @@ export class HomePage {
 
     sharePhrase() {
         this.socialSharing.share(this.graphService.graph.human_hash, "Add me on Yada Coin!");
-    }
-
-    createCode() {
-        this.graphService.getGraph().then(() => {
-            this.createdCode = JSON.stringify({
-                bulletin_secret: this.bulletinSecretService.bulletin_secret,
-                shared_secret: uuid4(),
-                to: this.bulletinSecretService.key.getAddress(),
-                requested_rid: this.graphService.rid
-            });
-        });
     }
 
     addFriend() {
@@ -431,44 +466,12 @@ export class HomePage {
                         });
                     });
                 }).then((txn) => {
-                    ///////////////////////////////////////////////////////////////
-                    // this "thenable" is for notifications
-                    // here, we notify the recipient of an inbound friend request
-                    ///////////////////////////////////////////////////////////////
                     this.loadingModal.dismiss()
                     var alert = this.alertCtrl.create();
                     alert.setTitle('Friend Request Sent');
                     alert.setSubTitle('Your Friend Request has been sent successfully.');
                     alert.addButton('Ok');
                     alert.present();
-                    for (var i=0; i < this.graphService.graph.friends.length; i++) {
-                        var friend = this.graphService.graph.friends[i];
-                        if (this.graphService.graph.rid = friend.rid) {
-                          try {
-                            friend.relationship = JSON.parse(this.decrypt(friend.relationship));
-                            break;
-                          } catch(error) {
-
-                          }
-                        }
-                    }
-                    if (!friend) {
-                        // no friends, probably a registration, in that case we don't need to notify becuase it is the server.
-                        return;
-                    }
-                    if (!friend.relationship.private_key) {
-                        return;
-                    }
-                    var relationship = JSON.parse(this.decrypt(txn['relationship']));
-                    txn['shared_secret'] = relationship.shared_secret;
-                    txn['bulletin_secret'] = this.bulletinSecretService.bulletin_secret;
-                    txn['accept'] = true;
-                    this.ahttp.post(this.settingsService.baseAddress + '/request-notification', {
-                        rid: friend.rid,
-                        requested_rid: txn['requested_rid'],
-                        to: this.bulletinSecretService.key.getAddress(),
-                        data: JSON.stringify(txn)
-                    }).subscribe(() => {});
                 });
             }
         });
@@ -487,7 +490,7 @@ export class HomePage {
         modal.present();
     }
 
-    share(url) {
+    share(item) {
         this.walletService.get().then(() => {
             return new Promise((resolve, reject) => {
 
@@ -503,7 +506,7 @@ export class HomePage {
                         // camera permission was granted
                         this.transactionService.pushTransaction({
                             relationship: {
-                                postText: url 
+                                postText: item.url || item.description
                             },
                             blockchainurl: this.blockchainAddress,
                             resolve: resolve

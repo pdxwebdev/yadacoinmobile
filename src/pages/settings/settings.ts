@@ -97,7 +97,7 @@ export class Settings {
         this.bulletinSecretService.create()
         .then(() => {
             return new Promise((resolve, reject) => {
-                this.graphService.getGraph().then(() => {
+                this.graphService.getInfo().then(() => {
                     resolve();
                 });
             });
@@ -116,7 +116,7 @@ export class Settings {
         this.bulletinSecretService.set(this.prefix + key)
         .then(() => {
             return new Promise((resolve, reject) => {
-                this.graphService.getGraph().then(() => {
+                this.graphService.getInfo().then(() => {
                     resolve();
                 });
             });
@@ -128,7 +128,6 @@ export class Settings {
                 this.firebaseService.initFirebase();
             }
             this.loadingModal.dismiss();
-            alert("Identity set to: " + key)
             this.refresh();
         });
     }

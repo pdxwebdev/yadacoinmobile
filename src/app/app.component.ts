@@ -66,8 +66,6 @@ export class MyApp {
   }
 
   ngAfterViewInit() {
-    this.firebaseService.initFirebase();
-    this.pushService.initPush();
     if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
       this.deeplinks.routeWithNavController(this.nav, {
         '/:txnData': HomePage

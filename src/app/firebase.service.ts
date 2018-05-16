@@ -35,34 +35,29 @@ export class FirebaseService {
   }
 
   initFirebase() {
-    this.graphService.getGraph().then(() => {
-      this.firebase.getToken()
-      .then((token) => {
-        console.log(token);
-        this.ahttp.post(this.settingsService.baseAddress + '/fcm-token', {
-          rid: this.graphService.graph.rid,
-          token: token,
-        }).subscribe(() => {});
-      })
-      .catch((error) => {
-          console.log('Error getting token', error)
-      });
+    this.firebase.getToken()
+    .then((token) => {
+      console.log(token);
+      this.ahttp.post(this.settingsService.baseAddress + '/fcm-token', {
+        rid: this.graphService.graph.rid,
+        token: token,
+      }).subscribe(() => {});
+    })
+    .catch((error) => {
+        console.log('Error getting token', error)
+    });
 
-      this.firebase.onTokenRefresh()
-      .subscribe((token: string) => {
-        console.log(token);
-        this.ahttp.post(this.settingsService.baseAddress + '/fcm-token', {
-          rid: this.graphService.graph.rid,
-          token: token
-        }).subscribe(() => {});
-      });
+    this.firebase.onTokenRefresh()
+    .subscribe((token: string) => {
+      console.log(token);
+      this.ahttp.post(this.settingsService.baseAddress + '/fcm-token', {
+        rid: this.graphService.graph.rid,
+        token: token
+      }).subscribe(() => {});
+    });
 
-      this.firebase.onNotificationOpen().subscribe(notification => {
-        this.graphService.getGraph().then(() => {
-          // used for an example of ngFor and navigation
-          this.storage.set('friend_request-' + notification.requester_rid+notification.requested_rid, JSON.stringify(notification));
-        });
-      });
+    this.firebase.onNotificationOpen().subscribe(notification => {
+      console.log(notification);
     });
   }
 }

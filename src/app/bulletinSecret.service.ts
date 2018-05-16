@@ -68,8 +68,6 @@ export class BulletinSecretService {
                          
                         this.bulletin_secret = foobar.bitcoin.crypto.sha256(this.shared_encrypt(this.key.toWIF(), this.key.toWIF())).toString('hex');
 
-                        this.ahttp.get(this.settingsService.baseAddress + '/faucet?address=' + this.key.getAddress()).subscribe(()=>{});
-
                         resolve();
                     });
                 });

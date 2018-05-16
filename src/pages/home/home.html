@@ -56,7 +56,7 @@
             </p>
           </ion-card-content>
         </div>
-        <ion-row no-padding>
+        <ion-row no-padding text-wrap (click)="reactsDetail(item)">
             <ion-item [innerHTML]="reacts[item.id]"></ion-item>
         </ion-row>
         <ion-row no-padding>
@@ -67,7 +67,7 @@
             </button>
           </ion-col>
           <ion-col text-right>
-            <button ion-button clear small color="danger" icon-start (click)="share(item.url)">
+            <button ion-button clear small color="danger" icon-start (click)="share(item)">
               <ion-icon name='share-alt'></ion-icon>
               Share
             </button>
@@ -86,7 +86,8 @@
         <ion-row>
           <ion-list col-lg-7>
             <ion-item *ngFor="let comment of comments[item.id]">
-              <ion-item [innerHTML]="comment"></ion-item>
+              <strong [innerHTML]="comment.username"></strong>
+              <ion-item [innerHTML]="comment.body"></ion-item>
             </ion-item>
           </ion-list>
         </ion-row>

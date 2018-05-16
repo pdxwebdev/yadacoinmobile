@@ -28,40 +28,39 @@ export class PushService {
   ) {}
 
   initPush() {
-    this.graphService.getGraph().then(() => {
-      const options: PushOptions = {
-         android: {
-           senderID: '805178314562',
-         },
-         ios: {},
-         windows: {},
-         browser: {
-             pushServiceURL: 'http://push.api.phonegap.com/v1/push',
-             applicationServerKey: 'BLuv1UWDqzAyTtK5xlNaY4tFOz6vKbjuutTQ0KmBRG5btvVbydsrMTA-UeyMqY4oCC1Gu3sDwLfsg-iWtAg6IB0'
-         }
-      };
-      const pushObject: PushObject = this.push.init(options);
-      var hey = this.push.hasPermission();
-      pushObject.on('registration').subscribe((registration: any) => {
-        console.log('Device registered', registration);
-        this.ahttp.post(this.settingsService.baseAddress + '/fcm-token', {
-          rid: this.graphService.graph.rid,
-          token: registration.registrationId
-        }).subscribe(() => {});
-      }, (error) => {
-        console.log(error);
-      });
+    if (!this.graphService.graph.rid) {alert('serious fucking issues...');}
+    const options: PushOptions = {
+       android: {
+         senderID: '805178314562',
+       },
+       ios: {},
+       windows: {},
+       browser: {
+           pushServiceURL: 'http://push.api.phonegap.com/v1/push',
+           applicationServerKey: 'BLuv1UWDqzAyTtK5xlNaY4tFOz6vKbjuutTQ0KmBRG5btvVbydsrMTA-UeyMqY4oCC1Gu3sDwLfsg-iWtAg6IB0'
+       }
+    };
+    const pushObject: PushObject = this.push.init(options);
+    var hey = this.push.hasPermission();
+    pushObject.on('registration').subscribe((registration: any) => {
+      console.log('Device registered', registration);
+      this.ahttp.post(this.settingsService.baseAddress + '/fcm-token', {
+        rid: this.graphService.graph.rid,
+        token: registration.registrationId
+      }).subscribe(() => {});
+    }, (error) => {
+      console.log(error);
+    });
 
 
-      pushObject.on('error').subscribe(error => {
-        console.error('Error with Push plugin', error);
-        console.error('Error getting token', error);
-      });
+    pushObject.on('error').subscribe(error => {
+      console.error('Error with Push plugin', error);
+      console.error('Error getting token', error);
+    });
 
-      pushObject.on('notification').subscribe(notification => {
-        console.log('Received a notification', notification);
-        // used for an example of ngFor and navigation
-      });
+    pushObject.on('notification').subscribe(notification => {
+      console.log('Received a notification', notification);
+      // used for an example of ngFor and navigation
     });
   }
 }

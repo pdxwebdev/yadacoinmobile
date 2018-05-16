@@ -20,7 +20,9 @@ export class GraphService {
     key: any;
     rid: any;
     stored_secrets: any;
+    stored_secrets_by_rid: any;
     accepted_friend_requests: any;
+    keys: any;
     constructor(
         private storage: Storage,
         private http: HTTP,
@@ -34,154 +36,292 @@ export class GraphService {
           http.setDataSerializer('json');
         }
         this.stored_secrets = {};
+        this.stored_secrets_by_rid = {};
         this.accepted_friend_requests = [];
+        this.keys = {};
     }
 
-    getGraph() {
-        return this.settingsService.refresh().then(() => {
-            return new Promise((resolve, reject) => {
-                this.bulletinSecretService.get().then(() => {
-                    return new Promise((resolve1, reject1) => {
-                        this.ahttp.get(this.settingsService.graphproviderAddress + '?bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
-                        .subscribe((data) => {
-                            this.graphParser(data['_body'])
-                            .then(() => {
-                                resolve1();
+    endpointRequest(endpoint) {
+        return new Promise((resolve, reject) => {
+            return this.settingsService.refresh().then(() => {
+                return new Promise((resolve1, reject1) => {
+                    this.bulletinSecretService.get().then(() => {
+                        return new Promise((resolve2, reject2) => {
+                            this.ahttp.get(this.settingsService.baseAddress + '/' + endpoint + '?bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
+                            .subscribe((data) => {
+                                var info = JSON.parse(data['_body']);
+                                this.graph.rid = info.rid;
+                                this.graph.human_hash = info.human_hash;
+                                this.graph.registered = info.registered;
+                                this.graph.pending_registration = info.pending_registration;
+                                resolve2(info);
                             });
+                        }).then((data) => {
+                            resolve1(data);
                         });
-                    }).then(() => {
-                        resolve();
+                    });
+                })         
+                .then((data) => {
+                    var currentWif = this.bulletinSecretService.key.toWIF();
+                    return new Promise((resolve1, reject1) => {
+                        this.storage.forEach((value, key) => {
+                            if(value === currentWif) {
+                                this.storage.remove(key).then(() => {
+                                    this.storage.set('usernames-' + this.graph.human_hash, currentWif);
+                                    this.bulletinSecretService.set('usernames-' + this.graph.human_hash);
+                                });
+                            }
+                        })
+                        .then(() => {
+                            resolve1();
+                        });
+                    })
+                    .then(() => {
+                        this.storage.set('usernames-' + this.graph.human_hash, currentWif);
+                        this.bulletinSecretService.set('usernames-' + this.graph.human_hash);
+                        resolve(data);
                     });
                 });
-            })
+            });
+        });
+    }
+
+    getInfo() {
+        return this.endpointRequest('get-graph-info');
+    }
+
+    getSentFriendRequests() {
+        return this.endpointRequest('get-graph-sent-friend-requests')
+        .then((data: any) => {
+            this.graph.sent_friend_requests = this.parseSentFriendRequests(data.sent_friend_requests);
+        });
+    }
+
+    getFriendRequests() {
+        return this.endpointRequest('get-graph-friend-requests')
+        .then((data: any) => {
+            this.graph.friend_requests = this.parseFriendRequests(data.friend_requests);
+        });
+    }
+
+    getFriends() {
+        return new Promise((resolve, reject) => {
+            this.getSentFriendRequests()
             .then(() => {
-                var currentWif = this.bulletinSecretService.key.toWIF();
-                this.storage.forEach((value, key) => {
-                    if(value === currentWif) {
-                        this.storage.remove(key).then(() => {
-                            this.storage.set('usernames-' + this.graph.human_hash, currentWif);
-                            this.bulletinSecretService.set('usernames-' + this.graph.human_hash);
-                        });
-                    }
-                    if (key.indexOf('accepted-') === 0) {
-                        this.accepted_friend_requests.push(value);
-                    }
-                })
+                this.getFriendRequests()
                 .then(() => {
-                    this.storage.set('usernames-' + this.graph.human_hash, currentWif);
-                    this.bulletinSecretService.set('usernames-' + this.graph.human_hash);
+                    this.endpointRequest('get-graph-friends')
+                    .then((data: any) => {
+                        this.parseFriends(data.friends)
+                        .then((friends) => {
+                            this.graph.friends = friends;
+                            resolve();
+                        });
+                    });
+                })
+            });
+        });
+    }
+
+    getMessages() {
+        return new Promise((resolve, reject) => {
+            this.endpointRequest('get-graph-messages')
+            .then((data: any) => {
+                this.parseMessages(data.messages)
+                .then((chats) => {
+                    this.graph.messages = chats;
+                    resolve(chats);
                 });
             });
         });
     }
 
-    getStoredSecrets() {
-        return new Promise((resolve, reject) => {
-            this.storage.forEach((value, key) => {
-                if (key.indexOf('shared_secret') === 0) {
-                    this.stored_secrets[key] = value;
+    getPosts() {
+        return this.endpointRequest('get-graph-posts')
+        .then((data: any) => {
+            this.graph.posts = this.parsePosts(data.posts);
+        });
+    }
+
+    parseSentFriendRequests(sent_friend_requests) {
+        var usernames = {};
+        var sent_friend_requestsObj = {};
+        for(var i=0; i < sent_friend_requests.length; i++) {
+            var sent_friend_request = sent_friend_requests[i];
+            if (!this.keys[sent_friend_request.rid]) {
+                this.keys[sent_friend_request.rid] = {
+                    dh_private_keys: [],
+                    dh_public_keys: []
+                };
+            }
+            var decrypted = this.decrypt(sent_friend_request['relationship']);
+            if (decrypted.indexOf('{') === 0) {
+                var relationship = JSON.parse(decrypted);
+                sent_friend_requestsObj[sent_friend_request.rid] = sent_friend_request;
+                //not sure how this affects the friends list yet, since we can't return friends from here
+                //friends[sent_friend_request.rid] = sent_friend_request;
+                if (this.keys[sent_friend_request.rid].dh_private_keys.indexOf(relationship.dh_private_key) === -1) {
+                    this.keys[sent_friend_request.rid].dh_private_keys.push(relationship.dh_private_key);
                 }
-            })
-            .then(() => {
-                resolve();
+            } else {
+                if (this.keys[sent_friend_request.rid].dh_public_keys.indexOf(sent_friend_request.dh_public_key) === -1) {
+                    this.keys[sent_friend_request.rid].dh_public_keys.push(sent_friend_request.dh_public_key);
+                }
+            }
+        }
+
+        var arr_sent_friend_requests = [];
+        for(let i in sent_friend_requestsObj) {
+            arr_sent_friend_requests.push(sent_friend_requestsObj[i].rid);
+            if (sent_friend_requestsObj[i].username) {
+                usernames[sent_friend_requestsObj[i].rid] = sent_friend_requestsObj[i].username
+            }
+        }
+        
+        let sent_friend_requests_diff = new Set(arr_sent_friend_requests);
+
+        sent_friend_requests = []
+        let arr_sent_friend_request_keys = Array.from(sent_friend_requests_diff.keys())
+        for(var i=0; i<arr_sent_friend_request_keys.length; i++) {
+            sent_friend_requests.push(sent_friend_requestsObj[arr_sent_friend_request_keys[i]])
+        }
+
+        return sent_friend_requests;
+    }
+
+    parseFriendRequests(friend_requests) {
+        var friend_requestsObj = {};
+        for(var i=0; i<friend_requests.length; i++) {
+            var friend_request = friend_requests[i];
+            if (!this.keys[friend_request.rid]) {
+                this.keys[friend_request.rid] = {
+                    dh_private_keys: [],
+                    dh_public_keys: []
+                };
+            }
+            var decrypted = this.decrypt(friend_request.relationship);
+            if (decrypted.indexOf('{') === 0) {
+                var relationship = JSON.parse(decrypted);
+                //not sure how this affects the friends list yet, since we can't return friends from here
+                //friends[friend_request.rid] = friend_request;
+                delete friend_requestsObj[friend_request.rid];
+                if (this.keys[friend_request.rid].dh_private_keys.indexOf(relationship.dh_private_key)) {
+                    this.keys[friend_request.rid].dh_private_keys.push(relationship.dh_private_key);
+                }
+            } else {
+                friend_requestsObj[friend_request.rid] = friend_request;
+                if (this.keys[friend_request.rid].dh_public_keys.indexOf(friend_request.dh_public_key)) {
+                    this.keys[friend_request.rid].dh_public_keys.push(friend_request.dh_public_key);
+                }
+            }
+        }
+
+        var arr_friend_requests = [];
+        for(let i in friend_requestsObj) {
+            arr_friend_requests.push(friend_requestsObj[i].rid);
+        }
+
+        friend_requests = []
+        let friend_requests_diff = new Set(arr_friend_requests);
+        if(arr_friend_requests.length > 0) {
+            let arr_friend_request_keys = Array.from(friend_requests_diff.keys())
+            for(var i=0; i<arr_friend_request_keys.length; i++) {
+                friend_requests.push(friend_requestsObj[arr_friend_request_keys[i]])
+            }
+        }
+        if (this.platform.is('android') || this.platform.is('ios')) {
+            this.badge.set(friend_requests.length);
+        }
+
+        this.storeSharedSecrets();
+        return friend_requests;
+    }
+
+    parseFriends(friends) {
+        // we must call getSentFriendRequests and getFriendRequests before getting here
+        // because we need this.keys to be populated with the dh_public_keys and dh_private_keys from the requests
+        // though friends really should be cached
+        // should be key: shared-secret_rid|pub_key[:26]priv_key[:26], value: {shared_secret: <shared_secret>, friend: [transaction.dh_public_key, transaction.dh_private_key]}
+        return new Promise((resolve, reject) => {
+            this.getStoredSecrets().then(() => {
+
+                //start "just do dedup yada server because yada server adds itself to the friends array automatically straight from the api"
+                var friendsObj = {};
+                for(var i=0; i<friends.length; i++) {
+                    var friend = friends[i];
+                    if (!this.keys[friend.rid]) {
+                        this.keys[friend.rid] = {
+                            dh_private_keys: [],
+                            dh_public_keys: []
+                        };
+                    }
+                    var decrypted = this.decrypt(friend.relationship);
+                    if (decrypted.indexOf('{') === 0) {
+                        var relationship = JSON.parse(decrypted);
+                        friendsObj[friend.rid] = friend;
+                        if (this.keys[friend.rid].dh_private_keys.indexOf(relationship.dh_private_key) === -1) {
+                            this.keys[friend.rid].dh_private_keys.push(relationship.dh_private_key);
+                        }
+                    } else {
+                        if (this.keys[friend.rid].dh_public_keys.indexOf(friend.dh_public_key)) {
+                            this.keys[friend.rid].dh_public_keys.push(friend.dh_public_key);
+                        }
+                    }
+                }
+
+                var secrets_rids = [];
+                var stored_secrets_keys = Object.keys(this.stored_secrets);
+                for (var i=0; i < stored_secrets_keys.length; i++) {
+                    var rid = stored_secrets_keys[i].slice('shared_secret-'.length, stored_secrets_keys[i].indexOf('|'));
+                    secrets_rids.push(rid);
+                }
+
+                for (var i=0; i < this.graph.sent_friend_requests.length; i++) {
+                    var sent_friend_request = this.graph.sent_friend_requests[i];
+                    if (secrets_rids.indexOf(sent_friend_request.rid) >= 0) {
+                        friendsObj[sent_friend_request.rid] = sent_friend_request;
+                    }
+                }
+
+                for (var i=0; i < this.graph.friend_requests.length; i++) {
+                    var friend_request = this.graph.friend_requests[i];
+                    if (secrets_rids.indexOf(friend_request.rid) >= 0) {
+                        friendsObj[friend_request.rid] = friend_request;
+                    }
+                }
+
+                var arr_friends = Object.keys(friendsObj);
+
+                friends = []
+                let friends_diff = new Set(arr_friends);
+                if(arr_friends.length > 0) {
+                    let arr_friends_keys = Array.from(friends_diff.keys())
+                    for(var i=0; i<arr_friends_keys.length; i++) {
+                        friends.push(friendsObj[arr_friends_keys[i]])
+                    }
+                }
+                //end accomodating yada server auto-friend add
+
+                resolve(friends);
             });
         });
     }
 
-    graphParser(data) {
-        return this.getStoredSecrets().then(() => {
-            this.graph = JSON.parse(data);
-            this.rid = this.graph.rid;
-            var dh_private_keys = {};
-            var sent_friend_requests = {};
-            var friends = {};
-            for(var i=0; i<this.graph.sent_friend_requests.length; i++) {
-                var sent_friend_request = this.graph.sent_friend_requests[i];
-                if (!dh_private_keys[sent_friend_request.rid]) {
-                    dh_private_keys[sent_friend_request.rid] = {
-                        dh_private_keys: [],
-                        dh_public_keys: []
-                    };
-                }
-                var decrypted = this.decrypt(sent_friend_request['relationship']);
-                if (decrypted.indexOf('{') === 0) {
-                    var relationship = JSON.parse(decrypted);
-                    sent_friend_requests[sent_friend_request.rid] = sent_friend_request;
-                    friends[sent_friend_request.rid] = sent_friend_request;
-                    dh_private_keys[sent_friend_request.rid].dh_private_keys.push(relationship.dh_private_key);
-                } else {
-                    dh_private_keys[sent_friend_request.rid].dh_public_keys.push(sent_friend_request.dh_public_key);
-                }
-            }
-            var friend_requests = {};
-            for(var i=0; i<this.graph.friend_requests.length; i++) {
-                var friend_request = this.graph.friend_requests[i];
-                if (!dh_private_keys[friend_request.rid]) {
-                    dh_private_keys[friend_request.rid] = {
-                        dh_private_keys: [],
-                        dh_public_keys: []
-                    };
-                }
-                var decrypted = this.decrypt(friend_request.relationship);
-                if (decrypted.indexOf('{') === 0) {
-                    var relationship = JSON.parse(decrypted);
-                    friends[friend_request.rid] = friend_request;
-                    delete friend_requests[friend_request.rid];
-                    dh_private_keys[friend_request.rid].dh_private_keys.push(relationship.dh_private_key);
-                } else {
-                    friend_requests[friend_request.rid] = friend_request;
-                    dh_private_keys[friend_request.rid].dh_public_keys.push(friend_request.dh_public_key);
-                }
-            }
-            for(var i=0; i<this.graph.friends.length; i++) {
-                var friend = this.graph.friends[i];
-                if (!dh_private_keys[friend.rid]) {
-                    dh_private_keys[friend.rid] = {
-                        dh_private_keys: [],
-                        dh_public_keys: []
-                    };
-                }
-                var decrypted = this.decrypt(friend.relationship);
-                if (decrypted.indexOf('{') === 0) {
-                    var relationship = JSON.parse(decrypted);
-                    friends[friend.rid] = friend;
-                    dh_private_keys[friend.rid].dh_private_keys.push(relationship.dh_private_key);
-                } else {
-                    dh_private_keys[friend.rid].dh_public_keys.push(friend.dh_public_key);
-                }
-            }
-            var messages = {};
-            var chats = {};
-            dance:
-            for(var i=0; i<this.graph.messages.length; i++) {
-                var message = this.graph.messages[i];
-                if (!message.rid) continue;
-                if (!dh_private_keys[message.rid]) continue;
-                if (message.dh_public_key) continue;
-                for(var j=0; j<dh_private_keys[message.rid].dh_private_keys.length; j++) {
-                    var dh_private_key = dh_private_keys[message.rid].dh_private_keys[j];
-                    if (!dh_private_key) continue;
-                    for(var k=0; k<dh_private_keys[message.rid].dh_public_keys.length; k++) {
-                        var dh_public_key = dh_private_keys[message.rid].dh_public_keys[j];
-                        if (!dh_public_key) continue;
-                        var key = 'shared_secret-' + dh_public_key.slice(0, 26) + dh_private_key.slice(0, 26);
-                        if (this.stored_secrets[key]) {
-                            var shared_secret = this.stored_secrets[key];
-                        } else {
-                            var dh = diffiehellman.getDiffieHellman('modp17');
-                            var dh1 = diffiehellman.createDiffieHellman(dh.getPrime(), dh.getGenerator());
-                            var privk = new Uint8Array(dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
-                              return parseInt(h, 16)
-                            }));
-                            dh1.setPrivateKey(privk);
-                            var pubk2 = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
-                              return parseInt(h, 16)
-                            }));
-                            var shared_secret = dh1.computeSecret(pubk2).toString('hex'); //this is the actual shared secret
-                            this.storage.set(key, shared_secret);
-                            this.stored_secrets[key] = shared_secret;
-                        }
-                        var decrypted = this.shared_decrypt(shared_secret, message.relationship);
+    parseMessages(messages) {
+        return new Promise((resolve, reject) => {
+            this.getStoredSecrets().then(() => {
+                var chats = {};
+                dance:
+                for(var i=0; i<messages.length; i++) {
+                    var message = messages[i];
+                    if (!message.rid) continue;
+                    if (!this.stored_secrets_by_rid[message.rid]) continue;
+                    if (message.dh_public_key) continue;
+                    //hopefully we've prepared the stored_secrets option before getting here 
+                    //by calling getSentFriendRequests and getFriendRequests
+                    for(var j=0; j<this.stored_secrets_by_rid[message.rid].length; j++) {
+                        var shared_secret = this.stored_secrets_by_rid[message.rid][j];
+                        var decrypted = this.shared_decrypt(shared_secret.shared_secret, message.relationship);
                         if(decrypted.indexOf('{') === 0) {
                             messages[message.rid] = message;
                             if (!chats[message.rid]) {
@@ -196,63 +336,85 @@ export class GraphService {
                         }
                     }
                 }
-            }
-            this.graph.chats = chats;
-            var arr_messages = [];
-            var usernames = {};
-            for(let i in messages) {
-                arr_messages.push(messages[i].rid);
-            }
-            var arr_sent_friend_requests = [];
-            for(let i in sent_friend_requests) {
-                arr_sent_friend_requests.push(sent_friend_requests[i].rid);
-                if (sent_friend_requests[i].username) {
-                    usernames[sent_friend_requests[i].rid] = sent_friend_requests[i].username
-                }
-            }
-            var arr_friend_requests = [];
-            for(let i in friend_requests) {
-                arr_friend_requests.push(friend_requests[i].rid);
-            }
-            var arr_friends = [];
-            for(let i in friends) {
-                arr_friends.push(friends[i].rid);
-            }
-            let messagesset = new Set(arr_messages);
-            let sent_friend_requests_diff = new Set(arr_sent_friend_requests.filter(x => !messagesset.has(x)));
-            let friend_requests_diff = new Set(arr_friend_requests.filter(x => !messagesset.has(x)));
-            let friends_diff = new Set(arr_friends);
+                resolve(chats);
+            });
+        });
+    }
 
-            let arr_sent_friend_request_keys = Array.from(sent_friend_requests_diff.keys())
-            this.graph.sent_friend_requests = []
-            for(var i=0; i<arr_sent_friend_request_keys.length; i++) {
-                this.graph.sent_friend_requests.push(sent_friend_requests[arr_sent_friend_request_keys[i]])
-            }
+    parsePosts(posts) {
+        return posts;
+    }
 
-            if(arr_friend_requests.length > 0) {
-                let arr_friend_request_keys = Array.from(friend_requests_diff.keys())
-                this.graph.friend_requests = []
-                for(var i=0; i<arr_friend_request_keys.length; i++) {
-                    this.graph.friend_requests.push(friend_requests[arr_friend_request_keys[i]])
-                }
-            } else {
-                this.graph.friend_requests = [];
-            }
-
-            if(arr_friends.length > 0) {
-                let arr_friends_keys = Array.from(friends_diff.keys())
-                this.graph.friends = []
-                for(var i=0; i<arr_friends_keys.length; i++) {
-                    if (usernames[arr_friends_keys[i]]) {
-                        //messages[i].username = usernames[arr_friends_keys[i]];
+    storeSharedSecrets() {
+        this.getStoredSecrets()
+        .then(() => {
+            for(let i in this.keys) {
+                for(var j=0; j < this.keys[i].dh_private_keys.length; j++) {
+                    var dh_private_key = this.keys[i].dh_private_keys[j];
+                    if (!dh_private_key) continue;
+                    for(var k=0; k < this.keys[i].dh_public_keys.length; k++) {
+                        var dh_public_key = this.keys[i].dh_public_keys[j];
+                        if (!dh_public_key) continue;
+                        var key = 'shared_secret-' + i + '|' + dh_public_key.slice(0, 26) + dh_private_key.slice(0, 26);
+                        if (this.stored_secrets[key]) {
+                            var shared_secret = this.stored_secrets[key];
+                        } else {
+                            var dh = diffiehellman.getDiffieHellman('modp17');
+                            var dh1 = diffiehellman.createDiffieHellman(dh.getPrime(), dh.getGenerator());
+                            var privk = new Uint8Array(dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
+                              return parseInt(h, 16)
+                            }));
+                            dh1.setPrivateKey(privk);
+                            var pubk2 = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
+                              return parseInt(h, 16)
+                            }));
+                            var shared_secret = dh1.computeSecret(pubk2).toString('hex'); //this is the actual shared secret
+                            this.storage.set(
+                                key,
+                                JSON.stringify({
+                                    shared_secret: shared_secret,
+                                    dh_public_key: dh_public_key,
+                                    dh_private_key: dh_private_key,
+                                    rid: i
+                                })
+                            );
+                            if(!this.stored_secrets[key]) {
+                                this.stored_secrets[key] = [];
+                            }
+                            this.stored_secrets[key].push({
+                                shared_secret: shared_secret,
+                                dh_public_key: dh_public_key,
+                                dh_private_key: dh_private_key,
+                                rid: i
+                            });
+                        }
                     }
-                    this.graph.friends.push(friends[arr_friends_keys[i]])
                 }
             }
-            if (this.platform.is('android') || this.platform.is('ios')) {
-                this.badge.set(this.graph.friend_requests.length);
-            }
-            this.graph.keys = dh_private_keys;
+        });
+    }
+
+    getStoredSecrets() {
+        return new Promise((resolve, reject) => {
+            this.storage.forEach((value, key) => {
+                if (key.indexOf('shared_secret') === 0 && key.indexOf('|') >= 0 && value.indexOf('{') === 0) {
+                    
+                    if(!this.stored_secrets[key]) {
+                        this.stored_secrets[key] = [];
+                    }
+                    var secret_json = JSON.parse(value);
+                    this.stored_secrets[key].push(secret_json.shared_secret);
+
+                    var rid = key.slice('shared_secret-'.length, key.indexOf('|'));
+                    if(!this.stored_secrets_by_rid[rid]) {
+                        this.stored_secrets_by_rid[rid] = [];
+                    }
+                    this.stored_secrets_by_rid[rid].push(secret_json);
+                }
+            })
+            .then(() => {
+                resolve();
+            });
         });
     }
 
