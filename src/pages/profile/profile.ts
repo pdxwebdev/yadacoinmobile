@@ -55,7 +55,7 @@ export class ProfilePage {
         this.ahttp.post(
             this.baseAddress + '/change-username',
             {
-                rid: this.graphService.rid,
+                rid: this.graphService.graph.rid,
                 username: this.username,
                 relationship: {
                     bulletin_secret: this.bulletinSecretService.bulletin_secret

@@ -9,10 +9,10 @@
     <button ion-button color="{{chatColor}}" title="Messages" (click)="showChat()">
       <ion-icon name="chatboxes"></ion-icon>
     </button>
-    <button *ngIf="balance > 0 && graphService.graph && graphService.graph.friends && graphService.graph.friends.length > 0" ion-button color="{{chatColor}}" title="Add Friend" (click)="addFriend()">
+    <button *ngIf="balance > 0 && graphService.graph && graphService.graph.registered" ion-button color="{{chatColor}}" title="Add Friend" (click)="addFriend()">
       <ion-icon name="person-add"></ion-icon>
     </button>
-    <button *ngIf="balance > 0 && graphService.graph && graphService.graph.friends && graphService.graph.friends.length > 0" ion-button color="{{chatColor}}" title="New Post" (click)="presentModal()">
+    <button *ngIf="balance > 0 && graphService.graph && graphService.graph.registered" ion-button color="{{chatColor}}" title="New Post" (click)="presentModal()">
       <ion-icon name="create"></ion-icon>
     </button>
     <button ion-button color="{{chatColor}}" title="Refresh" (click)="refresh()">
