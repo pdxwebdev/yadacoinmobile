@@ -191,6 +191,7 @@ export class GraphService {
 
     parseFriendRequests(friend_requests) {
         var friend_requestsObj = {};
+        if (!this.graph.friends) this.graph.friends = [];
         for(var i=0; i<friend_requests.length; i++) {
             var friend_request = friend_requests[i];
             if (!this.keys[friend_request.rid]) {
@@ -202,8 +203,7 @@ export class GraphService {
             var decrypted = this.decrypt(friend_request.relationship);
             if (decrypted.indexOf('{') === 0) {
                 var relationship = JSON.parse(decrypted);
-                //not sure how this affects the friends list yet, since we can't return friends from here
-                //friends[friend_request.rid] = friend_request;
+                this.graph.friends.push(friend_request);
                 delete friend_requestsObj[friend_request.rid];
                 if (this.keys[friend_request.rid].dh_private_keys.indexOf(relationship.dh_private_key)) {
                     this.keys[friend_request.rid].dh_private_keys.push(relationship.dh_private_key);
@@ -247,6 +247,8 @@ export class GraphService {
 
                 //start "just do dedup yada server because yada server adds itself to the friends array automatically straight from the api"
                 var friendsObj = {};
+                if (!this.graph.friends) this.graph.friends = [];
+                friends = friends.concat(this.graph.friends);
                 for(var i=0; i<friends.length; i++) {
                     var friend = friends[i];
                     if (!this.keys[friend.rid]) {
@@ -300,7 +302,6 @@ export class GraphService {
                         friends.push(friendsObj[arr_friends_keys[i]])
                     }
                 }
-                //end accomodating yada server auto-friend add
 
                 resolve(friends);
             });
