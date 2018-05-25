@@ -112,6 +112,10 @@ export class HomePage {
     }
 
     comment(item) {
+        if (!this.commentInputs[item.id]) {
+            alert('Comment cannot be empty.');
+            return;
+        }
         this.ahttp.post(
             this.baseAddress + '/comment',
             {

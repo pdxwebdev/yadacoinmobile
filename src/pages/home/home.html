@@ -38,20 +38,20 @@
         <a href="{{item.url}}" *ngIf="item.url" height="400">
           <img src="{{item.image}}" *ngIf="item.image">
           <ion-card-content>
-            <ion-card-title style="text-overflow:ellipsis;">
+            <ion-card-title style="text-overflow:ellipsis;" text-wrap>
               {{item.title}}
             </ion-card-title>
-            <p *ngIf="item.description" style="text-overflow:ellipsis;">
+            <p *ngIf="item.description" style="text-overflow:ellipsis;" text-wrap>
               {{item.description}}
             </p>
           </ion-card-content>
         </a>
         <div *ngIf="!item.url">
           <ion-card-content>
-            <ion-card-title style="text-overflow:ellipsis;">
+            <ion-card-title style="text-overflow:ellipsis;" text-wrap>
               {{item.title}}
             </ion-card-title>
-            <p *ngIf="item.description" style="text-overflow:ellipsis;">
+            <p *ngIf="item.description" style="text-overflow:ellipsis;" text-wrap>
               {{item.description}}
             </p>
           </ion-card-content>
@@ -87,7 +87,7 @@
           <ion-list col-lg-7>
             <ion-item *ngFor="let comment of comments[item.id]">
               <strong [innerHTML]="comment.username"></strong>
-              <ion-item [innerHTML]="comment.body"></ion-item>
+              <ion-item [innerHTML]="comment.body" text-wrap></ion-item>
             </ion-item>
           </ion-list>
         </ion-row>
