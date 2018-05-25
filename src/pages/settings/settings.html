@@ -25,6 +25,18 @@
   </ion-list>
   <button ion-button secondary (click)="createKey()">Create New Identity</button>
   <hr/>
+  <h4>Import / Export Identity</h4>
+  <ion-item>
+    <ion-input type="text" [(ngModel)]="activeKey">
+    </ion-input>
+  </ion-item>
+  <button ion-button secondary (click)="exportKey()">Export Active Identity</button>
+  <ion-item>
+    <ion-input type="text" placeholder="Paste secret key..." [(ngModel)]="importedKey">
+    </ion-input>
+  </ion-item>
+  <button ion-button secondary (click)="importKey()">Import Identity</button>
+  <hr/>
   <h4>Settings (Advanced)</h4>
   <ion-item>
     <ion-input type="text" placeholder="Base URL" [(ngModel)]="baseAddress">

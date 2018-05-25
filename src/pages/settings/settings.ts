@@ -10,6 +10,7 @@ import { ListPage } from '../list/list';
 import { AlertController, LoadingController } from 'ionic-angular';
 import { GraphService } from '../../app/graph.service';
 import { WalletService } from '../../app/wallet.service';
+import { SocialSharing } from '@ionic-native/social-sharing';
 
 @Component({
   selector: 'page-settings',
@@ -24,6 +25,8 @@ export class Settings {
     keys = null;
     loadingModal = null;
     prefix = null;
+    importedKey = null;
+    activeKey = null;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -33,8 +36,10 @@ export class Settings {
         private firebaseService: FirebaseService,
         private pushService: PushService,
         public loadingCtrl: LoadingController,
+        public alertCtrl: AlertController,
         private storage: Storage,
         private graphService: GraphService,
+        private socialSharing: SocialSharing,
         private walletService: WalletService
     ) {
         this.refresh();
@@ -88,8 +93,36 @@ export class Settings {
                 });
             })
             .then(() => {
+                this.activeKey = this.bulletinSecretService.key.toWIF()
                 this.loadingModal.dismiss();
             });
+        });
+    }
+
+    exportKey() {
+        let alert = this.alertCtrl.create();
+        alert.setTitle('Export Key');
+        alert.setSubTitle('Warning: Never ever share this secret key with anybody but yourself!');
+        alert.addButton({
+            text: 'Ok',
+            handler: (data: any) => {
+                this.socialSharing.share(this.bulletinSecretService.key.toWIF(), "Export Secret Key");
+            }
+        });
+        alert.present();
+    }
+
+    importKey() {
+        this.bulletinSecretService.import(this.importedKey)
+        .then(() => {
+            return new Promise((resolve, reject) => {
+                this.graphService.getInfo().then(() => {
+                    resolve();
+                });
+            });
+        })
+        .then(() => {
+            this.refresh();
         });
     }
 

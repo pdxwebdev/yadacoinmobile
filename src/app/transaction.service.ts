@@ -267,7 +267,7 @@ export class TransactionService {
             this.blockchainurl + '?bulletin_secret=' + this.bulletin_secret,
             this.transaction)
         .subscribe((data) => {
-            if (this.resolve) this.resolve(JSON.parse(data['_body']));
+            if (this.resolve && !this.callbackurl) this.resolve(JSON.parse(data['_body']));
         },
         (error) => {
             if (this.txnattempts.length > 0) {
@@ -277,20 +277,22 @@ export class TransactionService {
     }
 
     sendCallback() {
-        this.ahttp.post(
-            this.callbackurl,
-            {
-                bulletin_secret: this.bulletin_secret,
-                to: this.key.getAddress()
-            })
-        .subscribe((data) => {
-
-        },
-        (error) => {
-            if (this.cbattempts.length > 0) {
-                this.onCallbackError();
-            }
-        });
+        if(this.callbackurl) {
+            this.ahttp.post(
+                this.callbackurl,
+                {
+                    bulletin_secret: this.bulletin_secret,
+                    to: this.key.getAddress()
+                })
+            .subscribe((data) => {
+                if (this.resolve) this.resolve(JSON.parse(data['_body']));
+            },
+            (error) => {
+                if (this.cbattempts.length > 0) {
+                    this.onCallbackError();
+                }
+            });
+        }
     }
 
 

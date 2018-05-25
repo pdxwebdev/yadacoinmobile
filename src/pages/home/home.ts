@@ -282,9 +282,11 @@ export class HomePage {
                     data.dh_private_key = dh.getPrivateKey().toString('hex');
                     data.dh_public_key = dh.getPublicKey().toString('hex');
                     this.getTransaction(data, resolve);
-                    this.cryptoGenModal.dismiss();
                 });
             });
+        })
+        .then(() => {
+            this.cryptoGenModal.dismiss();
         });
     }
 
@@ -460,7 +462,6 @@ export class HomePage {
                             requested_rid: info.requested_rid,
                             requester_rid: info.requester_rid,
                             blockchainurl: this.blockchainAddress,
-                            callbackurl: info.callbackurl,
                             to: info.to,
                             resolve: resolve
                         });

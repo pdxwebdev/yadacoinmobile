@@ -87,19 +87,25 @@ export class ChatPage {
 		        		.then(() => {
 				            var dh_public_key = this.graphService.keys[this.rid].dh_public_keys[0];
 				            var dh_private_key = this.graphService.keys[this.rid].dh_private_keys[0];
-				        	if(dh_public_key && dh_private_key) {
-					            var dh = diffiehellman.getDiffieHellman('modp17');
-					            var dh1 = diffiehellman.createDiffieHellman(dh.getPrime(), dh.getGenerator());
-					            var privk = new Uint8Array(dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
-					              return parseInt(h, 16)
-					            }));
-					            dh1.setPrivateKey(privk);
-					            var pubk2 = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
-					              return parseInt(h, 16)
-					            }));
-					            var shared_secret = dh1.computeSecret(pubk2).toString('hex'); //this is the actual shared secret
-					            this.storage.set('shared_secret-' + dh_public_key.substr(0, 26) + dh_private_key.substr(0, 26), shared_secret);
 
+				        	if(dh_public_key && dh_private_key) {
+	                        	var key = 'shared_secret-' + this.rid + '|' + dh_public_key.slice(0, 26) + dh_private_key.slice(0, 26);
+		                        if (this.graphService.stored_secrets[key]) {
+		                            var shared_secret = this.graphService.stored_secrets[key];
+		                        } else {
+						            var dh = diffiehellman.getDiffieHellman('modp17');
+						            var dh1 = diffiehellman.createDiffieHellman(dh.getPrime(), dh.getGenerator());
+						            var privk = new Uint8Array(dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
+						              return parseInt(h, 16)
+						            }));
+						            dh1.setPrivateKey(privk);
+						            var pubk2 = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
+						              return parseInt(h, 16)
+						            }));
+						            var shared_secret = dh1.computeSecret(pubk2).toString('hex'); //this is the actual shared secret
+						            this.storage.set('shared_secret-' + dh_public_key.substr(0, 26) + dh_private_key.substr(0, 26), shared_secret);
+
+				                }
 			                    // camera permission was granted
 			                    this.transactionService.pushTransaction({
 			                    	dh_public_key: dh_public_key,

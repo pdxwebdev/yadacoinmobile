@@ -91,6 +91,17 @@ export class BulletinSecretService {
         return this.get();
     }
 
+    import (keyWif) {
+        return new Promise((resolve, reject) => {
+            this.keyname = 'key-' + uuid4();
+            this.storage.set(this.keyname, keyWif.trim());
+            this.get().
+            then(() => {
+                resolve();
+            });
+        });
+    }
+
     all() {
         return new Promise((resolve, reject) => {
             var keykeys = [];

@@ -259,8 +259,6 @@ export class ListPage {
             }
             var dh = diffiehellman.getDiffieHellman('modp17')
             dh.generateKeys()
-            this.cryptoGenModal.dismiss();
-            this.loadingModal.present();
             this.transactionService.pushTransaction({
               relationship: {
                 bulletin_secret: this.friend_request.bulletin_secret,
@@ -275,13 +273,12 @@ export class ListPage {
             });
           });
         }).then((txn) => {
-          this.loadingModal.dismiss();
+          this.cryptoGenModal.dismiss();
           var alert = this.alertCtrl.create();
           alert.setTitle('Friend Accept Sent');
           alert.setSubTitle('Your Friend Request acceptance has been submitted successfully.');
           alert.addButton('Ok');
           alert.present();
-          this.storage.set('accepted-' + this.friend_request.id, this.friend_request.id);
           
           this.refresh().then(() => {
             this.navCtrl.pop();

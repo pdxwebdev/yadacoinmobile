@@ -6,6 +6,7 @@ import { SettingsService } from './settings.service';
 import { Badge } from '@ionic-native/badge';
 import { Http } from '@angular/http';
 import { Platform } from 'ionic-angular';
+import { AlertController, LoadingController } from 'ionic-angular';
 
 
 declare var forge;
@@ -23,6 +24,7 @@ export class GraphService {
     stored_secrets_by_rid: any;
     accepted_friend_requests: any;
     keys: any;
+    storingSecretsModal: any;
     constructor(
         private storage: Storage,
         private http: HTTP,
@@ -30,6 +32,7 @@ export class GraphService {
         private settingsService: SettingsService,
         private badge: Badge,
         private platform: Platform,
+        private loadingCtrl: LoadingController,
         private ahttp: Http
     ) {
         if(this.platform.is('android') || this.platform.is('ios')) {
@@ -98,9 +101,19 @@ export class GraphService {
     }
 
     getFriendRequests() {
+        this.storingSecretsModal = this.loadingCtrl.create({
+            content: 'Caching shared secrets, please wait... (could take several minutes)'
+        });
+        this.storingSecretsModal.present();
         return this.endpointRequest('get-graph-friend-requests')
         .then((data: any) => {
             this.graph.friend_requests = this.parseFriendRequests(data.friend_requests);
+        })
+        .then(() => {
+            this.storeSharedSecrets()
+            .then(() => {
+                this.storingSecretsModal.dismiss();
+            });
         });
     }
 
@@ -233,7 +246,6 @@ export class GraphService {
             this.badge.set(friend_requests.length);
         }
 
-        this.storeSharedSecrets();
         return friend_requests;
     }
 
@@ -347,51 +359,54 @@ export class GraphService {
     }
 
     storeSharedSecrets() {
-        this.getStoredSecrets()
-        .then(() => {
-            for(let i in this.keys) {
-                for(var j=0; j < this.keys[i].dh_private_keys.length; j++) {
-                    var dh_private_key = this.keys[i].dh_private_keys[j];
-                    if (!dh_private_key) continue;
-                    for(var k=0; k < this.keys[i].dh_public_keys.length; k++) {
-                        var dh_public_key = this.keys[i].dh_public_keys[j];
-                        if (!dh_public_key) continue;
-                        var key = 'shared_secret-' + i + '|' + dh_public_key.slice(0, 26) + dh_private_key.slice(0, 26);
-                        if (this.stored_secrets[key]) {
-                            var shared_secret = this.stored_secrets[key];
-                        } else {
-                            var dh = diffiehellman.getDiffieHellman('modp17');
-                            var dh1 = diffiehellman.createDiffieHellman(dh.getPrime(), dh.getGenerator());
-                            var privk = new Uint8Array(dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
-                              return parseInt(h, 16)
-                            }));
-                            dh1.setPrivateKey(privk);
-                            var pubk2 = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
-                              return parseInt(h, 16)
-                            }));
-                            var shared_secret = dh1.computeSecret(pubk2).toString('hex'); //this is the actual shared secret
-                            this.storage.set(
-                                key,
-                                JSON.stringify({
+        return new Promise((resolve, reject) => {
+            this.getStoredSecrets()
+            .then(() => {
+                for(let i in this.keys) {
+                    for(var j=0; j < this.keys[i].dh_private_keys.length; j++) {
+                        var dh_private_key = this.keys[i].dh_private_keys[j];
+                        if (!dh_private_key) continue;
+                        for(var k=0; k < this.keys[i].dh_public_keys.length; k++) {
+                            var dh_public_key = this.keys[i].dh_public_keys[j];
+                            if (!dh_public_key) continue;
+                            var key = 'shared_secret-' + i + '|' + dh_public_key.slice(0, 26) + dh_private_key.slice(0, 26);
+                            if (this.stored_secrets[key]) {
+                                var shared_secret = this.stored_secrets[key];
+                            } else {
+                                var dh = diffiehellman.getDiffieHellman('modp17');
+                                var dh1 = diffiehellman.createDiffieHellman(dh.getPrime(), dh.getGenerator());
+                                var privk = new Uint8Array(dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
+                                  return parseInt(h, 16)
+                                }));
+                                dh1.setPrivateKey(privk);
+                                var pubk2 = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
+                                  return parseInt(h, 16)
+                                }));
+                                var shared_secret = dh1.computeSecret(pubk2).toString('hex'); //this is the actual shared secret
+                                this.storage.set(
+                                    key,
+                                    JSON.stringify({
+                                        shared_secret: shared_secret,
+                                        dh_public_key: dh_public_key,
+                                        dh_private_key: dh_private_key,
+                                        rid: i
+                                    })
+                                );
+                                if(!this.stored_secrets[key]) {
+                                    this.stored_secrets[key] = [];
+                                }
+                                this.stored_secrets[key].push({
                                     shared_secret: shared_secret,
                                     dh_public_key: dh_public_key,
                                     dh_private_key: dh_private_key,
                                     rid: i
-                                })
-                            );
-                            if(!this.stored_secrets[key]) {
-                                this.stored_secrets[key] = [];
+                                });
                             }
-                            this.stored_secrets[key].push({
-                                shared_secret: shared_secret,
-                                dh_public_key: dh_public_key,
-                                dh_private_key: dh_private_key,
-                                rid: i
-                            });
                         }
                     }
                 }
-            }
+                resolve();
+            });
         });
     }
 
@@ -400,11 +415,8 @@ export class GraphService {
             this.storage.forEach((value, key) => {
                 if (key.indexOf('shared_secret') === 0 && key.indexOf('|') >= 0 && value.indexOf('{') === 0) {
                     
-                    if(!this.stored_secrets[key]) {
-                        this.stored_secrets[key] = [];
-                    }
                     var secret_json = JSON.parse(value);
-                    this.stored_secrets[key].push(secret_json.shared_secret);
+                    this.stored_secrets[key] = secret_json.shared_secret;
 
                     var rid = key.slice('shared_secret-'.length, key.indexOf('|'));
                     if(!this.stored_secrets_by_rid[rid]) {
