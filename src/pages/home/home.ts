@@ -25,6 +25,7 @@ declare var forge;
 declare var elliptic;
 declare var uuid4;
 declare var diffiehellman;
+declare var firebase;
 
 @Component({
     selector: 'page-home',
@@ -76,24 +77,63 @@ export class HomePage {
         private pushService: PushService,
         private emojiPickerModule: EmojiPickerModule
     ) {
-        this.platform.ready().then(() => {
-          if(this.platform.is('cordova')) {
-            if(this.platform.is('ios')) {
-              this.firebaseService.firebase.grantPermission()
-              .then(() => {
+        this.refresh()
+        .then(() => {
+            if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
                 this.firebaseService.initFirebase();
-              });
             } else {
-              this.firebaseService.initFirebase();
+                // Initialize Firebase
+                var config = {
+                  apiKey: "AIzaSyAcJWjePVMBkEF8A3M-7oY_lT0MMXRDrpA",
+                  authDomain: "yadacoin-bcaae.firebaseapp.com",
+                  databaseURL: "https://yadacoin-bcaae.firebaseio.com",
+                  projectId: "yadacoin-bcaae",
+                  storageBucket: "yadacoin-bcaae.appspot.com",
+                  messagingSenderId: "805178314562"
+                };
+                firebase.initializeApp(config);
+                const messaging = firebase.messaging();
+                messaging.usePublicVapidKey('BLuv1UWDqzAyTtK5xlNaY4tFOz6vKbjuutTQ0KmBRG5btvVbydsrMTA-UeyMqY4oCC1Gu3sDwLfsg-iWtAg6IB0');
+                messaging.requestPermission().then(() => {
+                  console.log('Notification permission granted.');
+                  // TODO(developer): Retrieve an Instance ID token for use with FCM.
+                  // ...
+                }).catch((err) => {
+                  console.log('Unable to get permission to notify.', err);
+                });
+                messaging.getToken().then((currentToken) => {
+                  if (currentToken) {
+                    this.sendTokenToServer(currentToken);
+                    this.updateUIForPushEnabled(currentToken);
+                  } else {
+                    // Show permission request.
+                    console.log('No Instance ID token available. Request permission to generate one.');
+                    // Show permission UI.
+                    this.updateUIForPushPermissionRequired();
+                  }
+                }).catch((err) => {
+                  console.log('An error occurred while retrieving token. ', err);
+                });
             }
-          } else {
-            this.pushService.initPush();
-          }
         });
-        this.refresh();
         if (this.navParams.get('txnData')) {
             this.alertRoutine(JSON.parse(decodeURIComponent(this.navParams.get('txnData'))));
         }
+    }
+
+    sendTokenToServer(token) {
+      this.ahttp.post(this.settingsService.baseAddress + '/fcm-token', {
+        rid: this.graphService.graph.rid,
+        token: token,
+      }).subscribe(() => {});
+    }
+
+    updateUIForPushEnabled(token) {
+
+    }
+
+    updateUIForPushPermissionRequired() {
+
     }
 
     react(e, item) {
@@ -196,7 +236,7 @@ export class HomePage {
         });
 
         //this is our blocking procedure, update our posts for the main feed
-        this.graphService.getPosts().then(() => {
+        return this.graphService.getPosts().then(() => {
             if(this.graphService.graph && !this.graphService.graph.registered && !this.graphService.graph.pending_registration && this.walletService.wallet.balance > 1.01) {
                 this.register();
             }
