@@ -11,7 +11,7 @@ import { ListPage } from '../list/list';
 declare var forge;
 declare var elliptic;
 declare var uuid4;
-declare var diffiehellman;
+declare var X25519;
 
 @Component({
     selector: 'page-chat',
@@ -93,16 +93,13 @@ export class ChatPage {
 		                        if (this.graphService.stored_secrets[key]) {
 		                            var shared_secret = this.graphService.stored_secrets[key];
 		                        } else {
-						            var dh = diffiehellman.getDiffieHellman('modp17');
-						            var dh1 = diffiehellman.createDiffieHellman(dh.getPrime(), dh.getGenerator());
 						            var privk = new Uint8Array(dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
 						              return parseInt(h, 16)
 						            }));
-						            dh1.setPrivateKey(privk);
-						            var pubk2 = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
+						            var pubk = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
 						              return parseInt(h, 16)
 						            }));
-						            var shared_secret = dh1.computeSecret(pubk2).toString('hex'); //this is the actual shared secret
+						            shared_secret = this.toHex(X25519.getSharedKey(privk, pubk));
 						            this.storage.set('shared_secret-' + dh_public_key.substr(0, 26) + dh_private_key.substr(0, 26), shared_secret);
 
 				                }
@@ -152,5 +149,12 @@ export class ChatPage {
     showFriendRequests() {
       var item = {pageTitle: {title:"Friend Requests"}};
       this.navCtrl.push(ListPage, item);
+    }
+
+    toHex(byteArray) {
+        var callback = function(byte) {
+            return ('0' + (byte & 0xFF).toString(16)).slice(-2);
+        }
+        return Array.from(byteArray, callback).join('')
     }
 }

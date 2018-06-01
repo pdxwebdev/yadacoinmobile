@@ -11,7 +11,7 @@ import { AlertController, LoadingController } from 'ionic-angular';
 
 declare var forge;
 declare var foobar;
-declare var diffiehellman;
+declare var X25519;
 
 @Injectable()
 export class GraphService {
@@ -373,16 +373,13 @@ export class GraphService {
                             if (this.stored_secrets[key]) {
                                 var shared_secret = this.stored_secrets[key];
                             } else {
-                                var dh = diffiehellman.getDiffieHellman('modp17');
-                                var dh1 = diffiehellman.createDiffieHellman(dh.getPrime(), dh.getGenerator());
                                 var privk = new Uint8Array(dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
                                   return parseInt(h, 16)
                                 }));
-                                dh1.setPrivateKey(privk);
-                                var pubk2 = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
+                                var pubk = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
                                   return parseInt(h, 16)
                                 }));
-                                var shared_secret = dh1.computeSecret(pubk2).toString('hex'); //this is the actual shared secret
+                                shared_secret = this.toHex(X25519.getSharedKey(privk, pubk));
                                 this.storage.set(
                                     key,
                                     JSON.stringify({
@@ -458,5 +455,12 @@ export class GraphService {
             arr.push(parseInt(c, 16));
         }
         return String.fromCharCode.apply(null, arr);
+    }
+
+    toHex(byteArray) {
+        var callback = function(byte) {
+            return ('0' + (byte & 0xFF).toString(16)).slice(-2);
+        }
+        return Array.from(byteArray, callback).join('')
     }
 }

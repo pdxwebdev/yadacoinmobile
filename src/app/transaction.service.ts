@@ -11,7 +11,6 @@ import { Storage } from '@ionic/storage';
 declare var foobar;
 declare var forge;
 declare var uuid4;
-declare var diffiehellman;
 
 @Injectable()
 export class TransactionService {

@@ -17,7 +17,7 @@ import { Platform } from 'ionic-angular';
 declare var forge;
 declare var foobar;
 declare var uuid4;
-declare var diffiehellman;
+declare var X25519;
 
 @Component({
   selector: 'page-list',
@@ -257,14 +257,16 @@ export class ListPage {
                 to = output.to;
               }
             }
-            var dh = diffiehellman.getDiffieHellman('modp17')
-            dh.generateKeys()
+            var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
+            var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
+            var dh_private_key = this.toHex(raw_dh_private_key);
+            var dh_public_key = this.toHex(raw_dh_public_key);
             this.transactionService.pushTransaction({
               relationship: {
                 bulletin_secret: this.friend_request.bulletin_secret,
-                dh_private_key: dh.getPrivateKey().toString('hex')
+                dh_private_key: dh_private_key
               },
-              dh_public_key: dh.getPublicKey().toString('hex'),
+              dh_public_key: dh_public_key,
               requested_rid: this.friend_request.requested_rid,
               requester_rid: this.friend_request.requester_rid,
               to: to,
@@ -310,5 +312,12 @@ export class ListPage {
   showFriendRequests() {
       var item = {pageTitle: {title:"Friend Requests"}};
       this.navCtrl.push(ListPage, item);
+  }
+
+  toHex(byteArray) {
+    var callback = function(byte) {
+        return ('0' + (byte & 0xFF).toString(16)).slice(-2);
+    }
+    return Array.from(byteArray, callback).join('')
   }
 }

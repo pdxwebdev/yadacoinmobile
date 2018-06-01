@@ -24,7 +24,7 @@ import { EmojiPickerModule } from '@ionic-tools/emoji-picker';
 declare var forge;
 declare var elliptic;
 declare var uuid4;
-declare var diffiehellman;
+declare var X25519;
 declare var firebase;
 
 @Component({
@@ -321,10 +321,12 @@ export class HomePage {
                 this.ahttp.get(this.settingsService.baseAddress + '/register')
                 .subscribe((res) => {
                     var data = JSON.parse(res['_body']);
-                    var dh = diffiehellman.getDiffieHellman('modp17')
-                    dh.generateKeys()
-                    data.dh_private_key = dh.getPrivateKey().toString('hex');
-                    data.dh_public_key = dh.getPublicKey().toString('hex');
+                    var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
+                    var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
+                    var dh_private_key = this.toHex(raw_dh_private_key);
+                    var dh_public_key = this.toHex(raw_dh_public_key);
+                    data.dh_private_key = dh_private_key;
+                    data.dh_public_key = dh_public_key;
                     this.getTransaction(data, resolve);
                 });
             });
@@ -492,10 +494,12 @@ export class HomePage {
                 //////////////////////////////////////////////////////////////////////////
                 this.walletService.get().then(() => {
                     return new Promise((resolve, reject) => {
-                        var dh = diffiehellman.getDiffieHellman('modp17')
-                        dh.generateKeys()
-                        info.dh_private_key = dh.getPrivateKey().toString('hex');
-                        info.dh_public_key = dh.getPublicKey().toString('hex');
+                        var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
+                        var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
+                        var dh_private_key = this.toHex(raw_dh_private_key);
+                        var dh_public_key = this.toHex(raw_dh_public_key);
+                        info.dh_private_key = dh_private_key;
+                        info.dh_public_key = dh_public_key;
                         this.cryptoGenModal.dismiss();
                         this.transactionService.pushTransaction({
                             relationship: {
@@ -580,5 +584,12 @@ export class HomePage {
             arr.push(parseInt(c, 16));
         }
         return String.fromCharCode.apply(null, arr);
+    }
+
+    toHex(byteArray) {
+        var callback = function(byte) {
+            return ('0' + (byte & 0xFF).toString(16)).slice(-2);
+        }
+        return Array.from(byteArray, callback).join('')
     }
 }

@@ -21,7 +21,6 @@ import { SendReceive } from '../pages/sendreceive/sendreceive';
 
 
 declare var forge;
-declare var diffiehellman;
 
 @Component({
   templateUrl: 'app.html'
