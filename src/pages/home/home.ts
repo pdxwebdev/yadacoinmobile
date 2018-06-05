@@ -53,6 +53,7 @@ export class HomePage {
     comments = {};
     commentInputs = {};
     ids_to_get = [];
+    commentReacts = {};
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -184,6 +185,21 @@ export class HomePage {
         });
     }
 
+    commentReact(e, item) {
+        this.ahttp.post(
+            this.baseAddress + '/comment-react',
+            {
+                'react': e.char,
+                '_id': item._id,
+                'bulletin_secret': this.bulletinSecretService.bulletin_secret
+            }
+        )
+        .subscribe((res) => {
+            var existing = this.commentReacts[item._id] || '';
+            this.commentReacts[item._id] = existing + e.char;
+        });
+    }
+
     showChat() {
       var item = {pageTitle: {title:"Chat"}};
       this.navCtrl.push(ListPage, item);
@@ -198,6 +214,18 @@ export class HomePage {
         this.ahttp.post(
             this.settingsService.baseAddress + '/get-reacts-detail',
             {'txn_id': item.id}
+        )
+        .subscribe((res) => {
+            var data = JSON.parse(res['_body']);
+            var item = {pageTitle: {title:"Reacts Detail"}, detail: data};
+            this.navCtrl.push(ListPage, item);
+        });
+    }
+
+    commentReactsDetail(item) {
+        this.ahttp.post(
+            this.settingsService.baseAddress + '/get-comment-reacts-detail',
+            {'_id': item._id}
         )
         .subscribe((res) => {
             var data = JSON.parse(res['_body']);
@@ -268,6 +296,7 @@ export class HomePage {
                 if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
                     this.openGraphParserService.parseFromUrl(graphArray[i].relationship.postText).then((data) => {
                         data['id'] = graphArray[i].id;
+                        data['username'] = graphArray[i].username;
                         this.items.push(data);
                         if ((graphArray.length - 1) == i) {
                             this.loading = false;
@@ -277,6 +306,7 @@ export class HomePage {
                 } else {
                     this.openGraphParserService.parseFromUrl(this.baseAddress + '/get-url?url=' + encodeURIComponent(graphArray[i].relationship.postText)).then((data) => {
                         data['id'] = graphArray[i].id;
+                        data['username'] = graphArray[i].username;
                         this.items.push(data);
                         if ((graphArray.length - 1) == i) {
                             this.loading = false;
@@ -285,7 +315,7 @@ export class HomePage {
                     });
                 }
             } else {
-                var data = {title: "post", description: graphArray[i].relationship.postText, id: graphArray[i].id};
+                var data = {username: graphArray[i].username, title: '', description: graphArray[i].relationship.postText, id: graphArray[i].id};
                 this.items.push(data);
                 if ((graphArray.length - 1) == i) {
                     this.loading = false;
@@ -308,6 +338,20 @@ export class HomePage {
         .subscribe((res) => {
             var data = JSON.parse(res['_body']);
             this.comments = data;
+            var comment_ids_to_get = [];
+            for (var i=0; i < Object.keys(this.comments).length; i++) {
+                for (var j=0; j < this.comments[Object.keys(this.comments)[i]].length; j++) {
+                    comment_ids_to_get.push(this.comments[Object.keys(this.comments)[i]][j]._id);
+                }
+            }
+            this.ahttp.post(
+                this.settingsService.baseAddress + '/get-comment-reacts',
+                {'ids': comment_ids_to_get}
+            )
+            .subscribe((res) => {
+                var data = JSON.parse(res['_body']);
+                this.commentReacts = data;
+            });
         });
     }
 

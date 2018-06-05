@@ -41,6 +41,7 @@
             <ion-card-title style="text-overflow:ellipsis;" text-wrap>
               {{item.title}}
             </ion-card-title>
+            <h2>{{item.username}}</h2>
             <p *ngIf="item.description" style="text-overflow:ellipsis;" text-wrap>
               {{item.description}}
             </p>
@@ -51,6 +52,7 @@
             <ion-card-title style="text-overflow:ellipsis;" text-wrap>
               {{item.title}}
             </ion-card-title>
+            <h2>{{item.username}}</h2>
             <p *ngIf="item.description" style="text-overflow:ellipsis;" text-wrap>
               {{item.description}}
             </p>
@@ -88,6 +90,13 @@
             <ion-item *ngFor="let comment of comments[item.id]">
               <strong [innerHTML]="comment.username"></strong>
               <ion-item [innerHTML]="comment.body" text-wrap></ion-item>
+              <button ion-button clear small icon-start (click)="toggled[comment._id] = !toggled[comment._id]" [(emojiPickerIf)]="toggled[comment._id]" [emojiPickerDirection]="'top'" (emojiPickerSelect)="commentReact($event, comment)">
+                <ion-icon name='sunny'></ion-icon>
+                React
+              </button>
+              <ion-row *ngIf="commentReacts[comment._id] && commentReacts[comment._id].length > 0" no-padding text-wrap (click)="commentReactsDetail(comment)">
+                  <ion-item [innerHTML]="commentReacts[comment._id]"></ion-item>
+              </ion-row>
             </ion-item>
           </ion-list>
         </ion-row>
