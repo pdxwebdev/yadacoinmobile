@@ -236,8 +236,8 @@ export class ListPage {
 
   accept() {
     let alert = this.alertCtrl.create();
-    alert.setTitle('Approve Transaction');
-    alert.setSubTitle('You are about to spend 1.01 coins.');
+    alert.setTitle('Approve friend');
+    alert.setSubTitle('Are you sure?');
     alert.addButton({
         text: 'Cancel',
         handler: (data: any) => {

@@ -72,8 +72,8 @@ export class SendReceive {
             return
         }
         var alert = this.alertCtrl.create();
-        alert.setTitle('Approve Transaction');
-        alert.setSubTitle('You are about to spend ' + total + ' coins (' + this.value + ' coin + 0.01 fee)');
+        alert.setTitle('Approve this');
+        alert.setSubTitle('you sure?');
         alert.addButton('Cancel');
         alert.addButton({
             text: 'Confirm',
@@ -109,7 +109,7 @@ export class SendReceive {
     }
 
     shareAddress() {
-        this.socialSharing.share(this.bulletinSecretService.key.getAddress(), "Send Yada Coin to this address!");
+        this.socialSharing.share(this.bulletinSecretService.key.getAddress(), "Send Yada stuff!");
     }
 
     showChat() {

@@ -35,6 +35,7 @@ export class FirebaseService {
   }
 
   initFirebase() {
+    this.firebase.grantPermission();
     this.firebase.getToken()
     .then((token) => {
       console.log(token);

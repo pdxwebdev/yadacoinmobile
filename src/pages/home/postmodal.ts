@@ -43,8 +43,8 @@ export class PostModal {
 	            console.log(status);
 
 	            let alert = this.alertCtrl.create();
-	            alert.setTitle('Approve Transaction');
-	            alert.setSubTitle('You are about to spend 0.01 coins ( 0.01 fee)');
+	            alert.setTitle('Approve post');
+	            alert.setSubTitle('Are you sure?');
 	            alert.addButton('Cancel');
 	            alert.addButton({
 	                text: 'Confirm',

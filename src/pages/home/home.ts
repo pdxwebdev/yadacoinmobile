@@ -377,6 +377,7 @@ export class HomePage {
         })
         .then(() => {
             this.cryptoGenModal.dismiss();
+            this.refresh();
         });
     }
 
@@ -397,7 +398,7 @@ export class HomePage {
     }
 
     sharePhrase() {
-        this.socialSharing.share(this.graphService.graph.human_hash, "Add me on Yada Coin!");
+        this.socialSharing.share(this.graphService.graph.human_hash, "Add me on Yada!");
     }
 
     addFriend() {
@@ -439,6 +440,9 @@ export class HomePage {
         .subscribe((res) => {
             //this.loadingModal2.dismiss();
             this.alertRoutine(JSON.parse(res['_body']));
+        },
+        (err) => {
+            alert("Username not found.")
         });
     }
 
@@ -484,8 +488,8 @@ export class HomePage {
     alertRoutine(info) {
         if (this.walletService.wallet.balance < 1.01) {
             let alert = this.alertCtrl.create();
-            alert.setTitle('Insuficient Funds');
-            alert.setSubTitle('You need at least 1.01 YadaCoins');
+            alert.setTitle('Error');
+            alert.setSubTitle("You cannot do that right now.");
             alert.addButton('OK');
             alert.present();
             return
@@ -504,8 +508,8 @@ export class HomePage {
             return
         }
         let alert = this.alertCtrl.create();
-        alert.setTitle('Approve Transaction');
-        alert.setSubTitle('You are about to spend 1.01 coins (1 coin + 0.01 fee)');
+        alert.setTitle('Approve action');
+        alert.setSubTitle('You are sure you want to do this?');
         alert.addButton({
             text: 'Cancel',
             handler: (data: any) => {
@@ -590,8 +594,8 @@ export class HomePage {
                 console.log(status);
 
                 let alert = this.alertCtrl.create();
-                alert.setTitle('Approve Transaction');
-                alert.setSubTitle('You are about to spend 0.01 coins ( 0.01 fee)');
+                alert.setTitle('Approve share');
+                alert.setSubTitle('You are sure you want to share this?');
                 alert.addButton('Cancel');
                 alert.addButton({
                     text: 'Confirm',

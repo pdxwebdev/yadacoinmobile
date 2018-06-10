@@ -58,7 +58,6 @@ export class MyApp {
       { title: 'Friends', component: ListPage, count: 0, color: '' },
       { title: 'Friend Requests', component: ListPage, count: 0, color: '' },
       { title: 'Sent Requests', component: ListPage, count: 0, color: '' },
-      { title: 'Coins', component: SendReceive, count: false, color: '' },
       { title: 'Settings', component: Settings, count: false, color: '' }
     ];
     this.walletService.get();

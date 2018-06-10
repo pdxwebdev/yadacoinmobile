@@ -71,8 +71,8 @@ export class ChatPage {
 
     send() {
 	    let alert = this.alertCtrl.create();
-	    alert.setTitle('Approve transaction');
-	    alert.setSubTitle('You are about to spend 0.01 coins ( 0.01 fee)');
+	    alert.setTitle('Approve message');
+	    alert.setSubTitle('You are sure you want to send this message?');
 	    alert.addButton('Cancel');
 	    alert.addButton({
 	        text: 'Confirm',
