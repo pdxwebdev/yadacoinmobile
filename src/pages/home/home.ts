@@ -377,6 +377,7 @@ export class HomePage {
         })
         .then(() => {
             this.cryptoGenModal.dismiss();
+            this.refresh();
         });
     }
 
@@ -439,6 +440,10 @@ export class HomePage {
         .subscribe((res) => {
             //this.loadingModal2.dismiss();
             this.alertRoutine(JSON.parse(res['_body']));
+        },
+        (err) => {
+            //this.loadingModal2.dismiss();
+            alert('Username not found.');
         });
     }
 
