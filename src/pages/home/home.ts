@@ -442,7 +442,8 @@ export class HomePage {
             this.alertRoutine(JSON.parse(res['_body']));
         },
         (err) => {
-            alert("Username not found.")
+            //this.loadingModal2.dismiss();
+            alert('Username not found.');
         });
     }
 
