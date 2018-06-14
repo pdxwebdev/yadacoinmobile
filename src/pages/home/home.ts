@@ -9,6 +9,8 @@ import { WalletService } from '../../app/wallet.service';
 import { GraphService } from '../../app/graph.service';
 import { TransactionService } from '../../app/transaction.service';
 import { ListPage } from '../list/list';
+import { UserDetailPage } from '../userdetail/userdetail'
+import { ProfilePage } from '../profile/profile';
 import { PostModal } from './postmodal';
 import { OpenGraphParserService } from '../../app/opengraphparser.service'
 import { Clipboard } from '@ionic-native/clipboard';
@@ -78,6 +80,30 @@ export class HomePage {
         private pushService: PushService,
         private emojiPickerModule: EmojiPickerModule
     ) {
+        if (this.navParams.get('txnData')) {
+            this.alertRoutine(JSON.parse(decodeURIComponent(this.navParams.get('txnData'))));
+        }
+        this.storage.get('eula').then((value) => {
+            if (value === 'true') {
+                this.initThis();
+                return;
+            }
+            let alert = this.alertCtrl.create();
+            alert.setTitle('Terms (EULA)');
+            alert.setSubTitle('There is no tolerance for objectionable content or abusive users. If you are found in violation, your content will be removed and you will be ejected.');
+            alert.addButton('Cancel');
+            alert.addButton({
+                text: 'Confirm',
+                handler: (data: any) => {
+                    this.storage.set('eula', 'true');
+                    this.initThis();
+                }
+            });
+            alert.present();
+        });
+    }
+
+    initThis() {
         this.refresh()
         .then(() => {
             if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
@@ -117,9 +143,6 @@ export class HomePage {
                 });
             }
         });
-        if (this.navParams.get('txnData')) {
-            this.alertRoutine(JSON.parse(decodeURIComponent(this.navParams.get('txnData'))));
-        }
     }
 
     sendTokenToServer(token) {
@@ -176,7 +199,10 @@ export class HomePage {
 
             this.ahttp.post(
                 this.settingsService.baseAddress + '/get-comments',
-                {'txn_ids': this.ids_to_get}
+                {
+                    'txn_ids': this.ids_to_get,
+                    'bulletin_secret': this.bulletinSecretService.bulletin_secret
+                }
             )
             .subscribe((res) => {
                 var data = JSON.parse(res['_body']);
@@ -208,6 +234,14 @@ export class HomePage {
     showFriendRequests() {
       var item = {pageTitle: {title:"Friend Requests"}};
       this.navCtrl.push(ListPage, item);
+    }
+
+    userDetail(user) {
+      if (user.username === this.graphService.graph.human_hash) {
+          this.navCtrl.push(ProfilePage);
+          return;
+      }
+      this.navCtrl.push(UserDetailPage, {'user': user});
     }
 
     reactsDetail(item) {
@@ -333,7 +367,10 @@ export class HomePage {
         });
         this.ahttp.post(
             this.settingsService.baseAddress + '/get-comments',
-            {'txn_ids': this.ids_to_get}
+            {
+                'txn_ids': this.ids_to_get,
+                'bulletin_secret': this.bulletinSecretService.bulletin_secret
+            }
         )
         .subscribe((res) => {
             var data = JSON.parse(res['_body']);
@@ -596,7 +633,7 @@ export class HomePage {
 
                 let alert = this.alertCtrl.create();
                 alert.setTitle('Approve share');
-                alert.setSubTitle('You are sure you want to share this?');
+                alert.setSubTitle('Are you sure you want to share this?');
                 alert.addButton('Cancel');
                 alert.addButton({
                     text: 'Confirm',
@@ -614,6 +651,28 @@ export class HomePage {
                 alert.present();
             });
         });
+    }
+
+    flag(item) {
+        if (item.username === this.graphService.graph.human_hash) {
+            alert("You cannot flag your own content.");
+            return;
+        }
+        let alertc = this.alertCtrl.create();
+        alertc.setTitle('Report content?');
+        alertc.setSubTitle('Are sure you want to report this as objectionable content?');
+        alertc.addButton('Cancel');
+        alertc.addButton({
+            text: 'Confirm',
+            handler: (data: any) => {
+                item['bulletin_secret'] = this.bulletinSecretService.bulletin_secret;
+                this.ahttp.post(this.settingsService.baseAddress + '/flag', item).subscribe(() => {
+                    alert('The content has been reported and we will respond within 24 hours.');
+                    this.refresh();
+                });
+            }
+        });
+        alertc.present();
     }
 
     decrypt(message) {

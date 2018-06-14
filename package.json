@@ -67,7 +67,6 @@
     "metascraper": "^1.0.7",
     "ngx-qrcode2": "0.0.5",
     "node-forge": "^0.7.1",
-    "phonegap-plugin-push": "^2.2.3",
     "rxjs": "5.4.3",
     "sw-toolbox": "3.6.0",
     "uglify-js": "^3.1.4",
@@ -112,8 +111,7 @@
         "DEEPLINK_5_SCHEME": " ",
         "DEEPLINK_5_HOST": " "
       },
-      "cordova-plugin-firebase": {},
-      "phonegap-plugin-push": {}
+      "cordova-plugin-firebase": {}
     },
     "platforms": [
       "android",

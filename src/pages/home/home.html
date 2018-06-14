@@ -41,7 +41,7 @@
             <ion-card-title style="text-overflow:ellipsis;" text-wrap>
               {{item.title}}
             </ion-card-title>
-            <h2>{{item.username}}</h2>
+            <h2 (click)="userDetail(item)"><strong>{{item.username}}</strong></h2>
             <p *ngIf="item.description" style="text-overflow:ellipsis;" text-wrap>
               {{item.description}}
             </p>
@@ -52,7 +52,7 @@
             <ion-card-title style="text-overflow:ellipsis;" text-wrap>
               {{item.title}}
             </ion-card-title>
-            <h2>{{item.username}}</h2>
+            <h2 (click)="userDetail(item)"><strong>{{item.username}}</strong></h2>
             <p *ngIf="item.description" style="text-overflow:ellipsis;" text-wrap>
               {{item.description}}
             </p>
@@ -69,6 +69,10 @@
             </button>
           </ion-col>
           <ion-col text-right>
+            <button ion-button clear small color="danger" icon-start (click)="flag(item)">
+              <ion-icon name='flag'></ion-icon>
+              Flag
+            </button>
             <button ion-button clear small color="danger" icon-start (click)="share(item)">
               <ion-icon name='share-alt'></ion-icon>
               Share
@@ -88,7 +92,7 @@
         <ion-row>
           <ion-list col-lg-7>
             <ion-item *ngFor="let comment of comments[item.id]">
-              <strong [innerHTML]="comment.username"></strong>
+              <strong [innerHTML]="comment.username" (click)="userDetail(comment)"></strong>
               <ion-item [innerHTML]="comment.body" text-wrap></ion-item>
               <button ion-button clear small icon-start (click)="toggled[comment._id] = !toggled[comment._id]" [(emojiPickerIf)]="toggled[comment._id]" [emojiPickerDirection]="'top'" (emojiPickerSelect)="commentReact($event, comment)">
                 <ion-icon name='sunny'></ion-icon>
