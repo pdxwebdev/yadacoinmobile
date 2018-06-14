@@ -11,6 +11,7 @@ import { Storage } from '@ionic/storage';
 declare var foobar;
 declare var forge;
 declare var uuid4;
+declare var Base64;
 
 @Injectable()
 export class TransactionService {
@@ -343,7 +344,7 @@ export class TransactionService {
         var cipher = forge.cipher.createCipher('AES-CBC', key);
         var iv = forge.random.getBytesSync(16);
         cipher.start({iv: iv});
-        cipher.update(forge.util.createBuffer(iv + message));
+        cipher.update(forge.util.createBuffer(iv + Base64.encode(message)));
         cipher.finish()
         return cipher.output.toHex()
     }

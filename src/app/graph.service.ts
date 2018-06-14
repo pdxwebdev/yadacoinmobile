@@ -12,6 +12,7 @@ import { AlertController, LoadingController } from 'ionic-angular';
 declare var forge;
 declare var foobar;
 declare var X25519;
+declare var Base64;
 
 @Injectable()
 export class GraphService {
@@ -334,7 +335,12 @@ export class GraphService {
                     //by calling getSentFriendRequests and getFriendRequests
                     for(var j=0; j<this.stored_secrets_by_rid[message.rid].length; j++) {
                         var shared_secret = this.stored_secrets_by_rid[message.rid][j];
-                        var decrypted = this.shared_decrypt(shared_secret.shared_secret, message.relationship);
+                        try {
+                            var decrypted = this.shared_decrypt(shared_secret.shared_secret, message.relationship);
+                        } 
+                        catch(error) {
+                            continue
+                        }
                         if(decrypted.indexOf('{') === 0) {
                             messages[message.rid] = message;
                             if (!chats[message.rid]) {
@@ -445,7 +451,7 @@ export class GraphService {
         decipher.start({iv: enc.slice(0,16)});
         decipher.update(forge.util.createBuffer(enc.slice(16)));
         decipher.finish();
-        return decipher.output.data
+        return Base64.decode(decipher.output.data);
     }
 
     hexToBytes(s) {
