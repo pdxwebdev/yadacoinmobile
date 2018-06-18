@@ -143,11 +143,11 @@ export class GraphService {
         });
     }
 
-    getMessages() {
+    getMessages(rid) {
         return new Promise((resolve, reject) => {
             this.endpointRequest('get-graph-messages')
             .then((data: any) => {
-                this.parseMessages(data.messages)
+                this.parseMessages(data.messages, rid)
                 .then((chats) => {
                     this.graph.messages = chats;
                     resolve(chats);
@@ -341,7 +341,14 @@ export class GraphService {
         });
     }
 
-    parseMessages(messages) {
+    parseMessages(messages, rid) {
+        messages.sort(function (a, b) {
+          if (a.height > b.height)
+            return -1
+          if ( a.height < b.height)
+            return 1
+          return 0
+        });
         this.new_messages_count = 0;
         return new Promise((resolve, reject) => {
             this.getStoredSecrets().then(() => {
@@ -350,6 +357,8 @@ export class GraphService {
                     dance:
                     for(var i=0; i<messages.length; i++) {
                         var message = messages[i];
+                        if(!rid && chats[message.rid]) continue;
+                        if(rid && message.rid !== rid) continue;
                         if (!message.rid) continue;
                         if (!this.stored_secrets_by_rid[message.rid]) continue;
                         if (message.dh_public_key) continue;
@@ -411,14 +420,13 @@ export class GraphService {
                             if(message.height > this.new_messages_counts[message.rid]) {
                                 this.new_messages_counts[message.rid] = message.height;
                                 this.new_messages_count++;
-                                new_messages.push(message);
                             }
                         } else {
                             this.new_messages_counts[message.rid] = message.height;
                             this.new_messages_count++;
-                            new_messages.push(message);
                         }
                     }
+                    new_messages.push(message);
                 }
                 resolve(new_messages);
             });
@@ -479,6 +487,7 @@ export class GraphService {
     }
 
     getStoredSecrets() {
+        this.stored_secrets_by_rid = {};
         return new Promise((resolve, reject) => {
             this.storage.forEach((value, key) => {
                 if (key.indexOf('shared_secret') === 0 && key.indexOf('|') >= 0 && value.indexOf('{') === 0) {

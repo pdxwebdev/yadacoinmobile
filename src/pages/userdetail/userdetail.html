@@ -9,21 +9,18 @@
     <button ion-button color="{{chatColor}}" title="Messages" (click)="showChat()">
       <ion-icon name="chatboxes"></ion-icon>
     </button>
+    <button ion-button color="{{chatColor}}" title="Refresh" (click)="refresh()">
+      <ion-icon name="refresh"></ion-icon>
+    </button>
   </ion-navbar>
 </ion-header>
 <ion-content padding>
   <ion-row>
     <ion-col text-center>
       <ion-item>
-        <ion-label color="primary" stacked>Username:</ion-label>
-        <ion-input type="text" [(ngModel)]="username" (ionChange)="change()">
-        </ion-input>
-        <button *ngIf="isCordova" ion-button outline item-end (click)="sharePhrase()">share&nbsp;<ion-icon name="share"></ion-icon></button>
+        <h1 [innerHTML]="user.username"></h1>
+        <button ion-button outline item-end (click)="blockUser()">Block&nbsp;<ion-icon name="remove-circle"></ion-icon></button>
       </ion-item>
-    <button ion-button title="Save" (click)="save()">
-      <ion-icon name="save"></ion-icon>
-      Save
-    </button>
     </ion-col>
   </ion-row>
 </ion-content>

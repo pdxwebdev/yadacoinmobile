@@ -42,11 +42,11 @@ export class Settings {
         private socialSharing: SocialSharing,
         private walletService: WalletService
     ) {
-        this.refresh();
+        this.refresh(null);
         this.prefix = 'usernames-';
     }
 
-    refresh() {
+    refresh(refresher) {
         this.loadingModal = this.loadingCtrl.create({
             content: 'Please wait...'
         });
@@ -95,6 +95,7 @@ export class Settings {
             .then(() => {
                 this.activeKey = this.bulletinSecretService.key.toWIF()
                 this.loadingModal.dismiss();
+                if(refresher) refresher.complete();
             });
         });
     }
@@ -122,7 +123,7 @@ export class Settings {
             });
         })
         .then(() => {
-            this.refresh();
+            this.refresh(null);
         });
     }
 
@@ -136,7 +137,7 @@ export class Settings {
             });
         })
         .then(() => {
-            this.refresh();
+            this.refresh(null);
         });
     }
 
@@ -161,7 +162,7 @@ export class Settings {
                 this.firebaseService.initFirebase();
             }
             this.loadingModal.dismiss();
-            this.refresh();
+            this.refresh(null);
         });
     }
 
