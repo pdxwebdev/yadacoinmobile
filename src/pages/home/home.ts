@@ -54,6 +54,8 @@ export class HomePage {
     commentInputs = {};
     ids_to_get = [];
     commentReacts = {};
+    chatColor: any;
+    friendRequestColor: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -78,7 +80,7 @@ export class HomePage {
         private pushService: PushService,
         private emojiPickerModule: EmojiPickerModule
     ) {
-        this.refresh()
+        this.refresh(null)
         .then(() => {
             if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
                 this.firebaseService.initFirebase();
@@ -234,7 +236,7 @@ export class HomePage {
         });
     }
 
-    refresh() {
+    refresh(refresher) {
         this.loading = true;
         this.loadingBalance = true;
 
@@ -260,7 +262,15 @@ export class HomePage {
         .then(() => {
             //put ourselves in the faucet
             this.ahttp.get(this.settingsService.baseAddress + '/faucet?address=' + this.bulletinSecretService.key.getAddress()).subscribe(()=>{});
-            this.color = this.graphService.graph.friend_requests.length > 0 ? 'danger' : '';
+            this.color = this.graphService.friend_request_count > 0 ? 'danger' : '';
+            this.friendRequestColor = this.graphService.friend_request_count > 0 ? 'danger' : '';
+            this.chatColor = this.graphService.new_messages_count > 0 ? 'danger' : '';
+        });
+
+        //check for new messages
+        this.graphService.getNewMessages()
+        .then(() => {
+            this.chatColor = this.graphService.new_messages_count > 0 ? 'danger' : '';
         });
 
         //this is our blocking procedure, update our posts for the main feed
@@ -269,6 +279,7 @@ export class HomePage {
                 this.register();
             }
             this.generateFeed();
+            if(refresher) refresher.complete();
         });
     }
 
@@ -377,7 +388,7 @@ export class HomePage {
         })
         .then(() => {
             this.cryptoGenModal.dismiss();
-            this.refresh();
+            this.refresh(null);
         });
     }
 
@@ -409,14 +420,6 @@ export class HomePage {
                 this.pasteFriend(data.phrase);
             }
         });
-        if (this.platform.is('android') || this.platform.is('ios')) {
-            buttons.push({
-                text: 'Scan',
-                handler: () => {
-                    this.scanFriend();
-                }
-            });
-        }
         let alert = this.alertCtrl.create({
             inputs: [
                 {

@@ -61,7 +61,7 @@ export class ListPage {
     this.cryptoGenModal = this.loadingCtrl.create({
         content: 'Generating encryption, please wait... (could take several minutes)'
     });
-    this.refresh();
+    this.refresh(null);
     this.platform.ready().then(() => {
       if(this.platform.is('cordova')) {
         if(this.platform.is('android') || this.platform.is('ios')) {
@@ -71,7 +71,7 @@ export class ListPage {
     });
   }
 
-  refresh() {
+  refresh(refresher) {
     return new Promise((resolve, reject) => {
       this.loading = true;
       this.loadingBalance = true;
@@ -113,13 +113,16 @@ export class ListPage {
                 var messages = [];
                 for (let i in graphArray) {
                   for (var j=0; j < graphArray[i].length; j++) {
+                    if(this.graphService.new_messages_counts[i] && this.graphService.new_messages_counts[i] < graphArray[i][j]['height']) {
+                      graphArray[i][j]['new'] = true;
+                    }
                     messages.push(graphArray[i][j]);
                   }
                 }
                 messages.sort(function (a, b) {
-                  if (a.height < b.height)
+                  if (a.height > b.height)
                     return -1
-                  if ( a.height > b.height)
+                  if ( a.height < b.height)
                     return 1
                   return 0
                 });
@@ -209,6 +212,9 @@ export class ListPage {
           resolve();
       }
       this.balance = this.walletService.wallet.balance;
+    })
+    .then(() => {
+      if(refresher) refresher.complete();
     });
   }
 
@@ -282,7 +288,7 @@ export class ListPage {
           alert.addButton('Ok');
           alert.present();
           
-          this.refresh().then(() => {
+          this.refresh(null).then(() => {
             this.navCtrl.pop();
           });
         });
