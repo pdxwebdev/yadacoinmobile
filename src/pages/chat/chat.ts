@@ -39,12 +39,12 @@ export class ChatPage {
     ) {
     	this.rid = navParams.data.item.transaction.rid;
         var key = 'last_message_height-' + navParams.data.item.transaction.rid;
-    	this.storage.set(key, navParams.data.item.transaction.height);
+        if(navParams.data.item.transaction.height) this.storage.set(key, navParams.data.item.transaction.height);
         this.storage.get('blockchainAddress').then((blockchainAddress) => {
             this.blockchainAddress = blockchainAddress;
         });
         this.public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
-        this.parseChats();
+        this.refresh(null);
     }
 
     parseChats() {
@@ -62,12 +62,13 @@ export class ChatPage {
         }
     }
 
-    refresh() {
+    refresh(refresher) {
     	this.loading = true;
-    	this.graphService.getMessages()
+    	this.graphService.getMessages(this.rid)
     	.then(() => {
     		this.parseChats();
     		this.loading = false;
+    		if(refresher) refresher.complete();
     	});
     }
 

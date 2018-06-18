@@ -9,6 +9,9 @@
     <button ion-button color="{{chatColor}}" title="Messages" (click)="showChat()">
       <ion-icon name="chatboxes"></ion-icon>
     </button>
+    <button *ngIf="pageTitle =='Chat'" ion-button title="New Chat" (click)="newChat()">
+      <ion-icon name="add"></ion-icon>
+    </button>
   </ion-navbar>
 </ion-header>
 

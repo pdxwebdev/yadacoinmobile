@@ -31,7 +31,7 @@ export class SendReceive {
         private settingsService: SettingsService
     ) {
         this.createdCode = bulletinSecretService.key.getAddress();
-        this.refreshWallet();
+        this.refresh(null);
     }
 
     scan() {
@@ -93,18 +93,19 @@ export class SendReceive {
                     alert.present();
                     this.value = null;
                     this.address = null;
-                    this.refreshWallet();
+                    this.refresh(null);
                 });
             }
         });
         alert.present();
     }
-    refreshWallet() {
+    refresh(refresher) {
         this.loadingBalance = true;
         this.walletService.get()
         .then(() => {
             this.loadingBalance = false;
             this.balance = this.walletService.wallet.balance;
+            if(refresher) refresher.complete();
         });
     }
 

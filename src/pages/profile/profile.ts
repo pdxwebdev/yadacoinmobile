@@ -34,12 +34,13 @@ export class ProfilePage {
     ) {
         this.prev_name = graphService.graph.human_hash;
         this.username = graphService.graph.human_hash;
-        this.refresh();
+        this.refresh(null);
     }
 
-    refresh() {
+    refresh(refresher) {
         this.storage.get('baseAddress').then((baseAddress) => {
             this.baseAddress = baseAddress;
+            if(refresher) refresher.complete();
         });
     }
 

@@ -9,13 +9,13 @@
     <button ion-button color="{{chatColor}}" title="Messages" (click)="showChat()">
       <ion-icon name="chatboxes"></ion-icon>
     </button>
-    <button ion-button color="{{chatColor}}" title="Refresh" (click)="refresh()">
-      <ion-icon name="refresh"></ion-icon>
-    </button>
   </ion-navbar>
 </ion-header>
 
 <ion-content padding>
+  <ion-refresher (ionRefresh)="refresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
   <h3>Identities</h3>
   <ion-list>
     <button ion-item *ngFor="let key of keys" (click)="set(key.username)" [color]="key.active ? 'secondary' : 'light'">

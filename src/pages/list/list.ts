@@ -39,6 +39,7 @@ export class ListPage {
   createdCodeEncoded: any;
   friend_request: any;
   cryptoGenModal: any;
+  context: any;
   constructor(
     public navCtrl: NavController,
     public navParams: NavParams,
@@ -69,6 +70,7 @@ export class ListPage {
         }
       }
     });
+
   }
 
   refresh(refresher) {
@@ -84,6 +86,7 @@ export class ListPage {
           this.baseAddress = baseAddress;
       });
       this.selectedItem = this.navParams.get('item');
+      this.context = this.navParams.get('context');
       this.pageTitle = this.selectedItem ? this.selectedItem.pageTitle : this.navParams.get('pageTitle').title;
       this.refreshWallet();
       if(!this.selectedItem) {
@@ -106,53 +109,51 @@ export class ListPage {
             resolve();
           });
         } else if (this.pageTitle == 'Chat') {
-          this.graphService.getFriends()
-          .then(() => {
-            this.graphService.getMessages()
-            .then((graphArray) => {
-                var messages = [];
-                for (let i in graphArray) {
-                  for (var j=0; j < graphArray[i].length; j++) {
-                    if(this.graphService.new_messages_counts[i] && this.graphService.new_messages_counts[i] < graphArray[i][j]['height']) {
-                      graphArray[i][j]['new'] = true;
-                    }
-                    messages.push(graphArray[i][j]);
+          var my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
+          this.graphService.getMessages(null)
+          .then((graphArray) => {
+              var messages = [];
+              for (let i in graphArray) {
+                for (var j=0; j < graphArray[i].length; j++) {
+                  if(my_public_key !== graphArray[i][j]['public_key'] && this.graphService.new_messages_counts[i] && this.graphService.new_messages_counts[i] < graphArray[i][j]['height']) {
+                    graphArray[i][j]['new'] = true;
                   }
+                  messages.push(graphArray[i][j]);
                 }
-                messages.sort(function (a, b) {
-                  if (a.height > b.height)
-                    return -1
-                  if ( a.height < b.height)
-                    return 1
-                  return 0
-                });
-                var friend_list = [];
-                var used_rids = [];
-                for (var i=0; i < messages.length; i++) {
-                  var message = messages[i];
-                  if(used_rids.indexOf(message.rid) === -1) {
-                    friend_list.push(message);
-                    used_rids.push(message.rid);
-                  }
+              }
+              messages.sort(function (a, b) {
+                if (a.height > b.height)
+                  return -1
+                if ( a.height < b.height)
+                  return 1
+                return 0
+              });
+              var friend_list = [];
+              var used_rids = [];
+              for (var i=0; i < messages.length; i++) {
+                var message = messages[i];
+                if(used_rids.indexOf(message.rid) === -1) {
+                  friend_list.push(message);
+                  used_rids.push(message.rid);
                 }
+              }
 
-                this.graphService.graph.friends.sort(function (a, b) {
-                  if (a.username < b.username)
-                    return -1
-                  if ( a.username > b.username)
-                    return 1
-                  return 0
-                });
-                for (var i=0; i < this.graphService.graph.friends.length; i++) {
-                  if (used_rids.indexOf(this.graphService.graph.friends[i].rid) === -1) {
-                    friend_list.push(this.graphService.graph.friends[i]);
-                    used_rids.push(this.graphService.graph.friends[i].rid);
-                  }
+              this.graphService.graph.friends.sort(function (a, b) {
+                if (a.username < b.username)
+                  return -1
+                if ( a.username > b.username)
+                  return 1
+                return 0
+              });
+              for (var i=0; i < this.graphService.graph.friends.length; i++) {
+                if (used_rids.indexOf(this.graphService.graph.friends[i].rid) === -1) {
+                  friend_list.push(this.graphService.graph.friends[i]);
+                  used_rids.push(this.graphService.graph.friends[i].rid);
                 }
-                this.makeList(friend_list);
-                this.loading = false;
-                resolve();
-            });
+              }
+              this.makeList(friend_list);
+              this.loading = false;
+              resolve();
           });
         } else if (this.pageTitle == 'Friend Requests') {
           this.graphService.getFriendRequests()
@@ -228,8 +229,17 @@ export class ListPage {
     }
   }
 
+  newChat() {
+    var item = {pageTitle: {title:"Friends"}, context: 'newChat'};
+    this.navCtrl.push(ListPage, item);
+  }
+
   itemTapped(event, item) {
     if(this.pageTitle == 'Chat') {
+      this.navCtrl.push(ChatPage, {
+        item: item
+      });
+    } else if(this.pageTitle == 'Friends' && this.context == 'newChat') {
       this.navCtrl.push(ChatPage, {
         item: item
       });
