@@ -33,6 +33,8 @@ export class MyApp {
   pages: Array<{title: string, component: any, count: any, color: any}>;
 
   graph: any;
+  friend_request_count: any;
+  new_messages_count: any;
 
   constructor(
     public platform: Platform,
@@ -54,9 +56,9 @@ export class MyApp {
     this.pages = [
       { title: 'Me', component: ProfilePage, count: false, color: '' },
       { title: 'News Feed', component: HomePage, count: false, color: '' },
-      { title: 'Chat', component: ListPage, count: false, color: '' },
+      { title: 'Chat', component: ListPage, count: false, color: ''  },
       { title: 'Friends', component: ListPage, count: 0, color: '' },
-      { title: 'Friend Requests', component: ListPage, count: 0, color: '' },
+      { title: 'Friend Requests', component: ListPage, count: this.graphService.friend_request_count, color: this.graphService.friend_request_count > 0 ? 'danger' : '' },
       { title: 'Sent Requests', component: ListPage, count: 0, color: '' },
       { title: 'Settings', component: Settings, count: false, color: '' }
     ];

@@ -13,10 +13,12 @@
     <ion-content>
       <ion-list>
         <button menuClose ion-item *ngFor="let p of pages" (click)="openPage(p)">
-          {{p.title}}<ion-badge *ngIf="p.count" color="{{p.color}}" item-right>{{p.count}}</ion-badge>
+          {{p.title}}
+          <ion-badge *ngIf="p.title === 'Friend Requests'" color="{{graphService.friend_request_count > 0 ? 'danger' : ''}}" item-right>{{graphService.friend_request_count}}</ion-badge>
+          <ion-badge *ngIf="p.title === 'Chat'" color="{{graphService.new_messages_count > 0 ? 'danger' : ''}}" item-right>{{graphService.new_messages_count}}</ion-badge>
         </button>
         <button menuClose ion-item>
-          v0.8.10
+          v0.9.0
         </button>
       </ion-list>
     </ion-content>

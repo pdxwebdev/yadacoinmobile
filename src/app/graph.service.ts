@@ -26,6 +26,9 @@ export class GraphService {
     accepted_friend_requests: any;
     keys: any;
     storingSecretsModal: any;
+    new_messages_count: any;
+    new_messages_counts: any;
+    friend_request_count: any;
     constructor(
         private storage: Storage,
         private http: HTTP,
@@ -43,6 +46,9 @@ export class GraphService {
         this.stored_secrets_by_rid = {};
         this.accepted_friend_requests = [];
         this.keys = {};
+        this.new_messages_count = 0;
+        this.new_messages_counts = {};
+        this.friend_request_count = 0;
     }
 
     endpointRequest(endpoint) {
@@ -150,6 +156,19 @@ export class GraphService {
         });
     }
 
+    getNewMessages() {
+        return new Promise((resolve, reject) => {
+            this.endpointRequest('get-graph-new-messages')
+            .then((data: any) => {
+                this.parseNewMessages(data.new_messages)
+                .then((new_chats) => {
+                    this.graph.new_messages = new_chats;
+                    resolve(new_chats);
+                });
+            });
+        });
+    }
+
     getPosts() {
         return this.endpointRequest('get-graph-posts')
         .then((data: any) => {
@@ -243,6 +262,7 @@ export class GraphService {
                 friend_requests.push(friend_requestsObj[arr_friend_request_keys[i]])
             }
         }
+        this.friend_request_count = friend_requests.length;
         if (this.platform.is('android') || this.platform.is('ios')) {
             this.badge.set(friend_requests.length);
         }
@@ -322,40 +342,85 @@ export class GraphService {
     }
 
     parseMessages(messages) {
+        this.new_messages_count = 0;
         return new Promise((resolve, reject) => {
             this.getStoredSecrets().then(() => {
-                var chats = {};
-                dance:
-                for(var i=0; i<messages.length; i++) {
-                    var message = messages[i];
-                    if (!message.rid) continue;
-                    if (!this.stored_secrets_by_rid[message.rid]) continue;
-                    if (message.dh_public_key) continue;
-                    //hopefully we've prepared the stored_secrets option before getting here 
-                    //by calling getSentFriendRequests and getFriendRequests
-                    for(var j=0; j<this.stored_secrets_by_rid[message.rid].length; j++) {
-                        var shared_secret = this.stored_secrets_by_rid[message.rid][j];
-                        try {
-                            var decrypted = this.shared_decrypt(shared_secret.shared_secret, message.relationship);
-                        } 
-                        catch(error) {
-                            continue
+                this.getMessageHeights().then(() => {
+                    var chats = {};
+                    dance:
+                    for(var i=0; i<messages.length; i++) {
+                        var message = messages[i];
+                        if (!message.rid) continue;
+                        if (!this.stored_secrets_by_rid[message.rid]) continue;
+                        if (message.dh_public_key) continue;
+                        //hopefully we've prepared the stored_secrets option before getting here 
+                        //by calling getSentFriendRequests and getFriendRequests
+                        for(var j=0; j<this.stored_secrets_by_rid[message.rid].length; j++) {
+                            var shared_secret = this.stored_secrets_by_rid[message.rid][j];
+                            try {
+                                var decrypted = this.shared_decrypt(shared_secret.shared_secret, message.relationship);
+                            } 
+                            catch(error) {
+                                continue
+                            }
+                            if(decrypted.indexOf('{') === 0) {
+                                if(this.new_messages_counts[message.rid]) {
+                                    if(message.height > this.new_messages_counts[message.rid]) {
+                                        this.new_messages_count++;
+                                        if(!this.new_messages_counts[message.rid]) {
+                                            this.new_messages_counts[message.rid] = 0;
+                                        }
+                                        this.new_messages_counts[message.rid]++;
+                                    }
+                                } else {
+                                    this.new_messages_counts[message.rid] = 1;
+                                    this.new_messages_count++;
+                                }
+                                
+                                messages[message.rid] = message;
+                                if (!chats[message.rid]) {
+                                    chats[message.rid] = [];
+                                }
+                                var messageJson = JSON.parse(decrypted)
+                                if(messageJson.chatText) {
+                                    message.relationship = messageJson;
+                                    chats[message.rid].push(message);
+                                }
+                                continue dance;
+                            }
                         }
-                        if(decrypted.indexOf('{') === 0) {
-                            messages[message.rid] = message;
-                            if (!chats[message.rid]) {
-                                chats[message.rid] = [];
+                    }
+                    resolve(chats);
+                });
+            });
+        });
+    }
+
+    parseNewMessages(messages) {
+        this.new_messages_count = 0;
+        this.new_messages_counts = {}
+        var my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
+        return new Promise((resolve, reject) => {
+            return this.getMessageHeights()
+            .then(() => {
+                var new_messages = [];
+                for(var i=0; i<messages.length; i++) {
+                    if (messages[i].public_key != my_public_key) {
+                        var message = messages[i];
+                        if(this.new_messages_counts[message.rid]) {
+                            if(message.height > this.new_messages_counts[message.rid]) {
+                                this.new_messages_counts[message.rid] = message.height;
+                                this.new_messages_count++;
+                                new_messages.push(message);
                             }
-                            var messageJson = JSON.parse(decrypted)
-                            if(messageJson.chatText) {
-                                message.relationship = messageJson;
-                                chats[message.rid].push(message);
-                            }
-                            continue dance;
+                        } else {
+                            this.new_messages_counts[message.rid] = message.height;
+                            this.new_messages_count++;
+                            new_messages.push(message);
                         }
                     }
                 }
-                resolve(chats);
+                resolve(new_messages);
             });
         });
     }
@@ -426,6 +491,21 @@ export class GraphService {
                         this.stored_secrets_by_rid[rid] = [];
                     }
                     this.stored_secrets_by_rid[rid].push(secret_json);
+                }
+            })
+            .then(() => {
+                resolve();
+            });
+        });
+    }
+
+    getMessageHeights() {
+        this.new_messages_counts = {};
+        return new Promise((resolve, reject) => {
+            this.storage.forEach((value, key) => {
+                if (key.indexOf('last_message_height') === 0) {
+                    var rid = key.slice('last_message_height-'.length);
+                    this.new_messages_counts[rid] = parseInt(value);
                 }
             })
             .then(() => {
