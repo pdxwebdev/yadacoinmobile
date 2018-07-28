@@ -1,16 +1,14 @@
 import { Injectable } from '@angular/core';
-import { HTTP } from '@ionic-native/http';
 import { Storage } from '@ionic/storage';
 import { BulletinSecretService } from './bulletinSecret.service';
 import { SettingsService } from './settings.service';
 import { Badge } from '@ionic-native/badge';
 import { Http } from '@angular/http';
 import { Platform } from 'ionic-angular';
-import { AlertController, LoadingController } from 'ionic-angular';
+import { LoadingController } from 'ionic-angular';
 
 
 declare var forge;
-declare var foobar;
 declare var X25519;
 declare var Base64;
 
@@ -31,7 +29,6 @@ export class GraphService {
     friend_request_count: any;
     constructor(
         private storage: Storage,
-        private http: HTTP,
         private bulletinSecretService: BulletinSecretService,
         private settingsService: SettingsService,
         private badge: Badge,
@@ -39,9 +36,6 @@ export class GraphService {
         private loadingCtrl: LoadingController,
         private ahttp: Http
     ) {
-        if(this.platform.is('android') || this.platform.is('ios')) {
-          http.setDataSerializer('json');
-        }
         this.stored_secrets = {};
         this.stored_secrets_by_rid = {};
         this.accepted_friend_requests = [];
@@ -215,7 +209,7 @@ export class GraphService {
 
         sent_friend_requests = []
         let arr_sent_friend_request_keys = Array.from(sent_friend_requests_diff.keys())
-        for(var i=0; i<arr_sent_friend_request_keys.length; i++) {
+        for(i=0; i<arr_sent_friend_request_keys.length; i++) {
             sent_friend_requests.push(sent_friend_requestsObj[arr_sent_friend_request_keys[i]])
         }
 
@@ -258,7 +252,7 @@ export class GraphService {
         let friend_requests_diff = new Set(arr_friend_requests);
         if(arr_friend_requests.length > 0) {
             let arr_friend_request_keys = Array.from(friend_requests_diff.keys())
-            for(var i=0; i<arr_friend_request_keys.length; i++) {
+            for(i=0; i<arr_friend_request_keys.length; i++) {
                 friend_requests.push(friend_requestsObj[arr_friend_request_keys[i]])
             }
         }
@@ -306,19 +300,19 @@ export class GraphService {
 
                 var secrets_rids = [];
                 var stored_secrets_keys = Object.keys(this.stored_secrets);
-                for (var i=0; i < stored_secrets_keys.length; i++) {
+                for (i=0; i < stored_secrets_keys.length; i++) {
                     var rid = stored_secrets_keys[i].slice('shared_secret-'.length, stored_secrets_keys[i].indexOf('|'));
                     secrets_rids.push(rid);
                 }
 
-                for (var i=0; i < this.graph.sent_friend_requests.length; i++) {
+                for (i=0; i < this.graph.sent_friend_requests.length; i++) {
                     var sent_friend_request = this.graph.sent_friend_requests[i];
                     if (secrets_rids.indexOf(sent_friend_request.rid) >= 0) {
                         friendsObj[sent_friend_request.rid] = sent_friend_request;
                     }
                 }
 
-                for (var i=0; i < this.graph.friend_requests.length; i++) {
+                for (i=0; i < this.graph.friend_requests.length; i++) {
                     var friend_request = this.graph.friend_requests[i];
                     if (secrets_rids.indexOf(friend_request.rid) >= 0) {
                         friendsObj[friend_request.rid] = friend_request;
@@ -331,7 +325,7 @@ export class GraphService {
                 let friends_diff = new Set(arr_friends);
                 if(arr_friends.length > 0) {
                     let arr_friends_keys = Array.from(friends_diff.keys())
-                    for(var i=0; i<arr_friends_keys.length; i++) {
+                    for(i=0; i<arr_friends_keys.length; i++) {
                         friends.push(friendsObj[arr_friends_keys[i]])
                     }
                 }

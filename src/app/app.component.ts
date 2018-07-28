@@ -2,23 +2,15 @@ import { Component, ViewChild } from '@angular/core';
 import { Nav, Platform } from 'ionic-angular';
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
-import { HTTP } from '@ionic-native/http';
-import { Deeplinks } from '@ionic-native/deeplinks';
-import { Firebase } from '@ionic-native/firebase';
 import { GraphService } from './graph.service';
 import { BulletinSecretService } from './bulletinSecret.service';
-import { SettingsService } from './settings.service';
 import { WalletService } from './wallet.service';
-import { Storage } from '@ionic/storage';
-import { FirebaseService } from './firebase.service';
-import { PushService } from './push.service';
 
 import { HomePage } from '../pages/home/home';
 import { ListPage } from '../pages/list/list';
 import { Settings } from '../pages/settings/settings';
 import { ProfilePage } from '../pages/profile/profile';
 import { SendReceive } from '../pages/sendreceive/sendreceive';
-
 
 declare var forge;
 
@@ -40,16 +32,9 @@ export class MyApp {
     public platform: Platform,
     public statusBar: StatusBar,
     public splashScreen: SplashScreen,
-    private settingsService: SettingsService,
     private walletService: WalletService,
     private graphService: GraphService,
-    private bulletinSecretService: BulletinSecretService,
-    private deeplinks: Deeplinks,
-    private firebase: Firebase,
-    private http: HTTP,
-    private storage: Storage,
-    private firebaseService: FirebaseService,
-    private pushService: PushService
+    private bulletinSecretService: BulletinSecretService
   ) {
     this.graphService.graph = {}
     this.initializeApp();
@@ -64,22 +49,6 @@ export class MyApp {
       { title: 'Settings', component: Settings, count: false, color: '' }
     ];
     this.walletService.get();
-  }
-
-  ngAfterViewInit() {
-    if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
-      this.deeplinks.routeWithNavController(this.nav, {
-        '/:txnData': HomePage
-      }).subscribe((match) => {
-        // match.$route - the route we matched, which is the matched entry from the arguments to route()
-        // match.$args - the args passed in the link
-        // match.$link - the full link data
-        console.log('Successfully matched route', match);
-      }, (nomatch) => {
-        // nomatch.$link - the full link data
-        console.error('Got a deeplink that didn\'t match', nomatch);
-      });
-    }
   }
 
   initializeApp() {

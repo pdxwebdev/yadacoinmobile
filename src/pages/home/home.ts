@@ -4,26 +4,18 @@ import { AlertController, LoadingController } from 'ionic-angular';
 import { QRScanner, QRScannerStatus } from '@ionic-native/qr-scanner';
 import { Storage } from '@ionic/storage';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
-import { PeerService } from '../../app/peer.service';
 import { WalletService } from '../../app/wallet.service';
 import { GraphService } from '../../app/graph.service';
 import { TransactionService } from '../../app/transaction.service';
 import { ListPage } from '../list/list';
 import { PostModal } from './postmodal';
 import { OpenGraphParserService } from '../../app/opengraphparser.service'
-import { Clipboard } from '@ionic-native/clipboard';
 import { SocialSharing } from '@ionic-native/social-sharing';
-import { HTTP } from '@ionic-native/http';
 import { SettingsService } from '../../app/settings.service';
-import { Http } from '@angular/http';
-import { Platform } from 'ionic-angular';
 import { FirebaseService } from '../../app/firebase.service';
-import { PushService } from '../../app/push.service';
-import { EmojiPickerModule } from '@ionic-tools/emoji-picker';
+import { Http } from '@angular/http';
 
 declare var forge;
-declare var elliptic;
-declare var uuid4;
 declare var X25519;
 declare var firebase;
 
@@ -63,22 +55,16 @@ export class HomePage {
         private qrScanner: QRScanner,
         private storage: Storage,
         private bulletinSecretService: BulletinSecretService,
-        private peerService: PeerService,
         private alertCtrl: AlertController,
         private walletService: WalletService,
         private graphService: GraphService,
         private transactionService: TransactionService,
         private openGraphParserService: OpenGraphParserService,
-        private clipboard: Clipboard,
         private socialSharing: SocialSharing,
-        private http: HTTP,
         private settingsService: SettingsService,
         public loadingCtrl: LoadingController,
-        private platform: Platform,
         private ahttp: Http,
-        private firebaseService: FirebaseService,
-        private pushService: PushService,
-        private emojiPickerModule: EmojiPickerModule
+        private firebaseService: FirebaseService
     ) {
         this.refresh(null)
         .then(() => {
@@ -326,7 +312,16 @@ export class HomePage {
                     });
                 }
             } else {
-                var data = {username: graphArray[i].username, title: '', description: graphArray[i].relationship.postText, id: graphArray[i].id};
+                var data = {
+                    username: graphArray[i].username,
+                    title: '',
+                    description: graphArray[i].relationship.postText,
+                    id: graphArray[i].id
+                };
+                if (graphArray[i].relationship.postFileName) {
+                    data['fileName'] = graphArray[i].relationship.postFileName;
+                    data['fileData'] = graphArray[i].relationship.postFile;
+                }
                 this.items.push(data);
                 if ((graphArray.length - 1) == i) {
                     this.loading = false;
@@ -363,6 +358,19 @@ export class HomePage {
                 var data = JSON.parse(res['_body']);
                 this.commentReacts = data;
             });
+        });
+    }
+
+    download(item) {
+        this.ahttp.post(
+            this.settingsService.siaAddress + '/renter/loadasciidd',
+            {'asciisia': item.fileData}
+        )
+        .subscribe((res) => {
+            alert('File can now be found in your sia files');
+        },
+        (err) => {
+            alert('File can now be found in your sia files');
         });
     }
 
@@ -533,10 +541,6 @@ export class HomePage {
                 var requested_rid = info.requested_rid;
                 if (requester_rid && requested_rid) {
                     // get rid from bulletin secrets
-                    var bulletin_secrets = [this.bulletinSecretService.bulletin_secret, this.bulletinSecretService.bulletin_secret].sort(function (a, b) {
-                        return a.toLowerCase().localeCompare(b.toLowerCase());
-                    });
-                    var rid = forge.sha256.create().update(bulletin_secrets[0] + bulletin_secrets[1]).digest().toHex();
                 } else {
                     requester_rid = '';
                     requested_rid = '';

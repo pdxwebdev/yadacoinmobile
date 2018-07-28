@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { HTTP } from '@ionic-native/http';
 import { Storage } from '@ionic/storage';
 
 @Injectable()
@@ -8,7 +7,9 @@ export class SettingsService {
     blockchainAddress = null
     graphproviderAddress = null
     walletproviderAddress = null
-    constructor(private storage: Storage, private http: HTTP) {
+    siaAddress = null
+    siaPassword = null
+    constructor(private storage: Storage) {
         
     }
 
@@ -50,7 +51,7 @@ export class SettingsService {
                         resolve();
                     });
                 });
-            })        
+            })
             .then(() => {
                 return new Promise((resolve, reject) => {
                     this.storage.get('walletproviderAddress').then((walletproviderAddress) => {
@@ -59,6 +60,32 @@ export class SettingsService {
                             this.storage.set('walletproviderAddress', this.walletproviderAddress);
                         } else {
                             this.walletproviderAddress = walletproviderAddress;
+                        }
+                        resolve();
+                    });
+                });
+            })
+            .then(() => {
+                return new Promise((resolve, reject) => {
+                    this.storage.get('siaAddress').then((siaAddress) => {
+                        if(siaAddress == null) {
+                            this.siaAddress = 'http://localhost:9980';
+                            this.storage.set('siaAddress', this.siaAddress);
+                        } else {
+                            this.siaAddress = siaAddress;
+                        }
+                        resolve();
+                    });
+                });
+            })
+            .then(() => {
+                return new Promise((resolve, reject) => {
+                    this.storage.get('siaPassword').then((siaPassword) => {
+                        if(siaPassword == null) {
+                            this.siaPassword = 'http://localhost:9980';
+                            this.storage.set('siaPassword', this.siaPassword);
+                        } else {
+                            this.siaPassword = siaPassword;
                         }
                         resolve();
                     });
@@ -75,5 +102,7 @@ export class SettingsService {
         this.storage.set('blockchainAddress', this.blockchainAddress);
         this.storage.set('graphproviderAddress', this.graphproviderAddress);
         this.storage.set('walletproviderAddress', this.walletproviderAddress);
+        this.storage.set('siaAddress', this.siaAddress);
+        this.storage.set('siaPassword', this.siaPassword);
     }
 }

@@ -1,6 +1,4 @@
 import { Injectable } from '@angular/core';
-import { HTTP } from '@ionic-native/http';
-import { Platform } from 'ionic-angular';
 import { Http } from '@angular/http';
 
 @Injectable()
@@ -8,9 +6,7 @@ export class OpenGraphParserService {
     html = null
     attrs = null;
     constructor(
-        private http: HTTP,
-        private ahttp: Http,
-        private platform: Platform
+        private ahttp: Http
     ) {
         this.attrs = {
             "title": "title",
@@ -31,47 +27,25 @@ export class OpenGraphParserService {
     	this.html = '';
         return new Promise((resolve, reject) => {
             if (this.isURL(url)) {
-                if (this.platform.is('android') || this.platform.is('ios')) {
-                    this.http.get(url, {}, {}).then((data) => {
-                        this.html = data.data;
-                    }).then(() => {
-                        if (this.isYouTubeURL(url)) {
-                            var YTID = this.getYouTubeID(url);
-                            output['image'] = 'https://img.youtube.com/vi/' + YTID + '/0.jpg'
-                        }
+                this.ahttp.get(url)
+                .subscribe((res) => {
+                    this.html = res['_body'];
+                    if (this.isYouTubeURL(url)) {
+                        var YTID = this.getYouTubeID(url);
+                        output['image'] = 'https://img.youtube.com/vi/' + YTID + '/0.jpg'
+                    }
 
-                        for (var key in this.attrs) {
-                            var attr = this.getAttr(key);
+                    for (var key in this.attrs) {
+                        var attr = this.getAttr(key);
 
-                            if (attr) {
-                                var escape = document.createElement('textarea');
-                                escape.innerHTML = attr;
-                                output[this.attrs[key]] = escape.textContent;
-                            }
+                        if (attr) {
+                            var escape = document.createElement('textarea');
+                            escape.innerHTML = attr;
+                            output[this.attrs[key]] = escape.textContent;
                         }
-                        resolve(output);
-                    });
-                } else {
-                    this.ahttp.get(url)
-                    .subscribe((res) => {
-                        this.html = res['_body'];
-                        if (this.isYouTubeURL(url)) {
-                            var YTID = this.getYouTubeID(url);
-                            output['image'] = 'https://img.youtube.com/vi/' + YTID + '/0.jpg'
-                        }
-
-                        for (var key in this.attrs) {
-                            var attr = this.getAttr(key);
-
-                            if (attr) {
-                                var escape = document.createElement('textarea');
-                                escape.innerHTML = attr;
-                                output[this.attrs[key]] = escape.textContent;
-                            }
-                        }
-                        resolve(output);
-                    });
-                }
+                    }
+                    resolve(output);
+                });
             } else {
                 resolve(false);
             }
@@ -102,7 +76,6 @@ export class OpenGraphParserService {
         var attrLocation = this.html.indexOf(attr);
         var beginningToAttr = this.html.substr(0, attrLocation);
         if (attr === 'title' || attr === 'description') {
-        	var openTagEnd = beginningToAttr.indexOf('>');
             var tagBodyWithRemainder = this.html.substr(attrLocation + attr.length + 1);
             var closingTagStart = tagBodyWithRemainder.indexOf('</' + attr);
             var content = tagBodyWithRemainder.substr(0, closingTagStart);
@@ -116,13 +89,13 @@ export class OpenGraphParserService {
             var tag = tagWithRemainder.substr(0, tagEnd + 1);
             var contentAttrStart = tag.indexOf('content');
             if (contentAttrStart < 0) {
-                var contentAttrStart = tag.indexOf('value');
+                contentAttrStart = tag.indexOf('value');
             }
             var contentAttrSub = tag.substr(contentAttrStart);
             var contentAttrStartQuote = contentAttrSub.indexOf('"');
             var contentWithRemainder = contentAttrSub.substr(contentAttrStartQuote + 1);
             var contentEnd = contentWithRemainder.indexOf('"');
-            var content = contentWithRemainder.substr(0, contentEnd);
+            content = contentWithRemainder.substr(0, contentEnd);
             return content;
         }
     }

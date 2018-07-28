@@ -9,7 +9,9 @@
     "build": "ionic-app-scripts build",
     "lint": "ionic-app-scripts lint",
     "ionic:build": "ionic-app-scripts build",
-    "ionic:serve": "ionic-app-scripts serve"
+    "ionic:serve": "ionic-app-scripts serve",
+    "prestart": "ng build --prod && ngc",
+    "start": "ts-node src/app/server.ts"
   },
   "dependencies": {
     "@angular/common": "4.4.3",
@@ -27,6 +29,7 @@
     "@ionic-native/core": "3.12.1",
     "@ionic-native/deeplinks": "^4.4.2",
     "@ionic-native/fcm": "^4.4.2",
+    "@ionic-native/file": "^4.9.0",
     "@ionic-native/firebase": "^4.4.2",
     "@ionic-native/http": "^4.3.1",
     "@ionic-native/push": "^4.7.0",
@@ -36,13 +39,16 @@
     "@ionic-native/status-bar": "3.12.1",
     "@ionic-tools/emoji-picker": "^1.3.9",
     "@ionic/storage": "^2.0.1",
+    "babel-core": "^6.26.3",
+    "babel-runtime": "^6.26.0",
     "base64-js": "^1.2.1",
     "bitcoinjs-lib": "^3.2.0",
     "browserify": "^14.4.0",
+    "child_process": "^1.0.2",
     "cordova-android": "~6.3.0",
     "cordova-browser": "~5.0.3",
     "cordova-clipboard": "^1.1.1",
-    "cordova-ios": "^4.4.0",
+    "cordova-plugin-add-swift-support": "^1.7.2",
     "cordova-plugin-advanced-http": "^1.7.1",
     "cordova-plugin-badge": "^0.8.5",
     "cordova-plugin-camera": "^3.0.0",
@@ -51,6 +57,8 @@
     "cordova-plugin-file": "^4.3.3",
     "cordova-plugin-firebase": "git+https://github.com/arnesson/cordova-plugin-firebase.git",
     "cordova-plugin-iosrtc": "^4.0.2",
+    "cordova-plugin-keyboard": "^1.2.0",
+    "cordova-plugin-push": "0.0.1",
     "cordova-plugin-qrscanner": "^2.5.0",
     "cordova-plugin-splashscreen": "^4.0.3",
     "cordova-plugin-statusbar": "^2.2.3",
@@ -58,26 +66,28 @@
     "cordova-plugin-whitelist": "^1.3.2",
     "cordova-plugin-x-socialsharing": "^5.2.1",
     "cordova-sqlite-storage": "^2.0.4",
+    "electron": "^2.0.4",
     "es6-promise-plugin": "^4.1.0",
     "ionic-angular": "3.7.1",
     "ionic-native": "^2.9.0",
-    "ionic-plugin-deeplinks": "^1.0.15",
-    "ionic-plugin-keyboard": "^2.2.1",
     "ionicons": "3.0.0",
     "metascraper": "^1.0.7",
     "ngx-qrcode2": "0.0.5",
     "node-forge": "^0.7.1",
-    "phonegap-plugin-push": "^2.1.3",
     "rxjs": "5.4.3",
+    "sia.js": "^0.4.2",
     "sw-toolbox": "3.6.0",
     "uglify-js": "^3.1.4",
     "zone.js": "0.8.18"
   },
   "devDependencies": {
+    "@angular/cli": "^6.0.8",
     "@ionic/app-scripts": "3.0.0",
     "@ionic/cli-plugin-ionic-angular": "1.4.1",
+    "ts-node": "^7.0.0",
     "typescript": "2.3.4",
-    "typings": "^2.1.1"
+    "typings": "^2.1.1",
+    "webpack": "^4.15.1"
   },
   "description": "An Ionic project",
   "cordova": {
@@ -87,41 +97,20 @@
       "cordova-plugin-splashscreen": {},
       "cordova-plugin-statusbar": {},
       "cordova-plugin-whitelist": {},
-      "ionic-plugin-keyboard": {},
       "cordova-sqlite-storage": {},
       "cordova-plugin-advanced-http": {},
       "cordova-plugin-camera": {},
       "cordova-clipboard": {},
       "cordova-plugin-x-socialsharing": {},
       "cordova-plugin-badge": {},
-      "ionic-plugin-deeplinks": {
-        "URL_SCHEME": "myapp",
-        "DEEPLINK_SCHEME": "https",
-        "DEEPLINK_HOST": "example.com",
-        "ANDROID_PATH_PREFIX": "/",
-        "ANDROID_2_PATH_PREFIX": "/",
-        "ANDROID_3_PATH_PREFIX": "/",
-        "ANDROID_4_PATH_PREFIX": "/",
-        "ANDROID_5_PATH_PREFIX": "/",
-        "DEEPLINK_2_SCHEME": " ",
-        "DEEPLINK_2_HOST": " ",
-        "DEEPLINK_3_SCHEME": " ",
-        "DEEPLINK_3_HOST": " ",
-        "DEEPLINK_4_SCHEME": " ",
-        "DEEPLINK_4_HOST": " ",
-        "DEEPLINK_5_SCHEME": " ",
-        "DEEPLINK_5_HOST": " "
-      },
       "cordova-plugin-firebase": {},
-      "phonegap-plugin-push": {
-        "FCM_VERSION": "11.6.2",
-        "SENDER_ID": "1:805178314562:android:7e1a51ea2fcd8415"
-      }
+      "cordova-plugin-keyboard": {},
+      "cordova-plugin-add-swift-support": {},
+      "cordova-plugin-file": {}
     },
     "platforms": [
-      "ios",
-      "android",
-      "browser"
+      "browser",
+      "android"
     ]
   }
 }

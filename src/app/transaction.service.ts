@@ -1,16 +1,10 @@
 import { Injectable } from '@angular/core';
-import { Component } from '@angular/core';
-import { GraphService } from './graph.service';
 import { BulletinSecretService } from './bulletinSecret.service';
 import { WalletService } from './wallet.service';
-import { HTTP } from '@ionic-native/http';
 import { Http } from '@angular/http';
-import { Platform } from 'ionic-angular';
-import { Storage } from '@ionic/storage';
 
 declare var foobar;
 declare var forge;
-declare var uuid4;
 declare var Base64;
 
 @Injectable()
@@ -35,9 +29,6 @@ export class TransactionService {
     constructor(
         private walletService: WalletService,
         private bulletinSecretService: BulletinSecretService,
-        private http: HTTP,
-        private platform: Platform,
-        private storage: Storage,
         private ahttp: Http
     ) {}
 
@@ -63,7 +54,7 @@ export class TransactionService {
             });
             this.rid = forge.sha256.create().update(bulletin_secrets[0] + bulletin_secrets[1]).digest().toHex();
         } else if (this.info.bulletin_secret) {
-            var bulletin_secrets = [this.bulletin_secret, this.info.bulletin_secret].sort(function (a, b) {
+            bulletin_secrets = [this.bulletin_secret, this.info.bulletin_secret].sort(function (a, b) {
                 return a.toLowerCase().localeCompare(b.toLowerCase());
             });
             this.rid = forge.sha256.create().update(bulletin_secrets[0] + bulletin_secrets[1]).digest().toHex();
@@ -112,7 +103,7 @@ export class TransactionService {
         if (this.transaction.outputs.length > 0) {
             var transaction_total = this.transaction.outputs[0].value + this.transaction.fee;
         } else {
-            var transaction_total = this.transaction.fee;
+            transaction_total = this.transaction.fee;
         }
         if ((this.info.relationship.dh_private_key && this.walletService.wallet.balance < (this.transaction.outputs[0].value + this.transaction.fee)) || this.walletService.wallet.unspent_transactions.length == 0) {
             if (this.resolve) this.resolve(false);
@@ -158,7 +149,7 @@ export class TransactionService {
         this.transaction.inputs = inputs;
 
         var inputs_hashes = [];
-        for(var i=0; i < inputs.length; i++) {
+        for(i=0; i < inputs.length; i++) {
             inputs_hashes.push(inputs[i].id);
         }
 
@@ -173,7 +164,7 @@ export class TransactionService {
         var inputs_hashes_concat = inputs_hashes_arr.join('')
 
         var outputs_hashes = [];
-        for(var i=0; i < this.transaction.outputs.length; i++) {
+        for(i=0; i < this.transaction.outputs.length; i++) {
             outputs_hashes.push(this.transaction.outputs[i].to+this.transaction.outputs[i].value.toFixed(8));
         }
 
@@ -202,7 +193,7 @@ export class TransactionService {
                 this.transaction.dh_public_key +
                 this.transaction.rid +
                 this.transaction.relationship +
-                this.transaction.fee +
+                this.transaction.fee.toFixed(8) +
                 this.transaction.requester_rid +
                 this.transaction.requested_rid +
                 inputs_hashes_concat +
@@ -213,9 +204,9 @@ export class TransactionService {
 
             this.transaction.relationship = this.shared_encrypt(this.bulletin_secret, JSON.stringify(this.info.relationship));                    
 
-            var hash = foobar.bitcoin.crypto.sha256(
+            hash = foobar.bitcoin.crypto.sha256(
                 this.transaction.relationship +
-                this.transaction.fee +
+                this.transaction.fee.toFixed(8) +
                 inputs_hashes_concat +
                 outputs_hashes_concat
             ).toString('hex')
@@ -223,17 +214,17 @@ export class TransactionService {
             // chat
             this.transaction.relationship = this.shared_encrypt(this.info.shared_secret, JSON.stringify(this.info.relationship));                    
 
-            var hash = foobar.bitcoin.crypto.sha256(
+            hash = foobar.bitcoin.crypto.sha256(
                 this.transaction.rid +
                 this.transaction.relationship +
-                this.transaction.fee +
+                this.transaction.fee.toFixed(8) +
                 inputs_hashes_concat +
                 outputs_hashes_concat
             ).toString('hex')
         } else {
             //straight transaction
-            var hash = foobar.bitcoin.crypto.sha256(
-                this.transaction.fee +
+            hash = foobar.bitcoin.crypto.sha256(
+                this.transaction.fee.toFixed(8) +
                 inputs_hashes_concat +
                 outputs_hashes_concat
             ).toString('hex');            
@@ -241,7 +232,7 @@ export class TransactionService {
 
         this.transaction.hash = hash
         var attempt = this.txnattempts.pop();
-        var attempt = this.cbattempts.pop();
+        attempt = this.cbattempts.pop();
         this.transaction.id = this.get_transaction_id(this.transaction.hash, attempt);
         this.transaction.public_key = this.key.getPublicKeyBuffer().toString('hex');
     }

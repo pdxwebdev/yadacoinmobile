@@ -1,13 +1,8 @@
 import { Injectable } from '@angular/core';
-import { HTTP } from '@ionic-native/http';
-import { Storage } from '@ionic/storage';
 import { BulletinSecretService } from './bulletinSecret.service';
 import { SettingsService } from './settings.service';
 import { Http } from '@angular/http';
-import { Platform } from 'ionic-angular';
 
-declare var forge;
-declare var foobar;
 
 @Injectable()
 export class WalletService {
@@ -16,12 +11,10 @@ export class WalletService {
     xhr: any;
     key: any;
     constructor(
-        private storage: Storage,
-        private http: HTTP,
         private ahttp: Http,
         private bulletinSecretService: BulletinSecretService,
         private settingsService: SettingsService,
-        private platform: Platform    ) {
+    ) {
         this.wallet = {};
     }
 

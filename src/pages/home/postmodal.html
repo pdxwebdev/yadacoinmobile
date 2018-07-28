@@ -13,8 +13,14 @@
 </ion-header>
 <ion-content>
   <ion-item>
-    <ion-input type="text" placeholder="Shortened url (35 chars max)" [(ngModel)]="postText" (input)="change()">
-    </ion-input>
+    <ion-textarea placeholder="Shortened url (35 chars max)" [(ngModel)]="postText" (input)="change()">
+    </ion-textarea>
+  </ion-item>
+  <ion-item>
+    <ion-label>Files</ion-label>
+    <ion-select [(ngModel)]="selectedFile" multiple="true">
+      <ion-option *ngFor="let file of files" value="{{file.siapath}}">{{file.siapath}}</ion-option>
+    </ion-select>
   </ion-item>
   <button ion-button secondary (click)="submit()">Post</button>
   <ion-card *ngIf="post.title">

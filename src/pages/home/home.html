@@ -56,6 +56,10 @@
             <p *ngIf="item.description" style="text-overflow:ellipsis;" text-wrap>
               {{item.description}}
             </p>
+            Files:<br>
+            <a *ngIf="item.fileName" style="text-overflow:ellipsis; margin-top:50px;" text-wrap (click)="download(item)">
+              <strong>{{item.fileName}}</strong>
+            </a>
           </ion-card-content>
         </div>
         <ion-row no-padding text-wrap (click)="reactsDetail(item)">

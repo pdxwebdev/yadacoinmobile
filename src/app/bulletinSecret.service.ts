@@ -1,9 +1,6 @@
 import { Injectable } from '@angular/core';
-import { HTTP } from '@ionic-native/http';
 import { SettingsService } from './settings.service';
 import { Storage } from '@ionic/storage';
-import { Http } from '@angular/http';
-import { Platform } from 'ionic-angular';
 
 
 declare var foobar;
@@ -18,10 +15,7 @@ export class BulletinSecretService {
     keykeys = null;
     constructor(
         private settingsService: SettingsService,
-        private storage: Storage,
-        private http: HTTP,
-        private platform: Platform,
-        private ahttp: Http
+        private storage: Storage
     ) {}
 
     shared_encrypt(shared_secret, message) {

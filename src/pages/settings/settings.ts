@@ -4,8 +4,6 @@ import { Storage } from '@ionic/storage';
 import { SettingsService } from '../../app/settings.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { FirebaseService } from '../../app/firebase.service';
-import { PushService } from '../../app/push.service';
-import { Platform } from 'ionic-angular';
 import { ListPage } from '../list/list';
 import { AlertController, LoadingController } from 'ionic-angular';
 import { GraphService } from '../../app/graph.service';
@@ -22,6 +20,8 @@ export class Settings {
     blockchainAddress = null
     graphproviderAddress = null
     walletproviderAddress = null
+    siaAddress = null
+    siaPassword = null
     keys = null;
     loadingModal = null;
     prefix = null;
@@ -32,9 +32,7 @@ export class Settings {
         public navParams: NavParams,
         private settingsService: SettingsService,
         private bulletinSecretService: BulletinSecretService,
-        private platform: Platform,
         private firebaseService: FirebaseService,
-        private pushService: PushService,
         public loadingCtrl: LoadingController,
         public alertCtrl: AlertController,
         private storage: Storage,
@@ -56,6 +54,8 @@ export class Settings {
         this.blockchainAddress = this.settingsService.blockchainAddress || this.baseAddress + '/transaction';
         this.graphproviderAddress = this.settingsService.graphproviderAddress || this.baseAddress + '/get-graph-mobile';
         this.walletproviderAddress = this.settingsService.walletproviderAddress || this.baseAddress + '/wallet';
+        this.siaAddress = this.settingsService.siaAddress || 'http://localhost:9980'
+        this.siaPassword = this.settingsService.siaPassword || ''
         this.bulletinSecretService.all().then((keys: any) => {
             var keys_indexed = {};
             for (var i = 0; i < keys.length; i++) {
@@ -156,11 +156,7 @@ export class Settings {
             });
         })
         .then(() => {
-            if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
-                this.pushService.initPush();
-            } else {
-                this.firebaseService.initFirebase();
-            }
+            this.firebaseService.initFirebase();
             this.loadingModal.dismiss();
             this.refresh(null);
         });
@@ -171,6 +167,8 @@ export class Settings {
         this.blockchainAddress = this.baseAddress + '/transaction';
         this.graphproviderAddress = this.baseAddress + '/get-graph-mobile';
         this.walletproviderAddress = this.baseAddress + '/wallet';
+        this.siaAddress = 'http://localhost:9980'
+        this.siaPassword = ''
     }
 
     prod_reset() {
@@ -178,6 +176,8 @@ export class Settings {
         this.blockchainAddress = this.baseAddress + '/transaction';
         this.graphproviderAddress = this.baseAddress + '/get-graph-mobile';
         this.walletproviderAddress = this.baseAddress + '/wallet';
+        this.siaAddress = 'http://localhost:9980'
+        this.siaPassword = ''
     }
 
     save() {
@@ -185,6 +185,8 @@ export class Settings {
         this.settingsService.blockchainAddress = this.blockchainAddress;
         this.settingsService.graphproviderAddress = this.graphproviderAddress;
         this.settingsService.walletproviderAddress = this.walletproviderAddress;
+        this.settingsService.siaAddress = this.siaAddress;
+        this.settingsService.siaPassword = this.siaPassword;
         this.settingsService.save()
     }
 

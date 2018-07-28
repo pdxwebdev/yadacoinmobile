@@ -1,6 +1,4 @@
 import { Injectable } from '@angular/core';
-import { Component } from '@angular/core';
-import { Storage } from '@ionic/storage';
 import { GraphService } from './graph.service';
 import { BulletinSecretService } from './bulletinSecret.service';
 
@@ -17,7 +15,7 @@ export class PeerService {
     rid = null;
     key = null;
     baseAddress = null;
-    constructor(private storage: Storage, private graphService: GraphService, private bulletinSecretService: BulletinSecretService) {
+    constructor(private graphService: GraphService, private bulletinSecretService: BulletinSecretService) {
       /*
       this.storage.get('baseAddress').then((baseAddress) => {
           this.baseAddress = baseAddress;

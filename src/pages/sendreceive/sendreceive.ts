@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { NavController, NavParams } from 'ionic-angular';
+import { NavController } from 'ionic-angular';
 import { AlertController } from 'ionic-angular';
 import { WalletService } from '../../app/wallet.service';
 import { TransactionService } from '../../app/transaction.service';
@@ -57,21 +57,20 @@ export class SendReceive {
     submit() {
         var value = parseFloat(this.value)
         var total = value + 0.01;
+
+        var alert = this.alertCtrl.create();
         if (!this.address) {
-            var alert = this.alertCtrl.create();
             alert.setTitle('Enter an address');
             alert.addButton('Ok');
             alert.present();
             return
         }
         if (!value) {
-            var alert = this.alertCtrl.create();
             alert.setTitle('Enter an amount');
             alert.addButton('Ok');
             alert.present();
             return
         }
-        var alert = this.alertCtrl.create();
         alert.setTitle('Approve Transaction');
         alert.setSubTitle('You are about to spend ' + total + ' coins (' + this.value + ' coin + 0.01 fee)');
         alert.addButton('Cancel');

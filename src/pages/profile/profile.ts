@@ -1,14 +1,12 @@
 import { Component } from '@angular/core';
-import { NavController, NavParams, ModalController } from 'ionic-angular';
+import { NavController, NavParams } from 'ionic-angular';
 import { Storage } from '@ionic/storage';
 import { GraphService } from '../../app/graph.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { WalletService } from '../../app/wallet.service';
 import { ListPage } from '../list/list';
-import { HTTP } from '@ionic-native/http';
 import { Http } from '@angular/http';
-import { Platform } from 'ionic-angular';
-import { AlertController, LoadingController } from 'ionic-angular';
+import { LoadingController } from 'ionic-angular';
 
 
 @Component({
@@ -25,8 +23,6 @@ export class ProfilePage {
         public navParams: NavParams,
         public storage: Storage,
         public walletService: WalletService,
-        private http: HTTP,
-        private platform: Platform,
         public graphService: GraphService,
         private bulletinSecretService: BulletinSecretService,
         private ahttp: Http,

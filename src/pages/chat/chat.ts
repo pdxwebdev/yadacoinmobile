@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { NavController, NavParams, ModalController } from 'ionic-angular';
+import { NavController, NavParams } from 'ionic-angular';
 import { Storage } from '@ionic/storage';
 import { GraphService } from '../../app/graph.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
@@ -8,9 +8,6 @@ import { AlertController, LoadingController } from 'ionic-angular';
 import { TransactionService } from '../../app/transaction.service';
 import { ListPage } from '../list/list';
 
-declare var forge;
-declare var elliptic;
-declare var uuid4;
 declare var X25519;
 
 @Component({

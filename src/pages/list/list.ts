@@ -3,20 +3,12 @@ import { NavController, NavParams } from 'ionic-angular';
 import { AlertController, LoadingController } from 'ionic-angular';
 import { Storage } from '@ionic/storage';
 import { GraphService } from '../../app/graph.service';
-import { PeerService } from '../../app/peer.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { WalletService } from '../../app/wallet.service';
-import { SettingsService } from '../../app/settings.service';
 import { TransactionService } from '../../app/transaction.service';
-import { HTTP } from '@ionic-native/http';
 import { SocialSharing } from '@ionic-native/social-sharing';
 import { ChatPage } from '../chat/chat';
-import { Platform } from 'ionic-angular';
 
-
-declare var forge;
-declare var foobar;
-declare var uuid4;
 declare var X25519;
 
 @Component({
@@ -45,15 +37,11 @@ export class ListPage {
     public navParams: NavParams,
     private storage: Storage,
     private graphService: GraphService,
-    private peerService: PeerService,
     private bulletinSecretService: BulletinSecretService,
     private walletService: WalletService,
     private transactionService: TransactionService,
-    private http: HTTP,
     private socialSharing: SocialSharing,
-    private settingsService: SettingsService,
     private alertCtrl: AlertController,
-    private platform: Platform,
     public loadingCtrl: LoadingController
   ) {
     this.loadingModal = this.loadingCtrl.create({
@@ -63,13 +51,6 @@ export class ListPage {
         content: 'Generating encryption, please wait... (could take several minutes)'
     });
     this.refresh(null);
-    this.platform.ready().then(() => {
-      if(this.platform.is('cordova')) {
-        if(this.platform.is('android') || this.platform.is('ios')) {
-          this.http.setDataSerializer('json');
-        }
-      }
-    });
 
   }
 
@@ -145,7 +126,7 @@ export class ListPage {
                   return 1
                 return 0
               });
-              for (var i=0; i < this.graphService.graph.friends.length; i++) {
+              for (i=0; i < this.graphService.graph.friends.length; i++) {
                 if (used_rids.indexOf(this.graphService.graph.friends[i].rid) === -1) {
                   friend_list.push(this.graphService.graph.friends[i]);
                   used_rids.push(this.graphService.graph.friends[i].rid);
