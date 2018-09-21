@@ -50,7 +50,7 @@ export class Settings {
         });
         this.loadingModal.present();
         this.keys = [];
-        this.baseAddress = this.settingsService.baseAddress || 'https://yadacoin.io';
+        this.baseAddress = this.settingsService.baseAddress || 'http://localhost:8000';
         this.blockchainAddress = this.settingsService.blockchainAddress || this.baseAddress + '/transaction';
         this.graphproviderAddress = this.settingsService.graphproviderAddress || this.baseAddress + '/get-graph-mobile';
         this.walletproviderAddress = this.settingsService.walletproviderAddress || this.baseAddress + '/wallet';
@@ -156,7 +156,9 @@ export class Settings {
             });
         })
         .then(() => {
-            this.firebaseService.initFirebase();
+            if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
+                this.firebaseService.initFirebase();
+            }
             this.loadingModal.dismiss();
             this.refresh(null);
         });

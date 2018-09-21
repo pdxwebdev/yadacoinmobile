@@ -22,7 +22,7 @@ export class MyApp {
 
   rootPage: any = HomePage;
 
-  pages: Array<{title: string, component: any, count: any, color: any}>;
+  pages: Array<{title: string, label: string, component: any, count: any, color: any}>;
 
   graph: any;
   friend_request_count: any;
@@ -39,14 +39,14 @@ export class MyApp {
     this.graphService.graph = {}
     this.initializeApp();
     this.pages = [
-      { title: 'Me', component: ProfilePage, count: false, color: '' },
-      { title: 'News Feed', component: HomePage, count: false, color: '' },
-      { title: 'Chat', component: ListPage, count: false, color: ''  },
-      { title: 'Friends', component: ListPage, count: 0, color: '' },
-      { title: 'Friend Requests', component: ListPage, count: this.graphService.friend_request_count, color: this.graphService.friend_request_count > 0 ? 'danger' : '' },
-      { title: 'Sent Requests', component: ListPage, count: 0, color: '' },
-      { title: 'Coins', component: SendReceive, count: false, color: '' },
-      { title: 'Settings', component: Settings, count: false, color: '' }
+      { title: 'News Feed', label: 'Home', component: HomePage, count: false, color: '' },
+      { title: 'Me', label: 'Profile', component: ProfilePage, count: false, color: '' },
+      { title: 'Messages', label: 'Chat', component: ListPage, count: false, color: '' },
+      //{ title: 'Sign Ins', label: 'Sign Ins', component: ListPage, count: false, color: '' },
+      { title: 'Friend Requests', title: 'Friend Requests', component: ListPage, count: this.graphService.friend_request_count, color: this.graphService.friend_request_count > 0 ? 'danger' : '' },
+      { title: 'Sent Requests', title: 'Sent Requests', component: ListPage, count: 0, color: '' },
+      { title: 'Coins', title: 'Coins', component: SendReceive, count: false, color: '' },
+      { title: 'Settings', label: 'Settings', component: Settings, count: false, color: '' }
     ];
     this.walletService.get();
   }

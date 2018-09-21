@@ -57,33 +57,50 @@ export class PostModal {
                     this.http.get(this.settingsService.siaAddress + '/renter/shareascii?siapaths=' + this.selectedFile[0])
                     .subscribe((res) => {
                         let sharefiledata = res.json()['asciisia'];
-                        let alert = this.alertCtrl.create();
-                        alert.setTitle('Approve Transaction');
-                        alert.setSubTitle('You are about to spend 0.01 coins ( 0.01 fee)');
-                        alert.addButton('Cancel');
-                        alert.addButton({
-                            text: 'Confirm',
-                            handler: (data: any) => {
-                                // camera permission was granted
-                                this.transactionService.pushTransaction({
-                                    relationship: {
-                                        postText: this.postText,
-                                        postFile: sharefiledata,
-                                        postFileName: this.selectedFile[0]
-                                    },
-                                    blockchainurl: this.blockchainAddress,
-                                    resolve: resolve
-                                });
-                            }
-                        });
-                        alert.present();
+                        this.approveTxn(sharefiledata, resolve);
                     })
+                } else {
+                    this.approveTxn(null, resolve);
                 }
 	            console.log(status);
         	}).then(() => {
         		this.dismiss();
         	});
         });
+    }
+
+    approveTxn(sharefiledata, resolve) {
+        let alert = this.alertCtrl.create();
+        alert.setTitle('Approve Transaction');
+        alert.setSubTitle('You are about to spend 0.01 coins ( 0.01 fee)');
+        alert.addButton('Cancel');
+        alert.addButton({
+            text: 'Confirm',
+            handler: (data: any) => {
+                // camera permission was granted
+
+                if (sharefiledata) {
+                    this.transactionService.pushTransaction({
+                        relationship: {
+                            postText: this.postText,
+                            postFile: sharefiledata,
+                            postFileName: this.selectedFile[0]
+                        },
+                        blockchainurl: this.blockchainAddress,
+                        resolve: resolve
+                    });
+                } else {
+                    this.transactionService.pushTransaction({
+                        relationship: {
+                            postText: this.postText
+                        },
+                        blockchainurl: this.blockchainAddress,
+                        resolve: resolve
+                    });
+                }
+            }
+        });
+        alert.present();
     }
 
     dismiss() {

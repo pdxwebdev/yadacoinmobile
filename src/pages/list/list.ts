@@ -91,51 +91,54 @@ export class ListPage {
           });
         } else if (this.pageTitle == 'Chat') {
           var my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
-          this.graphService.getMessages(null)
-          .then((graphArray) => {
-              var messages = [];
-              for (let i in graphArray) {
-                for (var j=0; j < graphArray[i].length; j++) {
-                  if(my_public_key !== graphArray[i][j]['public_key'] && this.graphService.new_messages_counts[i] && this.graphService.new_messages_counts[i] < graphArray[i][j]['height']) {
-                    graphArray[i][j]['new'] = true;
+          this.graphService.getFriends()
+          .then(() => {
+            this.graphService.getMessages(null)
+            .then((graphArray) => {
+                var messages = [];
+                for (let i in graphArray) {
+                  for (var j=0; j < graphArray[i].length; j++) {
+                    if(my_public_key !== graphArray[i][j]['public_key'] && this.graphService.new_messages_counts[i] && this.graphService.new_messages_counts[i] < graphArray[i][j]['height']) {
+                      graphArray[i][j]['new'] = true;
+                    }
+                    messages.push(graphArray[i][j]);
                   }
-                  messages.push(graphArray[i][j]);
                 }
-              }
-              messages.sort(function (a, b) {
-                if (a.height > b.height)
-                  return -1
-                if ( a.height < b.height)
-                  return 1
-                return 0
-              });
-              var friend_list = [];
-              var used_rids = [];
-              for (var i=0; i < messages.length; i++) {
-                var message = messages[i];
-                if(used_rids.indexOf(message.rid) === -1) {
-                  friend_list.push(message);
-                  used_rids.push(message.rid);
+                messages.sort(function (a, b) {
+                  if (a.height > b.height)
+                    return -1
+                  if ( a.height < b.height)
+                    return 1
+                  return 0
+                });
+                var friend_list = [];
+                var used_rids = [];
+                for (var i=0; i < messages.length; i++) {
+                  var message = messages[i];
+                  if(used_rids.indexOf(message.rid) === -1) {
+                    friend_list.push(message);
+                    used_rids.push(message.rid);
+                  }
                 }
-              }
 
-              this.graphService.graph.friends.sort(function (a, b) {
-                if (a.username < b.username)
-                  return -1
-                if ( a.username > b.username)
-                  return 1
-                return 0
-              });
-              for (i=0; i < this.graphService.graph.friends.length; i++) {
-                if (used_rids.indexOf(this.graphService.graph.friends[i].rid) === -1) {
-                  friend_list.push(this.graphService.graph.friends[i]);
-                  used_rids.push(this.graphService.graph.friends[i].rid);
+                this.graphService.graph.friends.sort(function (a, b) {
+                  if (a.username < b.username)
+                    return -1
+                  if ( a.username > b.username)
+                    return 1
+                  return 0
+                });
+                for (i=0; i < this.graphService.graph.friends.length; i++) {
+                  if (used_rids.indexOf(this.graphService.graph.friends[i].rid) === -1) {
+                    friend_list.push(this.graphService.graph.friends[i]);
+                    used_rids.push(this.graphService.graph.friends[i].rid);
+                  }
                 }
-              }
-              this.makeList(friend_list);
-              this.loading = false;
-              resolve();
-          });
+                this.makeList(friend_list);
+                this.loading = false;
+                resolve();
+            });
+          })
         } else if (this.pageTitle == 'Friend Requests') {
           this.graphService.getFriendRequests()
           .then(() => {
@@ -176,17 +179,6 @@ export class ListPage {
           this.loading = false;
           this.loadingBalance = false;
           if (this.pageTitle == 'Sent Requests') {
-              var decrypted = this.bulletinSecretService.decrypt(this.selectedItem.transaction.relationship);
-              var relationship = JSON.parse(decrypted);
-              this.createdCode = JSON.stringify({
-                  bulletin_secret: this.bulletinSecretService.bulletin_secret,
-                  shared_secret: relationship.shared_secret,
-                  to: this.bulletinSecretService.key.getAddress(),
-                  requested_rid: this.selectedItem.transaction.requested_rid,
-                  requester_rid: this.graphService.graph.rid,
-                  accept: true
-              });
-              this.createdCodeEncoded = 'https://yadacoin.io/deeplink?txn=' + encodeURIComponent(this.createdCode);
           }
           else if (this.pageTitle == 'Friend Requests') {
             this.friend_request = this.navParams.get('item').transaction;

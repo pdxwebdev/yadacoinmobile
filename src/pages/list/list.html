@@ -40,27 +40,6 @@
     </button>
   </ion-list>
   <div *ngIf="selectedItem && pageTitle =='Sent Requests'" padding>
-    <ion-card *ngIf="createdCode">
-      <ion-item> 
-        <button ion-button outline item-end (click)="sendFriendRequestNotification(createdCode)">resend&nbsp;<ion-icon name="refresh"></ion-icon></button>
-      </ion-item>
-      <ion-item>
-        <button ion-button outline item-end (click)="share(createdCodeEncoded)">share&nbsp;<ion-icon name="share"></ion-icon></button>
-      </ion-item>
-      <ngx-qrcode *ngIf="createdCode" [qrc-value]="createdCode"></ngx-qrcode>
-      <ion-card-content>
-        <p>{{createdCode}}</p>
-      </ion-card-content>
-    </ion-card>
-    <ion-card *ngIf="confirmCode">
-      <ion-item>
-        <button ion-button outline item-end (click)="share(confirmCode)">share&nbsp;<ion-icon name="share"></ion-icon></button>
-      </ion-item>
-      <ngx-qrcode [qrc-value]="confirmCode"></ngx-qrcode>
-      <ion-card-content>
-        <p>{{confirmCode}}</p>
-      </ion-card-content>
-    </ion-card>
   </div>
   <div *ngIf="selectedItem && pageTitle =='Friend Requests'" padding>
 

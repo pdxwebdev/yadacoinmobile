@@ -7,6 +7,7 @@ import { WalletService } from '../../app/wallet.service';
 import { ListPage } from '../list/list';
 import { Http } from '@angular/http';
 import { LoadingController } from 'ionic-angular';
+import { SettingsService } from '../../app/settings.service';
 
 
 @Component({
@@ -26,11 +27,15 @@ export class ProfilePage {
         public graphService: GraphService,
         private bulletinSecretService: BulletinSecretService,
         private ahttp: Http,
-        public loadingCtrl: LoadingController
+        public loadingCtrl: LoadingController,
+        public settingsService: SettingsService
     ) {
         this.prev_name = graphService.graph.human_hash;
         this.username = graphService.graph.human_hash;
         this.refresh(null);
+        this.bulletinSecretService.get().then(() => {
+            this.ahttp.get(this.settingsService.baseAddress + '/faucet?address=' + this.bulletinSecretService.key.getAddress()).subscribe(()=>{});
+        });
     }
 
     refresh(refresher) {

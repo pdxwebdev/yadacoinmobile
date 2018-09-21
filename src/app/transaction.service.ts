@@ -221,6 +221,17 @@ export class TransactionService {
                 inputs_hashes_concat +
                 outputs_hashes_concat
             ).toString('hex')
+        } else if (this.info.relationship.signIn) {
+            // sign in
+            this.transaction.relationship = this.shared_encrypt(this.info.shared_secret, JSON.stringify(this.info.relationship));                    
+
+            hash = foobar.bitcoin.crypto.sha256(
+                this.transaction.rid +
+                this.transaction.relationship +
+                this.transaction.fee.toFixed(8) +
+                inputs_hashes_concat +
+                outputs_hashes_concat
+            ).toString('hex')
         } else {
             //straight transaction
             hash = foobar.bitcoin.crypto.sha256(

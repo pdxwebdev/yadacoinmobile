@@ -163,6 +163,19 @@ export class GraphService {
         });
     }
 
+    getNewSignIns() {
+        return new Promise((resolve, reject) => {
+            this.endpointRequest('get-graph-messages')
+            .then((data: any) => {
+                this.parseMessages(data.messages, null, 'signIn')
+                .then((new_chats) => {
+                    this.graph.signIns = new_chats;
+                    resolve(new_chats);
+                });
+            });
+        });
+    }
+
     getPosts() {
         return this.endpointRequest('get-graph-posts')
         .then((data: any) => {
@@ -335,7 +348,8 @@ export class GraphService {
         });
     }
 
-    parseMessages(messages, rid) {
+    parseMessages(messages, rid=null, messageType=null) {
+        var messageType = messageType || 'chatText';
         messages.sort(function (a, b) {
           if (a.height > b.height)
             return -1
@@ -367,27 +381,29 @@ export class GraphService {
                                 continue
                             }
                             if(decrypted.indexOf('{') === 0) {
-                                if(this.new_messages_counts[message.rid]) {
-                                    if(message.height > this.new_messages_counts[message.rid]) {
-                                        this.new_messages_count++;
-                                        if(!this.new_messages_counts[message.rid]) {
-                                            this.new_messages_counts[message.rid] = 0;
-                                        }
-                                        this.new_messages_counts[message.rid]++;
-                                    }
-                                } else {
-                                    this.new_messages_counts[message.rid] = 1;
-                                    this.new_messages_count++;
-                                }
-                                
-                                messages[message.rid] = message;
-                                if (!chats[message.rid]) {
-                                    chats[message.rid] = [];
-                                }
-                                var messageJson = JSON.parse(decrypted)
-                                if(messageJson.chatText) {
+                                var messageJson = JSON.parse(decrypted);
+                                if(messageJson[messageType]) {
                                     message.relationship = messageJson;
+                                    message.shared_secret = shared_secret.shared_secret
+                                    message.dh_public_key = shared_secret.dh_public_key
+                                    message.dh_private_key = shared_secret.dh_private_key
+                                    messages[message.rid] = message;
+                                    if (!chats[message.rid]) {
+                                        chats[message.rid] = [];
+                                    }
                                     chats[message.rid].push(message);
+                                    if(this.new_messages_counts[message.rid]) {
+                                        if(message.height > this.new_messages_counts[message.rid]) {
+                                            this.new_messages_count++;
+                                            if(!this.new_messages_counts[message.rid]) {
+                                                this.new_messages_counts[message.rid] = 0;
+                                            }
+                                            this.new_messages_counts[message.rid]++;
+                                        }
+                                    } else {
+                                        this.new_messages_counts[message.rid] = 1;
+                                        this.new_messages_count++;
+                                    }
                                 }
                                 continue dance;
                             }

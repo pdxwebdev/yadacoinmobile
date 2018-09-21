@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
 import { NavController, NavParams, ModalController } from 'ionic-angular';
 import { AlertController, LoadingController } from 'ionic-angular';
-import { QRScanner, QRScannerStatus } from '@ionic-native/qr-scanner';
 import { Storage } from '@ionic/storage';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { WalletService } from '../../app/wallet.service';
@@ -52,7 +51,6 @@ export class HomePage {
         public navCtrl: NavController,
         public navParams: NavParams,
         public modalCtrl: ModalController,
-        private qrScanner: QRScanner,
         private storage: Storage,
         private bulletinSecretService: BulletinSecretService,
         private alertCtrl: AlertController,
@@ -66,44 +64,50 @@ export class HomePage {
         private ahttp: Http,
         private firebaseService: FirebaseService
     ) {
-        this.refresh(null)
-        .then(() => {
-            if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
-                this.firebaseService.initFirebase();
-            } else {
-                // Initialize Firebase
-                var config = {
-                  apiKey: "AIzaSyAcJWjePVMBkEF8A3M-7oY_lT0MMXRDrpA",
-                  authDomain: "yadacoin-bcaae.firebaseapp.com",
-                  databaseURL: "https://yadacoin-bcaae.firebaseio.com",
-                  projectId: "yadacoin-bcaae",
-                  storageBucket: "yadacoin-bcaae.appspot.com",
-                  messagingSenderId: "805178314562"
-                };
-                firebase.initializeApp(config);
-                const messaging = firebase.messaging();
-                messaging.usePublicVapidKey('BLuv1UWDqzAyTtK5xlNaY4tFOz6vKbjuutTQ0KmBRG5btvVbydsrMTA-UeyMqY4oCC1Gu3sDwLfsg-iWtAg6IB0');
-                messaging.requestPermission().then(() => {
-                  console.log('Notification permission granted.');
-                  // TODO(developer): Retrieve an Instance ID token for use with FCM.
-                  // ...
-                }).catch((err) => {
-                  console.log('Unable to get permission to notify.', err);
-                });
-                messaging.getToken().then((currentToken) => {
-                  if (currentToken) {
-                    this.sendTokenToServer(currentToken);
-                    this.updateUIForPushEnabled(currentToken);
-                  } else {
-                    // Show permission request.
-                    console.log('No Instance ID token available. Request permission to generate one.');
-                    // Show permission UI.
-                    this.updateUIForPushPermissionRequired();
-                  }
-                }).catch((err) => {
-                  console.log('An error occurred while retrieving token. ', err);
-                });
-            }
+        this.bulletinSecretService.get().then(() => {
+            this.refresh(null)
+            .then(() => {
+                if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
+                    this.firebaseService.initFirebase();
+                } else {
+                    // Initialize Firebase
+                    var config = {
+                      apiKey: "AIzaSyAcJWjePVMBkEF8A3M-7oY_lT0MMXRDrpA",
+                      authDomain: "yadacoin-bcaae.firebaseapp.com",
+                      databaseURL: "https://yadacoin-bcaae.firebaseio.com",
+                      projectId: "yadacoin-bcaae",
+                      storageBucket: "yadacoin-bcaae.appspot.com",
+                      messagingSenderId: "805178314562"
+                    };
+                    try {
+                        firebase.initializeApp(config);
+                        const messaging = firebase.messaging();
+                        messaging.usePublicVapidKey('BLuv1UWDqzAyTtK5xlNaY4tFOz6vKbjuutTQ0KmBRG5btvVbydsrMTA-UeyMqY4oCC1Gu3sDwLfsg-iWtAg6IB0');
+                        messaging.requestPermission().then(() => {
+                          console.log('Notification permission granted.');
+                          // TODO(developer): Retrieve an Instance ID token for use with FCM.
+                          // ...
+                        }).catch((err) => {
+                          console.log('Unable to get permission to notify.', err);
+                        });
+                        messaging.getToken().then((currentToken) => {
+                          if (currentToken) {
+                            this.sendTokenToServer(currentToken);
+                            this.updateUIForPushEnabled(currentToken);
+                          } else {
+                            // Show permission request.
+                            console.log('No Instance ID token available. Request permission to generate one.');
+                            // Show permission UI.
+                            this.updateUIForPushPermissionRequired();
+                          }
+                        }).catch((err) => {
+                          console.log('An error occurred while retrieving token. ', err);
+                        });
+                    } catch(err) {
+
+                    }
+                }
+            });
         });
         if (this.navParams.get('txnData')) {
             this.alertRoutine(JSON.parse(decodeURIComponent(this.navParams.get('txnData'))));
@@ -244,7 +248,7 @@ export class HomePage {
         });
 
         //check for friend requests
-        this.graphService.getFriendRequests()
+        this.graphService.getFriends()
         .then(() => {
             //put ourselves in the faucet
             this.ahttp.get(this.settingsService.baseAddress + '/faucet?address=' + this.bulletinSecretService.key.getAddress()).subscribe(()=>{});
@@ -256,6 +260,15 @@ export class HomePage {
         //check for new messages
         this.graphService.getNewMessages()
         .then(() => {
+            this.chatColor = this.graphService.new_messages_count > 0 ? 'danger' : '';
+        });
+
+        //check for new sign ins
+        this.graphService.getNewSignIns()
+        .then(() => {
+            if (this.graphService.graph.signIns) {
+                this.alertRoutineForMessage(this.graphService.graph.signIns[Object.keys(this.graphService.graph.signIns)[0]][0])
+            }
             this.chatColor = this.graphService.new_messages_count > 0 ? 'danger' : '';
         });
 
@@ -458,45 +471,6 @@ export class HomePage {
         });
     }
 
-    scanFriend() {
-        if (this.walletService.wallet.balance < 1.01) {
-            let alert = this.alertCtrl.create();
-            alert.setTitle('Insuficient Funds');
-            alert.setSubTitle('You need at least 1.01 YC');
-            alert.addButton('OK');
-            alert.present();
-            return
-        }
-        this.qrScanner.prepare().then((status: QRScannerStatus) => {
-            console.log(status);
-            if (status.authorized) {
-                // start scanning
-                let scanSub = this.qrScanner.scan().subscribe((text: string) => {
-                    console.log('Scanned something', text);
-                    this.alertRoutine(JSON.parse(text));
-                    this.qrScanner.hide(); // hide camera preview
-                    scanSub.unsubscribe(); // stop scanning
-                    window.document.querySelector('ion-app').classList.remove('transparentBody');
-                });
-                console.log(this.qrScanner);
-                this.qrScanner.resumePreview();
-                // show camera preview
-                this.qrScanner.show();
-                window.document.querySelector('ion-app').classList.add('transparentBody');
-                // wait for user to scan something, then the observable callback will be called
-
-
-            } else if (status.denied) {
-                // camera permission was permanently denied
-                // you must use QRScanner.openSettings() method to guide the user to the settings page
-                // then they can grant the permission from there
-            } else {
-                // permission was denied, but not permanently. You can ask for permission again at a later time.
-            }
-
-        }).catch((e: any) => console.log('Error is', e));
-    }
-
     alertRoutine(info) {
         if (this.walletService.wallet.balance < 1.01) {
             let alert = this.alertCtrl.create();
@@ -568,6 +542,63 @@ export class HomePage {
                             blockchainurl: this.blockchainAddress,
                             to: info.to,
                             resolve: resolve
+                        });
+                    });
+                }).then((txn) => {
+                    this.loadingModal.dismiss()
+                    var alert = this.alertCtrl.create();
+                    alert.setTitle('Friend Request Sent');
+                    alert.setSubTitle('Your Friend Request has been sent successfully.');
+                    alert.addButton('Ok');
+                    alert.present();
+                });
+            }
+        });
+        alert.present();
+    }
+
+    alertRoutineForMessage(info) {
+        if (this.walletService.wallet.balance < 0.01) {
+            let alert = this.alertCtrl.create();
+            alert.setTitle('Insuficient Funds');
+            alert.setSubTitle('You need at least 1.01 YadaCoins');
+            alert.addButton('OK');
+            alert.present();
+            return
+        }
+        let alert = this.alertCtrl.create();
+        alert.setTitle('Approve Transaction');
+        alert.setSubTitle('You are about to spend 0.01 coins (0.01 fee)');
+        alert.addButton({
+            text: 'Cancel',
+            handler: (data: any) => {
+                this.loadingModal.dismiss();
+                this.cryptoGenModal.dismiss();
+            }
+        });
+        alert.addButton({
+            text: 'Confirm',
+            handler: (data: any) => {
+                this.cryptoGenModal = this.loadingCtrl.create({
+                    content: 'Generating encryption, please wait... (could take several minutes)'
+                });
+                this.cryptoGenModal.present();
+                //////////////////////////////////////////////////////////////////////////
+                // create and send transaction to create the relationship on the blockchain
+                //////////////////////////////////////////////////////////////////////////
+                this.walletService.get().then(() => {
+                    return new Promise((resolve, reject) => {
+                        this.cryptoGenModal.dismiss();
+                        this.transactionService.pushTransaction({
+                            dh_public_key: info.dh_public_key,
+                            dh_private_key: info.dh_private_key,
+                            relationship: {
+                                signIn: info.relationship.signIn
+                            },
+                            shared_secret: info.shared_secret,
+                            blockchainurl: this.blockchainAddress,
+                            resolve: resolve,
+                            rid: info.rid
                         });
                     });
                 }).then((txn) => {
