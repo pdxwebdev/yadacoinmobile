@@ -45,10 +45,6 @@ export class Settings {
     }
 
     refresh(refresher) {
-        this.loadingModal = this.loadingCtrl.create({
-            content: 'Please wait...'
-        });
-        this.loadingModal.present();
         this.keys = [];
         this.baseAddress = this.settingsService.baseAddress || 'http://localhost:8000';
         this.blockchainAddress = this.settingsService.blockchainAddress || this.baseAddress + '/transaction';
@@ -94,7 +90,6 @@ export class Settings {
             })
             .then(() => {
                 this.activeKey = this.bulletinSecretService.key.toWIF()
-                this.loadingModal.dismiss();
                 if(refresher) refresher.complete();
             });
         });
@@ -143,10 +138,6 @@ export class Settings {
 
     set(key) {
         this.storage.set('last-keyname', this.prefix + key)
-        this.loadingModal = this.loadingCtrl.create({
-            content: 'Please wait...'
-        });
-        this.loadingModal.present();
         this.bulletinSecretService.set(this.prefix + key)
         .then(() => {
             return new Promise((resolve, reject) => {
@@ -156,11 +147,10 @@ export class Settings {
             });
         })
         .then(() => {
+            this.refresh(null);
             if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
                 this.firebaseService.initFirebase();
             }
-            this.loadingModal.dismiss();
-            this.refresh(null);
         });
     }
 

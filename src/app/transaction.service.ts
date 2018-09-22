@@ -75,6 +75,10 @@ export class TransactionService {
             //return;
         }
         this.walletService.get().then(() => {
+            if(this.walletService.wallet.balance <= 0) {
+                if (this.resolve) this.resolve(false);
+                return;
+            }
             this.generateTransaction();
             this.sendTransaction()
         }).then(() => {
@@ -86,7 +90,7 @@ export class TransactionService {
 
         this.transaction = {
             rid:  this.rid,
-            fee: 0.1,
+            fee: 0.001,
             requester_rid: typeof this.info.requester_rid == 'undefined' ? '' : this.info.requester_rid,
             requested_rid: typeof this.info.requested_rid == 'undefined' ? '' : this.info.requested_rid,
             outputs: []
@@ -105,7 +109,7 @@ export class TransactionService {
         } else {
             transaction_total = this.transaction.fee;
         }
-        if ((this.info.relationship.dh_private_key && this.walletService.wallet.balance < (this.transaction.outputs[0].value + this.transaction.fee)) || this.walletService.wallet.unspent_transactions.length == 0) {
+        if ((this.info.relationship && this.info.relationship.dh_private_key && this.walletService.wallet.balance < (this.transaction.outputs[0].value + this.transaction.fee)) || this.walletService.wallet.unspent_transactions.length == 0) {
             if (this.resolve) this.resolve(false);
             return
         } else {

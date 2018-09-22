@@ -89,7 +89,7 @@ export class ListPage {
             this.loading = false;
             resolve();
           });
-        } else if (this.pageTitle == 'Chat') {
+        } else if (this.pageTitle == 'Messages') {
           var my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
           this.graphService.getFriends()
           .then(() => {

@@ -20,6 +20,7 @@ export class SendReceive {
     address = null;
     loadingBalance: any;
     balance = null;
+    isDevice = null;
     constructor(
         private navCtrl: NavController,
         private qrScanner: QRScanner,
@@ -30,11 +31,18 @@ export class SendReceive {
         private socialSharing: SocialSharing,
         private settingsService: SettingsService
     ) {
-        this.createdCode = bulletinSecretService.key.getAddress();
-        this.refresh(null);
+        this.bulletinSecretService.get().then(() => {
+            this.createdCode = bulletinSecretService.key.getAddress();
+            this.refresh(null);
+        });
     }
 
     scan() {
+        if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
+            this.isDevice = true;
+        } else {
+            this.isDevice = false;
+        }
         this.qrScanner.prepare().then((status: QRScannerStatus) => {
             console.log(status);
             if (status.authorized) {
@@ -72,7 +80,7 @@ export class SendReceive {
             return
         }
         alert.setTitle('Approve Transaction');
-        alert.setSubTitle('You are about to spend ' + total + ' coins (' + this.value + ' coin + 0.01 fee)');
+        alert.setSubTitle('You are about to spend ' + total + ' coins (' + this.value + ' coin + 0.001 fee)');
         alert.addButton('Cancel');
         alert.addButton({
             text: 'Confirm',
@@ -85,9 +93,15 @@ export class SendReceive {
                         resolve: resolve
                     });
                 }).then((txn) => {
+                    var title = 'Transaction Sent';
+                    var message = 'Your transaction has been sent succefully.';
+                    if (!txn) {
+                        title = 'Insufficient Funds'
+                        message = "Not enough YadaCoins for transaction.";
+                    }
                     var alert = this.alertCtrl.create();
-                    alert.setTitle('Transaction Sent');
-                    alert.setSubTitle('Your transaction has been sent succefully.');
+                    alert.setTitle(title);
+                    alert.setSubTitle(message);
                     alert.addButton('Ok');
                     alert.present();
                     this.value = null;
