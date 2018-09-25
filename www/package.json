@@ -1,6 +1,6 @@
 {
-  "name": "electron-quick-start",
-  "productName": "electron quick start",
+  "name": "yadacoinwallet",
+  "productName": "YadaCoin Wallet",
   "version": "1.0.0",
   "description": "A minimal Electron application",
   "main": "main.js",
