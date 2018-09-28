@@ -5,6 +5,7 @@ import { SplashScreen } from '@ionic-native/splash-screen';
 import { GraphService } from './graph.service';
 import { BulletinSecretService } from './bulletinSecret.service';
 import { WalletService } from './wallet.service';
+import { Events } from 'ionic-angular';
 
 import { HomePage } from '../pages/home/home';
 import { ListPage } from '../pages/list/list';
@@ -20,7 +21,7 @@ declare var forge;
 export class MyApp {
   @ViewChild(Nav) nav: Nav;
 
-  rootPage: any = SendReceive;
+  rootPage: any;
 
   pages: Array<{title: string, label: string, component: any, count: any, color: any}>;
 
@@ -34,21 +35,38 @@ export class MyApp {
     public splashScreen: SplashScreen,
     private walletService: WalletService,
     private graphService: GraphService,
-    private bulletinSecretService: BulletinSecretService
+    private bulletinSecretService: BulletinSecretService,
+    public events: Events
   ) {
+    events.subscribe('pages', () => {
+      this.setPages(false);
+    });
     this.graphService.graph = {}
     this.initializeApp();
-    this.pages = [
-      //{ title: 'News Feed', label: 'Home', component: HomePage, count: false, color: '' },
-      { title: 'Me', label: 'Profile', component: ProfilePage, count: false, color: '' },
-      { title: 'Messages', label: 'Chat', component: ListPage, count: false, color: '' },
-      //{ title: 'Sign Ins', label: 'Sign Ins', component: ListPage, count: false, color: '' },
-      { title: 'Friend Requests', label: 'Friend Requests', component: ListPage, count: this.graphService.friend_request_count, color: this.graphService.friend_request_count > 0 ? 'danger' : '' },
-      { title: 'Sent Requests', label: 'Sent Requests', component: ListPage, count: 0, color: '' },
-      { title: 'Coins', label: 'Coins', component: SendReceive, count: false, color: '' },
-      { title: 'Settings', label: 'Settings', component: Settings, count: false, color: '' }
-    ];
-    this.walletService.get();
+    this.walletService.get().then(() => {
+      this.setPages(true);
+    });
+  }
+
+  setPages(changePages) {
+    if (this.bulletinSecretService.username) {
+      if (changePages) this.rootPage = SendReceive;
+      this.pages = [
+        { title: 'News Feed', label: 'Home', component: HomePage, count: false, color: '' },
+        { title: 'Messages', label: 'Chat', component: ListPage, count: false, color: '' },
+        { title: 'Sign Ins', label: 'Sign Ins', component: ListPage, count: false, color: '' },
+        { title: 'Friend Requests', label: 'Friend Requests', component: ListPage, count: this.graphService.friend_request_count, color: this.graphService.friend_request_count > 0 ? 'danger' : '' },
+        { title: 'Sent Requests', label: 'Sent Requests', component: ListPage, count: 0, color: '' },
+        { title: 'Coins', label: 'Coins', component: SendReceive, count: false, color: '' },
+        { title: 'Settings', label: 'Settings', component: Settings, count: false, color: '' }
+      ];
+    } else {
+      if (changePages) this.rootPage = ProfilePage;
+      this.pages = [
+        { title: 'Me', label: 'Set Username', component: ProfilePage, count: false, color: '' },
+        { title: 'Settings', label: 'Settings', component: Settings, count: false, color: '' }
+      ];
+    }
   }
 
   initializeApp() {

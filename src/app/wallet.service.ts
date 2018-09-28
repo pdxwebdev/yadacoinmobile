@@ -23,16 +23,22 @@ export class WalletService {
             return new Promise((resolve, reject) => {
                 this.bulletinSecretService.get().then(() => {
                     return new Promise((resolve1, reject1) => {
-                        this.ahttp.get(this.settingsService.walletproviderAddress + '?address=' + this.bulletinSecretService.key.getAddress()).
-                        subscribe((data) => {
-                            resolve1(data['_body'])
-                        },
-                        (err) => {
-                            alert('Could not connect to your serve processes. Please check your settings and/or that your serve process is running and accessible.')
-                        });
+                        if(this.bulletinSecretService.username) {
+                            this.ahttp.get(this.settingsService.walletproviderAddress + '?address=' + this.bulletinSecretService.key.getAddress()).
+                            subscribe((data) => {
+                                resolve1(data['_body'])
+                            },
+                            (err) => {
+                                alert('Could not connect to your serve processes. Please check your settings and/or that your serve process is running and accessible.')
+                            });
+                        } else {
+                            resolve1(null);
+                        }
                     }).then((data: any) => {
-                        this.wallet = JSON.parse(data);
-                        this.wallet.balancePretty = this.wallet.balance.toFixed(2);
+                        if(data) {
+                            this.wallet = JSON.parse(data);
+                            this.wallet.balancePretty = this.wallet.balance.toFixed(2);
+                        }
                         resolve();
                     });
                 });

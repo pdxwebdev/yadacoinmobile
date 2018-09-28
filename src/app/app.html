@@ -8,13 +8,13 @@
       </ion-note>
       YadaCoin
       <ion-note item-end>
-        {{graphService.graph.human_hash}}
+        {{bulletinSecretService.username}}
       </ion-note></ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content>
-      <ion-list>
+      <ion-list *ngIf="pages">
         <button menuClose ion-item *ngFor="let p of pages" (click)="openPage(p)">
           {{p.label}}
         </button>

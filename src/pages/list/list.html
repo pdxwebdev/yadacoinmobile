@@ -20,6 +20,7 @@
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
   <ion-spinner *ngIf="loading"></ion-spinner>
+  <h2>{{label}}</h2>
   <ion-list>
     <ion-card *ngIf="items && items.length == 0">
       No items to display.

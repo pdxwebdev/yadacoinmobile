@@ -255,6 +255,7 @@ export class HomePage {
             this.color = this.graphService.friend_request_count > 0 ? 'danger' : '';
             this.friendRequestColor = this.graphService.friend_request_count > 0 ? 'danger' : '';
             this.chatColor = this.graphService.new_messages_count > 0 ? 'danger' : '';
+            this.signInColor = this.graphService.new_sign_ins_count > 0 ? 'danger' : '';
         });
 
         //check for new messages
@@ -266,17 +267,11 @@ export class HomePage {
         //check for new sign ins
         this.graphService.getNewSignIns()
         .then(() => {
-            if (this.graphService.graph.signIns) {
-                this.alertRoutineForMessage(this.graphService.graph.signIns[Object.keys(this.graphService.graph.signIns)[0]][0])
-            }
-            this.chatColor = this.graphService.new_messages_count > 0 ? 'danger' : '';
+            this.chatColor = this.graphService.new_sign_ins_count > 0 ? 'danger' : '';
         });
 
         //this is our blocking procedure, update our posts for the main feed
         return this.graphService.getPosts().then(() => {
-            if(this.graphService.graph && !this.graphService.graph.registered && !this.graphService.graph.pending_registration && this.walletService.wallet.balance > 1.01) {
-                this.register();
-            }
             this.generateFeed();
             if(refresher) refresher.complete();
         });
@@ -417,7 +412,9 @@ export class HomePage {
         return this.transactionService.pushTransaction({
             relationship: {
                 bulletin_secret: info.bulletin_secret,
-                dh_private_key: info.dh_private_key
+                dh_private_key: info.dh_private_key,
+                their_username: info.username,
+                my_username: this.bulletinSecretService.username
             },
             dh_public_key: info.dh_public_key,
             requested_rid: info.requested_rid,
@@ -430,7 +427,7 @@ export class HomePage {
     }
 
     sharePhrase() {
-        this.socialSharing.share(this.graphService.graph.human_hash, "Add me on Yada Coin!");
+        this.socialSharing.share(this.bulletinSecretService.username, "Add me on Yada Coin!");
     }
 
     addFriend() {

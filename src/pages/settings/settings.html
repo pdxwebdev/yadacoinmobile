@@ -19,7 +19,6 @@
   <h3>Identities</h3>
   <ion-list>
     <button ion-item *ngFor="let key of keys" (click)="set(key.username)" [color]="key.active ? 'secondary' : 'light'">
-      <span *ngIf="key.key && !key.username">{{key.key}}</span>
       <span *ngIf="key.username">{{key.username}}</span>
     </button>
   </ion-list>

@@ -30,11 +30,11 @@ export class ProfilePage {
         public loadingCtrl: LoadingController,
         public settingsService: SettingsService
     ) {
-        this.prev_name = graphService.graph.human_hash;
-        this.username = graphService.graph.human_hash;
         this.refresh(null);
         this.bulletinSecretService.get().then(() => {
-            this.ahttp.get(this.settingsService.baseAddress + '/faucet?address=' + this.bulletinSecretService.key.getAddress()).subscribe(()=>{});
+            if (this.bulletinSecretService.username) {
+                this.ahttp.get(this.settingsService.baseAddress + '/faucet?address=' + this.bulletinSecretService.key.getAddress()).subscribe(()=>{});
+            }
         });
     }
 
@@ -54,44 +54,9 @@ export class ProfilePage {
             content: 'Please wait...'
         });
         this.loadingModal.present();
-        this.ahttp.post(
-            this.baseAddress + '/change-username',
-            {
-                rid: this.graphService.graph.rid,
-                username: this.username,
-                relationship: {
-                    bulletin_secret: this.bulletinSecretService.bulletin_secret
-                },
-                to: this.bulletinSecretService.key.getAddress()
-            }
-        )
-        .subscribe((data) => {
-            this.graphService.graph.human_hash = this.username;
-            return new Promise((resolve, reject) => {
-                this.storage.get('usernames-' + this.prev_name)
-                .then((key) => {
-                    this.storage.remove('usernames-' + this.prev_name)
-                    .then(() => {
-                        this.storage.set('usernames-' + this.graphService.graph.human_hash, key)
-                        .then(() => {
-                            this.prev_name = this.graphService.graph.human_hash;
-                            this.bulletinSecretService.set('usernames-' + this.graphService.graph.human_hash)
-                            .then(() => {
-                                resolve();
-                            });
-                        });
-                    });
-                });
-            })
-            .then(() => {
-                this.loadingModal.dismiss();
-                alert('saved!');
-            });
-        }, 
-        (error) => {
-            this.graphService.graph.human_hash = this.username;
+        this.bulletinSecretService.set('usernames-' + this.username).then(() => {
             this.loadingModal.dismiss();
-            alert('That username is taken, try again.');
+            alert('saved!');
         });
     }
 

@@ -69,6 +69,7 @@ export class ListPage {
       this.selectedItem = this.navParams.get('item');
       this.context = this.navParams.get('context');
       this.pageTitle = this.selectedItem ? this.selectedItem.pageTitle : this.navParams.get('pageTitle').title;
+      this.label = this.navParams.get('pageTitle').label;
       this.refreshWallet();
       if(!this.selectedItem) {
         // Let's populate this page with some filler content for funzies
@@ -93,48 +94,26 @@ export class ListPage {
           var my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
           this.graphService.getFriends()
           .then(() => {
-            this.graphService.getMessages(null)
+            this.graphService.getNewMessages()
             .then((graphArray) => {
-                var messages = [];
-                for (let i in graphArray) {
-                  for (var j=0; j < graphArray[i].length; j++) {
-                    if(my_public_key !== graphArray[i][j]['public_key'] && this.graphService.new_messages_counts[i] && this.graphService.new_messages_counts[i] < graphArray[i][j]['height']) {
-                      graphArray[i][j]['new'] = true;
-                    }
-                    messages.push(graphArray[i][j]);
-                  }
-                }
-                messages.sort(function (a, b) {
-                  if (a.height > b.height)
-                    return -1
-                  if ( a.height < b.height)
-                    return 1
-                  return 0
-                });
-                var friend_list = [];
-                var used_rids = [];
-                for (var i=0; i < messages.length; i++) {
-                  var message = messages[i];
-                  if(used_rids.indexOf(message.rid) === -1) {
-                    friend_list.push(message);
-                    used_rids.push(message.rid);
-                  }
-                }
-
-                this.graphService.graph.friends.sort(function (a, b) {
-                  if (a.username < b.username)
-                    return -1
-                  if ( a.username > b.username)
-                    return 1
-                  return 0
-                });
-                for (i=0; i < this.graphService.graph.friends.length; i++) {
-                  if (used_rids.indexOf(this.graphService.graph.friends[i].rid) === -1) {
-                    friend_list.push(this.graphService.graph.friends[i]);
-                    used_rids.push(this.graphService.graph.friends[i].rid);
-                  }
-                }
-                this.makeList(friend_list);
+                var messages = this.markNew(graphArray, this.graphService.new_messages_counts);
+                var friendsWithMessagesList = this.getDistinctFriends(messages);
+                this.populateRemainingFriends(friendsWithMessagesList.friend_list, friendsWithMessagesList.used_rids);
+                this.makeList(friendsWithMessagesList.friend_list);
+                this.loading = false;
+                resolve();
+            });
+          })
+        } else if (this.pageTitle == 'Sign Ins') {
+          var my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
+          this.graphService.getFriends()
+          .then(() => {
+            this.graphService.getNewSignIns(null)
+            .then((graphArray) => {
+                var sign_ins = this.markNew(graphArray, this.graphService.new_sign_ins_counts);
+                var friendsWithSignInsList = this.getDistinctFriends(sign_ins);
+                this.populateRemainingFriends(friendsWithSignInsList.friend_list, friendsWithSignInsList.used_rids);
+                this.makeList(friendsWithSignInsList.friend_list);
                 this.loading = false;
                 resolve();
             });
@@ -190,6 +169,49 @@ export class ListPage {
     .then(() => {
       if(refresher) refresher.complete();
     });
+  }
+
+  markNew(graphArray, graphCount) {
+    var collection = [];
+    for (let i in graphArray) {
+      for (var j=0; j < graphArray[i].length; j++) {
+        if(my_public_key !== graphArray[i][j]['public_key'] && graphCount[i] && graphCount[i] < graphArray[i][j]['height']) {
+          graphArray[i][j]['new'] = true;
+        }
+        collection.push(graphArray[i][j]);
+      }
+    }
+    return collection;
+  }
+
+  getDistinctFriends(collection) {
+    // using the rids from new items
+    // make a list of friends sorted by block height descending (most recent)
+    var friend_list = [];
+    var used_rids = [];
+    for (var i=0; i < collection.length; i++) {
+      // we could have multiple transactions per friendship
+      // so make sure we're going using the rid once
+      var item = collection[i];
+      if(used_rids.indexOf(item.rid) === -1) {
+        friend_list.push(item);
+        used_rids.push(item.rid);
+      }
+    }
+    return {
+      friend_list: friend_list,
+      used_rids: used_rids
+    };
+  }
+
+  populateRemainingFriends(used_rids, friend_list) {
+    // now add everyone else
+    for (var i=0; i < this.graphService.graph.friends.length; i++) {
+      if (used_rids.indexOf(this.graphService.graph.friends[i].rid) === -1) {
+        friend_list.push(this.graphService.graph.friends[i]);
+        used_rids.push(this.graphService.graph.friends[i].rid);
+      }
+    }
   }
 
   makeList(graphArray) {
@@ -253,7 +275,9 @@ export class ListPage {
             this.transactionService.pushTransaction({
               relationship: {
                 bulletin_secret: this.friend_request.bulletin_secret,
-                dh_private_key: dh_private_key
+                dh_private_key: dh_private_key,
+                their_username: this.friend_request.username,
+                my_username: this.bulletinSecretService.username
               },
               dh_public_key: dh_public_key,
               requested_rid: this.friend_request.requested_rid,

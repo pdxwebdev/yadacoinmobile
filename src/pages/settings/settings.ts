@@ -9,6 +9,7 @@ import { AlertController, LoadingController } from 'ionic-angular';
 import { GraphService } from '../../app/graph.service';
 import { WalletService } from '../../app/wallet.service';
 import { SocialSharing } from '@ionic-native/social-sharing';
+import { Events } from 'ionic-angular';
 
 @Component({
   selector: 'page-settings',
@@ -38,14 +39,14 @@ export class Settings {
         private storage: Storage,
         private graphService: GraphService,
         private socialSharing: SocialSharing,
-        private walletService: WalletService
+        private walletService: WalletService,
+        public events: Events
     ) {
         this.refresh(null);
         this.prefix = 'usernames-';
     }
 
     refresh(refresher) {
-        this.keys = [];
         this.baseAddress = this.settingsService.baseAddress || 'http://localhost:8000';
         this.blockchainAddress = this.settingsService.blockchainAddress || this.baseAddress + '/transaction';
         this.graphproviderAddress = this.settingsService.graphproviderAddress || this.baseAddress + '/get-graph-mobile';
@@ -58,26 +59,25 @@ export class Settings {
                 keys_indexed[keys[i].key] = keys[i].key;
             }
             return new Promise((resolve, reject) => {
+                var newKeys = [];
                 this.storage.forEach((value, key) => {
-                    
                     if (key.substr(0, this.prefix.length) === this.prefix) {
-                        if (keys_indexed[value]) {
-                            this.keys.push({
-                                username: key.substr(this.prefix.length),
-                                key: value,
-                                active: this.bulletinSecretService.key.toWIF() == value
-                            });
-                        }
+                        newKeys.push({
+                            username: key.substr(this.prefix.length),
+                            key: value,
+                            active: (this.bulletinSecretService.username || '') == key.substr(this.prefix.length)
+                        });
                     }
                 })
                 .then(() => {
-                    this.keys.sort(function (a, b) {
+                    newKeys.sort(function (a, b) {
                         if (a.username < b.username)
                           return -1
                         if ( a.username > b.username)
                           return 1
                         return 0
                     });
+                    this.keys = newKeys;
                     resolve(this.keys);
                 });                
             })
@@ -89,7 +89,11 @@ export class Settings {
                 });
             })
             .then(() => {
-                this.activeKey = this.bulletinSecretService.key.toWIF()
+                if (this.bulletinSecretService.username) {
+                    this.activeKey = this.bulletinSecretService.key.toWIF();
+                } else {
+                    this.activeKey = '';
+                }
                 if(refresher) refresher.complete();
             });
         });
@@ -140,6 +144,7 @@ export class Settings {
         this.storage.set('last-keyname', this.prefix + key)
         this.bulletinSecretService.set(this.prefix + key)
         .then(() => {
+            this.events.publish('pages');
             return new Promise((resolve, reject) => {
                 this.graphService.getInfo().then(() => {
                     resolve();
