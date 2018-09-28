@@ -99,7 +99,7 @@ export class GraphService {
                     this.endpointRequest('get-graph-friends')
                     .then((data: any) => {
                         this.parseFriends(data.friends)
-                        .then((friends: []) => {
+                        .then((friends: any) => {
                             //sort list alphabetically by username
                             friends.sort(function (a, b) {
                               if (a.username < b.username)
@@ -144,7 +144,7 @@ export class GraphService {
             this.endpointRequest('get-graph-new-messages')
             .then((data: any) => {
                 this.parseNewMessages(data.new_messages, this.new_messages_counts, this.new_messages_count, null, 'chatText', 'last_message_height')
-                .then((newChats) => {
+                .then((newChats: any) => {
                     newChats.sort(function (a, b) {
                       if (a.height > b.height)
                         return -1
@@ -165,7 +165,7 @@ export class GraphService {
             this.endpointRequest('get-graph-messages')
             .then((data: any) => {
                 this.parseMessages(data.messages, this.new_sign_ins_counts, this.new_sign_ins_count, rid, 'signIn', 'last_sign_in_height')
-                .then((signIns) => {
+                .then((signIns: any) => {
                     signIns.sort(function (a, b) {
                       if (a.height > b.height)
                         return -1
@@ -186,7 +186,7 @@ export class GraphService {
             this.endpointRequest('get-graph-messages')
             .then((data: any) => {
                 this.parseMessages(data.messages, this.new_sign_ins_counts, this.new_sign_ins_count, null, 'signIn', 'last_sign_in_height')
-                .then((newSignIns) => {
+                .then((newSignIns: any) => {
                     this.graph.newSignIns = newSignIns;
                     resolve(newSignIns);
                 });

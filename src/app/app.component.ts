@@ -50,7 +50,7 @@ export class MyApp {
 
   setPages(changePages) {
     if (this.bulletinSecretService.username) {
-      if (changePages) this.rootPage = SendReceive;
+      this.rootPage = SendReceive;
       this.pages = [
         { title: 'News Feed', label: 'Home', component: HomePage, count: false, color: '' },
         { title: 'Messages', label: 'Chat', component: ListPage, count: false, color: '' },

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { SettingsService } from './settings.service';
 import { Storage } from '@ionic/storage';
+import { Events } from 'ionic-angular';
 
 
 declare var foobar;
@@ -16,7 +17,8 @@ export class BulletinSecretService {
     username = null;
     constructor(
         private settingsService: SettingsService,
-        private storage: Storage
+        private storage: Storage,
+        public events: Events
     ) {}
 
     shared_encrypt(shared_secret, message) {
@@ -68,7 +70,7 @@ export class BulletinSecretService {
                     this.username = '';
                     this.key =  null;
                     this.bulletin_secret = null;
-                    this.storage.set(this.keyname);
+                    this.storage.set(this.keyname, '');
                 } else {
                     this.key = foobar.bitcoin.ECPair.fromWIF(key);
                     this.username = this.keyname.substr('usernames-'.length);
@@ -79,7 +81,7 @@ export class BulletinSecretService {
                     this.username = '';
                     this.key =  null;
                     this.bulletin_secret = null;
-                    this.storage.set(this.keyname);
+                    this.storage.set(this.keyname, '');
                 } else {
                     this.username = this.keyname.substr('usernames-'.length);
                     this.key = foobar.bitcoin.ECPair.makeRandom();
@@ -94,6 +96,7 @@ export class BulletinSecretService {
 
     set(key) {
         return new Promise((resolve, reject) => {
+            this.storage.set('last-keyname', key)
             this.storage.remove('usernames-');
             this.keyname = key;
             this.get().
@@ -105,7 +108,10 @@ export class BulletinSecretService {
 
     create() {
         this.keyname = 'usernames-';
-        return this.get();
+        this.storage.set('last-keyname', this.keyname)
+        return this.get().then(() => {
+            
+        });
     }
 
     import (keyWif) {

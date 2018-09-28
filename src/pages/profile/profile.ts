@@ -8,6 +8,7 @@ import { ListPage } from '../list/list';
 import { Http } from '@angular/http';
 import { LoadingController } from 'ionic-angular';
 import { SettingsService } from '../../app/settings.service';
+import { Events } from 'ionic-angular';
 
 
 @Component({
@@ -28,7 +29,8 @@ export class ProfilePage {
         private bulletinSecretService: BulletinSecretService,
         private ahttp: Http,
         public loadingCtrl: LoadingController,
-        public settingsService: SettingsService
+        public settingsService: SettingsService,
+        public events: Events
     ) {
         this.refresh(null);
         this.bulletinSecretService.get().then(() => {
@@ -57,6 +59,7 @@ export class ProfilePage {
         this.bulletinSecretService.set('usernames-' + this.username).then(() => {
             this.loadingModal.dismiss();
             alert('saved!');
+            this.events.publish('pages');
         });
     }
 
