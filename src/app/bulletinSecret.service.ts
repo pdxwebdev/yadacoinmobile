@@ -68,13 +68,13 @@ export class BulletinSecretService {
             if(key && typeof key == 'string') {
                 if (this.keyname.substr('usernames-'.length) == '') {
                     this.username = '';
-                    this.key =  null;
-                    this.bulletin_secret = null;
-                    this.storage.set(this.keyname, '');
+                    this.key = foobar.bitcoin.ECPair.fromWIF(key);
+                    this.bulletin_secret = this.generate_bulletin_secret();
+                    this.storage.set(this.keyname, key);
                 } else {
                     this.key = foobar.bitcoin.ECPair.fromWIF(key);
                     this.username = this.keyname.substr('usernames-'.length);
-                    this.bulletin_secret = foobar.bitcoin.crypto.sha256(this.shared_encrypt(this.key.toWIF(), this.username)).toString('hex');
+                    this.bulletin_secret = this.generate_bulletin_secret();
                 }
             } else {
                 if (this.keyname.substr('usernames-'.length) == '') {
@@ -86,7 +86,7 @@ export class BulletinSecretService {
                     this.username = this.keyname.substr('usernames-'.length);
                     this.key = foobar.bitcoin.ECPair.makeRandom();
                     this.storage.set(this.keyname, this.key.toWIF());
-                    this.bulletin_secret = foobar.bitcoin.crypto.sha256(this.shared_encrypt(this.key.toWIF(), this.username)).toString('hex');
+                    this.bulletin_secret = this.generate_bulletin_secret();
                 }
             }
 
@@ -94,9 +94,13 @@ export class BulletinSecretService {
         });
     }
 
+    generate_bulletin_secret() {
+        return foobar.base64.fromByteArray(this.key.sign(foobar.bitcoin.crypto.sha256(this.username)).toDER());
+    }
+
     set(key) {
         return new Promise((resolve, reject) => {
-            this.storage.set('last-keyname', key)
+            this.storage.set('last-keyname', key);
             this.storage.remove('usernames-');
             this.keyname = key;
             this.get().
@@ -110,13 +114,14 @@ export class BulletinSecretService {
         this.keyname = 'usernames-';
         this.storage.set('last-keyname', this.keyname)
         return this.get().then(() => {
-            
+
         });
     }
 
     import (keyWif) {
         return new Promise((resolve, reject) => {
             this.keyname = 'usernames-';
+            this.storage.set('last-keyname', this.keyname);
             this.storage.set(this.keyname, keyWif.trim());
             this.get().
             then(() => {

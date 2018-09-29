@@ -34,7 +34,8 @@ export class TransactionService {
 
     pushTransaction(info) {
         this.key = this.bulletinSecretService.key;
-        this.bulletin_secret = this.bulletinSecretService.bulletin_secret;
+        this.bulletin_secret = this.bulletinSecretService.generate_bulletin_secret();
+        this.username = this.bulletinSecretService.username;
 
         this.txnattempts = [12, 5, 4];
         this.cbattempts = [12, 5, 4];
@@ -48,13 +49,13 @@ export class TransactionService {
         if (this.info.rid) {
             this.rid = this.info.rid;
         }
-        else if (this.info.relationship && this.info.relationship.bulletin_secret) {
-            var bulletin_secrets = [this.bulletin_secret, this.info.relationship.bulletin_secret].sort(function (a, b) {
+        else if (this.info.relationship && this.info.relationship.their_bulletin_secret) {
+            var bulletin_secrets = [this.bulletin_secret, this.info.relationship.their_bulletin_secret].sort(function (a, b) {
                 return a.toLowerCase().localeCompare(b.toLowerCase());
             });
             this.rid = forge.sha256.create().update(bulletin_secrets[0] + bulletin_secrets[1]).digest().toHex();
-        } else if (this.info.bulletin_secret) {
-            bulletin_secrets = [this.bulletin_secret, this.info.bulletin_secret].sort(function (a, b) {
+        } else if (this.info.their_bulletin_secret) {
+            bulletin_secrets = [this.bulletin_secret, this.info.their_bulletin_secret].sort(function (a, b) {
                 return a.toLowerCase().localeCompare(b.toLowerCase());
             });
             this.rid = forge.sha256.create().update(bulletin_secrets[0] + bulletin_secrets[1]).digest().toHex();
@@ -74,15 +75,22 @@ export class TransactionService {
             // existing relationship, exit
             //return;
         }
+        var res = null;
         this.walletService.get().then(() => {
             if(this.walletService.wallet.balance <= 0) {
                 if (this.resolve) this.resolve(false);
                 return;
             }
-            this.generateTransaction();
-            this.sendTransaction()
+            res = this.generateTransaction();
+            if(res) {
+                this.sendTransaction();
+            } else {
+                this.resolve(false)
+            }
         }).then(() => {
-            this.sendCallback();
+            if (res) {
+                this.sendCallback();
+            }
         });
     }
 
@@ -120,6 +128,13 @@ export class TransactionService {
                 unspent_transactions = [this.unspent_transaction_override];
             } else {
                 unspent_transactions = this.walletService.wallet.unspent_transactions;
+                unspent_transactions.sort(function (a, b) {
+                    if (a.height < b.height)
+                      return -1
+                    if ( a.height > b.height)
+                      return 1
+                    return 0
+                });
             }
             dance:
             for (var i=0; i < unspent_transactions.length; i++) {
@@ -131,7 +146,7 @@ export class TransactionService {
                         input_sum += parseFloat(unspent_output.value);
                         if (input_sum > transaction_total) {
                             let value: any;
-                            value = (input_sum - transaction_total).toFixed(1);
+                            value = (input_sum - transaction_total).toFixed(8);
 
                             this.transaction.outputs.push({
                                 to: this.key.getAddress(),
@@ -250,6 +265,7 @@ export class TransactionService {
         attempt = this.cbattempts.pop();
         this.transaction.id = this.get_transaction_id(this.transaction.hash, attempt);
         this.transaction.public_key = this.key.getPublicKeyBuffer().toString('hex');
+        return hash;
     }
 
     onTransactionError() {
@@ -288,7 +304,8 @@ export class TransactionService {
                 this.callbackurl,
                 {
                     bulletin_secret: this.bulletin_secret,
-                    to: this.key.getAddress()
+                    to: this.key.getAddress(),
+                    username: this.username
                 })
             .subscribe((data) => {
                 if (this.resolve) this.resolve(JSON.parse(data['_body']));

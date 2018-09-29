@@ -143,7 +143,7 @@ export class GraphService {
         return new Promise((resolve, reject) => {
             this.endpointRequest('get-graph-new-messages')
             .then((data: any) => {
-                this.parseNewMessages(data.new_messages, this.new_messages_counts, this.new_messages_count, null, 'chatText', 'last_message_height')
+                this.parseNewMessages(data.new_messages, this.new_messages_counts, this.new_messages_count, 'last_message_height')
                 .then((newChats: any) => {
                     newChats.sort(function (a, b) {
                       if (a.height > b.height)

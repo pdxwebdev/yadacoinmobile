@@ -56,10 +56,15 @@ export class ProfilePage {
             content: 'Please wait...'
         });
         this.loadingModal.present();
-        this.bulletinSecretService.set('usernames-' + this.username).then(() => {
-            this.loadingModal.dismiss();
-            alert('saved!');
-            this.events.publish('pages');
+        this.storage.get('usernames-').then((key) => {
+            this.storage.set('usernames-' + this.username, key).then(() => {
+                this.bulletinSecretService.set('usernames-' + this.username).then(() => {
+                    this.loadingModal.dismiss();
+                    alert('saved!');
+                    this.events.publish('pages');
+                    this.walletService.get();
+                });
+            });
         });
     }
 

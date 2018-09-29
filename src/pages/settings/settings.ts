@@ -116,6 +116,7 @@ export class Settings {
         this.bulletinSecretService.import(this.importedKey)
         .then(() => {
             return new Promise((resolve, reject) => {
+                this.events.publish('pages');
                 this.graphService.getInfo().then(() => {
                     resolve();
                 });

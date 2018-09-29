@@ -47,6 +47,8 @@ export class HomePage {
     commentReacts = {};
     chatColor: any;
     friendRequestColor: any;
+    registrationLink: any;
+    singInCode: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -389,7 +391,7 @@ export class HomePage {
         this.cryptoGenModal.present();
         return new Promise((resolve, reject) => {
             this.walletService.get().then(() => {
-                this.ahttp.get(this.settingsService.baseAddress + '/register')
+                this.ahttp.get(this.registrationLink)
                 .subscribe((res) => {
                     var data = JSON.parse(res['_body']);
                     var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
@@ -411,9 +413,10 @@ export class HomePage {
     getTransaction(info, resolve) {
         return this.transactionService.pushTransaction({
             relationship: {
-                bulletin_secret: info.bulletin_secret,
                 dh_private_key: info.dh_private_key,
+                their_bulletin_secret: info.bulletin_secret,
                 their_username: info.username,
+                my_bulletin_secret: this.bulletinSecretService.bulletin_secret,
                 my_username: this.bulletinSecretService.username
             },
             dh_public_key: info.dh_public_key,
@@ -504,7 +507,7 @@ export class HomePage {
             text: 'Confirm',
             handler: (data: any) => {
                 this.cryptoGenModal = this.loadingCtrl.create({
-                    content: 'Generating encryption, please wait... (could take several minutes)'
+                    content: 'Processing...'
                 });
                 this.cryptoGenModal.present();
                 // camera permission was granted
@@ -530,8 +533,11 @@ export class HomePage {
                         this.cryptoGenModal.dismiss();
                         this.transactionService.pushTransaction({
                             relationship: {
-                                bulletin_secret: info.bulletin_secret,
                                 dh_private_key: info.dh_private_key
+                                their_bulletin_secret: info.bulletin_secret,
+                                their_username: info.username,
+                                my_bulletin_secret: this.bulletinSecretService.generate_bulletin_secret(),
+                                my_username: this.bulletinSecretService.username
                             },
                             dh_public_key: info.dh_public_key,
                             requested_rid: info.requested_rid,
