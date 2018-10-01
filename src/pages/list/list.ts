@@ -34,6 +34,8 @@ export class ListPage {
   context: any;
   signIn: any;
   signInText: any;
+  rid: any;
+  label: any;
   constructor(
     public navCtrl: NavController,
     public navParams: NavParams,
@@ -110,7 +112,7 @@ export class ListPage {
           var my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
           this.graphService.getFriends()
           .then(() => {
-            this.graphService.getNewSignIns(null)
+            this.graphService.getNewSignIns()
             .then((graphArray) => {
                 var sign_ins = this.markNew(my_public_key, graphArray, this.graphService.new_sign_ins_counts);
                 var friendsWithSignInsList = this.getDistinctFriends(sign_ins);

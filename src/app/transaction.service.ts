@@ -26,6 +26,7 @@ export class TransactionService {
     resolve = null;
     unspent_transaction_override = null;
     value = null;
+    username = null;
     constructor(
         private walletService: WalletService,
         private bulletinSecretService: BulletinSecretService,

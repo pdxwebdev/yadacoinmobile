@@ -423,7 +423,7 @@ export class GraphService {
         this[graphCounts] = {}
         var my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
         return new Promise((resolve, reject) => {
-            return this.getMessageHeights()
+            return this.getMessageHeights(graphCounts, heightType)
             .then(() => {
                 var new_messages = [];
                 for(var i=0; i<messages.length; i++) {
