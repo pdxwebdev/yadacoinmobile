@@ -161,7 +161,7 @@ export class Settings {
     }
 
     dev_reset() {
-        this.baseAddress = 'https://yadacoin.io';
+        this.baseAddress = 'https://yadacoin.io:8000';
         this.blockchainAddress = this.baseAddress + '/transaction';
         this.graphproviderAddress = this.baseAddress + '/get-graph-mobile';
         this.walletproviderAddress = this.baseAddress + '/wallet';
@@ -170,7 +170,7 @@ export class Settings {
     }
 
     prod_reset() {
-        this.baseAddress = 'https://yadacoin.io';
+        this.baseAddress = 'https://yadacoin.io:8000';
         this.blockchainAddress = this.baseAddress + '/transaction';
         this.graphproviderAddress = this.baseAddress + '/get-graph-mobile';
         this.walletproviderAddress = this.baseAddress + '/wallet';

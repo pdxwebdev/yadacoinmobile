@@ -37,6 +37,7 @@ export class BulletinSecretService {
                 return this.settingsService.refresh().then(() => {
                     if (keys.length === 0) {
                         this.keyname = 'usernames-';
+                        this.setKey(resolve);
                     } else {
                         keys.sort(function (a, b) {
                             if (a.idx < b.idx)
