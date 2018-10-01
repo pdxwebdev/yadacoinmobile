@@ -48,7 +48,8 @@ export class HomePage {
     chatColor: any;
     friendRequestColor: any;
     registrationLink: any;
-    singInCode: any;
+    signInCode: any;
+    signInColor: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -533,7 +534,7 @@ export class HomePage {
                         this.cryptoGenModal.dismiss();
                         this.transactionService.pushTransaction({
                             relationship: {
-                                dh_private_key: info.dh_private_key
+                                dh_private_key: info.dh_private_key,
                                 their_bulletin_secret: info.bulletin_secret,
                                 their_username: info.username,
                                 my_bulletin_secret: this.bulletinSecretService.generate_bulletin_secret(),

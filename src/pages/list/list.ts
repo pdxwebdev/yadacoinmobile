@@ -32,6 +32,8 @@ export class ListPage {
   friend_request: any;
   cryptoGenModal: any;
   context: any;
+  signIn: any;
+  signInText: any;
   constructor(
     public navCtrl: NavController,
     public navParams: NavParams,
@@ -69,9 +71,9 @@ export class ListPage {
       this.selectedItem = this.navParams.get('item');
       this.context = this.navParams.get('context');
       this.pageTitle = this.selectedItem ? this.selectedItem.pageTitle : this.navParams.get('pageTitle').title;
-      this.label = this.navParams.get('pageTitle').label;
       this.refreshWallet();
       if(!this.selectedItem) {
+        this.label = this.navParams.get('pageTitle').label;
         // Let's populate this page with some filler content for funzies
         this.icons = ['flask', 'wifi', 'beer', 'football', 'basketball', 'paper-plane',
         'american-football', 'boat', 'bluetooth', 'build'];
@@ -96,7 +98,7 @@ export class ListPage {
           .then(() => {
             this.graphService.getNewMessages()
             .then((graphArray) => {
-                var messages = this.markNew(graphArray, this.graphService.new_messages_counts);
+                var messages = this.markNew(my_public_key, graphArray, this.graphService.new_messages_counts);
                 var friendsWithMessagesList = this.getDistinctFriends(messages);
                 this.populateRemainingFriends(friendsWithMessagesList.friend_list, friendsWithMessagesList.used_rids);
                 this.makeList(friendsWithMessagesList.friend_list);
@@ -110,7 +112,7 @@ export class ListPage {
           .then(() => {
             this.graphService.getNewSignIns(null)
             .then((graphArray) => {
-                var sign_ins = this.markNew(graphArray, this.graphService.new_sign_ins_counts);
+                var sign_ins = this.markNew(my_public_key, graphArray, this.graphService.new_sign_ins_counts);
                 var friendsWithSignInsList = this.getDistinctFriends(sign_ins);
                 this.populateRemainingFriends(friendsWithSignInsList.friend_list, friendsWithSignInsList.used_rids);
                 this.makeList(friendsWithSignInsList.friend_list);
@@ -162,6 +164,15 @@ export class ListPage {
           else if (this.pageTitle == 'Friend Requests') {
             this.friend_request = this.navParams.get('item').transaction;
           }
+          else if (this.pageTitle == 'Sign Ins') {
+            this.rid = this.navParams.get('item').transaction.rid;
+            this.graphService.getSignIns(this.rid)
+            .then((signIn: any) => {
+              this.signIn = signIn[0];
+              this.signInText = this.signIn.relationship.signIn;
+              if(refresher) refresher.complete();
+            });
+          }
           resolve();
       }
       this.balance = this.walletService.wallet.balance;
@@ -171,15 +182,13 @@ export class ListPage {
     });
   }
 
-  markNew(graphArray, graphCount) {
+  markNew(my_public_key, graphArray, graphCount) {
     var collection = [];
     for (let i in graphArray) {
-      for (var j=0; j < graphArray[i].length; j++) {
-        if(my_public_key !== graphArray[i][j]['public_key'] && graphCount[i] && graphCount[i] < graphArray[i][j]['height']) {
-          graphArray[i][j]['new'] = true;
-        }
-        collection.push(graphArray[i][j]);
+      if(my_public_key !== graphArray[i]['public_key'] && graphCount[i] && graphCount[i] < graphArray[i]['height']) {
+        graphArray[i]['new'] = true;
       }
+      collection.push(graphArray[i]);
     }
     return collection;
   }
@@ -304,6 +313,77 @@ export class ListPage {
     alert.present();
   }
 
+  sendSignIn() {
+    let alert = this.alertCtrl.create();
+    alert.setTitle('Approve transaction');
+    alert.setSubTitle('You are about to spend 0.01 coins ( 0.01 fee)');
+    alert.addButton('Cancel');
+    alert.addButton({
+      text: 'Confirm',
+      handler: (data: any) => {
+        this.cryptoGenModal = this.loadingCtrl.create({
+          content: 'Generating encryption, please wait... (could take several minutes)'
+        });
+        this.cryptoGenModal.present();
+        this.walletService.get().then(() => {
+          return new Promise((resolve, reject) => {
+            this.graphService.getFriends()
+            .then(() => {
+              var dh_public_key = this.graphService.keys[this.rid].dh_public_keys[0];
+              var dh_private_key = this.graphService.keys[this.rid].dh_private_keys[0];
+
+              if(dh_public_key && dh_private_key) {
+                var key = 'shared_secret-' + this.rid + '|' + dh_public_key.slice(0, 26) + dh_private_key.slice(0, 26);
+                if (this.graphService.stored_secrets[key]) {
+                  var shared_secret = this.graphService.stored_secrets[key];
+                } else {
+                  var privk = new Uint8Array(dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
+                  return parseInt(h, 16)
+                  }));
+                  var pubk = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
+                  return parseInt(h, 16)
+                  }));
+                  shared_secret = this.toHex(X25519.getSharedKey(privk, pubk));
+                  this.storage.set('shared_secret-' + dh_public_key.substr(0, 26) + dh_private_key.substr(0, 26), shared_secret);
+
+                }
+                // camera permission was granted
+                this.transactionService.pushTransaction({
+                  dh_public_key: dh_public_key,
+                  dh_private_key: dh_private_key,
+                  relationship: {
+                    signIn: this.signIn.relationship.signIn 
+                  },
+                  shared_secret: shared_secret,
+                  blockchainurl: this.blockchainAddress,
+                  resolve: resolve,
+                  rid: this.rid
+                });
+              } else {
+                let alert = this.alertCtrl.create();
+                alert.setTitle('Friendship not yet processed');
+                alert.setSubTitle('Please wait a few minutes and try again');
+                alert.addButton('Ok');
+                alert.present();
+                resolve(false);          
+              }
+            });
+          });
+        }).then((result) => {
+          this.cryptoGenModal.dismiss();
+          if (result) {
+            let alert = this.alertCtrl.create();
+            alert.setTitle('Message sent');
+            alert.setSubTitle('Your message has been sent successfully');
+            alert.addButton('Ok');
+            alert.present();
+          }
+          this.navCtrl.pop();
+        });
+       }
+    });
+    alert.present();
+  }
   refreshWallet() {
      this.loadingBalance = true;
      this.walletService.get()

@@ -34,6 +34,10 @@
       <span *ngIf="pageTitle =='Chat' && item.transaction.username && !item.transaction.new">{{item.transaction.username}}</span>
       <span *ngIf="pageTitle =='Chat' && !item.transaction.username && item.transaction.new"><strong>{{item.transaction.rid}}</strong></span>
       <span *ngIf="pageTitle =='Chat' && item.transaction.username && item.transaction.new"><strong>{{item.transaction.username}}</strong></span>
+      <span *ngIf="pageTitle =='Sign Ins' && !item.transaction.username && !item.transaction.new">{{item.transaction.rid}}</span>
+      <span *ngIf="pageTitle =='Sign Ins' && item.transaction.username && !item.transaction.new">{{item.transaction.username}}</span>
+      <span *ngIf="pageTitle =='Sign Ins' && !item.transaction.username && item.transaction.new"><strong>{{item.transaction.rid}}</strong></span>
+      <span *ngIf="pageTitle =='Sign Ins' && item.transaction.username && item.transaction.new"><strong>{{item.transaction.username}}</strong></span>
       <span *ngIf="pageTitle =='Friends' && !item.transaction.username">{{item.transaction.rid}}</span>
       <span *ngIf="pageTitle =='Friends' && item.transaction.username">{{item.transaction.username}}</span>
       <span *ngIf="pageTitle =='Reacts Detail' && !item.transaction.username">{{item.transaction.emoji}} {{item.transaction.rid}}</span>
@@ -62,5 +66,22 @@
   </div>
   <div *ngIf="selectedItem && pageTitle =='Posts'" padding>
     <a href="{{selectedItem.transaction.relationship.postText}}" target="_blank">{{selectedItem.transaction.relationship.postText}}</a>
+  </div>
+  <div *ngIf="selectedItem && pageTitle =='Sign Ins'" padding>
+
+    <ion-card>
+      <ion-card-header>
+        <p><strong>{{selectedItem.transaction.username}}</strong> has sent you an authorization offer. Accept offer with the 'Sign in' button.</p>
+      </ion-card-header>
+      <ion-card-content>
+        <button ion-button secondary (click)="sendSignIn()">Sign in</button>
+        Sign in code: {{signInText}}
+      </ion-card-content>
+    </ion-card>
+    <!-- for now, we can't do p2p on WKWebView
+    <button *ngIf="pageTitle == 'Friend Requests'" ion-button secondary (click)="accept(selectedItem.transaction)">Accept Request</button>
+
+    <button *ngIf="pageTitle == 'Friend Requests'" ion-button secondary (click)="send_receipt(selectedItem.transaction)">Send Receipt</button>
+    -->
   </div>
 </ion-content>

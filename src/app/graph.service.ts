@@ -122,17 +122,17 @@ export class GraphService {
         return new Promise((resolve, reject) => {
             this.endpointRequest('get-graph-messages')
             .then((data: any) => {
-                this.parseMessages(data.messages, this.new_messages_counts, this.new_messages_count, rid, 'chatText', 'last_message_height')
+                this.parseMessages(data.messages, 'new_messages_counts', 'new_messages_count', rid, 'chatText', 'last_message_height')
                 .then((chats: any) => {
-                    chats.sort(function (a, b) {
+                    chats[rid].sort(function (a, b) {
                       if (a.height > b.height)
                         return -1
                       if ( a.height < b.height)
                         return 1
                       return 0
                     });
-                    this.graph.messages = chats;
-                    resolve(chats);
+                    this.graph.messages = chats[rid];
+                    resolve(chats[rid]);
                 });
             });
         });
@@ -143,15 +143,8 @@ export class GraphService {
         return new Promise((resolve, reject) => {
             this.endpointRequest('get-graph-new-messages')
             .then((data: any) => {
-                this.parseNewMessages(data.new_messages, this.new_messages_counts, this.new_messages_count, 'last_message_height')
+                this.parseNewMessages(data.new_messages, 'new_messages_counts', 'new_messages_count', 'last_message_height')
                 .then((newChats: any) => {
-                    newChats.sort(function (a, b) {
-                      if (a.height > b.height)
-                        return -1
-                      if ( a.height < b.height)
-                        return 1
-                      return 0
-                    });
                     this.graph.newMessages = newChats;
                     resolve(newChats);
                 });
@@ -162,19 +155,19 @@ export class GraphService {
     getSignIns(rid) {
         //get sign ins for a specific friend
         return new Promise((resolve, reject) => {
-            this.endpointRequest('get-graph-messages')
+            this.endpointRequest('get-graph-new-messages')
             .then((data: any) => {
-                this.parseMessages(data.messages, this.new_sign_ins_counts, this.new_sign_ins_count, rid, 'signIn', 'last_sign_in_height')
+                this.parseMessages(data.new_messages, 'new_sign_ins_counts', 'new_sign_ins_count', rid, 'signIn', 'last_sign_in_height')
                 .then((signIns: any) => {
-                    signIns.sort(function (a, b) {
+                    signIns[rid].sort(function (a, b) {
                       if (a.height > b.height)
                         return -1
                       if ( a.height < b.height)
                         return 1
                       return 0
                     });
-                    this.graph.signIns = signIns;
-                    resolve(signIns);
+                    this.graph.signIns = signIns[rid];
+                    resolve(signIns[rid]);
                 });
             });
         });
@@ -183,9 +176,9 @@ export class GraphService {
     getNewSignIns() {
         //get the latest sign ins for a specific friend
         return new Promise((resolve, reject) => {
-            this.endpointRequest('get-graph-messages')
+            this.endpointRequest('get-graph-new-messages')
             .then((data: any) => {
-                this.parseMessages(data.messages, this.new_sign_ins_counts, this.new_sign_ins_count, null, 'signIn', 'last_sign_in_height')
+                this.parseNewMessages(data.new_messages, 'new_sign_ins_counts', 'new_sign_ins_count', 'last_sign_in_height')
                 .then((newSignIns: any) => {
                     this.graph.newSignIns = newSignIns;
                     resolve(newSignIns);
@@ -218,11 +211,11 @@ export class GraphService {
                 sent_friend_requestsObj[sent_friend_request.rid] = sent_friend_request;
                 //not sure how this affects the friends list yet, since we can't return friends from here
                 //friends[sent_friend_request.rid] = sent_friend_request;
-                if (this.keys[sent_friend_request.rid].dh_private_keys.indexOf(relationship.dh_private_key) === -1) {
+                if (this.keys[sent_friend_request.rid].dh_private_keys.indexOf(relationship.dh_private_key) === -1 && relationship.dh_private_key) {
                     this.keys[sent_friend_request.rid].dh_private_keys.push(relationship.dh_private_key);
                 }
             } else {
-                if (this.keys[sent_friend_request.rid].dh_public_keys.indexOf(sent_friend_request.dh_public_key) === -1) {
+                if (this.keys[sent_friend_request.rid].dh_public_keys.indexOf(sent_friend_request.dh_public_key) === -1 && sent_friend_request.dh_public_key) {
                     this.keys[sent_friend_request.rid].dh_public_keys.push(sent_friend_request.dh_public_key);
                 }
             }
@@ -263,12 +256,12 @@ export class GraphService {
                 var relationship = JSON.parse(decrypted);
                 this.graph.friends.push(friend_request);
                 delete friend_requestsObj[friend_request.rid];
-                if (this.keys[friend_request.rid].dh_private_keys.indexOf(relationship.dh_private_key)) {
+                if (this.keys[friend_request.rid].dh_private_keys.indexOf(relationship.dh_private_key) === -1 && relationship.dh_private_key) {
                     this.keys[friend_request.rid].dh_private_keys.push(relationship.dh_private_key);
                 }
             } else {
                 friend_requestsObj[friend_request.rid] = friend_request;
-                if (this.keys[friend_request.rid].dh_public_keys.indexOf(friend_request.dh_public_key)) {
+                if (this.keys[friend_request.rid].dh_public_keys.indexOf(friend_request.dh_public_key) === -1 && friend_request.dh_public_key) {
                     this.keys[friend_request.rid].dh_public_keys.push(friend_request.dh_public_key);
                 }
             }
@@ -319,11 +312,11 @@ export class GraphService {
                     if (decrypted.indexOf('{') === 0) {
                         var relationship = JSON.parse(decrypted);
                         friendsObj[friend.rid] = friend;
-                        if (this.keys[friend.rid].dh_private_keys.indexOf(relationship.dh_private_key) === -1) {
+                        if (this.keys[friend.rid].dh_private_keys.indexOf(relationship.dh_private_key) === -1 && relationship.dh_private_key) {
                             this.keys[friend.rid].dh_private_keys.push(relationship.dh_private_key);
                         }
                     } else {
-                        if (this.keys[friend.rid].dh_public_keys.indexOf(friend.dh_public_key)) {
+                        if (this.keys[friend.rid].dh_public_keys.indexOf(friend.dh_public_key) === -1 && friend.dh_public_key) {
                             this.keys[friend.rid].dh_public_keys.push(friend.dh_public_key);
                         }
                     }
@@ -367,7 +360,7 @@ export class GraphService {
     }
 
     parseMessages(messages, graphCounts, graphCount, rid=null, messageType=null, messageHeightType=null) {
-        graphCount = 0;
+        this[graphCount] = 0;
         return new Promise((resolve, reject) => {
             this.getStoredSecrets().then(() => {
                 this.getMessageHeights(graphCounts, messageHeightType).then(() => {
@@ -402,17 +395,17 @@ export class GraphService {
                                         chats[message.rid] = [];
                                     }
                                     chats[message.rid].push(message);
-                                    if(graphCounts[message.rid]) {
-                                        if(message.height > graphCounts[message.rid]) {
-                                            graphCount++;
-                                            if(!graphCounts[message.rid]) {
-                                                graphCounts[message.rid] = 0;
+                                    if(this[graphCounts][message.rid]) {
+                                        if(message.height > this[graphCounts][message.rid]) {
+                                            this[graphCount]++;
+                                            if(!this[graphCounts][message.rid]) {
+                                                this[graphCounts][message.rid] = 0;
                                             }
-                                            graphCounts[message.rid]++;
+                                            this[graphCounts][message.rid]++;
                                         }
                                     } else {
-                                        graphCounts[message.rid] = 1;
-                                        graphCount++;
+                                        this[graphCounts][message.rid] = 1;
+                                        this[graphCount]++;
                                     }
                                 }
                                 continue dance;
@@ -426,24 +419,24 @@ export class GraphService {
     }
 
     parseNewMessages(messages, graphCounts, graphCount, heightType) {
-        graphCount = 0;
-        graphCounts = {}
+        this[graphCount] = 0;
+        this[graphCounts] = {}
         var my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
         return new Promise((resolve, reject) => {
             return this.getMessageHeights()
             .then(() => {
                 var new_messages = [];
                 for(var i=0; i<messages.length; i++) {
+                    var message = messages[i];
                     if (messages[i].public_key != my_public_key) {
-                        var message = messages[i];
                         if(graphCounts[message.rid]) {
-                            if(message.height > graphCounts[message.rid]) {
-                                graphCounts[message.rid] = message.height;
-                                graphCount++;
+                            if(message.height > this[graphCounts][message.rid]) {
+                                this[graphCounts][message.rid] = message.height;
+                                this[graphCount]++;
                             }
                         } else {
-                            graphCounts[message.rid] = message.height;
-                            graphCount++;
+                            this[graphCounts][message.rid] = message.height;
+                            this[graphCount]++;
                         }
                     }
                     new_messages.push(message);
@@ -529,12 +522,12 @@ export class GraphService {
     }
 
     getMessageHeights(graphCounts, heightType) {
-        graphCounts = {};
+        this[graphCounts] = {};
         return new Promise((resolve, reject) => {
             this.storage.forEach((value, key) => {
                 if (key.indexOf(heightType) === 0) {
                     var rid = key.slice(heightType + '-'.length);
-                    graphCounts[rid] = parseInt(value);
+                    this[graphCounts][rid] = parseInt(value);
                 }
             })
             .then(() => {
