@@ -5,6 +5,7 @@ import { SettingsService } from '../../app/settings.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { FirebaseService } from '../../app/firebase.service';
 import { ListPage } from '../list/list';
+import { ProfilePage } from '../profile/profile';
 import { AlertController, LoadingController } from 'ionic-angular';
 import { GraphService } from '../../app/graph.service';
 import { WalletService } from '../../app/wallet.service';
@@ -28,6 +29,9 @@ export class Settings {
     prefix = null;
     importedKey = null;
     activeKey = null;
+    serverDown = false;
+    noUsername = false;
+    key = null;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -42,60 +46,56 @@ export class Settings {
         private walletService: WalletService,
         public events: Events
     ) {
-        this.refresh(null);
+        this.refresh(null).catch(() => {
+
+        });
         this.prefix = 'usernames-';
     }
 
     refresh(refresher) {
-        this.baseAddress = this.settingsService.baseAddress || 'http://localhost:8000';
+        this.noUsername = false;
+        this.baseAddress = this.settingsService.baseAddress || 'https://yadacoin.io';
         this.blockchainAddress = this.settingsService.blockchainAddress || this.baseAddress + '/transaction';
         this.graphproviderAddress = this.settingsService.graphproviderAddress || this.baseAddress + '/get-graph-mobile';
         this.walletproviderAddress = this.settingsService.walletproviderAddress || this.baseAddress + '/wallet';
         this.siaAddress = this.settingsService.siaAddress || 'http://localhost:9980'
         this.siaPassword = this.settingsService.siaPassword || ''
-        this.bulletinSecretService.all().then((keys: any) => {
-            var keys_indexed = {};
-            for (var i = 0; i < keys.length; i++) {
-                keys_indexed[keys[i].key] = keys[i].key;
-            }
-            return new Promise((resolve, reject) => {
-                var newKeys = [];
-                this.storage.forEach((value, key) => {
-                    if (key.substr(0, this.prefix.length) === this.prefix) {
-                        newKeys.push({
-                            username: key.substr(this.prefix.length),
-                            key: value,
-                            active: (this.bulletinSecretService.username || '') == key.substr(this.prefix.length)
-                        });
-                    }
-                })
-                .then(() => {
-                    newKeys.sort(function (a, b) {
-                        if (a.username < b.username)
-                          return -1
-                        if ( a.username > b.username)
-                          return 1
-                        return 0
-                    });
-                    this.keys = newKeys;
-                    resolve(this.keys);
-                });                
-            })
-            .then(() => {
-                return new Promise((resolve, reject) => {
-                    this.walletService.get().then(() => {
-                        resolve();
-                    })
+        return this.bulletinSecretService.all().then((keys) => {
+            this.setKey(keys);
+        }).then(() => {
+            if(refresher) refresher.complete();
+        });
+
+    }
+
+    setKey(keys) {
+        var keys_indexed = {};
+        for (var i = 0; i < keys.length; i++) {
+            keys_indexed[keys[i].key] = keys[i].key;
+        }
+        var newKeys = [];
+        this.storage.forEach((value, key) => {
+            if (key.substr(0, this.prefix.length) === this.prefix) {
+                let active = (this.bulletinSecretService.username || '') == key.substr(this.prefix.length);
+                newKeys.push({
+                    username: key.substr(this.prefix.length),
+                    key: value,
+                    active: active
                 });
-            })
-            .then(() => {
-                if (this.bulletinSecretService.username) {
-                    this.activeKey = this.bulletinSecretService.key.toWIF();
-                } else {
-                    this.activeKey = '';
+                if (active) {
+                    this.activeKey = value;
                 }
-                if(refresher) refresher.complete();
+            }
+        })
+        .then(() => {
+            newKeys.sort(function (a, b) {
+                if (a.username < b.username)
+                  return -1
+                if ( a.username > b.username)
+                  return 1
+                return 0
             });
+            this.keys = newKeys;
         });
     }
 
@@ -113,55 +113,56 @@ export class Settings {
     }
 
     importKey() {
-        this.bulletinSecretService.import(this.importedKey)
-        .then(() => {
-            return new Promise((resolve, reject) => {
-                this.events.publish('pages');
-                this.graphService.getInfo().then(() => {
-                    resolve();
-                });
-            });
+        this.bulletinSecretService.import(this.importedKey).then(() => {
+            return this.refresh(null);
         })
         .then(() => {
-            this.refresh(null);
+            this.navCtrl.push(ProfilePage);
         });
     }
 
     createKey() {
         this.bulletinSecretService.create()
         .then(() => {
-            return new Promise((resolve, reject) => {
-                this.graphService.getInfo().then(() => {
-                    resolve();
-                });
-            });
+            return this.graphService.getInfo();
         })
         .then(() => {
-            this.refresh(null);
+            return this.refresh(null)
+        })
+        .then(() => {
+            this.events.publish('pages-settings');
+        })
+        .catch(() => {
+            this.events.publish('pages');
         });
     }
 
     set(key) {
-        this.storage.set('last-keyname', this.prefix + key)
-        this.bulletinSecretService.set(this.prefix + key)
-        .then(() => {
+        this.storage.set('last-keyname', this.prefix + key);
+        this.doSet(this.prefix + key);
+    }
+
+    doSet(keyname) {
+        this.bulletinSecretService.set(keyname).then(() => {
+            return this.refresh(null);
+        }).then(() => {
+            return this.walletService.get();
+        }).then(() => {
+            return this.graphService.getInfo();
+        }).then(() => {
             this.events.publish('pages');
-            return new Promise((resolve, reject) => {
-                this.graphService.getInfo().then(() => {
-                    resolve();
-                });
-            });
-        })
-        .then(() => {
-            this.refresh(null);
+            this.serverDown = false;
             if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
                 this.firebaseService.initFirebase();
             }
+        }).catch((error) => {
+            this.events.publish('pages-error');
+            this.serverDown = true;
         });
     }
 
     dev_reset() {
-        this.baseAddress = 'https://yadacoin.io:8000';
+        this.baseAddress = 'https://yadacoin.io';
         this.blockchainAddress = this.baseAddress + '/transaction';
         this.graphproviderAddress = this.baseAddress + '/get-graph-mobile';
         this.walletproviderAddress = this.baseAddress + '/wallet';
@@ -170,7 +171,7 @@ export class Settings {
     }
 
     prod_reset() {
-        this.baseAddress = 'https://yadacoin.io:8000';
+        this.baseAddress = 'https://yadacoin.io';
         this.blockchainAddress = this.baseAddress + '/transaction';
         this.graphproviderAddress = this.baseAddress + '/get-graph-mobile';
         this.walletproviderAddress = this.baseAddress + '/wallet';
@@ -186,6 +187,7 @@ export class Settings {
         this.settingsService.siaAddress = this.siaAddress;
         this.settingsService.siaPassword = this.siaPassword;
         this.settingsService.save()
+        this.set(this.bulletinSecretService.keyname.substr(this.prefix.length));
     }
 
     showChat() {

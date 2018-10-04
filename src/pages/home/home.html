@@ -22,6 +22,15 @@
   <ion-refresher (ionRefresh)="refresh($event)">
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
+  <ion-item class="alert alert-danger" *ngIf="!bulletinSecretService.username" color="danger">Specify a username on the Set Username tab</ion-item>
+  <ion-item class="alert alert-danger" *ngIf="walletService.walletError" color="danger">Error accessing wallet.</ion-item>
+  <ion-item class="alert alert-danger" *ngIf="graphService.getSentFriendRequestsError" color="danger">Error accessing sent friend requests.</ion-item>
+  <ion-item class="alert alert-danger" *ngIf="graphService.getFriendsError" color="danger">Error accessing friend requests.</ion-item>
+  <ion-item class="alert alert-danger" *ngIf="graphService.getMessagesError" color="danger">Error accessing messages.</ion-item>
+  <ion-item class="alert alert-danger" *ngIf="graphService.getNewMessagesError" color="danger">Error accessing new messages.</ion-item>
+  <ion-item class="alert alert-danger" *ngIf="graphService.getSignInsError" color="danger">Error accessing sign ins.</ion-item>
+  <ion-item class="alert alert-danger" *ngIf="graphService.getNewSignInsError" color="danger">Error accessing new sign ins.</ion-item>
+  <ion-item class="alert alert-danger" *ngIf="graphService.getPostsError" color="danger">Error accessing posts.</ion-item>
   <ion-spinner *ngIf="loading"></ion-spinner>
   <ion-row>
     <ion-col text-center>

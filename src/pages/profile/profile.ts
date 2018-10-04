@@ -32,6 +32,7 @@ export class ProfilePage {
         public settingsService: SettingsService,
         public events: Events
     ) {
+        this.username = this.bulletinSecretService.username;
         this.refresh(null);
         this.bulletinSecretService.get().then(() => {
             if (this.bulletinSecretService.username) {
@@ -57,14 +58,17 @@ export class ProfilePage {
         });
         this.loadingModal.present();
         this.storage.get('usernames-').then((key) => {
-            this.storage.set('usernames-' + this.username, key).then(() => {
-                this.bulletinSecretService.set('usernames-' + this.username).then(() => {
-                    this.loadingModal.dismiss();
-                    alert('saved!');
-                    this.events.publish('pages');
-                    this.walletService.get();
-                });
-            });
+            return this.storage.set('usernames-' + this.username, key)
+        }).then(() => {
+            return this.bulletinSecretService.set('usernames-' + this.username);
+        }).then(() => {
+            this.loadingModal.dismiss();
+            alert('saved!');
+            return this.walletService.get();
+        }).then(() => {
+            this.events.publish('pages');
+        }).catch(() => {
+            console.log('error saving');
         });
     }
 

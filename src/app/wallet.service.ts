@@ -10,6 +10,7 @@ export class WalletService {
     walletproviderAddress: any;
     xhr: any;
     key: any;
+    walletError = false;
     constructor(
         private ahttp: Http,
         private bulletinSecretService: BulletinSecretService,
@@ -19,30 +20,39 @@ export class WalletService {
     }
 
     get() {
-        return this.settingsService.refresh().then(() => {
-            return new Promise((resolve, reject) => {
-                this.bulletinSecretService.get().then(() => {
-                    return new Promise((resolve1, reject1) => {
-                        if(this.bulletinSecretService.username) {
-                            this.ahttp.get(this.settingsService.walletproviderAddress + '?address=' + this.bulletinSecretService.key.getAddress()).
-                            subscribe((data) => {
-                                resolve1(data['_body'])
-                            },
-                            (err) => {
-                                alert('Could not connect to your serve processes. Please check your settings and/or that your serve process is running and accessible.')
-                            });
-                        } else {
-                            resolve1(null);
-                        }
-                    }).then((data: any) => {
-                        if(data) {
-                            this.wallet = JSON.parse(data);
-                            this.wallet.balancePretty = this.wallet.balance.toFixed(2);
-                        }
-                        resolve();
-                    });
+        return this.settingsService.refresh()
+        .then(() => {
+            return this.bulletinSecretService.get();
+        }).then(() => {
+            return this.walletPromise();
+        });
+    }
+
+    walletPromise() {
+        return new Promise((resolve, reject) => {
+            if(this.bulletinSecretService.username) {
+                this.ahttp.get(this.settingsService.walletproviderAddress + '?address=' + this.bulletinSecretService.key.getAddress()).
+                subscribe((data) => {
+                    if(data['_body']) {
+                        this.walletError = false;
+                        this.wallet = JSON.parse(data['_body']);
+                        this.wallet.balancePretty = this.wallet.balance.toFixed(2);
+                        resolve(data['_body']);
+                    } else {
+                        this.walletError = true;
+                        this.wallet = {};
+                        this.wallet.balancePretty = 0;
+                        reject("no data returned");
+                    }
+                },
+                (err) => {
+                    this.walletError = true;
+                    reject("data or server error");
                 });
-            });
+            } else {
+                this.walletError = true;
+                reject("username not set");
+            }
         });
     }
 }

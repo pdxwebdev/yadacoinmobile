@@ -8,6 +8,7 @@ import { WalletService } from '../../app/wallet.service';
 import { TransactionService } from '../../app/transaction.service';
 import { SocialSharing } from '@ionic-native/social-sharing';
 import { ChatPage } from '../chat/chat';
+import { Events } from 'ionic-angular';
 
 declare var X25519;
 
@@ -46,41 +47,55 @@ export class ListPage {
     private transactionService: TransactionService,
     private socialSharing: SocialSharing,
     private alertCtrl: AlertController,
-    public loadingCtrl: LoadingController
+    public loadingCtrl: LoadingController,
+    public events: Events
   ) {
     this.loadingModal = this.loadingCtrl.create({
         content: 'Please wait...'
     });
-    this.cryptoGenModal = this.loadingCtrl.create({
-        content: 'Generating encryption, please wait... (could take several minutes)'
+    this.refresh(null)
+    .catch(() => {
+      console.log('error refreshing listpage')
     });
-    this.refresh(null);
 
   }
 
   refresh(refresher) {
-    return new Promise((resolve, reject) => {
+    return this.walletService.get()
+    .then(() => {
       this.loading = true;
       this.loadingBalance = true;
 
       // If we navigated to this page, we will have an item available as a nav param
-      this.storage.get('blockchainAddress').then((blockchainAddress) => {
-          this.blockchainAddress = blockchainAddress;
-      });
-      this.storage.get('baseAddress').then((baseAddress) => {
-          this.baseAddress = baseAddress;
-      });
+      return this.storage.get('blockchainAddress');
+    })
+    .then((blockchainAddress) => {
+        this.blockchainAddress = blockchainAddress;
+        return this.storage.get('baseAddress')
+    })
+    .then((baseAddress) => {
+      this.baseAddress = baseAddress;
       this.selectedItem = this.navParams.get('item');
       this.context = this.navParams.get('context');
       this.pageTitle = this.selectedItem ? this.selectedItem.pageTitle : this.navParams.get('pageTitle').title;
-      this.refreshWallet();
+      return this.choosePage();
+    })
+    .then(() => {
+      if(refresher) refresher.complete();
+    }).catch(() => {
+        console.log('listpage walletService error');
+    });
+  }
+
+  choosePage() {
+    return new Promise((resolve, reject) => {
       if(!this.selectedItem) {
         this.label = this.navParams.get('pageTitle').label;
         // Let's populate this page with some filler content for funzies
         this.icons = ['flask', 'wifi', 'beer', 'football', 'basketball', 'paper-plane',
         'american-football', 'boat', 'bluetooth', 'build'];
         if (this.pageTitle == 'Friends') {
-          this.graphService.getFriends()
+          return this.graphService.getFriends()
           .then(() => {
             var graphArray = this.graphService.graph.friends;
             graphArray.sort(function (a, b) {
@@ -92,38 +107,41 @@ export class ListPage {
             });
             this.makeList(graphArray);
             this.loading = false;
-            resolve();
+          }).catch(() => {
+              console.log('listpage getFriends error');
           });
         } else if (this.pageTitle == 'Messages') {
           var my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
-          this.graphService.getFriends()
+          return this.graphService.getFriends()
           .then(() => {
-            this.graphService.getNewMessages()
-            .then((graphArray) => {
-                var messages = this.markNew(my_public_key, graphArray, this.graphService.new_messages_counts);
-                var friendsWithMessagesList = this.getDistinctFriends(messages);
-                this.populateRemainingFriends(friendsWithMessagesList.friend_list, friendsWithMessagesList.used_rids);
-                this.makeList(friendsWithMessagesList.friend_list);
-                this.loading = false;
-                resolve();
-            });
+            return this.graphService.getNewMessages();
           })
+          .then((graphArray) => {
+            var messages = this.markNew(my_public_key, graphArray, this.graphService.new_messages_counts);
+            var friendsWithMessagesList = this.getDistinctFriends(messages);
+            this.populateRemainingFriends(friendsWithMessagesList.friend_list, friendsWithMessagesList.used_rids);
+            this.loading = false;
+            return this.makeList(friendsWithMessagesList.friend_list);
+          }).catch(() => {
+              console.log('listpage getNewMessages error');
+          });
         } else if (this.pageTitle == 'Sign Ins') {
           var my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
-          this.graphService.getFriends()
+          return this.graphService.getFriends()
           .then(() => {
-            this.graphService.getNewSignIns()
-            .then((graphArray) => {
-                var sign_ins = this.markNew(my_public_key, graphArray, this.graphService.new_sign_ins_counts);
-                var friendsWithSignInsList = this.getDistinctFriends(sign_ins);
-                this.populateRemainingFriends(friendsWithSignInsList.friend_list, friendsWithSignInsList.used_rids);
-                this.makeList(friendsWithSignInsList.friend_list);
-                this.loading = false;
-                resolve();
-            });
+            return this.graphService.getNewSignIns();
           })
+          .then((graphArray) => {
+              var sign_ins = this.markNew(my_public_key, graphArray, this.graphService.new_sign_ins_counts);
+              var friendsWithSignInsList = this.getDistinctFriends(sign_ins);
+              this.populateRemainingFriends(friendsWithSignInsList.friend_list, friendsWithSignInsList.used_rids);
+              this.loading = false;
+              return this.makeList(friendsWithSignInsList.friend_list);
+          }).catch(() => {
+              console.log('listpage getFriends or getNewSignIns error');
+          });
         } else if (this.pageTitle == 'Friend Requests') {
-          this.graphService.getFriendRequests()
+          return this.graphService.getFriendRequests()
           .then(() => {
               var graphArray = this.graphService.graph.friend_requests;
               graphArray.sort(function (a, b) {
@@ -133,12 +151,13 @@ export class ListPage {
                     return 1
                   return 0
               });
-              this.makeList(graphArray);
               this.loading = false;
-              resolve();
+              return this.makeList(graphArray);
+          }).catch(() => {
+              console.log('listpage getFriendRequests error');
           });
         } else if (this.pageTitle == 'Sent Requests') {
-          this.graphService.getSentFriendRequests()
+          return this.graphService.getSentFriendRequests()
           .then(() => {
               var graphArray = this.graphService.graph.sent_friend_requests;
               graphArray.sort(function (a, b) {
@@ -148,39 +167,39 @@ export class ListPage {
                     return 1
                   return 0
               });
-              this.makeList(graphArray);
               this.loading = false;
-              resolve();
+              return this.makeList(graphArray);
+          }).catch(() => {
+              console.log('listpage getSentFriendRequests error');
           });
         } else if (this.pageTitle == 'Reacts Detail') {
           var graphArray = this.navParams.get('detail');
-          this.makeList(graphArray);
           this.loading = false;
-          resolve();
+          return this.makeList(graphArray);
         }
       } else {
-          this.loading = false;
-          this.loadingBalance = false;
-          if (this.pageTitle == 'Sent Requests') {
-          }
-          else if (this.pageTitle == 'Friend Requests') {
-            this.friend_request = this.navParams.get('item').transaction;
-          }
-          else if (this.pageTitle == 'Sign Ins') {
-            this.rid = this.navParams.get('item').transaction.rid;
-            this.graphService.getSignIns(this.rid)
-            .then((signIn: any) => {
-              this.signIn = signIn[0];
-              this.signInText = this.signIn.relationship.signIn;
-              if(refresher) refresher.complete();
-            });
-          }
+        this.loading = false;
+        this.loadingBalance = false;
+        if (this.pageTitle == 'Sent Requests') {
           resolve();
+        }
+        else if (this.pageTitle == 'Friend Requests') {
+          this.friend_request = this.navParams.get('item').transaction;
+          resolve();
+        }
+        else if (this.pageTitle == 'Sign Ins') {
+          this.rid = this.navParams.get('item').transaction.rid;
+          this.graphService.getSignIns(this.rid)
+          .then((signIn: any) => {
+            this.signIn = signIn[0];
+            this.signInText = this.signIn.relationship.signIn;
+            resolve();
+          }).catch(() => {
+            console.log('listpage getSignIns error');
+            reject();
+          });
+        }
       }
-      this.balance = this.walletService.wallet.balance;
-    })
-    .then(() => {
-      if(refresher) refresher.complete();
     });
   }
 
@@ -226,13 +245,16 @@ export class ListPage {
   }
 
   makeList(graphArray) {
-    this.items = [];
-    for (let i = 0; i < graphArray.length; i++) {
-      this.items.push({
-        pageTitle: this.pageTitle,
-        transaction: graphArray[i]
-      });
-    }
+    return new Promise((resolve, reject) => {
+      this.items = [];
+      for (let i = 0; i < graphArray.length; i++) {
+        this.items.push({
+          pageTitle: this.pageTitle,
+          transaction: graphArray[i]
+        });
+      }
+      resolve();
+    })
   }
 
   newChat() {
@@ -385,14 +407,6 @@ export class ListPage {
        }
     });
     alert.present();
-  }
-  refreshWallet() {
-     this.loadingBalance = true;
-     this.walletService.get()
-     .then(() => {
-         this.loadingBalance = false;
-         this.balance = this.walletService.wallet.balance;
-     });
   }
 
   share(code) {

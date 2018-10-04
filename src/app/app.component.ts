@@ -41,16 +41,27 @@ export class MyApp {
     events.subscribe('pages', () => {
       this.setPages(false);
     });
+    events.subscribe('pages-error', () => {
+      this.setPages(true, 'settings');
+    });
     this.graphService.graph = {}
     this.initializeApp();
-    this.walletService.get().then(() => {
-      this.setPages(true);
+    this.walletService.get().then((data: any) => {
+      this.rootPage = HomePage;
+      this.setPages(true, data ? null : 'settings');
+    }).catch(() => {
+      this.rootPage = Settings;
+      this.setPages(true, 'settings');
     });
   }
 
-  setPages(changePages) {
-    if (this.bulletinSecretService.username) {
-      this.rootPage = HomePage;
+  setPages(changePages, page=null) {
+    if (page == 'settings') {
+      this.pages = [
+        { title: 'Me', label: 'Set Username', component: ProfilePage, count: false, color: '' },
+        { title: 'Settings', label: 'Settings', component: Settings, count: false, color: '' }
+      ];
+    } else if (this.bulletinSecretService.username) {
       this.pages = [
         { title: 'News Feed', label: 'Home', component: HomePage, count: false, color: '' },
         { title: 'Messages', label: 'Chat', component: ListPage, count: false, color: '' },
@@ -61,7 +72,6 @@ export class MyApp {
         { title: 'Settings', label: 'Settings', component: Settings, count: false, color: '' }
       ];
     } else {
-      if (changePages) this.rootPage = ProfilePage;
       this.pages = [
         { title: 'Me', label: 'Set Username', component: ProfilePage, count: false, color: '' },
         { title: 'Settings', label: 'Settings', component: Settings, count: false, color: '' }

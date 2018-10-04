@@ -32,66 +32,76 @@ export class BulletinSecretService {
     }
 
     get() {
-        return new Promise((resolve, reject) => {
-            return this.all().then((keys: any) => {
-                return this.settingsService.refresh().then(() => {
-                    if (keys.length === 0) {
-                        this.keyname = 'usernames-';
-                        this.setKey(resolve);
-                    } else {
-                        keys.sort(function (a, b) {
-                            if (a.idx < b.idx)
-                              return -1
-                            if ( a.idx > b.idx)
-                              return 1
-                            return 0
-                        });
-                        if (!this.keyname) {
-                            this.storage.get('last-keyname').then((key) => {
-                                if(key && typeof key == 'string') {
-                                    this.keyname = key;
-                                } else {
-                                    this.keyname = keys[0].idx
-                                }
-                                this.setKey(resolve);
-                            });
-                        } else {
-                            this.setKey(resolve);
-                        }
-                    }
-                });
-            });
+        return this.settingsService.refresh()
+        .then(() => {
+            return this.all();
+        })
+        .then((keys: any) => {
+            return this.setKeyName(keys);
+        })
+        .then(() => {
+            return this.setKey();
         });
     }
 
-    setKey(resolve) {
-        this.storage.get(this.keyname).then((key) => {
-            if(key && typeof key == 'string') {
-                if (this.keyname.substr('usernames-'.length) == '') {
-                    this.username = '';
-                    this.key = foobar.bitcoin.ECPair.fromWIF(key);
-                    this.bulletin_secret = this.generate_bulletin_secret();
-                    this.storage.set(this.keyname, key);
-                } else {
-                    this.key = foobar.bitcoin.ECPair.fromWIF(key);
-                    this.username = this.keyname.substr('usernames-'.length);
-                    this.bulletin_secret = this.generate_bulletin_secret();
-                }
+    setKeyName(keys) {
+        return new Promise((resolve, reject) => {
+            if (keys.length === 0) {
+                this.keyname = 'usernames-';
+                resolve();
             } else {
-                if (this.keyname.substr('usernames-'.length) == '') {
-                    this.username = '';
-                    this.key =  null;
-                    this.bulletin_secret = null;
-                    this.storage.set(this.keyname, '');
+                keys.sort(function (a, b) {
+                    if (a.idx < b.idx)
+                      return -1
+                    if ( a.idx > b.idx)
+                      return 1
+                    return 0
+                });
+                if (!this.keyname) {
+                    this.storage.get('last-keyname').then((key) => {
+                        if(key && typeof key == 'string') {
+                            this.keyname = key;
+                        } else {
+                            this.keyname = keys[0].idx
+                        }
+                        resolve(keys);
+                    });
                 } else {
-                    this.username = this.keyname.substr('usernames-'.length);
-                    this.key = foobar.bitcoin.ECPair.makeRandom();
-                    this.storage.set(this.keyname, this.key.toWIF());
-                    this.bulletin_secret = this.generate_bulletin_secret();
+                    resolve(keys);
                 }
             }
+        });
+    }
 
-            resolve();
+    setKey() {
+        return new Promise((resolve, reject) => {
+            this.storage.get(this.keyname).then((key) => {
+                if(key && typeof key == 'string') {
+                    if (this.keyname.substr('usernames-'.length) == '') {
+                        this.username = '';
+                        this.key = foobar.bitcoin.ECPair.fromWIF(key);
+                        this.bulletin_secret = this.generate_bulletin_secret();
+                        this.storage.set(this.keyname, key);
+                    } else {
+                        this.key = foobar.bitcoin.ECPair.fromWIF(key);
+                        this.username = this.keyname.substr('usernames-'.length);
+                        this.bulletin_secret = this.generate_bulletin_secret();
+                    }
+                } else {
+                    if (this.keyname.substr('usernames-'.length) == '') {
+                        this.username = '';
+                        this.key =  null;
+                        this.bulletin_secret = null;
+                        this.storage.set(this.keyname, '');
+                    } else {
+                        this.username = this.keyname.substr('usernames-'.length);
+                        this.key = foobar.bitcoin.ECPair.makeRandom();
+                        this.storage.set(this.keyname, this.key.toWIF());
+                        this.bulletin_secret = this.generate_bulletin_secret();
+                    }
+                }
+                resolve();
+            });
         });
     }
 
@@ -100,14 +110,15 @@ export class BulletinSecretService {
     }
 
     set(key) {
-        return new Promise((resolve, reject) => {
-            this.storage.set('last-keyname', key);
-            this.storage.remove('usernames-');
-            this.keyname = key;
-            this.get().
-            then(() => {
-                resolve();
-            });
+        this.keyname = key;
+        return this.storage.set('last-keyname', key)
+        .then(() => {
+            return this.storage.remove('usernames-');
+        })
+        .then((key) => {
+            return this.get();
+        }).then(() => {
+            return this.setKey();
         });
     }
 
@@ -124,10 +135,10 @@ export class BulletinSecretService {
             this.keyname = 'usernames-';
             this.storage.set('last-keyname', this.keyname);
             this.storage.set(this.keyname, keyWif.trim());
-            this.get().
-            then(() => {
-                resolve();
-            });
+            resolve();
+        })
+        .then(() => {
+            return this.get();
         });
     }
 

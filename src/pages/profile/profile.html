@@ -12,6 +12,14 @@
   </ion-navbar>
 </ion-header>
 <ion-content padding>
+  <ion-item class="alert alert-danger" *ngIf="walletService.walletError" color="danger">Error accessing wallet.</ion-item>
+  <ion-item class="alert alert-danger" *ngIf="graphService.getSentFriendRequestsError" color="danger">Error accessing sent friend requests.</ion-item>
+  <ion-item class="alert alert-danger" *ngIf="graphService.getFriendsError" color="danger">Error accessing friend requests.</ion-item>
+  <ion-item class="alert alert-danger" *ngIf="graphService.getMessagesError" color="danger">Error accessing messages.</ion-item>
+  <ion-item class="alert alert-danger" *ngIf="graphService.getNewMessagesError" color="danger">Error accessing new messages.</ion-item>
+  <ion-item class="alert alert-danger" *ngIf="graphService.getSignInsError" color="danger">Error accessing sign ins.</ion-item>
+  <ion-item class="alert alert-danger" *ngIf="graphService.getNewSignInsError" color="danger">Error accessing new sign ins.</ion-item>
+  <ion-item class="alert alert-danger" *ngIf="graphService.getPostsError" color="danger">Error accessing posts.</ion-item>
   <ion-row>
     <ion-col text-center>
       <ion-item>
@@ -29,6 +37,9 @@
     </ion-col>
     <ion-item>
       <b>Warning: </b> You cannot change your username after this.
+    </ion-item>
+    <ion-item>
+      <b>Warning: </b> If your servers are configured to point to your own wallet, this username must be identical to the username specified in your config file.
     </ion-item>
   </ion-row>
 </ion-content>

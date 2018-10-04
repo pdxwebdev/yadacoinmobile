@@ -13,6 +13,7 @@ import { SocialSharing } from '@ionic-native/social-sharing';
 import { SettingsService } from '../../app/settings.service';
 import { FirebaseService } from '../../app/firebase.service';
 import { Http } from '@angular/http';
+import { Events } from 'ionic-angular';
 
 declare var forge;
 declare var X25519;
@@ -35,7 +36,6 @@ export class HomePage {
     loadingBalance = true;
     loadingModal = null;
     loadingModal2 = null;
-    cryptoGenModal = null;
     phrase = null;
     color = null;
     isCordova = null;
@@ -65,52 +65,53 @@ export class HomePage {
         private settingsService: SettingsService,
         public loadingCtrl: LoadingController,
         private ahttp: Http,
-        private firebaseService: FirebaseService
+        private firebaseService: FirebaseService,
+        public events: Events
     ) {
         this.bulletinSecretService.get().then(() => {
-            this.refresh(null)
-            .then(() => {
-                if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
-                    this.firebaseService.initFirebase();
-                } else {
-                    // Initialize Firebase
-                    var config = {
-                      apiKey: "AIzaSyAcJWjePVMBkEF8A3M-7oY_lT0MMXRDrpA",
-                      authDomain: "yadacoin-bcaae.firebaseapp.com",
-                      databaseURL: "https://yadacoin-bcaae.firebaseio.com",
-                      projectId: "yadacoin-bcaae",
-                      storageBucket: "yadacoin-bcaae.appspot.com",
-                      messagingSenderId: "805178314562"
-                    };
-                    try {
-                        firebase.initializeApp(config);
-                        const messaging = firebase.messaging();
-                        messaging.usePublicVapidKey('BLuv1UWDqzAyTtK5xlNaY4tFOz6vKbjuutTQ0KmBRG5btvVbydsrMTA-UeyMqY4oCC1Gu3sDwLfsg-iWtAg6IB0');
-                        messaging.requestPermission().then(() => {
-                          console.log('Notification permission granted.');
-                          // TODO(developer): Retrieve an Instance ID token for use with FCM.
-                          // ...
-                        }).catch((err) => {
-                          console.log('Unable to get permission to notify.', err);
-                        });
-                        messaging.getToken().then((currentToken) => {
-                          if (currentToken) {
-                            this.sendTokenToServer(currentToken);
-                            this.updateUIForPushEnabled(currentToken);
-                          } else {
-                            // Show permission request.
-                            console.log('No Instance ID token available. Request permission to generate one.');
-                            // Show permission UI.
-                            this.updateUIForPushPermissionRequired();
-                          }
-                        }).catch((err) => {
-                          console.log('An error occurred while retrieving token. ', err);
-                        });
-                    } catch(err) {
+            return this.refresh(null)
+        })
+        .then(() => {
+            if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
+               return this.firebaseService.initFirebase();
+            } else {
+                // Initialize Firebase
+                var config = {
+                  apiKey: "AIzaSyAcJWjePVMBkEF8A3M-7oY_lT0MMXRDrpA",
+                  authDomain: "yadacoin-bcaae.firebaseapp.com",
+                  databaseURL: "https://yadacoin-bcaae.firebaseio.com",
+                  projectId: "yadacoin-bcaae",
+                  storageBucket: "yadacoin-bcaae.appspot.com",
+                  messagingSenderId: "805178314562"
+                };
+                try {
+                    firebase.initializeApp(config);
+                    const messaging = firebase.messaging();
+                    messaging.usePublicVapidKey('BLuv1UWDqzAyTtK5xlNaY4tFOz6vKbjuutTQ0KmBRG5btvVbydsrMTA-UeyMqY4oCC1Gu3sDwLfsg-iWtAg6IB0');
+                    messaging.requestPermission().then(() => {
+                      console.log('Notification permission granted.');
+                      // TODO(developer): Retrieve an Instance ID token for use with FCM.
+                      // ...
+                    }).catch((err) => {
+                      console.log('Unable to get permission to notify.', err);
+                    });
+                    return messaging.getToken().then((currentToken) => {
+                      if (currentToken) {
+                        this.sendTokenToServer(currentToken);
+                        this.updateUIForPushEnabled(currentToken);
+                      } else {
+                        // Show permission request.
+                        console.log('No Instance ID token available. Request permission to generate one.');
+                        // Show permission UI.
+                        this.updateUIForPushPermissionRequired();
+                      }
+                    }).catch((err) => {
+                      console.log('An error occurred while retrieving token. ', err);
+                    });
+                } catch(err) {
 
-                    }
                 }
-            });
+            }
         });
         if (this.navParams.get('txnData')) {
             this.alertRoutine(JSON.parse(decodeURIComponent(this.navParams.get('txnData'))));
@@ -248,6 +249,8 @@ export class HomePage {
         this.walletService.get().then(() => {
             this.balance = this.walletService.wallet.balance;
             this.loadingBalance = false;
+        }).catch(() => {
+            console.log('homepage walletService error');
         });
 
         //check for friend requests
@@ -259,24 +262,33 @@ export class HomePage {
             this.friendRequestColor = this.graphService.friend_request_count > 0 ? 'danger' : '';
             this.chatColor = this.graphService.new_messages_count > 0 ? 'danger' : '';
             this.signInColor = this.graphService.new_sign_ins_count > 0 ? 'danger' : '';
+        }).catch(() => {
+            console.log('homepage getFriends error');
         });
 
         //check for new messages
         this.graphService.getNewMessages()
         .then(() => {
             this.chatColor = this.graphService.new_messages_count > 0 ? 'danger' : '';
+        }).catch(() => {
+            console.log('homepage getNewMessages error');
         });
 
         //check for new sign ins
         this.graphService.getNewSignIns()
         .then(() => {
             this.chatColor = this.graphService.new_sign_ins_count > 0 ? 'danger' : '';
+        }).catch(() => {
+            console.log('homepage getNewSignIns error');
         });
 
+        if(refresher) refresher.complete();
         //this is our blocking procedure, update our posts for the main feed
         return this.graphService.getPosts().then(() => {
             this.generateFeed();
-            if(refresher) refresher.complete();
+        }).catch(() => {
+            this.loading = false;
+            this.loadingModal.dismiss();
         });
     }
 
@@ -386,10 +398,6 @@ export class HomePage {
     }
 
     register() {
-        this.cryptoGenModal = this.loadingCtrl.create({
-            content: 'Generating encryption, please wait... (could take several minutes)'
-        });
-        this.cryptoGenModal.present();
         return new Promise((resolve, reject) => {
             this.walletService.get().then(() => {
                 this.ahttp.get(this.registrationLink)
@@ -406,7 +414,6 @@ export class HomePage {
             });
         })
         .then(() => {
-            this.cryptoGenModal.dismiss();
             this.refresh(null);
         });
     }
@@ -501,16 +508,11 @@ export class HomePage {
             text: 'Cancel',
             handler: (data: any) => {
                 this.loadingModal.dismiss();
-                this.cryptoGenModal.dismiss();
             }
         });
         alert.addButton({
             text: 'Confirm',
             handler: (data: any) => {
-                this.cryptoGenModal = this.loadingCtrl.create({
-                    content: 'Processing...'
-                });
-                this.cryptoGenModal.present();
                 // camera permission was granted
                 var requester_rid = info.requester_rid;
                 var requested_rid = info.requested_rid;
@@ -531,7 +533,6 @@ export class HomePage {
                         var dh_public_key = this.toHex(raw_dh_public_key);
                         info.dh_private_key = dh_private_key;
                         info.dh_public_key = dh_public_key;
-                        this.cryptoGenModal.dismiss();
                         this.transactionService.pushTransaction({
                             relationship: {
                                 dh_private_key: info.dh_private_key,
@@ -577,22 +578,16 @@ export class HomePage {
             text: 'Cancel',
             handler: (data: any) => {
                 this.loadingModal.dismiss();
-                this.cryptoGenModal.dismiss();
             }
         });
         alert.addButton({
             text: 'Confirm',
             handler: (data: any) => {
-                this.cryptoGenModal = this.loadingCtrl.create({
-                    content: 'Generating encryption, please wait... (could take several minutes)'
-                });
-                this.cryptoGenModal.present();
                 //////////////////////////////////////////////////////////////////////////
                 // create and send transaction to create the relationship on the blockchain
                 //////////////////////////////////////////////////////////////////////////
                 this.walletService.get().then(() => {
                     return new Promise((resolve, reject) => {
-                        this.cryptoGenModal.dismiss();
                         this.transactionService.pushTransaction({
                             dh_public_key: info.dh_public_key,
                             dh_private_key: info.dh_private_key,
