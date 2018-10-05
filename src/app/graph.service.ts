@@ -38,6 +38,7 @@ export class GraphService {
     getSignInsError = false;
     getNewSignInsError = false;
     getPostsError = false;
+    usernames = false;
     constructor(
         private storage: Storage,
         private bulletinSecretService: BulletinSecretService,
@@ -56,6 +57,7 @@ export class GraphService {
         this.new_sign_ins_count = 0;
         this.new_sign_ins_counts = {};
         this.friend_request_count = 0;
+        this.usernames = {};
     }
 
     endpointRequest(endpoint) {
@@ -245,7 +247,6 @@ export class GraphService {
     }
 
     parseSentFriendRequests(sent_friend_requests) {
-        var usernames = {};
         var sent_friend_requestsObj = {};
         for(var i=0; i < sent_friend_requests.length; i++) {
             var sent_friend_request = sent_friend_requests[i];
@@ -276,7 +277,7 @@ export class GraphService {
         for(let i in sent_friend_requestsObj) {
             arr_sent_friend_requests.push(sent_friend_requestsObj[i].rid);
             if (sent_friend_requestsObj[i].relationship && sent_friend_requestsObj[i].relationship.their_username) {
-                usernames[sent_friend_requestsObj[i].rid] = sent_friend_requestsObj[i].their_username;
+                this.usernames[sent_friend_requestsObj[i].rid] = sent_friend_requestsObj[i].their_username;
             }
         }
         
@@ -322,6 +323,9 @@ export class GraphService {
         var arr_friend_requests = [];
         for(let i in friend_requestsObj) {
             arr_friend_requests.push(friend_requestsObj[i].rid);
+            if (friend_requestsObj[i].relationship && friend_requestsObj[i].relationship.their_username) {
+                this.usernames[friend_requestsObj[i].rid] = friend_requestsObj[i].their_username;
+            }
         }
 
         friend_requests = []
@@ -404,6 +408,12 @@ export class GraphService {
                     let arr_friends_keys = Array.from(friends_diff.keys())
                     for(i=0; i<arr_friends_keys.length; i++) {
                         friends.push(friendsObj[arr_friends_keys[i]])
+                        if (friendsObj[arr_friends_keys[i]].relationship && friendsObj[arr_friends_keys[i]].relationship.their_username) {
+                            this.usernames[friendsObj[arr_friends_keys[i]].rid] = friendsObj[arr_friends_keys[i]].their_username;
+                        }
+                        if (friendsObj[arr_friends_keys[i]].username) {
+                            this.usernames[friendsObj[arr_friends_keys[i]].rid] = friendsObj[arr_friends_keys[i]].username;
+                        }
                     }
                 }
 
@@ -445,6 +455,7 @@ export class GraphService {
                                 message.shared_secret = shared_secret.shared_secret
                                 message.dh_public_key = shared_secret.dh_public_key
                                 message.dh_private_key = shared_secret.dh_private_key
+                                message.username = this.usernames[message.rid];
                                 messages[message.rid] = message;
                                 if (!chats[message.rid]) {
                                     chats[message.rid] = [];
@@ -482,6 +493,7 @@ export class GraphService {
                 var new_messages = [];
                 for(var i=0; i<messages.length; i++) {
                     var message = messages[i];
+                    message.username = this.usernames[message.rid];
                     if (messages[i].public_key != my_public_key) {
                         if(graphCounts[message.rid]) {
                             if(message.height > this[graphCounts][message.rid]) {
