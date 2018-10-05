@@ -261,6 +261,7 @@ export class GraphService {
                 sent_friend_requestsObj[sent_friend_request.rid] = sent_friend_request;
                 //not sure how this affects the friends list yet, since we can't return friends from here
                 //friends[sent_friend_request.rid] = sent_friend_request;
+                sent_friend_request['relationship'] = relationship;
                 if (this.keys[sent_friend_request.rid].dh_private_keys.indexOf(relationship.dh_private_key) === -1 && relationship.dh_private_key) {
                     this.keys[sent_friend_request.rid].dh_private_keys.push(relationship.dh_private_key);
                 }
@@ -274,8 +275,8 @@ export class GraphService {
         var arr_sent_friend_requests = [];
         for(let i in sent_friend_requestsObj) {
             arr_sent_friend_requests.push(sent_friend_requestsObj[i].rid);
-            if (sent_friend_requestsObj[i].username) {
-                usernames[sent_friend_requestsObj[i].rid] = sent_friend_requestsObj[i].username
+            if (sent_friend_requestsObj[i].relationship && sent_friend_requestsObj[i].relationship.their_username) {
+                usernames[sent_friend_requestsObj[i].rid] = sent_friend_requestsObj[i].their_username;
             }
         }
         
@@ -306,6 +307,7 @@ export class GraphService {
                 var relationship = JSON.parse(decrypted);
                 this.graph.friends.push(friend_request);
                 delete friend_requestsObj[friend_request.rid];
+                friend_request['relationship'] = relationship;
                 if (this.keys[friend_request.rid].dh_private_keys.indexOf(relationship.dh_private_key) === -1 && relationship.dh_private_key) {
                     this.keys[friend_request.rid].dh_private_keys.push(relationship.dh_private_key);
                 }
@@ -362,6 +364,7 @@ export class GraphService {
                     if (decrypted.indexOf('{') === 0) {
                         var relationship = JSON.parse(decrypted);
                         friendsObj[friend.rid] = friend;
+                        friend['relationship'] = relationship;
                         if (this.keys[friend.rid].dh_private_keys.indexOf(relationship.dh_private_key) === -1 && relationship.dh_private_key) {
                             this.keys[friend.rid].dh_private_keys.push(relationship.dh_private_key);
                         }
