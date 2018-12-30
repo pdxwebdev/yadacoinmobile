@@ -14,13 +14,8 @@ export class PeerService {
     callback = null;
     rid = null;
     key = null;
-    baseAddress = null;
+    baseUrl = null;
     constructor(private graphService: GraphService, private bulletinSecretService: BulletinSecretService) {
-      /*
-      this.storage.get('baseAddress').then((baseAddress) => {
-          this.baseAddress = baseAddress;
-      });
-      */
     }
 
     init() {
@@ -42,7 +37,7 @@ export class PeerService {
       this.peer.on('open', (id) => {
         for(var i=0; i < this.graphService.graph.friends.length; i++) {
           var xhr = new XMLHttpRequest();
-          xhr.open('GET', this.baseAddress + '/add-peer?rid=' + this.graphService.graph.friends[i].rid + '&peer_id=' + id, true);
+          xhr.open('GET', this.baseUrl + '/add-peer?rid=' + this.graphService.graph.friends[i].rid + '&peer_id=' + id, true);
           xhr.send();
         }
       });
@@ -68,7 +63,7 @@ export class PeerService {
           var testrid = foobar.bitcoin.crypto.sha256(rids[0] + rids[1]).toString('hex');
 
           var xhr = new XMLHttpRequest();
-          xhr.open('GET', this.baseAddress + '/transaction?rid=' + testrid, true);
+          xhr.open('GET', this.baseUrl + '/transaction?rid=' + testrid, true);
           xhr.onreadystatechange = () => {
             if (xhr.readyState === 4) {
                   var transactions = JSON.parse(xhr.responseText);

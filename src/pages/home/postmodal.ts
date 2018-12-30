@@ -33,9 +33,9 @@ export class PostModal {
         this.blockchainAddress = navParams.data.blockchainAddress;
         this.logicalParent = navParams.data.logicalParent;
         let headers = new Headers();
-        headers.append('Authorization', 'basic ' + Base64.encode(this.settingsService.siaPassword));
+        headers.append('Authorization', 'basic ' + Base64.encode(this.settingsService.remoteSettings['siaPassword']));
         let options = new RequestOptions({ headers: headers, withCredentials: true });
-        this.http.get(this.settingsService.siaAddress + '/renter/files', options)
+        this.http.get(this.settingsService.remoteSettings['siaUrl'] + '/renter/files', options)
         .subscribe((res) => {
             this.files = res.json()['files'];
         })
@@ -54,7 +54,7 @@ export class PostModal {
         	return new Promise((resolve, reject) => {
                 if (this.selectedFile) {
 
-                    this.http.get(this.settingsService.siaAddress + '/renter/shareascii?siapaths=' + this.selectedFile[0])
+                    this.http.get(this.settingsService.remoteSettings['siaUrl'] + '/renter/shareascii?siapaths=' + this.selectedFile[0])
                     .subscribe((res) => {
                         let sharefiledata = res.json()['asciisia'];
                         this.approveTxn(sharefiledata, resolve);
@@ -80,21 +80,19 @@ export class PostModal {
                 // camera permission was granted
 
                 if (sharefiledata) {
-                    this.transactionService.pushTransaction({
+                    this.transactionService.generateTransaction({
                         relationship: {
                             postText: this.postText,
                             postFile: sharefiledata,
                             postFileName: this.selectedFile[0]
                         },
-                        blockchainurl: this.blockchainAddress,
                         resolve: resolve
                     });
                 } else {
-                    this.transactionService.pushTransaction({
+                    this.transactionService.generateTransaction({
                         relationship: {
                             postText: this.postText
                         },
-                        blockchainurl: this.blockchainAddress,
                         resolve: resolve
                     });
                 }

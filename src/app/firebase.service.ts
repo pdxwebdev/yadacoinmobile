@@ -19,7 +19,7 @@ export class FirebaseService {
       this.firebase.getToken()
       .then((token) => {
         console.log(token);
-        this.ahttp.post(this.settingsService.baseAddress + '/fcm-token', {
+        this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/fcm-token', {
           rid: this.graphService.graph.rid,
           token: token,
         }).subscribe(() => {});
@@ -31,7 +31,7 @@ export class FirebaseService {
       this.firebase.onTokenRefresh()
       .subscribe((token: string) => {
         console.log(token);
-        this.ahttp.post(this.settingsService.baseAddress + '/fcm-token', {
+        this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/fcm-token', {
           rid: this.graphService.graph.rid,
           token: token
         }).subscribe(() => {});

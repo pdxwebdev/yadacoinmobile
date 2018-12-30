@@ -3,25 +3,21 @@
     <ion-header>
       <ion-toolbar>
         <ion-title>
-      <ion-note item-start>
-        {{walletService.wallet.balancePretty}}
-      </ion-note>
-      YadaCoin
-      <ion-note item-end>
-        {{bulletinSecretService.username}}
-      </ion-note></ion-title>
+          <img src="/assets/img/yadacoinlogotextsmall.png" class="logotext">
+          <ion-note style="font-size: 12px">
+            v1.0.2
+          </ion-note>
+        </ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content>
-      <ion-list *ngIf="pages">
+      <ion-list>
         <button menuClose ion-item *ngFor="let p of pages" (click)="openPage(p)">
           {{p.label}}
         </button>
-        <button menuClose ion-item>
-          v1.0.2
-        </button>
       </ion-list>
+      <img src="/assets/img/yadacoinlogosmall.png" class="logo">
     </ion-content>
 
   </ion-menu>

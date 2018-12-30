@@ -63,9 +63,9 @@ export class MyApp {
       ];
     } else if (this.bulletinSecretService.username) {
       this.pages = [
-        { title: 'News Feed', label: 'Home', component: HomePage, count: false, color: '' },
-        { title: 'Messages', label: 'Chat', component: ListPage, count: false, color: '' },
-        { title: 'Sign Ins', label: 'Sign Ins', component: ListPage, count: false, color: '' },
+        { title: 'Apps', label: 'Apps', component: HomePage, count: false, color: '' },
+        { title: 'Auth', label: 'Auth', component: ListPage, count: false, color: '' },
+        { title: 'Messages', label: 'Messages', component: ListPage, count: false, color: '' },
         { title: 'Friend Requests', label: 'Friend Requests', component: ListPage, count: this.graphService.friend_request_count, color: this.graphService.friend_request_count > 0 ? 'danger' : '' },
         { title: 'Sent Requests', label: 'Sent Requests', component: ListPage, count: 0, color: '' },
         { title: 'Coins', label: 'Coins', component: SendReceive, count: false, color: '' },

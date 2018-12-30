@@ -3,15 +3,7 @@
     <button ion-button menuToggle color="{{color}}">
       <ion-icon name="menu"></ion-icon>
     </button>
-    <button ion-button color="{{chatColor}}" title="Friend Requests" (click)="showFriendRequests()">
-      <ion-icon name="contacts"></ion-icon>
-    </button>
-    <button ion-button color="{{chatColor}}" title="Messages" (click)="showChat()">
-      <ion-icon name="chatboxes"></ion-icon>
-    </button>
-    <button *ngIf="pageTitle =='Chat'" ion-button title="New Chat" (click)="newChat()">
-      <ion-icon name="add"></ion-icon>
-    </button>
+    <ion-title>{{label}}</ion-title>
   </ion-navbar>
 </ion-header>
 
@@ -29,11 +21,14 @@
   <ion-item class="alert alert-danger" *ngIf="graphService.getSignInsError" color="danger">Error accessing sign ins.</ion-item>
   <ion-item class="alert alert-danger" *ngIf="graphService.getNewSignInsError" color="danger">Error accessing new sign ins.</ion-item>
   <ion-item class="alert alert-danger" *ngIf="graphService.getPostsError" color="danger">Error accessing posts.</ion-item>
-  <h2>{{label}}</h2>
+  <ion-card *ngIf="items && items.length == 0">
+      <ion-card-content>
+        <ion-card-title style="text-overflow:ellipsis;" text-wrap>
+          No items to display.
+      </ion-card-title>
+    </ion-card-content>
+  </ion-card>
   <ion-list>
-    <ion-card *ngIf="items && items.length == 0">
-      No items to display.
-    </ion-card>
     <button ion-item *ngFor="let item of items" (click)="itemTapped($event, item)">
       <span *ngIf="pageTitle =='Sent Requests' && !item.transaction.username">{{item.transaction.requested_rid}}</span>
       <span *ngIf="pageTitle =='Sent Requests' && item.transaction.username">{{item.transaction.username}}</span>

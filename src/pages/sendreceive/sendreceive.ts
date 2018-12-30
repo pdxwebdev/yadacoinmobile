@@ -86,8 +86,7 @@ export class SendReceive {
             text: 'Confirm',
             handler: (data: any) => {
                 new Promise((resolve, reject) => {
-                    this.transactionService.pushTransaction({
-                        blockchainurl: this.settingsService.blockchainAddress,
+                    this.transactionService.generateTransaction({
                         to: this.address,
                         value: value,
                         resolve: resolve

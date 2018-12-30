@@ -18,7 +18,7 @@ import { Events } from 'ionic-angular';
 })
 
 export class Settings {
-    baseAddress = null
+    baseUrl = null
     blockchainAddress = null
     graphproviderAddress = null
     walletproviderAddress = null
@@ -54,12 +54,6 @@ export class Settings {
 
     refresh(refresher) {
         this.noUsername = false;
-        this.baseAddress = this.settingsService.baseAddress || 'https://yadacoin.io';
-        this.blockchainAddress = this.settingsService.blockchainAddress || this.baseAddress + '/transaction';
-        this.graphproviderAddress = this.settingsService.graphproviderAddress || this.baseAddress + '/get-graph-mobile';
-        this.walletproviderAddress = this.settingsService.walletproviderAddress || this.baseAddress + '/wallet';
-        this.siaAddress = this.settingsService.siaAddress || 'http://localhost:9980'
-        this.siaPassword = this.settingsService.siaPassword || ''
         return this.bulletinSecretService.all().then((keys) => {
             this.setKey(keys);
         }).then(() => {
@@ -138,56 +132,43 @@ export class Settings {
     }
 
     set(key) {
-        this.storage.set('last-keyname', this.prefix + key);
-        this.doSet(this.prefix + key);
-    }
-
-    doSet(keyname) {
-        this.bulletinSecretService.set(keyname).then(() => {
-            return this.refresh(null);
-        }).then(() => {
-            return this.walletService.get();
-        }).then(() => {
-            return this.graphService.getInfo();
-        }).then(() => {
-            this.events.publish('pages');
-            this.serverDown = false;
-            if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
-                this.firebaseService.initFirebase();
-            }
-        }).catch((error) => {
-            this.events.publish('pages-error');
-            this.serverDown = true;
+        return new Promise((resolve, reject) => {
+            this.storage.set('last-keyname', this.prefix + key);
+            return this.doSet(this.prefix + key)
+            .then(() => {
+                resolve();
+            });
         });
     }
 
-    dev_reset() {
-        this.baseAddress = 'https://yadacoin.io';
-        this.blockchainAddress = this.baseAddress + '/transaction';
-        this.graphproviderAddress = this.baseAddress + '/get-graph-mobile';
-        this.walletproviderAddress = this.baseAddress + '/wallet';
-        this.siaAddress = 'http://localhost:9980'
-        this.siaPassword = ''
-    }
-
-    prod_reset() {
-        this.baseAddress = 'https://yadacoin.io';
-        this.blockchainAddress = this.baseAddress + '/transaction';
-        this.graphproviderAddress = this.baseAddress + '/get-graph-mobile';
-        this.walletproviderAddress = this.baseAddress + '/wallet';
-        this.siaAddress = 'http://localhost:9980'
-        this.siaPassword = ''
+    doSet(keyname) {
+        return new Promise((resolve, reject) => {
+            this.bulletinSecretService.set(keyname).then(() => {
+                return this.refresh(null);
+            }).then(() => {
+                return this.walletService.get();
+            }).then(() => {
+                return this.graphService.getInfo();
+            }).then(() => {
+                this.events.publish('pages');
+                this.serverDown = false;
+                if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
+                    this.firebaseService.initFirebase();
+                }
+                return resolve();
+            }).catch((error) => {
+                this.events.publish('pages-error');
+                this.serverDown = true;
+                return reject();
+            });
+        });
     }
 
     save() {
-        this.settingsService.baseAddress = this.baseAddress;
-        this.settingsService.blockchainAddress = this.blockchainAddress;
-        this.settingsService.graphproviderAddress = this.graphproviderAddress;
-        this.settingsService.walletproviderAddress = this.walletproviderAddress;
-        this.settingsService.siaAddress = this.siaAddress;
-        this.settingsService.siaPassword = this.siaPassword;
-        this.settingsService.save()
-        this.set(this.bulletinSecretService.keyname.substr(this.prefix.length));
+        this.settingsService.go()
+        .then(() => {
+            return this.set(this.bulletinSecretService.keyname.substr(this.prefix.length));
+        });
     }
 
     showChat() {

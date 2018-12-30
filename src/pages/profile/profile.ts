@@ -16,7 +16,7 @@ import { Events } from 'ionic-angular';
     templateUrl: 'profile.html'
 })
 export class ProfilePage {
-    baseAddress: any;
+    baseUrl: any;
     loadingModal: any;
     prev_name: any;
     username: any;
@@ -36,14 +36,14 @@ export class ProfilePage {
         this.refresh(null);
         this.bulletinSecretService.get().then(() => {
             if (this.bulletinSecretService.username) {
-                this.ahttp.get(this.settingsService.baseAddress + '/faucet?address=' + this.bulletinSecretService.key.getAddress()).subscribe(()=>{});
+                this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/faucet?address=' + this.bulletinSecretService.key.getAddress()).subscribe(()=>{});
             }
         });
     }
 
     refresh(refresher) {
-        this.storage.get('baseAddress').then((baseAddress) => {
-            this.baseAddress = baseAddress;
+        this.storage.get('baseUrl').then((baseUrl) => {
+            this.baseUrl = baseUrl;
             if(refresher) refresher.complete();
         });
     }

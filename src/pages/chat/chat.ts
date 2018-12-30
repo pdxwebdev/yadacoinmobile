@@ -104,14 +104,13 @@ export class ChatPage {
 
                                 }
                                 // camera permission was granted
-                                this.transactionService.pushTransaction({
+                                this.transactionService.generateTransaction({
                                     dh_public_key: dh_public_key,
                                     dh_private_key: dh_private_key,
                                     relationship: {
                                         chatText: this.chatText 
                                     },
                                     shared_secret: shared_secret,
-                                    blockchainurl: this.blockchainAddress,
                                     resolve: resolve,
                                     rid: this.rid
                                 });

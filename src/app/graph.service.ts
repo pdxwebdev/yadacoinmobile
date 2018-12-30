@@ -38,7 +38,7 @@ export class GraphService {
     getSignInsError = false;
     getNewSignInsError = false;
     getPostsError = false;
-    usernames = false;
+    usernames = {};
     constructor(
         private storage: Storage,
         private bulletinSecretService: BulletinSecretService,
@@ -62,16 +62,19 @@ export class GraphService {
 
     endpointRequest(endpoint) {
         return new Promise((resolve, reject) => {
-            return this.settingsService.refresh().then(() => {
-                this.ahttp.get(this.settingsService.baseAddress + '/' + endpoint + '?bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
-                .subscribe((data) => {
+            this.ahttp.get(this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
+            .subscribe((data) => {
+                try {
                     var info = JSON.parse(data['_body']);
                     this.graph.rid = info.rid;
+                    this.graph.registered = info.registered;
+                    this.graph.pending_registration = info.pending_registration;
                     resolve(info);
-                },
-                (err) => {
-                    reject(err);
-                });
+                } catch(err) {
+                }
+            },
+            (err) => {
+                reject(err);
             });
         });
     }
@@ -583,6 +586,19 @@ export class GraphService {
             })
             .then(() => {
                 resolve();
+            });
+        });
+    }
+
+    getSharedSecretForRid(rid) {
+        return new Promise((resolve, reject) => {
+            this.getFriends()
+            .then(() => {
+                if (this.stored_secrets_by_rid[rid] && this.stored_secrets_by_rid[rid].length > 0) {
+                    resolve(this.stored_secrets_by_rid[rid][0]);
+                } else {
+                    reject('no shared secret found for rid: ' + rid);         
+                }
             });
         });
     }

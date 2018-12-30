@@ -20,18 +20,27 @@ export class WalletService {
     }
 
     get() {
-        return this.settingsService.refresh()
-        .then(() => {
-            return this.bulletinSecretService.get();
-        }).then(() => {
-            return this.walletPromise();
-        });
+        return new Promise((resolve, reject) => {
+            this.bulletinSecretService.get()
+            .then(() => {
+                return this.walletPromise();
+            })
+            .then(() => {
+                return resolve();  
+            })
+            .catch(() => {
+                return reject();  
+            });
+        })
     }
 
     walletPromise() {
         return new Promise((resolve, reject) => {
+            if(!this.settingsService.remoteSettings['walletUrl']) {
+                return reject()
+            }
             if(this.bulletinSecretService.username) {
-                this.ahttp.get(this.settingsService.walletproviderAddress + '?address=' + this.bulletinSecretService.key.getAddress()).
+                this.ahttp.get(this.settingsService.remoteSettings['walletUrl'] + '?address=' + this.bulletinSecretService.key.getAddress()).
                 subscribe((data) => {
                     if(data['_body']) {
                         this.walletError = false;

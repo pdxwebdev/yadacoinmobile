@@ -12,7 +12,7 @@ import { OpenGraphParserService } from '../../app/opengraphparser.service'
 import { SocialSharing } from '@ionic-native/social-sharing';
 import { SettingsService } from '../../app/settings.service';
 import { FirebaseService } from '../../app/firebase.service';
-import { Http } from '@angular/http';
+import { Http, RequestOptions } from '@angular/http';
 import { Events } from 'ionic-angular';
 
 declare var forge;
@@ -29,7 +29,6 @@ export class HomePage {
     scannedCode = null;
     key = null;
     blockchainAddress = null;
-    baseAddress = null;
     balance = null;
     items = [];
     loading = false;
@@ -50,6 +49,8 @@ export class HomePage {
     registrationLink: any;
     signInCode: any;
     signInColor: any;
+    prefix: any;
+    signedIn = false;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -68,6 +69,7 @@ export class HomePage {
         private firebaseService: FirebaseService,
         public events: Events
     ) {
+        this.prefix = 'usernames-';
         this.bulletinSecretService.get().then(() => {
             return this.refresh(null)
         })
@@ -119,7 +121,7 @@ export class HomePage {
     }
 
     sendTokenToServer(token) {
-      this.ahttp.post(this.settingsService.baseAddress + '/fcm-token', {
+      this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/fcm-token', {
         rid: this.graphService.graph.rid,
         token: token,
       }).subscribe(() => {});
@@ -135,7 +137,7 @@ export class HomePage {
 
     react(e, item) {
         this.ahttp.post(
-            this.baseAddress + '/react',
+            this.settingsService.remoteSettings['baseUrl'] + '/react',
             {
                 'react': e.char,
                 'txn_id': item.id,
@@ -154,7 +156,7 @@ export class HomePage {
             return;
         }
         this.ahttp.post(
-            this.baseAddress + '/comment',
+            this.settingsService.remoteSettings['baseUrl'] + '/comment',
             {
                 'comment': this.commentInputs[item.id],
                 'txn_id': item.id,
@@ -171,7 +173,7 @@ export class HomePage {
             this.commentInputs[item.id] = '';
 
             this.ahttp.post(
-                this.settingsService.baseAddress + '/get-comments',
+                this.settingsService.remoteSettings['baseUrl'] + '/get-comments',
                 {'txn_ids': this.ids_to_get}
             )
             .subscribe((res) => {
@@ -183,7 +185,7 @@ export class HomePage {
 
     commentReact(e, item) {
         this.ahttp.post(
-            this.baseAddress + '/comment-react',
+            this.settingsService.remoteSettings['baseUrl'] + '/comment-react',
             {
                 'react': e.char,
                 '_id': item._id,
@@ -208,7 +210,7 @@ export class HomePage {
 
     reactsDetail(item) {
         this.ahttp.post(
-            this.settingsService.baseAddress + '/get-reacts-detail',
+            this.settingsService.remoteSettings['baseUrl'] + '/get-reacts-detail',
             {'txn_id': item.id}
         )
         .subscribe((res) => {
@@ -220,7 +222,7 @@ export class HomePage {
 
     commentReactsDetail(item) {
         this.ahttp.post(
-            this.settingsService.baseAddress + '/get-comment-reacts-detail',
+            this.settingsService.remoteSettings['baseUrl'] + '/get-comment-reacts-detail',
             {'_id': item._id}
         )
         .subscribe((res) => {
@@ -241,9 +243,6 @@ export class HomePage {
         this.storage.get('blockchainAddress').then((blockchainAddress) => {
             this.blockchainAddress = blockchainAddress;
         });
-        this.storage.get('baseAddress').then((baseAddress) => {
-            this.baseAddress = baseAddress;
-        });
 
         //update our wallet
         this.walletService.get().then(() => {
@@ -257,7 +256,7 @@ export class HomePage {
         this.graphService.getFriends()
         .then(() => {
             //put ourselves in the faucet
-            this.ahttp.get(this.settingsService.baseAddress + '/faucet?address=' + this.bulletinSecretService.key.getAddress()).subscribe(()=>{});
+            this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/faucet?address=' + this.bulletinSecretService.key.getAddress()).subscribe(()=>{});
             this.color = this.graphService.friend_request_count > 0 ? 'danger' : '';
             this.friendRequestColor = this.graphService.friend_request_count > 0 ? 'danger' : '';
             this.chatColor = this.graphService.new_messages_count > 0 ? 'danger' : '';
@@ -324,7 +323,7 @@ export class HomePage {
                         }
                     });
                 } else {
-                    this.openGraphParserService.parseFromUrl(this.baseAddress + '/get-url?url=' + encodeURIComponent(graphArray[i].relationship.postText)).then((data) => {
+                    this.openGraphParserService.parseFromUrl(this.settingsService.remoteSettings['baseUrl'] + '/get-url?url=' + encodeURIComponent(graphArray[i].relationship.postText)).then((data) => {
                         data['id'] = graphArray[i].id;
                         data['username'] = graphArray[i].username;
                         this.items.push(data);
@@ -353,7 +352,7 @@ export class HomePage {
             }
         }
         this.ahttp.post(
-            this.settingsService.baseAddress + '/get-reacts',
+            this.settingsService.remoteSettings['baseUrl'] + '/get-reacts',
             {'txn_ids': this.ids_to_get}
         )
         .subscribe((res) => {
@@ -361,7 +360,7 @@ export class HomePage {
             this.reacts = data;
         });
         this.ahttp.post(
-            this.settingsService.baseAddress + '/get-comments',
+            this.settingsService.remoteSettings['baseUrl'] + '/get-comments',
             {'txn_ids': this.ids_to_get}
         )
         .subscribe((res) => {
@@ -374,7 +373,7 @@ export class HomePage {
                 }
             }
             this.ahttp.post(
-                this.settingsService.baseAddress + '/get-comment-reacts',
+                this.settingsService.remoteSettings['baseUrl'] + '/get-comment-reacts',
                 {'ids': comment_ids_to_get}
             )
             .subscribe((res) => {
@@ -386,7 +385,7 @@ export class HomePage {
 
     download(item) {
         this.ahttp.post(
-            this.settingsService.siaAddress + '/renter/loadasciidd',
+            this.settingsService.remoteSettings['baseUrl'] + '/renter/loadasciidd',
             {'asciisia': item.fileData}
         )
         .subscribe((res) => {
@@ -400,7 +399,7 @@ export class HomePage {
     register() {
         return new Promise((resolve, reject) => {
             this.walletService.get().then(() => {
-                this.ahttp.get(this.registrationLink)
+                this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/register')
                 .subscribe((res) => {
                     var data = JSON.parse(res['_body']);
                     var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
@@ -409,17 +408,27 @@ export class HomePage {
                     var dh_public_key = this.toHex(raw_dh_public_key);
                     data.dh_private_key = dh_private_key;
                     data.dh_public_key = dh_public_key;
-                    this.getTransaction(data, resolve);
+                    var hash = this.getTransaction(data, resolve);
+                    resolve(hash);
                 });
             });
         })
+        .then((hash) => {
+            this.transactionService.sendTransaction();
+        })
+        .then(() => {
+            this.transactionService.sendCallback();
+        })
         .then(() => {
             this.refresh(null);
+        })
+        .catch(() => {
+            alert('error registering')  
         });
     }
 
     getTransaction(info, resolve) {
-        return this.transactionService.pushTransaction({
+        return this.transactionService.generateTransaction({
             relationship: {
                 dh_private_key: info.dh_private_key,
                 their_bulletin_secret: info.bulletin_secret,
@@ -430,7 +439,6 @@ export class HomePage {
             dh_public_key: info.dh_public_key,
             requested_rid: info.requested_rid,
             requester_rid: info.requester_rid,
-            blockchainurl: this.blockchainAddress,
             callbackurl: info.callbackurl,
             to: info.to,
             resolve: resolve
@@ -468,7 +476,7 @@ export class HomePage {
         //    content: 'Please wait...'
         //});
         //this.loadingModal.present();
-        this.ahttp.get(this.settingsService.baseAddress + '/search?phrase=' + phrase + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
+        this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/search?phrase=' + phrase + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
         .subscribe((res) => {
             //this.loadingModal2.dismiss();
             this.alertRoutine(JSON.parse(res['_body']));
@@ -533,7 +541,7 @@ export class HomePage {
                         var dh_public_key = this.toHex(raw_dh_public_key);
                         info.dh_private_key = dh_private_key;
                         info.dh_public_key = dh_public_key;
-                        this.transactionService.pushTransaction({
+                        this.transactionService.generateTransaction({
                             relationship: {
                                 dh_private_key: info.dh_private_key,
                                 their_bulletin_secret: info.bulletin_secret,
@@ -544,7 +552,6 @@ export class HomePage {
                             dh_public_key: info.dh_public_key,
                             requested_rid: info.requested_rid,
                             requester_rid: info.requester_rid,
-                            blockchainurl: this.blockchainAddress,
                             to: info.to,
                             resolve: resolve
                         });
@@ -586,19 +593,50 @@ export class HomePage {
                 //////////////////////////////////////////////////////////////////////////
                 // create and send transaction to create the relationship on the blockchain
                 //////////////////////////////////////////////////////////////////////////
-                this.walletService.get().then(() => {
+                this.walletService.get().then((txn) => {
                     return new Promise((resolve, reject) => {
-                        this.transactionService.pushTransaction({
+                        var hash = this.transactionService.generateTransaction({
                             dh_public_key: info.dh_public_key,
                             dh_private_key: info.dh_private_key,
                             relationship: {
                                 signIn: info.relationship.signIn
                             },
                             shared_secret: info.shared_secret,
-                            blockchainurl: this.blockchainAddress,
                             resolve: resolve,
                             rid: info.rid
                         });
+                        if(hash) {
+                            resolve(hash);
+                        } else {
+                            reject('could not generate hash');
+                        }
+                    });
+                }).then((hash) => {
+                    return new Promise((resolve, reject) => {
+                        this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/sign-raw-transaction', {
+                            hash: hash, 
+                            bulletin_secret: this.bulletinSecretService.bulletin_secret
+                        })
+                        .subscribe((res) => {
+                            //this.loadingModal2.dismiss();
+                            try {
+                                this.transactionService.signatures = [JSON.parse(res['_body'])]
+                                resolve();
+                            } catch(err) {
+                                reject();
+                            }
+                        },
+                        (err) => {
+                            //this.loadingModal2.dismiss();
+                        });
+                    });
+                }).then(() => {
+                    return new Promise((resolve, reject) => {
+                        this.transactionService.sendTransaction();
+                    });
+                }).then(() => {
+                    return new Promise((resolve, reject) => {
+                        this.transactionService.sendCallback();
                     });
                 }).then((txn) => {
                     this.loadingModal.dismiss()
@@ -607,10 +645,68 @@ export class HomePage {
                     alert.setSubTitle('Your Friend Request has been sent successfully.');
                     alert.addButton('Ok');
                     alert.present();
+                }).catch((err) => {
+                    //alert('transaction error');
                 });
             }
         });
         alert.present();
+    }
+
+    signIn() {
+        this.walletService.get().then((signin_code) => {
+            return this.graphService.getSharedSecretForRid(this.graphService.graph.rid);
+        }).then((args) => {
+            return new Promise((resolve, reject) => {
+                let options = new RequestOptions({ withCredentials: true });
+                this.ahttp.get(this.settingsService.remoteSettings['loginUrl'], options)
+                .subscribe((res) => {
+                    try {
+                        return this.transactionService.generateTransaction({
+                            dh_public_key: args['dh_public_key'],
+                            dh_private_key: args['dh_private_key'],
+                            relationship: {
+                                signIn: JSON.parse(res['_body']).signin_code
+                            },
+                            shared_secret: args['shared_secret'],
+                            rid: this.graphService.graph.rid
+                        }).then((hash) => {
+                            resolve(hash);
+                        });                       
+                    } catch(err) {
+                        reject();
+                    }
+                },
+                (err) => {
+                });
+            });
+        }).then((hash) => {
+            return new Promise((resolve, reject) => {
+                this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/sign-raw-transaction', {
+                    hash: hash,
+                    bulletin_secret: this.bulletinSecretService.bulletin_secret,
+                    id: this.transactionService.transaction.id
+                })
+                .subscribe((res) => {
+                    try {
+                        this.transactionService.transaction.signatures = [JSON.parse(res['_body'])]
+                        resolve();
+                    } catch(err) {
+                        reject();
+                    }
+                },
+                (err) => {
+                });
+            });
+        }).then(() => {
+            return new Promise((resolve, reject) => {
+                this.transactionService.sendTransaction();
+            });
+        }).then(() => {
+            this.signedIn = true;  
+        }).catch((err) => {
+            alert('transaction error');
+        });
     }
 
     itemTapped(event, item) {
@@ -621,7 +717,7 @@ export class HomePage {
     }
 
     presentModal() {
-        let modal = this.modalCtrl.create(PostModal, {blockchainAddress: this.blockchainAddress, logicalParent: this});
+        let modal = this.modalCtrl.create(PostModal, {blockchainAddress: this.settingsService.remoteSettings['baseUrl'], logicalParent: this});
         modal.present();
     }
 
@@ -639,11 +735,10 @@ export class HomePage {
                     text: 'Confirm',
                     handler: (data: any) => {
                         // camera permission was granted
-                        this.transactionService.pushTransaction({
+                        this.transactionService.generateTransaction({
                             relationship: {
                                 postText: item.url || item.description
                             },
-                            blockchainurl: this.blockchainAddress,
                             resolve: resolve
                         });
                     }

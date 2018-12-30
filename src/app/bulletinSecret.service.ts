@@ -32,10 +32,7 @@ export class BulletinSecretService {
     }
 
     get() {
-        return this.settingsService.refresh()
-        .then(() => {
-            return this.all();
-        })
+        return this.all()
         .then((keys: any) => {
             return this.setKeyName(keys);
         })
