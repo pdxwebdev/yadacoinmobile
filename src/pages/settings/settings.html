@@ -8,50 +8,58 @@
         <ion-icon large name="help-circle"></ion-icon>
       </a>
       <ion-label color="primary" text-right>Service: </ion-label>
-      <ion-input color="primary" type="text" placeholder="Enter URL" [(ngModel)]="settingsService.remoteSettingsUrl"></ion-input>
+      <ion-input color="primary" type="text" placeholder="YadaCoin app URL" [(ngModel)]="settingsService.remoteSettingsUrl"></ion-input>
       <button ion-button primary (click)="save()" item-end>Go</button>
     </ion-item>
   </ion-navbar>
 </ion-header>
 
 <ion-content padding>
-  <ion-refresher (ionRefresh)="refresh($event)">
-    <ion-refresher-content></ion-refresher-content>
-  </ion-refresher>
-  <ion-item class="alert alert-danger" *ngIf="!bulletinSecretService.username" color="danger">Specify a username on the Set Username tab</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="walletService.walletError" color="danger">Error accessing wallet.</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="graphService.getGraphError" color="danger">Error accessing graph.</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="graphService.getSentFriendRequestsError" color="danger">Error accessing sent friend requests.</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="graphService.getFriendsError" color="danger">Error accessing friend requests.</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="graphService.getMessagesError" color="danger">Error accessing messages.</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="graphService.getNewMessagesError" color="danger">Error accessing new messages.</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="graphService.getSignInsError" color="danger">Error accessing sign ins.</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="graphService.getNewSignInsError" color="danger">Error accessing new sign ins.</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="graphService.getPostsError" color="danger">Error accessing posts.</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="serverDown" color="danger">Network error.</ion-item>
-  <h3>Identities</h3>
-  <ion-list>
-    <button ion-item *ngFor="let key of keys" (click)="set(key.username)" [color]="key.active ? 'secondary' : 'dark'">
-      <span *ngIf="key.username">{{key.username}}</span>
-    </button>
-  </ion-list>
-  <button ion-button secondary (click)="createKey()">Create New Identity</button>
-  <hr/>
-  <h4>Export Identity</h4>
-  <ion-item>
-    <ion-input type="text" [(ngModel)]="activeKey">
-    </ion-input>
-  </ion-item>
-  <h4>Bulletin Secret</h4>
-  <ion-item>
-    <ion-input type="text" [(ngModel)]="bulletinSecretService.bulletin_secret">
-    </ion-input>
-    <button ion-button secondary (click)="exportKey()">Export Active Identity</button>
-  </ion-item>
-  <h4>Import Identity</h4>
-  <ion-item>
-    <ion-input type="text" placeholder="Paste secret key..." [(ngModel)]="importedKey">
-    </ion-input>
-  </ion-item>
-  <button ion-button secondary (click)="importKey()">Import Identity</button>
+  <ion-content *ngIf="settingsService.remoteSettings['walletUrl']">
+    <ion-refresher (ionRefresh)="refresh($event)">
+      <ion-refresher-content></ion-refresher-content>
+    </ion-refresher>
+    <ion-item class="alert alert-danger" *ngIf="!bulletinSecretService.username" color="danger">Specify a username on the Set Username tab</ion-item>
+    <ion-item class="alert alert-danger" *ngIf="walletService.walletError" color="danger">Error accessing wallet.</ion-item>
+    <ion-item class="alert alert-danger" *ngIf="graphService.getGraphError" color="danger">Error accessing graph.</ion-item>
+    <ion-item class="alert alert-danger" *ngIf="graphService.getSentFriendRequestsError" color="danger">Error accessing sent friend requests.</ion-item>
+    <ion-item class="alert alert-danger" *ngIf="graphService.getFriendsError" color="danger">Error accessing friend requests.</ion-item>
+    <ion-item class="alert alert-danger" *ngIf="graphService.getMessagesError" color="danger">Error accessing messages.</ion-item>
+    <ion-item class="alert alert-danger" *ngIf="graphService.getNewMessagesError" color="danger">Error accessing new messages.</ion-item>
+    <ion-item class="alert alert-danger" *ngIf="graphService.getSignInsError" color="danger">Error accessing sign ins.</ion-item>
+    <ion-item class="alert alert-danger" *ngIf="graphService.getNewSignInsError" color="danger">Error accessing new sign ins.</ion-item>
+    <ion-item class="alert alert-danger" *ngIf="graphService.getPostsError" color="danger">Error accessing posts.</ion-item>
+    <ion-item class="alert alert-danger" *ngIf="serverDown" color="danger">Network error.</ion-item>
+    <h3>Identities</h3>
+    <p>
+      The highlighted row is the active identity that will be used for the app at: {{settingsService.remoteSettingsUrl}}
+    </p>
+    <ion-list>
+      <button ion-item *ngFor="let key of keys" (click)="set(key.username)" [color]="key.active ? 'secondary' : 'dark'">
+        <span *ngIf="key.username">{{key.username}}</span>
+      </button>
+    </ion-list>
+    <button ion-button secondary (click)="createKey()">Create New Identity</button>
+    <hr/>
+    <h4>Export Identity</h4>
+    <ion-item>
+      <ion-input type="text" [(ngModel)]="activeKey">
+      </ion-input>
+    </ion-item>
+    <h4>Bulletin Secret</h4>
+    <ion-item>
+      <ion-input type="text" [(ngModel)]="bulletinSecretService.bulletin_secret">
+      </ion-input>
+      <button ion-button secondary (click)="exportKey()">Export Active Identity</button>
+    </ion-item>
+    <h4>Import Identity</h4>
+    <ion-item>
+      <ion-input type="text" placeholder="Paste WIF key from your wallet..." [(ngModel)]="importedKey">
+      </ion-input>
+    </ion-item>
+    <button ion-button secondary (click)="importKey()">Import Identity</button>
+  </ion-content>
+  <ion-content *ngIf="!settingsService.remoteSettings['walletUrl']">
+    <h3>Enter the URL of a YadaCoin app in the box above <ion-icon large large name="arrow-up"></ion-icon></h3>
+  </ion-content>
 </ion-content>

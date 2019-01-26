@@ -97,7 +97,7 @@ export class BulletinSecretService {
                         this.bulletin_secret = this.generate_bulletin_secret();
                     }
                 }
-                resolve();
+                return resolve();
             });
         });
     }
@@ -107,15 +107,24 @@ export class BulletinSecretService {
     }
 
     set(key) {
-        this.keyname = key;
-        return this.storage.set('last-keyname', key)
-        .then(() => {
-            return this.storage.remove('usernames-');
-        })
-        .then((key) => {
-            return this.get();
-        }).then(() => {
-            return this.setKey();
+        return new Promise((resolve, reject) => {
+            this.keyname = key;
+            return this.storage.set('last-keyname', key)
+            .then(() => {
+                return this.storage.remove('usernames-');
+            })
+            .then((key) => {
+                return this.get();
+            })
+            .then(() => {
+                return this.setKey();
+            })
+            .then(() => {
+                return resolve();
+            })
+            .catch(() => {
+                return reject();
+            });
         });
     }
 

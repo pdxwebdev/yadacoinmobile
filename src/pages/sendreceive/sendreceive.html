@@ -3,18 +3,16 @@
     <button ion-button menuToggle color="{{color}}">
       <ion-icon name="menu"></ion-icon>
     </button>
-    <button ion-button color="{{chatColor}}" title="Friend Requests" (click)="showFriendRequests()">
-      <ion-icon name="contacts"></ion-icon>
-    </button>
-    <button ion-button color="{{chatColor}}" title="Messages" (click)="showChat()">
-      <ion-icon name="chatboxes"></ion-icon>
-    </button>
   </ion-navbar>
 </ion-header>
 <ion-content padding>
   <ion-refresher (ionRefresh)="refresh($event)">
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
+  <h4>Balance</h4>
+  <ion-item>
+    {{walletService.wallet.balance}} YADA
+  </ion-item>
   <h4>Send YadaCoins</h4>
   <button *ngIf="isDevice" ion-button color="secondary" (click)="scan()" full>Scan Address</button>
   <ion-item>

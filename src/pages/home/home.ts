@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { NavController, NavParams, ModalController } from 'ionic-angular';
-import { AlertController, LoadingController } from 'ionic-angular';
+import { AlertController, LoadingController, ToastController } from 'ionic-angular';
 import { Storage } from '@ionic/storage';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { WalletService } from '../../app/wallet.service';
@@ -50,7 +50,8 @@ export class HomePage {
     signInCode: any;
     signInColor: any;
     prefix: any;
-    signedIn = false;
+    signedIn: any;
+    txnId: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -67,57 +68,73 @@ export class HomePage {
         public loadingCtrl: LoadingController,
         private ahttp: Http,
         private firebaseService: FirebaseService,
-        public events: Events
+        public events: Events,
+        public toastCtrl: ToastController
     ) {
         this.prefix = 'usernames-';
-        this.bulletinSecretService.get().then(() => {
-            return this.refresh(null)
-        })
-        .then(() => {
-            if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
-               return this.firebaseService.initFirebase();
-            } else {
-                // Initialize Firebase
-                var config = {
-                  apiKey: "AIzaSyAcJWjePVMBkEF8A3M-7oY_lT0MMXRDrpA",
-                  authDomain: "yadacoin-bcaae.firebaseapp.com",
-                  databaseURL: "https://yadacoin-bcaae.firebaseio.com",
-                  projectId: "yadacoin-bcaae",
-                  storageBucket: "yadacoin-bcaae.appspot.com",
-                  messagingSenderId: "805178314562"
-                };
-                try {
-                    firebase.initializeApp(config);
-                    const messaging = firebase.messaging();
-                    messaging.usePublicVapidKey('BLuv1UWDqzAyTtK5xlNaY4tFOz6vKbjuutTQ0KmBRG5btvVbydsrMTA-UeyMqY4oCC1Gu3sDwLfsg-iWtAg6IB0');
-                    messaging.requestPermission().then(() => {
-                      console.log('Notification permission granted.');
-                      // TODO(developer): Retrieve an Instance ID token for use with FCM.
-                      // ...
-                    }).catch((err) => {
-                      console.log('Unable to get permission to notify.', err);
-                    });
-                    return messaging.getToken().then((currentToken) => {
-                      if (currentToken) {
-                        this.sendTokenToServer(currentToken);
-                        this.updateUIForPushEnabled(currentToken);
-                      } else {
-                        // Show permission request.
-                        console.log('No Instance ID token available. Request permission to generate one.');
-                        // Show permission UI.
-                        this.updateUIForPushPermissionRequired();
-                      }
-                    }).catch((err) => {
-                      console.log('An error occurred while retrieving token. ', err);
-                    });
-                } catch(err) {
-
-                }
-            }
-        });
-        if (this.navParams.get('txnData')) {
-            this.alertRoutine(JSON.parse(decodeURIComponent(this.navParams.get('txnData'))));
+        if (!graphService.graph) {
+            console.log('hahahaha')
         }
+        if(!settingsService.remoteSettingsUrl){
+            this.bulletinSecretService.get().then(() => {
+                const toast = this.toastCtrl.create({
+                    message: 'Enter an address up top',
+                    duration: 2000
+                });
+                toast.present();
+            });
+        } else {
+            this.refresh(null)
+            .then(() => {
+                if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
+                return this.firebaseService.initFirebase();
+                } else {
+                    // Initialize Firebase
+                    var config = {
+                    apiKey: "AIzaSyAcJWjePVMBkEF8A3M-7oY_lT0MMXRDrpA",
+                    authDomain: "yadacoin-bcaae.firebaseapp.com",
+                    databaseURL: "https://yadacoin-bcaae.firebaseio.com",
+                    projectId: "yadacoin-bcaae",
+                    storageBucket: "yadacoin-bcaae.appspot.com",
+                    messagingSenderId: "805178314562"
+                    };
+                    try {
+                        firebase.initializeApp(config);
+                        const messaging = firebase.messaging();
+                        messaging.usePublicVapidKey('BLuv1UWDqzAyTtK5xlNaY4tFOz6vKbjuutTQ0KmBRG5btvVbydsrMTA-UeyMqY4oCC1Gu3sDwLfsg-iWtAg6IB0');
+                        messaging.requestPermission().then(() => {
+                        console.log('Notification permission granted.');
+                        // TODO(developer): Retrieve an Instance ID token for use with FCM.
+                        // ...
+                        }).catch((err) => {
+                        console.log('Unable to get permission to notify.', err);
+                        });
+                        return messaging.getToken().then((currentToken) => {
+                        if (currentToken) {
+                            this.sendTokenToServer(currentToken);
+                            this.updateUIForPushEnabled(currentToken);
+                        } else {
+                            // Show permission request.
+                            console.log('No Instance ID token available. Request permission to generate one.');
+                            // Show permission UI.
+                            this.updateUIForPushPermissionRequired();
+                        }
+                        }).catch((err) => {
+                        console.log('An error occurred while retrieving token. ', err);
+                        });
+                    } catch(err) {
+
+                    }
+                }
+            });
+        }
+    }
+
+    go() {
+        return this.settingsService.go()
+        .then(() => {
+            return this.refresh(null);
+        });
     }
 
     sendTokenToServer(token) {
@@ -155,15 +172,30 @@ export class HomePage {
             alert('Comment cannot be empty.');
             return;
         }
-        this.ahttp.post(
-            this.settingsService.remoteSettings['baseUrl'] + '/comment',
-            {
-                'comment': this.commentInputs[item.id],
-                'txn_id': item.id,
-                'bulletin_secret': this.bulletinSecretService.bulletin_secret
-            }
-        )
-        .subscribe((res) => {
+        return this.walletService.get()
+        .then(() => {
+            return this.transactionService.generateTransaction({
+                relationship: {
+                    'comment': this.commentInputs[item.id],
+                    'id': item.id,
+                    'bulletin_secret': this.bulletinSecretService.bulletin_secret
+                }
+            });
+        })
+        .then(() => {
+            return this.transactionService.getFastGraphSignature();
+        })
+        .then((hash) => {
+            return this.transactionService.sendTransaction();
+        })
+        .then(() => {
+            const toast = this.toastCtrl.create({
+                message: 'Comment posted',
+                duration: 2000
+            });
+            return toast.present();
+        })
+        .then(() => {
             if(!this.commentInputs[item.id]) {
                 this.commentInputs[item.id] = [];
             }
@@ -172,14 +204,14 @@ export class HomePage {
             }
             this.commentInputs[item.id] = '';
 
-            this.ahttp.post(
-                this.settingsService.remoteSettings['baseUrl'] + '/get-comments',
-                {'txn_ids': this.ids_to_get}
-            )
-            .subscribe((res) => {
-                var data = JSON.parse(res['_body']);
-                this.comments = data;
+            this.graphService.getComments(this.ids_to_get)
+        })
+        .catch((err) => {
+            const toast = this.toastCtrl.create({
+                message: 'Something went wrong with your comment!',
+                duration: 2000
             });
+            toast.present();  
         });
     }
 
@@ -188,7 +220,7 @@ export class HomePage {
             this.settingsService.remoteSettings['baseUrl'] + '/comment-react',
             {
                 'react': e.char,
-                '_id': item._id,
+                'id': item.id,
                 'bulletin_secret': this.bulletinSecretService.bulletin_secret
             }
         )
@@ -243,12 +275,26 @@ export class HomePage {
         this.storage.get('blockchainAddress').then((blockchainAddress) => {
             this.blockchainAddress = blockchainAddress;
         });
-
         //update our wallet
-        this.walletService.get().then(() => {
+        this.walletService.get()
+        .then(() => {
             this.balance = this.walletService.wallet.balance;
+            for(var i=0; i < this.walletService.wallet.unspent_transactions.length; i++) {
+                var txn = this.walletService.wallet.unspent_transactions[i];
+                if ((txn.signatures) && txn.rid == this.graphService.graph.rid) {
+                    this.txnId = txn.id;
+                }
+            }
             this.loadingBalance = false;
-        }).catch(() => {
+            let options = new RequestOptions({ withCredentials: true });
+            this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '?rid=' + this.graphService.graph.rid + '&id=' + this.txnId, options).subscribe((res) => {
+                var data = JSON.parse(res['_body']);
+                this.signedIn = data.authenticated;
+                this.loading = false;
+                this.loadingModal.dismiss().catch(() => {});
+            });
+        })
+        .catch(() => {
             console.log('homepage walletService error');
         });
 
@@ -263,6 +309,7 @@ export class HomePage {
             this.signInColor = this.graphService.new_sign_ins_count > 0 ? 'danger' : '';
         }).catch(() => {
             console.log('homepage getFriends error');
+            this.loadingModal.dismiss().catch(() => {});
         });
 
         //check for new messages
@@ -271,6 +318,7 @@ export class HomePage {
             this.chatColor = this.graphService.new_messages_count > 0 ? 'danger' : '';
         }).catch(() => {
             console.log('homepage getNewMessages error');
+            this.loadingModal.dismiss().catch(() => {});
         });
 
         //check for new sign ins
@@ -279,107 +327,96 @@ export class HomePage {
             this.chatColor = this.graphService.new_sign_ins_count > 0 ? 'danger' : '';
         }).catch(() => {
             console.log('homepage getNewSignIns error');
+            this.loadingModal.dismiss().catch(() => {});
         });
+
+        //this.graphService.getReacts(this.ids_to_get);
+
+        //this.graphService.getCommentReacts(comment_ids_to_get);
 
         if(refresher) refresher.complete();
         //this is our blocking procedure, update our posts for the main feed
         return this.graphService.getPosts().then(() => {
-            this.generateFeed();
-        }).catch(() => {
-            this.loading = false;
-            this.loadingModal.dismiss();
+            return this.generateFeed();
+        })
+        .then(() => {
+            return this.graphService.getComments(this.ids_to_get);
+        })
+        .then(() => {
+            var comment_ids_to_get = [];
+            for (var i=0; i < Object.keys(this.graphService.graph.comments).length; i++) {
+                for (var j=0; j < this.comments[Object.keys(this.graphService.graph.comments)[i]].length; j++) {
+                    comment_ids_to_get.push(this.graphService.graph.comments[Object.keys(this.graphService.graph.comments)[i]][j]._id);
+                }
+            }
+            this.loadingModal.dismiss().catch(() => {});
+        })
+        .catch(() => {
         });
     }
 
     generateFeed() {
-        ////////////////////////////////////////////
-        // all friend post operations
-        ////////////////////////////////////////////
-        var graphArray = this.graphService.graph.posts;
-        if (graphArray.length == 0) {
-            this.loading = false;
-            this.loadingModal.dismiss();
-        }
-        graphArray.sort(function (a, b) {
-          if (a.height < b.height)
-            return 1
-          if ( a.height > b.height)
-            return -1
-          return 0
-        });
-        this.ids_to_get = [];
-        this.items = [];
-        for (let i = 0; i < graphArray.length; i++) {
-            this.ids_to_get.push(graphArray[i].id);
-            if (this.openGraphParserService.isURL(graphArray[i].relationship.postText)) {
-                if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
-                    this.openGraphParserService.parseFromUrl(graphArray[i].relationship.postText).then((data) => {
-                        data['id'] = graphArray[i].id;
-                        data['username'] = graphArray[i].username;
-                        this.items.push(data);
-                        if ((graphArray.length - 1) == i) {
-                            this.loading = false;
-                            this.loadingModal.dismiss();
-                        }
-                    });
-                } else {
-                    this.openGraphParserService.parseFromUrl(this.settingsService.remoteSettings['baseUrl'] + '/get-url?url=' + encodeURIComponent(graphArray[i].relationship.postText)).then((data) => {
-                        data['id'] = graphArray[i].id;
-                        data['username'] = graphArray[i].username;
-                        this.items.push(data);
-                        if ((graphArray.length - 1) == i) {
-                            this.loading = false;
-                            this.loadingModal.dismiss();
-                        }
-                    });
-                }
-            } else {
-                var data = {
-                    username: graphArray[i].username,
-                    title: '',
-                    description: graphArray[i].relationship.postText,
-                    id: graphArray[i].id
-                };
-                if (graphArray[i].relationship.postFileName) {
-                    data['fileName'] = graphArray[i].relationship.postFileName;
-                    data['fileData'] = graphArray[i].relationship.postFile;
-                }
-                this.items.push(data);
-                if ((graphArray.length - 1) == i) {
-                    this.loading = false;
-                    this.loadingModal.dismiss();
-                }
+        return new Promise((resolve, reject) => {
+            ////////////////////////////////////////////
+            // all friend post operations
+            ////////////////////////////////////////////
+            var graphArray = this.graphService.graph.posts;
+            if (graphArray.length == 0) {
+                this.loading = false;
+                //this.loadingModal.dismiss().catch(() => {});
             }
-        }
-        this.ahttp.post(
-            this.settingsService.remoteSettings['baseUrl'] + '/get-reacts',
-            {'txn_ids': this.ids_to_get}
-        )
-        .subscribe((res) => {
-            var data = JSON.parse(res['_body']);
-            this.reacts = data;
-        });
-        this.ahttp.post(
-            this.settingsService.remoteSettings['baseUrl'] + '/get-comments',
-            {'txn_ids': this.ids_to_get}
-        )
-        .subscribe((res) => {
-            var data = JSON.parse(res['_body']);
-            this.comments = data;
-            var comment_ids_to_get = [];
-            for (var i=0; i < Object.keys(this.comments).length; i++) {
-                for (var j=0; j < this.comments[Object.keys(this.comments)[i]].length; j++) {
-                    comment_ids_to_get.push(this.comments[Object.keys(this.comments)[i]][j]._id);
-                }
-            }
-            this.ahttp.post(
-                this.settingsService.remoteSettings['baseUrl'] + '/get-comment-reacts',
-                {'ids': comment_ids_to_get}
-            )
-            .subscribe((res) => {
-                var data = JSON.parse(res['_body']);
-                this.commentReacts = data;
+            graphArray.sort(function (a, b) {
+            if (a.height < b.height)
+                return 1
+            if ( a.height > b.height)
+                return -1
+            return 0
             });
+            this.ids_to_get = [];
+            this.items = [];
+            for (let i = 0; i < graphArray.length; i++) {
+                this.ids_to_get.push(graphArray[i].id);
+                if (this.openGraphParserService.isURL(graphArray[i].relationship.postText)) {
+                    if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
+                        this.openGraphParserService.parseFromUrl(graphArray[i].relationship.postText).then((data) => {
+                            data['id'] = graphArray[i].id;
+                            data['username'] = graphArray[i].username;
+                            this.items.push(data);
+                            if ((graphArray.length - 1) == i) {
+                                this.loading = false;
+                                //this.loadingModal.dismiss().catch(() => {});
+                            }
+                        });
+                    } else {
+                        this.openGraphParserService.parseFromUrl(this.settingsService.remoteSettings['baseUrl'] + '/get-url?url=' + encodeURIComponent(graphArray[i].relationship.postText)).then((data) => {
+                            data['id'] = graphArray[i].id;
+                            data['username'] = graphArray[i].username;
+                            this.items.push(data);
+                            if ((graphArray.length - 1) == i) {
+                                this.loading = false;
+                                //this.loadingModal.dismiss().catch(() => {});
+                            }
+                        });
+                    }
+                } else {
+                    var data = {
+                        username: graphArray[i].username,
+                        title: '',
+                        description: graphArray[i].relationship.postText,
+                        id: graphArray[i].id
+                    };
+                    if (graphArray[i].relationship.postFileName) {
+                        data['fileName'] = graphArray[i].relationship.postFileName;
+                        data['fileData'] = graphArray[i].relationship.postFile;
+                    }
+                    this.items.push(data);
+                    if ((graphArray.length - 1) == i) {
+                        this.loading = false;
+                        //this.loadingModal.dismiss().catch(() => {});
+                    }
+                }
+            }
+            resolve();
         });
     }
 
@@ -423,7 +460,8 @@ export class HomePage {
             this.refresh(null);
         })
         .catch(() => {
-            alert('error registering')  
+            alert('error registering');
+            this.loadingModal.dismiss().catch(() => {});
         });
     }
 
@@ -503,7 +541,7 @@ export class HomePage {
             alert.addButton({
                 text: 'Cancel',
                 handler: (data: any) => {
-                    this.loadingModal.dismiss();
+                    this.loadingModal.dismiss().catch(() => {});
                 }
             });
             alert.present();
@@ -515,7 +553,7 @@ export class HomePage {
         alert.addButton({
             text: 'Cancel',
             handler: (data: any) => {
-                this.loadingModal.dismiss();
+                this.loadingModal.dismiss().catch(() => {});
             }
         });
         alert.addButton({
@@ -557,7 +595,7 @@ export class HomePage {
                         });
                     });
                 }).then((txn) => {
-                    this.loadingModal.dismiss()
+                    this.loadingModal.dismiss().catch(() => {})
                     var alert = this.alertCtrl.create();
                     alert.setTitle('Friend Request Sent');
                     alert.setSubTitle('Your Friend Request has been sent successfully.');
@@ -584,7 +622,7 @@ export class HomePage {
         alert.addButton({
             text: 'Cancel',
             handler: (data: any) => {
-                this.loadingModal.dismiss();
+                this.loadingModal.dismiss().catch(() => {});
             }
         });
         alert.addButton({
@@ -615,15 +653,18 @@ export class HomePage {
                     return new Promise((resolve, reject) => {
                         this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/sign-raw-transaction', {
                             hash: hash, 
-                            bulletin_secret: this.bulletinSecretService.bulletin_secret
+                            bulletin_secret: this.bulletinSecretService.bulletin_secret,
+                            input: this.transactionService.transaction.inputs[0].id,
+                            id: this.transactionService.transaction.id
                         })
                         .subscribe((res) => {
                             //this.loadingModal2.dismiss();
                             try {
-                                this.transactionService.signatures = [JSON.parse(res['_body'])]
+                                this.transactionService.transaction.signatures = [JSON.parse(res['_body'])]
                                 resolve();
                             } catch(err) {
                                 reject();
+                                this.loadingModal.dismiss().catch(() => {});
                             }
                         },
                         (err) => {
@@ -631,15 +672,11 @@ export class HomePage {
                         });
                     });
                 }).then(() => {
-                    return new Promise((resolve, reject) => {
-                        this.transactionService.sendTransaction();
-                    });
+                    return this.transactionService.sendTransaction();
                 }).then(() => {
-                    return new Promise((resolve, reject) => {
-                        this.transactionService.sendCallback();
-                    });
+                    return this.transactionService.sendCallback();
                 }).then((txn) => {
-                    this.loadingModal.dismiss()
+                    this.loadingModal.dismiss().catch(() => {})
                     var alert = this.alertCtrl.create();
                     alert.setTitle('Friend Request Sent');
                     alert.setSubTitle('Your Friend Request has been sent successfully.');
@@ -647,6 +684,7 @@ export class HomePage {
                     alert.present();
                 }).catch((err) => {
                     //alert('transaction error');
+                    this.loadingModal.dismiss().catch(() => {});
                 });
             }
         });
@@ -671,10 +709,12 @@ export class HomePage {
                             shared_secret: args['shared_secret'],
                             rid: this.graphService.graph.rid
                         }).then((hash) => {
+                            this.txnId = this.transactionService.transaction.id;
                             resolve(hash);
                         });                       
                     } catch(err) {
                         reject();
+                        this.loadingModal.dismiss().catch(() => {});
                     }
                 },
                 (err) => {
@@ -685,11 +725,12 @@ export class HomePage {
                 this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/sign-raw-transaction', {
                     hash: hash,
                     bulletin_secret: this.bulletinSecretService.bulletin_secret,
+                    input: this.transactionService.transaction.inputs[0].id,
                     id: this.transactionService.transaction.id
                 })
                 .subscribe((res) => {
                     try {
-                        this.transactionService.transaction.signatures = [JSON.parse(res['_body'])]
+                        this.transactionService.transaction.signatures = [JSON.parse(res['_body']).signature]
                         resolve();
                     } catch(err) {
                         reject();
@@ -699,13 +740,12 @@ export class HomePage {
                 });
             });
         }).then(() => {
-            return new Promise((resolve, reject) => {
-                this.transactionService.sendTransaction();
-            });
+            return this.transactionService.sendTransaction();
         }).then(() => {
-            this.signedIn = true;  
+            this.signedIn = true;
+            this.refresh(null);
         }).catch((err) => {
-            alert('transaction error');
+            alert(err);
         });
     }
 

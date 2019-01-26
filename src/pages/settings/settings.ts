@@ -118,7 +118,9 @@ export class Settings {
     createKey() {
         this.bulletinSecretService.create()
         .then(() => {
-            return this.graphService.getInfo();
+            if (this.settingsService.remoteSettings['walletUrl']) {
+                return this.graphService.getInfo();
+            }
         })
         .then(() => {
             return this.refresh(null)
@@ -132,12 +134,13 @@ export class Settings {
     }
 
     set(key) {
-        return new Promise((resolve, reject) => {
-            this.storage.set('last-keyname', this.prefix + key);
-            return this.doSet(this.prefix + key)
-            .then(() => {
-                resolve();
-            });
+        this.storage.set('last-keyname', this.prefix + key);
+        return this.doSet(this.prefix + key)
+        .then(() => {
+            this.events.publish('graph');
+        })
+        .catch(() => {
+            console.log('can not set identity')
         });
     }
 
@@ -146,9 +149,13 @@ export class Settings {
             this.bulletinSecretService.set(keyname).then(() => {
                 return this.refresh(null);
             }).then(() => {
-                return this.walletService.get();
+                if (this.settingsService.remoteSettings['walletUrl']) {
+                    return this.walletService.get();
+                }
             }).then(() => {
-                return this.graphService.getInfo();
+                if (this.settingsService.remoteSettings['walletUrl']) {
+                    return this.graphService.getInfo();
+                }
             }).then(() => {
                 this.events.publish('pages');
                 this.serverDown = false;
@@ -157,7 +164,6 @@ export class Settings {
                 }
                 return resolve();
             }).catch((error) => {
-                this.events.publish('pages-error');
                 this.serverDown = true;
                 return reject();
             });

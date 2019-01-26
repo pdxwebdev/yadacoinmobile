@@ -12,8 +12,23 @@
     </ion-header>
 
     <ion-content>
-      <ion-list>
-        <button menuClose ion-item *ngFor="let p of pages" (click)="openPage(p)">
+      <ion-list *ngIf="graphService.graph.registered === true">
+        <button menuClose ion-item *ngFor="let p of pagesForRegisteredUser" (click)="openPage(p)">
+          {{p.label}}
+        </button>
+      </ion-list>
+      <ion-list *ngIf="graphService.graph.registered === false">
+        <button menuClose ion-item *ngFor="let p of pagesForUnregisteredUser" (click)="openPage(p)">
+          {{p.label}}
+        </button>
+      </ion-list>
+      <ion-list *ngIf="settingsService.remoteSettings['walletUrl']">
+        <button menuClose ion-item *ngFor="let p of defaultPages" (click)="openPage(p)">
+          {{p.label}}
+        </button>
+      </ion-list>
+      <ion-list *ngIf="!settingsService.remoteSettings['walletUrl']">
+        <button menuClose ion-item *ngFor="let p of noUrlPages" (click)="openPage(p)">
           {{p.label}}
         </button>
       </ion-list>

@@ -7,9 +7,9 @@
       <a button clear href="https://youtube.com/w=lajksdf98" target="_blank" item-start>
         <ion-icon large name="help-circle"></ion-icon>
       </a>
-      <ion-label color="primary" text-right>Service: </ion-label>
-      <ion-input color="primary" type="text" placeholder="Base URL" [(ngModel)]="settingsService.remoteSettingsUrl"></ion-input>
-      <button ion-button primary (click)="settingsService.go(baseUrl)" item-end>Go</button>
+      <ion-label color="primary" text-right>Address: </ion-label>
+      <ion-input color="primary" type="text" placeholder="Enter a url" [(ngModel)]="settingsService.remoteSettingsUrl"></ion-input>
+      <button ion-button primary (click)="go()" item-end>Go</button>
     </ion-item>
   </ion-navbar>
 </ion-header>
@@ -18,62 +18,66 @@
   <ion-refresher (ionRefresh)="refresh($event)">
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
-  <ion-item class="alert alert-danger" *ngIf="!bulletinSecretService.username" color="danger">Specify a username on the Set Username tab</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="walletService.walletError" color="danger">Error accessing wallet.</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="graphService.getSentFriendRequestsError" color="danger">Error accessing sent friend requests.</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="graphService.getFriendsError" color="danger">Error accessing friend requests.</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="graphService.getMessagesError" color="danger">Error accessing messages.</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="graphService.getNewMessagesError" color="danger">Error accessing new messages.</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="graphService.getSignInsError" color="danger">Error accessing sign ins.</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="graphService.getNewSignInsError" color="danger">Error accessing new sign ins.</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="graphService.getPostsError" color="danger">Error accessing posts.</ion-item>
+  <ion-item class="alert alert-info" *ngIf="!bulletinSecretService.username" color="primary">Specify a username on the Set Username tab</ion-item>
   <ion-spinner *ngIf="loading"></ion-spinner>
-  <ion-row *ngIf="!graphService.graph.registered">
+  <ion-row *ngIf="!graphService.graph.registered && settingsService.remoteSettings['walletUrl']">
     <ion-col col-lg-6 col-md-4 col-sm-4 text-center>
-      <ion-item>
+      <ion-item *ngIf="walletService.wallet.balance > 0">
         You've connected to a new service! To sign in, you must register first.
       </ion-item>
-      <ion-item>
+      <ion-item *ngIf="walletService.wallet.balance > 0">
         Click the register button below and confirm the transaction.
       </ion-item>
+      <ion-item *ngIf="walletService.wallet.balance === 0" text-wrap>
+        Your wallet has a ballance of zero. To create accounts with YadaCoin apps, you need YadaCoins.
+      </ion-item>
+      <ion-item *ngIf="walletService.wallet.balance === 0" text-wrap>
+        <ion-icon large name="arrow-dropleft"></ion-icon>&nbsp;&nbsp;Goto the wallet tab to receive coins from other users.
+      </ion-item>
     </ion-col>
   </ion-row>
-  <ion-row *ngIf="graphService.graph.registered">
+  <ion-row *ngIf="graphService.graph.registered && settingsService.remoteSettings['walletUrl']">
     <ion-col col-lg-6 col-md-4 col-sm-4 text-center>
-      <ion-item>
+      <ion-item *ngIf="signedIn === false">
         Welcome back.
       </ion-item>
-      <ion-item>
+      <ion-item *ngIf="signedIn === true">
+        You're already signed in. Click the visit button below.
+      </ion-item>
+      <ion-item *ngIf="signedIn === false">
         Click the sign in button below and confirm the transaction to sign into.
+      </ion-item>
+      <ion-item *ngIf="walletService.wallet.balance === 0">
+        You have a zero wallet ballance. To authenticate with YadaCoin apps, you need YadaCoins. Goto your wallet and receive coins from other users.
       </ion-item>
     </ion-col>
   </ion-row>
-  <ion-row>
+  <ion-row *ngIf="settingsService.remoteSettings['walletUrl']">
     <ion-col col-lg-3 col-md-4 col-sm-4 text-center *ngIf="!graphService.graph.registered">
-      <ion-item>
-        <button large ion-button title="register" (click)="register()" full>
-          <ion-icon name="register"></ion-icon>
-          Register
-        </button>
-      </ion-item>
+      <button large ion-button title="register" (click)="register()" full *ngIf="walletService.wallet.balance > 0">
+        <ion-icon name="register"></ion-icon>
+        Register
+      </button>
+      <button large disabled ion-button title="register" (click)="register()" full *ngIf="walletService.wallet.balance === 0">
+        <ion-icon name="register"></ion-icon>
+        Register
+      </button>
     </ion-col>
     <ion-col col-lg-3 col-md-4 col-sm-4 text-center>
-      <ion-item>
-        <button large ion-button title="Sign in" (click)="signIn()" full disabled *ngIf="!graphService.graph.registered && !signedIn">
-          <ion-icon name="signIn"></ion-icon>
-          Sign in
-        </button>
-        <button large ion-button title="Sign in" (click)="signIn()" full *ngIf="graphService.graph.registered && !signedIn">
-          <ion-icon name="signIn"></ion-icon>
-          Sign in
-        </button>
-        <a button clear href="{{settingsService.remoteSettings['baseUrl']}}" target="_blank" item-start>
-          Sign in&nbsp;<ion-icon name="arrow-dropright"></ion-icon>
-        </a>
-        <button large secondary ion-button title="Sign in" (click)="signIn()" full *ngIf="signedIn">
-          
-        </button>
-      </ion-item>
+      <button large ion-button title="Sign in" (click)="signIn()" full disabled *ngIf="!graphService.graph.registered && signedIn === false">
+        <ion-icon name="signIn"></ion-icon>
+        Sign in
+      </button>
+      <button large ion-button title="Sign in" (click)="signIn()" full *ngIf="graphService.graph.registered && signedIn === false">
+        <ion-icon name="signIn"></ion-icon>
+        Sign in
+      </button>
+      <a ion-button large secondary href="{{settingsService.remoteSettings['baseUrl']}}?rid={{graphService.graph.rid}}&id={{txnId}}" target="_blank" item-start *ngIf="graphService.graph.registered && signedIn === true">
+        Visit&nbsp;<ion-icon name="arrow-dropright"></ion-icon>
+      </a>
+      <a ion-button large secondary href="#" (click)="presentModal()" item-start *ngIf="graphService.graph.registered && signedIn === true">
+        Post status update&nbsp;<ion-icon name="arrow-dropright"></ion-icon>
+      </a>
     </ion-col>
   </ion-row>
   <ion-list col-lg-7>
@@ -100,14 +104,14 @@
             <p *ngIf="item.description" style="text-overflow:ellipsis;" text-wrap>
               {{item.description}}
             </p>
-            Files:<br>
+            <span *ngIf="item.fileName">Files:</span><br>
             <a *ngIf="item.fileName" style="text-overflow:ellipsis; margin-top:50px;" text-wrap (click)="download(item)">
               <strong>{{item.fileName}}</strong>
             </a>
           </ion-card-content>
         </div>
         <ion-row no-padding text-wrap (click)="reactsDetail(item)">
-            <ion-item [innerHTML]="reacts[item.id]"></ion-item>
+            <ion-item [innerHTML]="graphService.graph.reacts[item.id]"></ion-item>
         </ion-row>
         <ion-row no-padding>
           <ion-col>
@@ -135,15 +139,15 @@
         </ion-row>
         <ion-row>
           <ion-list col-lg-7>
-            <ion-item *ngFor="let comment of comments[item.id]">
+            <ion-item *ngFor="let comment of graphService.graph.comments[item.id]">
               <strong [innerHTML]="comment.username"></strong>
-              <ion-item [innerHTML]="comment.body" text-wrap></ion-item>
-              <button ion-button clear small icon-start (click)="toggled[comment._id] = !toggled[comment._id]" [(emojiPickerIf)]="toggled[comment._id]" [emojiPickerDirection]="'top'" (emojiPickerSelect)="commentReact($event, comment)">
+              <ion-item [innerHTML]="comment.relationship.comment" text-wrap></ion-item>
+              <button ion-button clear small icon-start (click)="toggled[comment.id] = !toggled[comment.id]" [(emojiPickerIf)]="toggled[comment.id]" [emojiPickerDirection]="'top'" (emojiPickerSelect)="commentReact($event, comment)">
                 <ion-icon name='sunny'></ion-icon>
                 React
               </button>
-              <ion-row *ngIf="commentReacts[comment._id] && commentReacts[comment._id].length > 0" no-padding text-wrap (click)="commentReactsDetail(comment)">
-                  <ion-item [innerHTML]="commentReacts[comment._id]"></ion-item>
+              <ion-row *ngIf="graphService.graph.commentReacts[comment.id] && graphService.graph.commentReacts[comment.id].length > 0" no-padding text-wrap (click)="commentReactsDetail(comment)">
+                  <ion-item [innerHTML]="graphService.graph.commentReacts[comment.id]"></ion-item>
               </ion-row>
             </ion-item>
           </ion-list>

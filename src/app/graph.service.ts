@@ -38,6 +38,9 @@ export class GraphService {
     getSignInsError = false;
     getNewSignInsError = false;
     getPostsError = false;
+    getReactsError = false;
+    getCommentsError = false;
+    getcommentReactsError = false;
     usernames = {};
     constructor(
         private storage: Storage,
@@ -60,9 +63,20 @@ export class GraphService {
         this.usernames = {};
     }
 
-    endpointRequest(endpoint) {
+    endpointRequest(endpoint, ids) {
         return new Promise((resolve, reject) => {
-            this.ahttp.get(this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
+            if (ids) {
+                var promise = this.ahttp.post(
+                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?bulletin_secret=' + this.bulletinSecretService.bulletin_secret,
+                    {ids: ids}
+                );
+            } else {
+                var promise = this.ahttp.get(
+                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?bulletin_secret=' + this.bulletinSecretService.bulletin_secret
+                )
+            }
+            
+            promise
             .subscribe((data) => {
                 try {
                     var info = JSON.parse(data['_body']);
@@ -81,6 +95,7 @@ export class GraphService {
 
     getInfo() {
         return new Promise((resolve, reject) => {
+            if (!this.settingsService.remoteSettings['walletUrl']) return resolve();
             this.endpointRequest('get-graph-info')
             .then((data: any) => {
                 this.getGraphError = false;
@@ -244,6 +259,48 @@ export class GraphService {
                 resolve(data.posts);
             }).catch(() => {
                 this.getPostsError = true;
+                reject(null);
+            });
+        });
+    }
+
+    getReacts(ids) {
+        return new Promise((resolve, reject) => {
+            this.endpointRequest('get-graph-reacts')
+            .then((data: any) => {
+                this.graph.reacts = this.parsePosts(data.reacts);
+                this.getReactsError = false;
+                resolve(data.reacts);
+            }).catch(() => {
+                this.getReactsError = true;
+                reject(null);
+            });
+        });
+    }
+
+    getComments(ids) {
+        return new Promise((resolve, reject) => {
+            this.endpointRequest('get-graph-comments', ids)
+            .then((data: any) => {
+                this.graph.comments = this.parsePosts(data.comments);
+                this.getCommentsError = false;
+                resolve(data.comments);
+            }).catch(() => {
+                this.getCommentsError = true;
+                reject(null);
+            });
+        });
+    }
+
+    getCommentReacts() {
+        return new Promise((resolve, reject) => {
+            this.endpointRequest('get-graph-comment-reacts')
+            .then((data: any) => {
+                this.graph.commentReacts = this.parsePosts(data.commentReacts);
+                this.getcommentReactsError = false;
+                resolve(data.commentReacts);
+            }).catch(() => {
+                this.getcommentReactsError = true;
                 reject(null);
             });
         });
@@ -507,10 +564,10 @@ export class GraphService {
                             this[graphCounts][message.rid] = message.height;
                             this[graphCount]++;
                         }
+                        new_messages.push(message);
                     }
-                    new_messages.push(message);
                 }
-                resolve(new_messages);
+                return resolve(new_messages);
             });
         });
     }

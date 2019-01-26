@@ -67,10 +67,9 @@ export class TransactionService {
                 this.rid = '';
             }
             var res = null;
-            // if(this.walletService.wallet.balance <= 0) {
-            //     if (this.resolve) this.resolve(false);
-            //     return;
-            // }
+            if(this.walletService.wallet.balance <= 0) {
+                return resolve(false);
+            }
             this.transaction = {
                 rid:  this.rid,
                 fee: 0.01,
@@ -204,6 +203,17 @@ export class TransactionService {
                     inputs_hashes_concat +
                     outputs_hashes_concat
                 ).toString('hex')
+            } else if (this.info.relationship.comment) {
+                // comment
+    
+                this.transaction.relationship = this.shared_encrypt(this.bulletin_secret, JSON.stringify(this.info.relationship));                    
+    
+                hash = foobar.bitcoin.crypto.sha256(
+                    this.transaction.relationship +
+                    this.transaction.fee.toFixed(8) +
+                    inputs_hashes_concat +
+                    outputs_hashes_concat
+                ).toString('hex')
             } else if (this.info.relationship.chatText) {
                 // chat
                 this.transaction.relationship = this.shared_encrypt(this.info.shared_secret, JSON.stringify(this.info.relationship));                    
@@ -248,11 +258,34 @@ export class TransactionService {
         });
     }
 
+    getFastGraphSignature() {
+        return new Promise((resolve, reject) => {
+            this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/sign-raw-transaction', {
+                hash: this.transaction.hash, 
+                bulletin_secret: this.bulletinSecretService.bulletin_secret,
+                input: this.transaction.inputs[0].id,
+                id: this.transaction.id
+            })
+            .subscribe((res) => {
+                try {
+                    this.transaction.signatures = [JSON.parse(res['_body']).signature]
+                    resolve();
+                } catch(err) {
+                    reject();
+                    
+                }
+            },
+            (err) => {
+                reject();
+            });
+        });
+    }
+
     onTransactionError() {
         if (this.txnattempts.length > 0) {
             var attempt = this.txnattempts.pop();
             this.transaction.id = this.get_transaction_id(this.transaction.hash, attempt);
-            this.sendTransaction();
+            return this.sendTransaction();
         }
     }
 
@@ -260,47 +293,57 @@ export class TransactionService {
         if (this.cbattempts.length > 0) {
             var attempt = this.cbattempts.pop();
             this.transaction.id = this.get_transaction_id(this.transaction.hash, attempt);
-            this.sendCallback();
+            return this.sendCallback();
         }
     }
 
     sendTransaction() {
-        if (this.transaction.signatures && this.transaction.signatures.length > 0) {
-            var url = this.settingsService.remoteSettings['fastgraphUrl'] + '?bulletin_secret=' + this.bulletin_secret
-        } else {
-            var url = this.settingsService.remoteSettings['transactionUrl'] + '?bulletin_secret=' + this.bulletin_secret
-        }
-        this.ahttp.post(
-            url,
-            this.transaction)
-        .subscribe((data) => {
-            if (this.resolve && !this.callbackurl) this.resolve(JSON.parse(data['_body']));
-        },
-        (error) => {
-            if (this.txnattempts.length > 0) {
-                this.onTransactionError();
+        return new Promise((resolve, reject) => {
+            if (this.transaction.signatures && this.transaction.signatures.length > 0) {
+                var url = this.settingsService.remoteSettings['fastgraphUrl'] + '?bulletin_secret=' + this.bulletin_secret
+            } else {
+                var url = this.settingsService.remoteSettings['transactionUrl'] + '?bulletin_secret=' + this.bulletin_secret
             }
+            this.ahttp.post(
+                url,
+                this.transaction)
+            .subscribe((data) => {
+                resolve(JSON.parse(data['_body']));
+            },
+            (error) => {
+                if (this.txnattempts.length > 0) {
+                    reject();
+                }
+            });
+        })
+        .catch((err) => {
+            this.onTransactionError();
         });
     }
 
     sendCallback() {
-        if(this.callbackurl) {
-            this.ahttp.post(
-                this.callbackurl,
-                {
-                    bulletin_secret: this.bulletin_secret,
-                    to: this.key.getAddress(),
-                    username: this.username
-                })
-            .subscribe((data) => {
-                if (this.resolve) this.resolve(JSON.parse(data['_body']));
-            },
-            (error) => {
-                if (this.cbattempts.length > 0) {
-                    this.onCallbackError();
-                }
-            });
-        }
+        return new Promise((resolve, reject) => {
+            if(this.callbackurl) {
+                this.ahttp.post(
+                    this.callbackurl,
+                    {
+                        bulletin_secret: this.bulletin_secret,
+                        to: this.key.getAddress(),
+                        username: this.username
+                    })
+                .subscribe((data) => {
+                    resolve(JSON.parse(data['_body']));
+                },
+                (error) => {
+                    if (this.cbattempts.length > 0) {
+                        reject();
+                    }
+                });
+            }
+        })
+        .catch((err) => {
+            return this.onCallbackError();
+        });
     }
 
 

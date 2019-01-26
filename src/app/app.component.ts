@@ -3,6 +3,7 @@ import { Nav, Platform } from 'ionic-angular';
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
 import { GraphService } from './graph.service';
+import { SettingsService } from './settings.service';
 import { BulletinSecretService } from './bulletinSecret.service';
 import { WalletService } from './wallet.service';
 import { Events } from 'ionic-angular';
@@ -23,7 +24,10 @@ export class MyApp {
 
   rootPage: any;
 
-  pages: Array<{title: string, label: string, component: any, count: any, color: any}>;
+  pagesForRegisteredUser: Array<{title: string, label: string, component: any, count: any, color: any}>;
+  pagesForUnregisteredUser: Array<{title: string, label: string, component: any, count: any, color: any}>;
+  defaultPages: Array<{title: string, label: string, component: any, count: any, color: any}>;
+  noUrlPages: any;
 
   graph: any;
   friend_request_count: any;
@@ -35,48 +39,46 @@ export class MyApp {
     public splashScreen: SplashScreen,
     private walletService: WalletService,
     private graphService: GraphService,
+    public settingsService: SettingsService,
     private bulletinSecretService: BulletinSecretService,
     public events: Events
   ) {
-    events.subscribe('pages', () => {
-      this.setPages(false);
+    events.subscribe('graph', () => {
+      this.rootPage = HomePage;
     });
     events.subscribe('pages-error', () => {
-      this.setPages(true, 'settings');
+      
     });
-    this.graphService.graph = {}
+    this.graphService.graph = {
+      comments: "",
+      reacts: "",
+      commentReacts: ""
+    }
     this.initializeApp();
     this.walletService.get().then((data: any) => {
       this.rootPage = HomePage;
-      this.setPages(true, data ? null : 'settings');
     }).catch(() => {
       this.rootPage = Settings;
-      this.setPages(true, 'settings');
     });
-  }
 
-  setPages(changePages, page=null) {
-    if (page == 'settings') {
-      this.pages = [
-        { title: 'Me', label: 'Set Username', component: ProfilePage, count: false, color: '' },
-        { title: 'Settings', label: 'Settings', component: Settings, count: false, color: '' }
-      ];
-    } else if (this.bulletinSecretService.username) {
-      this.pages = [
-        { title: 'Apps', label: 'Apps', component: HomePage, count: false, color: '' },
-        { title: 'Auth', label: 'Auth', component: ListPage, count: false, color: '' },
-        { title: 'Messages', label: 'Messages', component: ListPage, count: false, color: '' },
-        { title: 'Friend Requests', label: 'Friend Requests', component: ListPage, count: this.graphService.friend_request_count, color: this.graphService.friend_request_count > 0 ? 'danger' : '' },
-        { title: 'Sent Requests', label: 'Sent Requests', component: ListPage, count: 0, color: '' },
-        { title: 'Coins', label: 'Coins', component: SendReceive, count: false, color: '' },
-        { title: 'Settings', label: 'Settings', component: Settings, count: false, color: '' }
-      ];
-    } else {
-      this.pages = [
-        { title: 'Me', label: 'Set Username', component: ProfilePage, count: false, color: '' },
-        { title: 'Settings', label: 'Settings', component: Settings, count: false, color: '' }
-      ];
-    }
+    this.pagesForRegisteredUser = [
+      { title: 'Home', label: 'App', component: HomePage, count: false, color: '' },
+      { title: 'Messages', label: 'Messages', component: ListPage, count: false, color: '' },
+      { title: 'Friend Requests', label: 'Friend Requests', component: ListPage, count: this.graphService.friend_request_count, color: this.graphService.friend_request_count > 0 ? 'danger' : '' },
+      { title: 'Sent Requests', label: 'Sent Requests', component: ListPage, count: 0, color: '' }
+    ];
+
+    this.pagesForUnregisteredUser = [
+      { title: 'Home', label: 'App', component: HomePage, count: false, color: '' }
+    ];
+
+    this.defaultPages = [
+      { title: 'Identity', label: 'Identity', component: Settings, count: false, color: '' },
+      { title: 'Wallet', label: 'Wallet', component: SendReceive, count: false, color: '' }
+    ];
+
+    this.noUrlPages = [
+    ];
   }
 
   initializeApp() {

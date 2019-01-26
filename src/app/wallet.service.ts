@@ -21,6 +21,7 @@ export class WalletService {
 
     get() {
         return new Promise((resolve, reject) => {
+            if (!this.settingsService.remoteSettings['walletUrl']) return resolve();
             this.bulletinSecretService.get()
             .then(() => {
                 return this.walletPromise();
