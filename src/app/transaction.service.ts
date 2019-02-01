@@ -101,7 +101,17 @@ export class TransactionService {
                 if(this.unspent_transaction_override) {
                     unspent_transactions = [this.unspent_transaction_override];
                 } else {
-                    unspent_transactions = this.walletService.wallet.unspent_transactions;
+                    if (
+                        this.info.relationship.postText ||
+                        this.info.relationship.comment ||
+                        this.info.relationship.react ||
+                        this.info.relationship.chatText ||
+                        this.info.relationship.signIn
+                    ) {
+                        unspent_transactions = this.walletService.wallet.txns_for_fastgraph;
+                    } else {
+                        unspent_transactions = this.walletService.wallet.unspent_transactions;
+                    }
                     unspent_transactions.sort(function (a, b) {
                         if (a.height < b.height)
                           return -1
@@ -214,6 +224,17 @@ export class TransactionService {
                     inputs_hashes_concat +
                     outputs_hashes_concat
                 ).toString('hex')
+            } else if (this.info.relationship.react) {
+                // react
+    
+                this.transaction.relationship = this.shared_encrypt(this.bulletin_secret, JSON.stringify(this.info.relationship));                    
+    
+                hash = foobar.bitcoin.crypto.sha256(
+                    this.transaction.relationship +
+                    this.transaction.fee.toFixed(8) +
+                    inputs_hashes_concat +
+                    outputs_hashes_concat
+                ).toString('hex')
             } else if (this.info.relationship.chatText) {
                 // chat
                 this.transaction.relationship = this.shared_encrypt(this.info.shared_secret, JSON.stringify(this.info.relationship));                    
@@ -281,22 +302,6 @@ export class TransactionService {
         });
     }
 
-    onTransactionError() {
-        if (this.txnattempts.length > 0) {
-            var attempt = this.txnattempts.pop();
-            this.transaction.id = this.get_transaction_id(this.transaction.hash, attempt);
-            return this.sendTransaction();
-        }
-    }
-
-    onCallbackError() {
-        if (this.cbattempts.length > 0) {
-            var attempt = this.cbattempts.pop();
-            this.transaction.id = this.get_transaction_id(this.transaction.hash, attempt);
-            return this.sendCallback();
-        }
-    }
-
     sendTransaction() {
         return new Promise((resolve, reject) => {
             if (this.transaction.signatures && this.transaction.signatures.length > 0) {
@@ -315,9 +320,6 @@ export class TransactionService {
                     reject();
                 }
             });
-        })
-        .catch((err) => {
-            this.onTransactionError();
         });
     }
 
@@ -340,9 +342,6 @@ export class TransactionService {
                     }
                 });
             }
-        })
-        .catch((err) => {
-            return this.onCallbackError();
         });
     }
 

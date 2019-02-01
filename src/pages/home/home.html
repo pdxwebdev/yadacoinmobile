@@ -111,11 +111,11 @@
           </ion-card-content>
         </div>
         <ion-row no-padding text-wrap (click)="reactsDetail(item)">
-            <ion-item [innerHTML]="graphService.graph.reacts[item.id]"></ion-item>
+            <ion-item><span *ngFor="let react of graphService.graph.reacts[item.id]" [innerHTML]="react.relationship.react"></span></ion-item>
         </ion-row>
         <ion-row no-padding>
           <ion-col>
-            <button ion-button clear small icon-start (click)="toggled[item.id] = !toggled[item.id]" [(emojiPickerIf)]="toggled[item.id]" [emojiPickerDirection]="'top'" (emojiPickerSelect)="react($event, item)">
+            <button ion-button clear small icon-start (click)="toggled[item.id] = !toggled[item.id]" [(emojiPickerIf)]="toggled[item.id]" [emojiPickerDirection]="'right'" (emojiPickerSelect)="react($event, item)">
               <ion-icon name='sunny'></ion-icon>
               React
             </button>
@@ -140,14 +140,14 @@
         <ion-row>
           <ion-list col-lg-7>
             <ion-item *ngFor="let comment of graphService.graph.comments[item.id]">
-              <strong [innerHTML]="comment.username"></strong>
-              <ion-item [innerHTML]="comment.relationship.comment" text-wrap></ion-item>
-              <button ion-button clear small icon-start (click)="toggled[comment.id] = !toggled[comment.id]" [(emojiPickerIf)]="toggled[comment.id]" [emojiPickerDirection]="'top'" (emojiPickerSelect)="commentReact($event, comment)">
+              <button style="z-index:1000;"ion-button clear small icon-start (click)="toggled[comment.id] = !toggled[comment.id]" [(emojiPickerIf)]="toggled[comment.id]" [emojiPickerDirection]="'right'" (emojiPickerSelect)="react($event, comment)">
                 <ion-icon name='sunny'></ion-icon>
                 React
               </button>
+              <strong [innerHTML]="comment.username"></strong>
+              <ion-item [innerHTML]="comment.relationship.comment" text-wrap></ion-item>
               <ion-row *ngIf="graphService.graph.commentReacts[comment.id] && graphService.graph.commentReacts[comment.id].length > 0" no-padding text-wrap (click)="commentReactsDetail(comment)">
-                  <ion-item [innerHTML]="graphService.graph.commentReacts[comment.id]"></ion-item>
+                  <ion-item><span *ngFor="let react of graphService.graph.commentReacts[comment.id]" [innerHTML]="react.relationship.react"></span></ion-item>
               </ion-row>
             </ion-item>
           </ion-list>

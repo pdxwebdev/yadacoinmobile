@@ -41,7 +41,7 @@ export class WalletService {
                 return reject()
             }
             if(this.bulletinSecretService.username) {
-                this.ahttp.get(this.settingsService.remoteSettings['walletUrl'] + '?address=' + this.bulletinSecretService.key.getAddress()).
+                this.ahttp.get(this.settingsService.remoteSettings['walletUrl'] + '?address=' + this.bulletinSecretService.key.getAddress() + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret).
                 subscribe((data) => {
                     if(data['_body']) {
                         this.walletError = false;

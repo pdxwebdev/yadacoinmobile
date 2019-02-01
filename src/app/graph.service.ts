@@ -41,6 +41,7 @@ export class GraphService {
     getReactsError = false;
     getCommentsError = false;
     getcommentReactsError = false;
+    getcommentRepliesError = false;
     usernames = {};
     constructor(
         private storage: Storage,
@@ -63,7 +64,7 @@ export class GraphService {
         this.usernames = {};
     }
 
-    endpointRequest(endpoint, ids) {
+    endpointRequest(endpoint, ids=null) {
         return new Promise((resolve, reject) => {
             if (ids) {
                 var promise = this.ahttp.post(
@@ -266,7 +267,7 @@ export class GraphService {
 
     getReacts(ids) {
         return new Promise((resolve, reject) => {
-            this.endpointRequest('get-graph-reacts')
+            this.endpointRequest('get-graph-reacts', ids)
             .then((data: any) => {
                 this.graph.reacts = this.parsePosts(data.reacts);
                 this.getReactsError = false;
@@ -292,15 +293,29 @@ export class GraphService {
         });
     }
 
-    getCommentReacts() {
+    getCommentReacts(ids) {
         return new Promise((resolve, reject) => {
-            this.endpointRequest('get-graph-comment-reacts')
+            this.endpointRequest('get-graph-reacts', ids)
             .then((data: any) => {
-                this.graph.commentReacts = this.parsePosts(data.commentReacts);
+                this.graph.commentReacts = this.parsePosts(data.reacts);
                 this.getcommentReactsError = false;
-                resolve(data.commentReacts);
+                resolve(data.comment_reacts);
             }).catch(() => {
                 this.getcommentReactsError = true;
+                reject(null);
+            });
+        });
+    }
+
+    getCommentReplies(ids) {
+        return new Promise((resolve, reject) => {
+            this.endpointRequest('get-graph-comments', ids)
+            .then((data: any) => {
+                this.graph.commentReplies = this.parsePosts(data.comments);
+                this.getcommentRepliesError = false;
+                resolve(data.comments);
+            }).catch(() => {
+                this.getcommentRepliesError = true;
                 reject(null);
             });
         });

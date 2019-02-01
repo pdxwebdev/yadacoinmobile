@@ -43,6 +43,7 @@ export class HomePage {
     comments = {};
     commentInputs = {};
     ids_to_get = [];
+    comment_ids_to_get = [];
     commentReacts = {};
     chatColor: any;
     friendRequestColor: any;
@@ -153,17 +154,38 @@ export class HomePage {
     }
 
     react(e, item) {
-        this.ahttp.post(
-            this.settingsService.remoteSettings['baseUrl'] + '/react',
-            {
-                'react': e.char,
-                'txn_id': item.id,
-                'bulletin_secret': this.bulletinSecretService.bulletin_secret
-            }
-        )
-        .subscribe((res) => {
-            var existing = this.reacts[item.id] || '';
-            this.reacts[item.id] = existing + e.char;
+        return this.walletService.get()
+        .then(() => {
+            return this.transactionService.generateTransaction({
+                relationship: {
+                    'react': e.char,
+                    'id': item.id,
+                    'bulletin_secret': this.bulletinSecretService.bulletin_secret
+                }
+            });
+        })
+        .then(() => {
+            return this.transactionService.getFastGraphSignature();
+        })
+        .then((hash) => {
+            return this.transactionService.sendTransaction();
+        })
+        .then(() => {
+            const toast = this.toastCtrl.create({
+                message: 'React sent',
+                duration: 2000
+            });
+            return toast.present();
+        })
+        .then(() => {
+            this.graphService.getReacts(this.ids_to_get)
+        })
+        .catch((err) => {
+            const toast = this.toastCtrl.create({
+                message: 'Something went wrong with your react!',
+                duration: 2000
+            });
+            toast.present();  
         });
     }
 
@@ -196,14 +218,6 @@ export class HomePage {
             return toast.present();
         })
         .then(() => {
-            if(!this.commentInputs[item.id]) {
-                this.commentInputs[item.id] = [];
-            }
-            if(!this.comments[item.id]) {
-                this.comments[item.id] = [];
-            }
-            this.commentInputs[item.id] = '';
-
             this.graphService.getComments(this.ids_to_get)
         })
         .catch((err) => {
@@ -216,17 +230,78 @@ export class HomePage {
     }
 
     commentReact(e, item) {
-        this.ahttp.post(
-            this.settingsService.remoteSettings['baseUrl'] + '/comment-react',
-            {
-                'react': e.char,
-                'id': item.id,
-                'bulletin_secret': this.bulletinSecretService.bulletin_secret
-            }
-        )
-        .subscribe((res) => {
-            var existing = this.commentReacts[item._id] || '';
-            this.commentReacts[item._id] = existing + e.char;
+        return this.walletService.get()
+        .then(() => {
+            return this.transactionService.generateTransaction({
+                relationship: {
+                    'react': e.char,
+                    'id': item.id,
+                    'bulletin_secret': this.bulletinSecretService.bulletin_secret
+                }
+            });
+        })
+        .then(() => {
+            return this.transactionService.getFastGraphSignature();
+        })
+        .then((hash) => {
+            return this.transactionService.sendTransaction();
+        })
+        .then(() => {
+            const toast = this.toastCtrl.create({
+                message: 'Comment react sent',
+                duration: 2000
+            });
+            return toast.present();
+        })
+        .then(() => {
+            this.graphService.getCommentReacts(this.comment_ids_to_get)
+        })
+        .catch((err) => {
+            const toast = this.toastCtrl.create({
+                message: 'Something went wrong with your react!',
+                duration: 2000
+            });
+            toast.present();  
+        });
+    }
+
+    commentReplies(item) {
+        if (!this.commentInputs[item.id]) {
+            alert('Comment cannot be empty.');
+            return;
+        }
+        return this.walletService.get()
+        .then(() => {
+            return this.transactionService.generateTransaction({
+                relationship: {
+                    'comment': this.commentInputs[item.id],
+                    'id': item.id,
+                    'bulletin_secret': this.bulletinSecretService.bulletin_secret
+                }
+            });
+        })
+        .then(() => {
+            return this.transactionService.getFastGraphSignature();
+        })
+        .then((hash) => {
+            return this.transactionService.sendTransaction();
+        })
+        .then(() => {
+            const toast = this.toastCtrl.create({
+                message: 'Comment posted',
+                duration: 2000
+            });
+            return toast.present();
+        })
+        .then(() => {
+            this.graphService.getCommentReplies(this.comment_ids_to_get)
+        })
+        .catch((err) => {
+            const toast = this.toastCtrl.create({
+                message: 'Something went wrong with your comment!',
+                duration: 2000
+            });
+            toast.present();  
         });
     }
 
@@ -241,27 +316,8 @@ export class HomePage {
     }
 
     reactsDetail(item) {
-        this.ahttp.post(
-            this.settingsService.remoteSettings['baseUrl'] + '/get-reacts-detail',
-            {'txn_id': item.id}
-        )
-        .subscribe((res) => {
-            var data = JSON.parse(res['_body']);
-            var item = {pageTitle: {title:"Reacts Detail"}, detail: data};
-            this.navCtrl.push(ListPage, item);
-        });
-    }
-
-    commentReactsDetail(item) {
-        this.ahttp.post(
-            this.settingsService.remoteSettings['baseUrl'] + '/get-comment-reacts-detail',
-            {'_id': item._id}
-        )
-        .subscribe((res) => {
-            var data = JSON.parse(res['_body']);
-            var item = {pageTitle: {title:"Reacts Detail"}, detail: data};
-            this.navCtrl.push(ListPage, item);
-        });
+        var data = {pageTitle: {title:"Reacts Detail"}, detail: this.graphService.graph.reacts[item.id]};
+        this.navCtrl.push(ListPage, data);
     }
 
     refresh(refresher) {
@@ -330,25 +386,29 @@ export class HomePage {
             this.loadingModal.dismiss().catch(() => {});
         });
 
-        //this.graphService.getReacts(this.ids_to_get);
-
-        //this.graphService.getCommentReacts(comment_ids_to_get);
-
         if(refresher) refresher.complete();
         //this is our blocking procedure, update our posts for the main feed
         return this.graphService.getPosts().then(() => {
             return this.generateFeed();
         })
         .then(() => {
+            return this.graphService.getReacts(this.ids_to_get);
+        })
+        .then(() => {
             return this.graphService.getComments(this.ids_to_get);
         })
         .then(() => {
-            var comment_ids_to_get = [];
             for (var i=0; i < Object.keys(this.graphService.graph.comments).length; i++) {
-                for (var j=0; j < this.comments[Object.keys(this.graphService.graph.comments)[i]].length; j++) {
-                    comment_ids_to_get.push(this.graphService.graph.comments[Object.keys(this.graphService.graph.comments)[i]][j]._id);
+                for (var j=0; j < this.graphService.graph.comments[Object.keys(this.graphService.graph.comments)[i]].length; j++) {
+                    this.comment_ids_to_get.push(this.graphService.graph.comments[Object.keys(this.graphService.graph.comments)[i]][j].id);
                 }
             }
+            return this.graphService.getCommentReacts(this.comment_ids_to_get);
+        })
+        .then(() => {
+            return this.graphService.getCommentReplies(this.comment_ids_to_get);
+        })
+        .then(() => {
             this.loadingModal.dismiss().catch(() => {});
         })
         .catch(() => {
@@ -451,10 +511,10 @@ export class HomePage {
             });
         })
         .then((hash) => {
-            this.transactionService.sendTransaction();
+            return this.transactionService.sendTransaction();
         })
         .then(() => {
-            this.transactionService.sendCallback();
+            return this.transactionService.sendCallback();
         })
         .then(() => {
             this.refresh(null);
