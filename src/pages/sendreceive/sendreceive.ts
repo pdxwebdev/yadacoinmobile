@@ -85,12 +85,11 @@ export class SendReceive {
         alert.addButton({
             text: 'Confirm',
             handler: (data: any) => {
-                new Promise((resolve, reject) => {
-                    this.transactionService.generateTransaction({
-                        to: this.address,
-                        value: value,
-                        resolve: resolve
-                    });
+                this.transactionService.generateTransaction({
+                    to: this.address,
+                    value: value
+                }).then(() => {
+                    return this.transactionService.sendTransaction();
                 }).then((txn) => {
                     var title = 'Transaction Sent';
                     var message = 'Your transaction has been sent succefully.';

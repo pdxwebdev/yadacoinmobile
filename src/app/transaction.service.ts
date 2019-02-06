@@ -68,7 +68,7 @@ export class TransactionService {
             }
             var res = null;
             if(this.walletService.wallet.balance <= 0) {
-                return resolve(false);
+                return reject("no money");
             }
             this.transaction = {
                 rid:  this.rid,
@@ -92,7 +92,7 @@ export class TransactionService {
                 transaction_total = this.transaction.fee;
             }
             if ((this.info.relationship && this.info.relationship.dh_private_key && this.walletService.wallet.balance < (this.transaction.outputs[0].value + this.transaction.fee)) /* || this.walletService.wallet.unspent_transactions.length == 0*/) {
-                resolve(false);
+                reject("not enough money");
                 return
             } else {
                 var inputs = [];
@@ -101,6 +101,7 @@ export class TransactionService {
                 if(this.unspent_transaction_override) {
                     unspent_transactions = [this.unspent_transaction_override];
                 } else {
+                    this.info.relationship = this.info.relationship || {};
                     if (
                         this.info.relationship.postText ||
                         this.info.relationship.comment ||
