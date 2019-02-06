@@ -27,7 +27,7 @@
           {{p.label}}
         </button>
       </ion-list>
-      <ion-list *ngIf="!settingsService.remoteSettings['walletUrl']">
+      <ion-list>
         <button menuClose ion-item *ngFor="let p of noUrlPages" (click)="openPage(p)">
           {{p.label}}
         </button>

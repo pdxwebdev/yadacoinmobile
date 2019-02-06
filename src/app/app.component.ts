@@ -56,7 +56,7 @@ export class MyApp {
     }
     this.initializeApp();
     this.walletService.get().then((data: any) => {
-      this.rootPage = HomePage;
+      this.rootPage = Settings;
     }).catch(() => {
       this.rootPage = Settings;
     });
@@ -73,11 +73,11 @@ export class MyApp {
     ];
 
     this.defaultPages = [
-      { title: 'Identity', label: 'Identity', component: Settings, count: false, color: '' },
-      { title: 'Wallet', label: 'Wallet', component: SendReceive, count: false, color: '' }
+      { title: 'Wallet', label: 'Wallet', component: SendReceive, count: false, color: '' },
     ];
 
     this.noUrlPages = [
+      { title: 'Identity', label: 'Identity', component: Settings, count: false, color: '' }
     ];
   }
 

@@ -73,9 +73,6 @@ export class HomePage {
         public toastCtrl: ToastController
     ) {
         this.prefix = 'usernames-';
-        if (!graphService.graph) {
-            console.log('hahahaha')
-        }
         if(!settingsService.remoteSettingsUrl){
             this.bulletinSecretService.get().then(() => {
                 const toast = this.toastCtrl.create({
@@ -343,7 +340,8 @@ export class HomePage {
             }
             this.loadingBalance = false;
             let options = new RequestOptions({ withCredentials: true });
-            this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '?rid=' + this.graphService.graph.rid + '&id=' + this.txnId, options).subscribe((res) => {
+
+            this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '?rid=' + this.graphService.graph.rid + '&id=' + (this.txnId || ''), options).subscribe((res) => {
                 var data = JSON.parse(res['_body']);
                 this.signedIn = data.authenticated;
                 this.loading = false;

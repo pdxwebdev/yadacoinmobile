@@ -128,11 +128,14 @@ export class BulletinSecretService {
         });
     }
 
-    create() {
-        this.keyname = 'usernames-';
-        this.storage.set('last-keyname', this.keyname)
-        return this.get().then(() => {
-
+    create(username) {
+        return new Promise((resolve, reject) => {
+            if (!username) return reject();
+            this.keyname = 'usernames-' + username;
+            this.storage.set('last-keyname', this.keyname)
+            return this.get().then(() => {
+                return resolve();
+            });
         });
     }
 

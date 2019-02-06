@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { NavController, NavParams } from 'ionic-angular';
+import { NavController, NavParams, ToastController } from 'ionic-angular';
 import { Storage } from '@ionic/storage';
 import { SettingsService } from '../../app/settings.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
@@ -44,7 +44,8 @@ export class Settings {
         private graphService: GraphService,
         private socialSharing: SocialSharing,
         private walletService: WalletService,
-        public events: Events
+        public events: Events,
+        public toastCtrl: ToastController
     ) {
         this.refresh(null).catch(() => {
 
@@ -116,7 +117,45 @@ export class Settings {
     }
 
     createKey() {
-        this.bulletinSecretService.create()
+        new Promise((resolve, reject) => {
+            let alert = this.alertCtrl.create({
+                title: 'Set username',
+                inputs: [
+                {
+                    name: 'username',
+                    placeholder: 'Username'
+                }
+                ],
+                buttons: [
+                {
+                    text: 'Cancel',
+                    role: 'cancel',
+                    handler: data => {
+                        console.log('Cancel clicked');
+                        reject();
+                    }
+                },
+                {
+                    text: 'Save',
+                    handler: data => {
+                        const toast = this.toastCtrl.create({
+                            message: 'Identity created',
+                            duration: 2000
+                        });
+                        toast.present();
+                        resolve(data.username);
+                    }
+                }
+                ]
+            });
+            alert.present();
+        })
+        .then((username) => {
+            return this.bulletinSecretService.create(username);
+        })
+        .then(() => {
+            return this.doSet(this.bulletinSecretService.keyname);
+        })
         .then(() => {
             if (this.settingsService.remoteSettings['walletUrl']) {
                 return this.graphService.getInfo();
@@ -137,7 +176,7 @@ export class Settings {
         this.storage.set('last-keyname', this.prefix + key);
         return this.doSet(this.prefix + key)
         .then(() => {
-            this.events.publish('graph');
+            this.events.publish('pages-settings');
         })
         .catch(() => {
             console.log('can not set identity')
@@ -157,7 +196,6 @@ export class Settings {
                     return this.graphService.getInfo();
                 }
             }).then(() => {
-                this.events.publish('pages');
                 this.serverDown = false;
                 if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
                     this.firebaseService.initFirebase();
@@ -174,6 +212,9 @@ export class Settings {
         this.settingsService.go()
         .then(() => {
             return this.set(this.bulletinSecretService.keyname.substr(this.prefix.length));
+        })
+        .then(() => {
+            this.events.publish('graph');  
         });
     }
 

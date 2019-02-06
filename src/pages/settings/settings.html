@@ -3,7 +3,7 @@
     <button ion-button menuToggle color="{{color}}">
       <ion-icon name="menu"></ion-icon>
     </button>
-    <ion-item>
+    <ion-item *ngIf="bulletinSecretService.keyname">
       <a button clear href="https://youtube.com/w=lajksdf98" target="_blank" item-start>
         <ion-icon large name="help-circle"></ion-icon>
       </a>
@@ -15,23 +15,18 @@
 </ion-header>
 
 <ion-content padding>
-  <ion-content *ngIf="settingsService.remoteSettings['walletUrl']">
+  <ion-content>
     <ion-refresher (ionRefresh)="refresh($event)">
       <ion-refresher-content></ion-refresher-content>
     </ion-refresher>
-    <ion-item class="alert alert-danger" *ngIf="!bulletinSecretService.username" color="danger">Specify a username on the Set Username tab</ion-item>
-    <ion-item class="alert alert-danger" *ngIf="walletService.walletError" color="danger">Error accessing wallet.</ion-item>
-    <ion-item class="alert alert-danger" *ngIf="graphService.getGraphError" color="danger">Error accessing graph.</ion-item>
-    <ion-item class="alert alert-danger" *ngIf="graphService.getSentFriendRequestsError" color="danger">Error accessing sent friend requests.</ion-item>
-    <ion-item class="alert alert-danger" *ngIf="graphService.getFriendsError" color="danger">Error accessing friend requests.</ion-item>
-    <ion-item class="alert alert-danger" *ngIf="graphService.getMessagesError" color="danger">Error accessing messages.</ion-item>
-    <ion-item class="alert alert-danger" *ngIf="graphService.getNewMessagesError" color="danger">Error accessing new messages.</ion-item>
-    <ion-item class="alert alert-danger" *ngIf="graphService.getSignInsError" color="danger">Error accessing sign ins.</ion-item>
-    <ion-item class="alert alert-danger" *ngIf="graphService.getNewSignInsError" color="danger">Error accessing new sign ins.</ion-item>
-    <ion-item class="alert alert-danger" *ngIf="graphService.getPostsError" color="danger">Error accessing posts.</ion-item>
-    <ion-item class="alert alert-danger" *ngIf="serverDown" color="danger">Network error.</ion-item>
+    <ion-content *ngIf="!settingsService.remoteSettings['walletUrl'] && bulletinSecretService.keyname">
+      <h3>Enter the URL of a YadaCoin app in the box above <ion-icon large large name="arrow-up"></ion-icon></h3>
+    </ion-content>
     <h3>Identities</h3>
-    <p>
+    <p *ngIf="!bulletinSecretService.keyname">
+      Select an identity from the list below.
+    </p>
+    <p *ngIf="bulletinSecretService.keyname">
       The highlighted row is the active identity that will be used for the app at: {{settingsService.remoteSettingsUrl}}
     </p>
     <ion-list>
