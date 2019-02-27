@@ -75,7 +75,9 @@ export class TransactionService {
                 fee: 0.01,
                 requester_rid: typeof this.info.requester_rid == 'undefined' ? '' : this.info.requester_rid,
                 requested_rid: typeof this.info.requested_rid == 'undefined' ? '' : this.info.requested_rid,
-                outputs: []
+                outputs: [],
+                time: (+ new Date()).toString(),
+                public_key: this.key.getPublicKeyBuffer().toString('hex')
             };
             if (this.info.dh_public_key && this.info.relationship.dh_private_key) {
                 this.transaction.dh_public_key = this.info.dh_public_key;
@@ -83,7 +85,7 @@ export class TransactionService {
             if (this.to) {
                 this.transaction.outputs.push({
                     to: this.to,
-                    value: this.value || 1
+                    value: this.value || 0
                 })
             }
             if (this.transaction.outputs.length > 0) {
@@ -103,6 +105,7 @@ export class TransactionService {
                 } else {
                     this.info.relationship = this.info.relationship || {};
                     if (
+                        (this.info.requester_rid && this.info.requested_rid) ||
                         this.info.relationship.postText ||
                         this.info.relationship.comment ||
                         this.info.relationship.react ||
@@ -147,8 +150,7 @@ export class TransactionService {
             }
             
             if (input_sum < transaction_total) {
-                resolve(false);
-                return
+                return reject(false);
             }
             this.transaction.inputs = inputs;
     
@@ -194,6 +196,8 @@ export class TransactionService {
                 // creating new relationship
                 this.transaction.relationship = this.encrypt()
                 var hash = foobar.bitcoin.crypto.sha256(
+                    this.transaction.public_key +
+                    this.transaction.time +
                     this.transaction.dh_public_key +
                     this.transaction.rid +
                     this.transaction.relationship +
@@ -209,6 +213,8 @@ export class TransactionService {
                 this.transaction.relationship = this.shared_encrypt(this.bulletin_secret, JSON.stringify(this.info.relationship));                    
     
                 hash = foobar.bitcoin.crypto.sha256(
+                    this.transaction.public_key +
+                    this.transaction.time +
                     this.transaction.relationship +
                     this.transaction.fee.toFixed(8) +
                     inputs_hashes_concat +
@@ -220,6 +226,8 @@ export class TransactionService {
                 this.transaction.relationship = this.shared_encrypt(this.bulletin_secret, JSON.stringify(this.info.relationship));                    
     
                 hash = foobar.bitcoin.crypto.sha256(
+                    this.transaction.public_key +
+                    this.transaction.time +
                     this.transaction.relationship +
                     this.transaction.fee.toFixed(8) +
                     inputs_hashes_concat +
@@ -231,6 +239,8 @@ export class TransactionService {
                 this.transaction.relationship = this.shared_encrypt(this.bulletin_secret, JSON.stringify(this.info.relationship));                    
     
                 hash = foobar.bitcoin.crypto.sha256(
+                    this.transaction.public_key +
+                    this.transaction.time +
                     this.transaction.relationship +
                     this.transaction.fee.toFixed(8) +
                     inputs_hashes_concat +
@@ -241,6 +251,8 @@ export class TransactionService {
                 this.transaction.relationship = this.shared_encrypt(this.info.shared_secret, JSON.stringify(this.info.relationship));                    
     
                 hash = foobar.bitcoin.crypto.sha256(
+                    this.transaction.public_key +
+                    this.transaction.time +
                     this.transaction.rid +
                     this.transaction.relationship +
                     this.transaction.fee.toFixed(8) +
@@ -252,6 +264,8 @@ export class TransactionService {
                 this.transaction.relationship = this.shared_encrypt(this.info.shared_secret, JSON.stringify(this.info.relationship));                    
     
                 hash = foobar.bitcoin.crypto.sha256(
+                    this.transaction.public_key +
+                    this.transaction.time +
                     this.transaction.rid +
                     this.transaction.relationship +
                     this.transaction.fee.toFixed(8) +
@@ -261,6 +275,8 @@ export class TransactionService {
             } else {
                 //straight transaction
                 hash = foobar.bitcoin.crypto.sha256(
+                    this.transaction.public_key +
+                    this.transaction.time +
                     this.transaction.fee.toFixed(8) +
                     inputs_hashes_concat +
                     outputs_hashes_concat
@@ -271,7 +287,6 @@ export class TransactionService {
             var attempt = this.txnattempts.pop();
             attempt = this.cbattempts.pop();
             this.transaction.id = this.get_transaction_id(this.transaction.hash, attempt);
-            this.transaction.public_key = this.key.getPublicKeyBuffer().toString('hex');
             if(hash) {
                 resolve(hash);
             } else {

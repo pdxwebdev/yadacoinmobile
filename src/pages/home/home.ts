@@ -351,7 +351,7 @@ export class HomePage {
         .catch(() => {
             console.log('homepage walletService error');
         });
-
+        
         //check for friend requests
         this.graphService.getFriends()
         .then(() => {
@@ -630,28 +630,49 @@ export class HomePage {
                 // create and send transaction to create the relationship on the blockchain
                 //////////////////////////////////////////////////////////////////////////
                 this.walletService.get().then(() => {
+                    var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
+                    var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
+                    var dh_private_key = this.toHex(raw_dh_private_key);
+                    var dh_public_key = this.toHex(raw_dh_public_key);
+                    info.dh_private_key = dh_private_key;
+                    info.dh_public_key = dh_public_key;
+                    return this.transactionService.generateTransaction({
+                        relationship: {
+                            dh_private_key: info.dh_private_key,
+                            their_bulletin_secret: info.bulletin_secret,
+                            their_username: info.username,
+                            my_bulletin_secret: this.bulletinSecretService.generate_bulletin_secret(),
+                            my_username: this.bulletinSecretService.username
+                        },
+                        dh_public_key: info.dh_public_key,
+                        requested_rid: info.requested_rid,
+                        requester_rid: info.requester_rid,
+                        to: info.to
+                    });
+                }).then((hash) => {
                     return new Promise((resolve, reject) => {
-                        var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
-                        var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
-                        var dh_private_key = this.toHex(raw_dh_private_key);
-                        var dh_public_key = this.toHex(raw_dh_public_key);
-                        info.dh_private_key = dh_private_key;
-                        info.dh_public_key = dh_public_key;
-                        this.transactionService.generateTransaction({
-                            relationship: {
-                                dh_private_key: info.dh_private_key,
-                                their_bulletin_secret: info.bulletin_secret,
-                                their_username: info.username,
-                                my_bulletin_secret: this.bulletinSecretService.generate_bulletin_secret(),
-                                my_username: this.bulletinSecretService.username
-                            },
-                            dh_public_key: info.dh_public_key,
-                            requested_rid: info.requested_rid,
-                            requester_rid: info.requester_rid,
-                            to: info.to,
-                            resolve: resolve
+                        this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/sign-raw-transaction', {
+                            hash: hash, 
+                            bulletin_secret: this.bulletinSecretService.bulletin_secret,
+                            input: this.transactionService.transaction.inputs[0].id,
+                            id: this.transactionService.transaction.id
+                        })
+                        .subscribe((res) => {
+                            //this.loadingModal2.dismiss();
+                            try {
+                                this.transactionService.transaction.signatures = [JSON.parse(res['_body'])]
+                                resolve();
+                            } catch(err) {
+                                reject();
+                                this.loadingModal.dismiss().catch(() => {});
+                            }
+                        },
+                        (err) => {
+                            //this.loadingModal2.dismiss();
                         });
                     });
+                }).then((txn) => {
+                    return this.transactionService.sendTransaction();
                 }).then((txn) => {
                     this.loadingModal.dismiss().catch(() => {})
                     var alert = this.alertCtrl.create();
@@ -659,6 +680,8 @@ export class HomePage {
                     alert.setSubTitle('Your Friend Request has been sent successfully.');
                     alert.addButton('Ok');
                     alert.present();
+                }).catch((err) => {
+                    console.log(err);
                 });
             }
         });

@@ -21,11 +21,14 @@
   <ion-spinner *ngIf="loading"></ion-spinner>
   <ion-row *ngIf="!graphService.graph.registered && settingsService.remoteSettings['walletUrl']">
     <ion-col col-lg-6 col-md-4 col-sm-4 text-center>
-      <ion-item *ngIf="walletService.wallet.balance > 0">
+      <ion-item *ngIf="!graphService.graph.pending_registration && walletService.wallet.balance > 0">
         You've connected to a new service! To sign in, you must register first.
       </ion-item>
-      <ion-item *ngIf="walletService.wallet.balance > 0">
+      <ion-item *ngIf="!graphService.graph.pending_registration && walletService.wallet.balance > 0">
         Click the register button below and confirm the transaction.
+      </ion-item>
+      <ion-item *ngIf="!graphService.graph.pending_registration || walletService.wallet.balance > 0">
+       Pending approval, please wait.
       </ion-item>
       <ion-item *ngIf="walletService.wallet.balance === 0" text-wrap>
         Your wallet has a ballance of zero. To register with YadaCoin apps, you need YadaCoins.
@@ -53,16 +56,16 @@
   </ion-row>
   <ion-row *ngIf="settingsService.remoteSettings['walletUrl']">
     <ion-col col-lg-3 col-md-4 col-sm-4 text-center *ngIf="!graphService.graph.registered">
-      <button large ion-button title="register" (click)="register()" full *ngIf="walletService.wallet.balance > 0">
+      <button large ion-button title="register" (click)="register()" full *ngIf="!graphService.graph.pending_registration && walletService.wallet.balance > 0">
         <ion-icon name="register"></ion-icon>
         Register
       </button>
-      <button large disabled ion-button title="register" (click)="register()" full *ngIf="walletService.wallet.balance === 0">
+      <button large disabled ion-button title="register" (click)="register()" full *ngIf="graphService.graph.pending_registration || walletService.wallet.balance === 0">
         <ion-icon name="register"></ion-icon>
         Register
       </button>
     </ion-col>
-    <ion-col col-lg-3 col-md-4 col-sm-4 text-center>
+    <ion-col col-lg-4 col-md-4 col-sm-4 text-center>
       <button large ion-button title="Sign in" (click)="signIn()" full disabled *ngIf="!graphService.graph.registered && signedIn === false">
         <ion-icon name="signIn"></ion-icon>
         Sign in
@@ -71,10 +74,13 @@
         <ion-icon name="signIn"></ion-icon>
         Sign in
       </button>
-      <a ion-button large secondary href="#" (click)="presentModal()" item-start *ngIf="graphService.graph.registered && signedIn === true">
+      <a ion-button large secondary href="#" (click)="addFriend()" item-start *ngIf="graphService.graph.registered">
+        Add friend&nbsp;<ion-icon name="search"></ion-icon>
+      </a>
+      <a ion-button large secondary href="#" (click)="presentModal()" *ngIf="graphService.graph.registered && signedIn === true">
         Post&nbsp;<ion-icon name="create"></ion-icon>
       </a>
-      <a ion-button large secondary href="{{settingsService.remoteSettings['baseUrl']}}?rid={{graphService.graph.rid}}&id={{txnId}}" target="_blank" item-start *ngIf="graphService.graph.registered && signedIn === true">
+      <a ion-button large secondary href="{{settingsService.remoteSettings['baseUrl']}}?rid={{graphService.graph.rid}}&id={{txnId}}" target="_blank" item-end *ngIf="graphService.graph.registered && signedIn === true">
         Visit&nbsp;<ion-icon name="open"></ion-icon>
       </a>
     </ion-col>
