@@ -94,4 +94,7 @@
     <plugin name="cordova-plugin-add-swift-support" spec="^1.7.2" />
     <plugin name="cordova-plugin-file" spec="^4.3.3" />
     <plugin name="cordova-plugin-splashscreen" spec="^5.0.2" />
+    <plugin name="cordova-plugin-mixpanel" spec="^4.5.2">
+        <variable name="PLAY_SERVICES_VERSION" value="+" />
+    </plugin>
 </widget>

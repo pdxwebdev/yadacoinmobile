@@ -58,6 +58,7 @@
     "cordova-plugin-firebase": "git+https://github.com/arnesson/cordova-plugin-firebase.git",
     "cordova-plugin-iosrtc": "^4.0.2",
     "cordova-plugin-keyboard": "^1.2.0",
+    "cordova-plugin-mixpanel": "^4.5.2",
     "cordova-plugin-push": "0.0.1",
     "cordova-plugin-qrscanner": "^2.5.0",
     "cordova-plugin-splashscreen": "^5.0.2",
@@ -106,7 +107,10 @@
       "cordova-plugin-keyboard": {},
       "cordova-plugin-add-swift-support": {},
       "cordova-plugin-file": {},
-      "cordova-plugin-splashscreen": {}
+      "cordova-plugin-splashscreen": {},
+      "cordova-plugin-mixpanel": {
+        "PLAY_SERVICES_VERSION": "+"
+      }
     },
     "platforms": [
       "browser",

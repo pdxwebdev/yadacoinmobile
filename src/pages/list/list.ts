@@ -6,9 +6,11 @@ import { GraphService } from '../../app/graph.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { WalletService } from '../../app/wallet.service';
 import { TransactionService } from '../../app/transaction.service';
+import { SettingsService } from '../../app/settings.service';
 import { SocialSharing } from '@ionic-native/social-sharing';
 import { ChatPage } from '../chat/chat';
 import { Events } from 'ionic-angular';
+import { Http, RequestOptions } from '@angular/http';
 
 declare var X25519;
 
@@ -31,7 +33,6 @@ export class ListPage {
   loadingModal: any;
   createdCodeEncoded: any;
   friend_request: any;
-  cryptoGenModal: any;
   context: any;
   signIn: any;
   signInText: any;
@@ -48,7 +49,9 @@ export class ListPage {
     private socialSharing: SocialSharing,
     private alertCtrl: AlertController,
     public loadingCtrl: LoadingController,
-    public events: Events
+    public events: Events,
+    private ahttp: Http,
+    private settingsService: SettingsService
   ) {
     this.loadingModal = this.loadingCtrl.create({
         content: 'Please wait...'
@@ -291,45 +294,82 @@ export class ListPage {
     alert.addButton({
       text: 'Confirm',
       handler: (data: any) => {
-        this.cryptoGenModal.present();
-        this.walletService.get().then(() => {
-          return new Promise((resolve, reject) => {
-            var to = '';
-            for (var i=0; i < this.friend_request.outputs.length; i++) {
-              var output = this.friend_request.outputs[i];
-              if (output.to != this.bulletinSecretService.key.getAddress()) {
-                to = output.to;
-              }
-            }
-            var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
-            var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
-            var dh_private_key = this.toHex(raw_dh_private_key);
-            var dh_public_key = this.toHex(raw_dh_public_key);
-            this.transactionService.generateTransaction({
-              relationship: {
-                bulletin_secret: this.friend_request.bulletin_secret,
-                dh_private_key: dh_private_key,
-                their_username: this.friend_request.username,
-                my_username: this.bulletinSecretService.username
-              },
-              dh_public_key: dh_public_key,
-              requested_rid: this.friend_request.requested_rid,
-              requester_rid: this.friend_request.requester_rid,
-              to: to,
-              resolve: resolve
+        this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/search?requester_rid=' + this.friend_request.requester_rid + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
+        .subscribe((res) => {
+          let info = res.json();
+          // camera permission was granted
+          var requester_rid = info.requester_rid;
+          var requested_rid = info.requested_rid;
+          if (requester_rid && requested_rid) {
+              // get rid from bulletin secrets
+          } else {
+              requester_rid = '';
+              requested_rid = '';
+          }
+          //////////////////////////////////////////////////////////////////////////
+          // create and send transaction to create the relationship on the blockchain
+          //////////////////////////////////////////////////////////////////////////
+          this.walletService.get().then(() => {
+              var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
+              var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
+              var dh_private_key = this.toHex(raw_dh_private_key);
+              var dh_public_key = this.toHex(raw_dh_public_key);
+              info.dh_private_key = dh_private_key;
+              info.dh_public_key = dh_public_key;
+              return this.transactionService.generateTransaction({
+                  relationship: {
+                      dh_private_key: info.dh_private_key,
+                      their_bulletin_secret: info.bulletin_secret,
+                      their_username: info.username,
+                      my_bulletin_secret: this.bulletinSecretService.generate_bulletin_secret(),
+                      my_username: this.bulletinSecretService.username
+                  },
+                  dh_public_key: info.dh_public_key,
+                  requested_rid: info.requested_rid,
+                  requester_rid: info.requester_rid,
+                  to: info.to
+              });
+          }).then((hash) => {
+              return new Promise((resolve, reject) => {
+                  this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/sign-raw-transaction', {
+                      hash: hash, 
+                      bulletin_secret: this.bulletinSecretService.bulletin_secret,
+                      input: this.transactionService.transaction.inputs[0].id,
+                      id: this.transactionService.transaction.id
+                  })
+                  .subscribe((res) => {
+                      //this.loadingModal2.dismiss();
+                      try {
+                          this.transactionService.transaction.signatures = [JSON.parse(res['_body'])]
+                          resolve();
+                      } catch(err) {
+                          reject();
+                          this.loadingModal.dismiss().catch(() => {});
+                      }
+                  },
+                  (err) => {
+                      //this.loadingModal2.dismiss();
+                  });
+              });
+          }).then((txn) => {
+              return this.transactionService.sendTransaction();
+          }).then((txn) => {
+            var alert = this.alertCtrl.create();
+            alert.setTitle('Friend Accept Sent');
+            alert.setSubTitle('Your Friend Request acceptance has been submitted successfully.');
+            alert.addButton('Ok');
+            alert.present();
+            
+            this.refresh(null).then(() => {
+              this.navCtrl.pop();
             });
+          }).catch((err) => {
+              console.log(err);
           });
-        }).then((txn) => {
-          this.cryptoGenModal.dismiss();
-          var alert = this.alertCtrl.create();
-          alert.setTitle('Friend Accept Sent');
-          alert.setSubTitle('Your Friend Request acceptance has been submitted successfully.');
-          alert.addButton('Ok');
-          alert.present();
-          
-          this.refresh(null).then(() => {
-            this.navCtrl.pop();
-          });
+        },
+        (err) => {
+            //this.loadingModal2.dismiss();
+            console.log(err);
         });
       }
     });
@@ -344,14 +384,9 @@ export class ListPage {
     alert.addButton({
       text: 'Confirm',
       handler: (data: any) => {
-        this.cryptoGenModal = this.loadingCtrl.create({
-          content: 'Generating encryption, please wait... (could take several minutes)'
-        });
-        this.cryptoGenModal.present();
         this.walletService.get().then(() => {
             return this.graphService.getSharedSecretForRid(this.rid);
         }).then((result) => {
-          this.cryptoGenModal.dismiss();
           if (result) {
             let alert = this.alertCtrl.create();
             alert.setTitle('Message sent');

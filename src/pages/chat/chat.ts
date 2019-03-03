@@ -20,7 +20,6 @@ export class ChatPage {
     blockchainAddress: any;
     chats: any;
     rid: any;
-    cryptoGenModal: any;
     public_key: any;
     loading: any;
     constructor(
@@ -77,10 +76,6 @@ export class ChatPage {
         alert.addButton({
             text: 'Confirm',
             handler: (data: any) => {
-                this.cryptoGenModal = this.loadingCtrl.create({
-                    content: 'Generating encryption, please wait... (could take several minutes)'
-                });
-                this.cryptoGenModal.present();
                 this.walletService.get().then(() => {
                     return new Promise((resolve, reject) => {
                         this.graphService.getFriends()
@@ -125,7 +120,6 @@ export class ChatPage {
                         });
                     });
                 }).then((result) => {
-                    this.cryptoGenModal.dismiss();
                     if (result) {
                         let alert = this.alertCtrl.create();
                         alert.setTitle('Message sent');
