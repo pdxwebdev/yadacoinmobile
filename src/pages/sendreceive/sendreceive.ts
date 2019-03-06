@@ -105,6 +105,9 @@ export class SendReceive {
                     this.value = null;
                     this.address = null;
                     this.refresh(null);
+                })
+                .catch((err) => {
+                    console.log(err);
                 });
             }
         });

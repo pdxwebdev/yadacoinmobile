@@ -3,25 +3,27 @@
     <button ion-button menuToggle color="{{color}}">
       <ion-icon name="menu"></ion-icon>
     </button>
-    <ion-item *ngIf="bulletinSecretService.keyname">
+    <ion-item>
       <a button clear href="https://youtube.com/w=lajksdf98" target="_blank" item-start>
         <ion-icon large name="help-circle"></ion-icon>
       </a>
       <ion-label color="primary" text-right>Service: </ion-label>
       <ion-input color="primary" type="text" placeholder="YadaCoin app URL" [(ngModel)]="settingsService.remoteSettingsUrl"></ion-input>
-      <button ion-button primary (click)="save()" item-end>Go</button>
+      <button ion-button primary (click)="save()" item-end [disabled]="!settingsService.remoteSettingsUrl || !bulletinSecretService.keyname">Go</button>
     </ion-item>
   </ion-navbar>
 </ion-header>
 
 <ion-content padding>
-  <ion-content>
-    <ion-refresher (ionRefresh)="refresh($event)">
-      <ion-refresher-content></ion-refresher-content>
-    </ion-refresher>
-    <ion-content *ngIf="!settingsService.remoteSettings['walletUrl'] && bulletinSecretService.keyname">
-      <h3>Enter the URL of a YadaCoin app in the box above <ion-icon large large name="arrow-up"></ion-icon></h3>
-    </ion-content>
+  <ion-refresher (ionRefresh)="refresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+  <ion-list *ngIf="!settingsService.remoteSettings['walletUrl']">
+    <h3 [ngClass]="settingsService.remoteSettingsUrl ? 'inactive' : 'active'">1. Enter the URL of a YadaCoin app in the box above <ion-icon large large name="arrow-up"></ion-icon></h3>
+    <h3 *ngIf="settingsService.remoteSettingsUrl" [ngClass]="settingsService.remoteSettingsUrl && bulletinSecretService.keyname ? 'inactive' : 'active'">2. Select an identity <ion-icon large large name="arrow-down"></ion-icon></h3>
+    <h3 *ngIf="settingsService.remoteSettingsUrl && bulletinSecretService.keyname" [ngClass]="settingsService.remoteSettings['walletUrl'] ? 'inactive' : 'active'">3. Click the 'go' button <ion-icon large large name="arrow-up"></ion-icon></h3>
+  </ion-list>
+  <ion-list *ngIf="settingsService.remoteSettingsUrl">
     <h3>Identities</h3>
     <p *ngIf="!bulletinSecretService.keyname">
       Select an identity from the list below.
@@ -30,10 +32,12 @@
       The highlighted row is the active identity that will be used for the app at: {{settingsService.remoteSettingsUrl}}
     </p>
     <ion-list>
-      <button ion-item *ngFor="let key of keys" (click)="set(key.username)" [color]="key.active ? 'secondary' : 'dark'">
+      <button ion-item *ngFor="let key of keys" (click)="selectIdentity(key.username)" [color]="key.active ? 'secondary' : 'dark'">
         <span *ngIf="key.username">{{key.username}}</span>
       </button>
     </ion-list>
+  </ion-list>
+  <ion-list *ngIf="bulletinSecretService.keyname">
     <button ion-button secondary (click)="createKey()">Create New Identity</button>
     <hr/>
     <h4>Export Identity</h4>
@@ -53,8 +57,5 @@
       </ion-input>
     </ion-item>
     <button ion-button secondary (click)="importKey()">Import Identity</button>
-  </ion-content>
-  <ion-content *ngIf="!settingsService.remoteSettings['walletUrl']">
-    <h3>Enter the URL of a YadaCoin app in the box above <ion-icon large large name="arrow-up"></ion-icon></h3>
-  </ion-content>
+  </ion-list>
 </ion-content>

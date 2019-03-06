@@ -27,7 +27,7 @@ export class SettingsService {
             }
             this.ahttp.get(this.remoteSettingsUrl + '/yada_config.json').subscribe(
                 (res) => {
-                    this.remoteSettings = JSON.parse(res['_body']);
+                    this.remoteSettings = res.json();
                     resolve();
                 },
                 (err) => {

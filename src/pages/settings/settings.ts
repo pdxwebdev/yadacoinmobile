@@ -172,6 +172,15 @@ export class Settings {
         });
     }
 
+    selectIdentity(key) {
+        const toast = this.toastCtrl.create({
+            message: 'Now click the "go" button',
+            duration: 2000
+        });
+        toast.present();
+        this.set(key);
+    }
+
     set(key) {
         this.storage.set('last-keyname', this.prefix + key);
         return this.doSet(this.prefix + key)
@@ -209,12 +218,20 @@ export class Settings {
     }
 
     save() {
+        this.loadingModal = this.loadingCtrl.create({
+            content: 'Please wait...'
+        });
+        this.loadingModal.present();
         this.settingsService.go()
         .then(() => {
             return this.set(this.bulletinSecretService.keyname.substr(this.prefix.length));
         })
         .then(() => {
             this.events.publish('graph');  
+            this.loadingModal.dismiss();
+        })
+        .catch((err)  => {
+            this.loadingModal.dismiss();  
         });
     }
 
