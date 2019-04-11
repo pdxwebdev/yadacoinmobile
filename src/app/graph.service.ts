@@ -29,6 +29,7 @@ export class GraphService {
     new_sign_ins_count: any; //total new sign ins
     new_sign_ins_counts: any; //new sign ins by rid
     friend_request_count: any; //total friend requests
+    friends_indexed: any;
     getGraphError = false;
     getSentFriendRequestsError = false;
     getFriendRequestsError = false;
@@ -58,10 +59,11 @@ export class GraphService {
         this.keys = {};
         this.new_messages_count = 0;
         this.new_messages_counts = {};
-        this.new_sign_ins_count = 0;
+        this.new_sign_ins_count = this.new_sign_ins_count || 0;
         this.new_sign_ins_counts = {};
-        this.friend_request_count = 0;
+        this.friend_request_count = this.friend_request_count || 0;
         this.usernames = {};
+        this.friends_indexed = {};
     }
 
     endpointRequest(endpoint, ids=null) {
@@ -170,16 +172,21 @@ export class GraphService {
                 return this.parseMessages(data.messages, 'new_messages_counts', 'new_messages_count', rid, 'chatText', 'last_message_height')
             })
             .then((chats: any) => {
-                chats[rid].sort(function (a, b) {
-                  if (a.height > b.height)
-                    return -1
-                  if ( a.height < b.height)
-                    return 1
-                  return 0
-                });
-                this.graph.messages = chats[rid];
-                this.getMessagesError = false;
-                resolve(chats[rid]);
+                if (!this.graph.messages) {
+                    this.graph.messages = {};
+                }
+                if (chats[rid]){
+                    this.graph.messages[rid] = chats[rid];
+                    this.graph.messages[rid].sort(function (a, b) {
+                        if (parseInt(a.time) > parseInt(b.time))
+                        return 1
+                        if ( parseInt(a.time) < parseInt(b.time))
+                        return -1
+                        return 0
+                    });
+                }
+                this.getMessagesError = false;                
+                return resolve(chats[rid]);
             }).catch((err) => {
                 this.getMessagesError = true;
                 reject(err);
@@ -320,6 +327,7 @@ export class GraphService {
 
     parseSentFriendRequests(sent_friend_requests) {
         var sent_friend_requestsObj = {};
+        if (!this.graph.friends) this.graph.friends = [];
         for(var i=0; i < sent_friend_requests.length; i++) {
             var sent_friend_request = sent_friend_requests[i];
             if (!this.keys[sent_friend_request.rid]) {
@@ -335,12 +343,23 @@ export class GraphService {
                 //not sure how this affects the friends list yet, since we can't return friends from here
                 //friends[sent_friend_request.rid] = sent_friend_request;
                 sent_friend_request['relationship'] = relationship;
+                this.friends_indexed[sent_friend_request.rid] = sent_friend_request;
                 if (this.keys[sent_friend_request.rid].dh_private_keys.indexOf(relationship.dh_private_key) === -1 && relationship.dh_private_key) {
                     this.keys[sent_friend_request.rid].dh_private_keys.push(relationship.dh_private_key);
                 }
             } else {
                 if (this.keys[sent_friend_request.rid].dh_public_keys.indexOf(sent_friend_request.dh_public_key) === -1 && sent_friend_request.dh_public_key) {
                     this.keys[sent_friend_request.rid].dh_public_keys.push(sent_friend_request.dh_public_key);
+                }
+            }
+        }
+        for(var i=0; i < sent_friend_requests.length; i++) {
+            var sent_friend_request = sent_friend_requests[i];
+            if(typeof(sent_friend_request['relationship']) != 'object') {
+                //TODO: VERIFY THE BULLETIN SECRET!
+                if(sent_friend_requestsObj[sent_friend_request.rid]) {
+                    this.graph.friends.push(sent_friend_requestsObj[sent_friend_request.rid]);
+                    delete sent_friend_requestsObj[sent_friend_request.rid];
                 }
             }
         }
@@ -381,6 +400,7 @@ export class GraphService {
                 this.graph.friends.push(friend_request);
                 delete friend_requestsObj[friend_request.rid];
                 friend_request['relationship'] = relationship;
+                this.friends_indexed[friend_request.rid] = friend_request;
                 if (this.keys[friend_request.rid].dh_private_keys.indexOf(relationship.dh_private_key) === -1 && relationship.dh_private_key) {
                     this.keys[friend_request.rid].dh_private_keys.push(relationship.dh_private_key);
                 }
@@ -434,11 +454,20 @@ export class GraphService {
                         dh_public_keys: []
                     };
                 }
-                var decrypted = this.decrypt(friend.relationship);
-                if (decrypted.indexOf('{') === 0) {
-                    var relationship = JSON.parse(decrypted);
+                var decrypted;
+                var bypassDecrypt = false;
+                if (typeof friend.relationship == 'object') {
+                    var bypassDecrypt = true;
+                } else {
+                    decrypted = this.decrypt(friend.relationship);
+                }
+                if (decrypted.indexOf('{') === 0 || bypassDecrypt) {
+                    var relationship;
+                    if (!bypassDecrypt) {
+                        relationship = JSON.parse(decrypted);
+                        friend['relationship'] = relationship;
+                    }
                     friendsObj[friend.rid] = friend;
-                    friend['relationship'] = relationship;
                     if (this.keys[friend.rid].dh_private_keys.indexOf(relationship.dh_private_key) === -1 && relationship.dh_private_key) {
                         this.keys[friend.rid].dh_private_keys.push(relationship.dh_private_key);
                     }
@@ -563,14 +592,14 @@ export class GraphService {
                 for(var i=0; i<messages.length; i++) {
                     var message = messages[i];
                     message.username = this.usernames[message.rid];
-                    if (messages[i].public_key != my_public_key) {
-                        if(graphCounts[message.rid]) {
-                            if(message.height > this[graphCounts][message.rid]) {
-                                this[graphCounts][message.rid] = message.height;
+                    if (message.public_key != my_public_key) {
+                        if(this[graphCounts][message.rid]) {
+                            if(parseInt(message.time) > this[graphCounts][message.rid]) {
+                                this[graphCounts][message.rid] = message.time;
                                 this[graphCount]++;
                             }
                         } else {
-                            this[graphCounts][message.rid] = message.height;
+                            this[graphCounts][message.rid] = parseInt(message.time);
                             this[graphCount]++;
                         }
                         new_messages.push(message);
@@ -590,32 +619,35 @@ export class GraphService {
             this.getFriends()
             .then(() => {
                 for(let i in this.keys) {
+                    if(!this.stored_secrets[i]) {
+                        this.stored_secrets[i] = [];
+                    }
+                    var stored_secrets_by_dh_public_key = {}
+                    for(var ss=0; ss < this.stored_secrets[i].length; ss++) {
+                        stored_secrets_by_dh_public_key[this.stored_secrets[i][ss].dh_public_key + this.stored_secrets[i][ss].dh_private_key] = this.stored_secrets[i][ss]
+                    }
                     for(var j=0; j < this.keys[i].dh_private_keys.length; j++) {
                         var dh_private_key = this.keys[i].dh_private_keys[j];
                         if (!dh_private_key) continue;
                         for(var k=0; k < this.keys[i].dh_public_keys.length; k++) {
-                            var dh_public_key = this.keys[i].dh_public_keys[j];
+                            var dh_public_key = this.keys[i].dh_public_keys[k];
                             if (!dh_public_key) continue;
-                            if (this.stored_secrets[i]) {
-                                var shared_secret = this.stored_secrets[i];
-                            } else {
-                                var privk = new Uint8Array(dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
-                                  return parseInt(h, 16)
-                                }));
-                                var pubk = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
-                                  return parseInt(h, 16)
-                                }));
-                                shared_secret = this.toHex(X25519.getSharedKey(privk, pubk));
-                                if(!this.stored_secrets[i]) {
-                                    this.stored_secrets[i] = [];
-                                }
-                                this.stored_secrets[i].push({
-                                    shared_secret: shared_secret,
-                                    dh_public_key: dh_public_key,
-                                    dh_private_key: dh_private_key,
-                                    rid: i
-                                });
+                            if (stored_secrets_by_dh_public_key[dh_public_key + dh_private_key]) {
+                                continue;
                             }
+                            var privk = new Uint8Array(dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
+                                return parseInt(h, 16)
+                            }));
+                            var pubk = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
+                                return parseInt(h, 16)
+                            }));
+                            var shared_secret = this.toHex(X25519.getSharedKey(privk, pubk));
+                            this.stored_secrets[i].push({
+                                shared_secret: shared_secret,
+                                dh_public_key: dh_public_key,
+                                dh_private_key: dh_private_key,
+                                rid: i
+                            });
                         }
                     }
                 }
@@ -671,6 +703,19 @@ export class GraphService {
         decipher.finish();
         return Base64.decode(decipher.output.data);
     }
+
+    hexToByteArray(str) {
+        if (!str) {
+          return new Uint8Array([]);
+        }
+        
+        var a = [];
+        for (var i = 0, len = str.length; i < len; i+=2) {
+          a.push(parseInt(str.substr(i,2),16));
+        }
+        
+        return new Uint8Array(a);
+      }
 
     hexToBytes(s) {
         var arr = []

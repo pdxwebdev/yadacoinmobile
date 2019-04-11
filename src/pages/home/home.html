@@ -8,8 +8,8 @@
         <ion-icon large name="help-circle"></ion-icon>
       </a>
       <ion-label color="primary" text-right>Address: </ion-label>
-      <ion-input color="primary" type="text" placeholder="Enter a url" [(ngModel)]="settingsService.remoteSettingsUrl"></ion-input>
-      <button ion-button primary (click)="go()" item-end>Go</button>
+      <ion-input color="primary" type="text" placeholder="Enter a url" [disabled]="true" [(ngModel)]="settingsService.remoteSettingsUrl"></ion-input>
+      <button ion-button primary (click)="saveToFavorites()" item-end>Save</button>
     </ion-item>
   </ion-navbar>
 </ion-header>
@@ -27,7 +27,7 @@
       <ion-item *ngIf="!graphService.graph.pending_registration && walletService.wallet.balance > 0">
         Click the register button below and confirm the transaction.
       </ion-item>
-      <ion-item *ngIf="!graphService.graph.pending_registration || walletService.wallet.balance > 0">
+      <ion-item *ngIf="graphService.graph.pending_registration && !graphService.graph.registered">
        Pending approval, please wait.
       </ion-item>
       <ion-item *ngIf="walletService.wallet.balance === 0" text-wrap>
@@ -80,7 +80,7 @@
       <a ion-button large secondary href="#" (click)="presentModal()" *ngIf="graphService.graph.registered && signedIn === true">
         Post&nbsp;<ion-icon name="create"></ion-icon>
       </a>
-      <a ion-button large secondary href="{{settingsService.remoteSettings['baseUrl']}}?rid={{graphService.graph.rid}}&id={{txnId}}" target="_blank" item-end *ngIf="graphService.graph.registered && signedIn === true">
+      <a ion-button large secondary href="{{settingsService.remoteSettings['baseUrl']}}" target="_blank" item-end *ngIf="graphService.graph.registered && signedIn === true">
         Visit&nbsp;<ion-icon name="open"></ion-icon>
       </a>
     </ion-col>

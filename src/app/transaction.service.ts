@@ -72,7 +72,7 @@ export class TransactionService {
             }
             this.transaction = {
                 rid:  this.rid,
-                fee: 0.01,
+                fee: 0.00,
                 requester_rid: typeof this.info.requester_rid == 'undefined' ? '' : this.info.requester_rid,
                 requested_rid: typeof this.info.requested_rid == 'undefined' ? '' : this.info.requested_rid,
                 outputs: [],
@@ -147,6 +147,13 @@ export class TransactionService {
                         }
                     }
                 }
+            }
+
+            if (this.transaction.outputs.length == 0) {
+                this.transaction.outputs.push({
+                    to: this.key.getAddress(),
+                    value: 0
+                })
             }
             
             if (input_sum < transaction_total) {
@@ -301,11 +308,13 @@ export class TransactionService {
                 hash: this.transaction.hash, 
                 bulletin_secret: this.bulletinSecretService.bulletin_secret,
                 input: this.transaction.inputs[0].id,
-                id: this.transaction.id
+                id: this.transaction.id,
+                txn: this.transaction
             })
             .subscribe((res) => {
                 try {
-                    this.transaction.signatures = [JSON.parse(res['_body']).signature]
+                    let data = res.json();
+                    this.transaction.signatures = [data.signature]
                     resolve();
                 } catch(err) {
                     reject();
@@ -386,6 +395,13 @@ export class TransactionService {
             arr.push(parseInt(c, 16));
         }
         return String.fromCharCode.apply(null, arr);
+    }
+
+    hexToByteArray(byteArray) {
+        var callback = function(byte) {
+            return ('0' + (byte & 0xFF).toString(16)).slice(-2);
+        }
+        return Array.from(byteArray, callback)
     }
 
     byteArrayToHexString(byteArray) {

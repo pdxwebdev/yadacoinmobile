@@ -11,6 +11,7 @@ import { GraphService } from '../../app/graph.service';
 import { WalletService } from '../../app/wallet.service';
 import { SocialSharing } from '@ionic-native/social-sharing';
 import { Events } from 'ionic-angular';
+import { HomePage } from '../home/home';
 
 @Component({
   selector: 'page-settings',
@@ -32,6 +33,8 @@ export class Settings {
     serverDown = false;
     noUsername = false;
     key = null;
+    favorites = null;
+    removeFavorites = null;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -58,9 +61,45 @@ export class Settings {
         return this.bulletinSecretService.all().then((keys) => {
             this.setKey(keys);
         }).then(() => {
+            this.getFavorites();
+        }).then(() => {
             if(refresher) refresher.complete();
         });
 
+    }
+
+    getFavorites() {
+        return new Promise((resolve, reject) => {
+            var favorites = [];
+            this.storage.forEach((value, key) => {
+                if (key.substr(0, 'favorites-'.length) === 'favorites-') {
+                    favorites.push({label: key.substr('favorites-'.length), url: value});
+                }
+            })
+            .then(() => {
+                if (favorites.length == 0) {
+                    this.favorites = null;
+                    resolve(null);
+                    return;
+                }
+                this.favorites = favorites;
+                resolve(favorites);
+            });
+        });
+    }
+
+    selectFavorite(favorite) {
+        this.settingsService.remoteSettingsUrl = favorite.url;
+    }
+
+    removeFavorite(favorite) {
+        this.storage.remove('favorites-' + favorite.label);
+        this.getFavorites()
+        .then((favorites) => {
+            if (!favorites) {
+                this.removeFavorites = null;
+            }
+        });
     }
 
     setKey(keys) {
@@ -178,7 +217,10 @@ export class Settings {
             duration: 2000
         });
         toast.present();
-        this.set(key);
+        this.set(key)
+        .then(() => {
+            this.save();
+        });
     }
 
     set(key) {
@@ -222,12 +264,19 @@ export class Settings {
             content: 'Please wait...'
         });
         this.loadingModal.present();
+        this.graphService.graph = {
+            comments: "",
+            reacts: "",
+            commentReacts: ""
+        };
         this.settingsService.go()
         .then(() => {
             return this.set(this.bulletinSecretService.keyname.substr(this.prefix.length));
         })
         .then(() => {
-            this.events.publish('graph');  
+            this.navCtrl.push(HomePage);
+        })
+        .then(() => { 
             this.loadingModal.dismiss();
         })
         .catch((err)  => {

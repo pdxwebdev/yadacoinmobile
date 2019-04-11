@@ -101,17 +101,18 @@ export class ListPage {
           return this.graphService.getFriends()
           .then(() => {
             var graphArray = this.graphService.graph.friends;
+            graphArray = this.getDistinctFriends(graphArray).friend_list;
             graphArray.sort(function (a, b) {
-                if (a.username.toLowerCase() < b.username.toLowerCase())
+                if (a.relationship.their_username.toLowerCase() < b.relationship.their_username.toLowerCase())
                   return -1
-                if ( a.username.toLowerCase() > b.username.toLowerCase())
+                if ( a.relationship.their_username.toLowerCase() > b.relationship.their_username.toLowerCase())
                   return 1
                 return 0
             });
             this.makeList(graphArray);
             this.loading = false;
-          }).catch(() => {
-              console.log('listpage getFriends error');
+          }).catch((err) => {
+              console.log('listpage getFriends error: ' + err);
           });
         } else if (this.pageTitle == 'Messages') {
           var my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
@@ -124,9 +125,16 @@ export class ListPage {
             var friendsWithMessagesList = this.getDistinctFriends(messages);
             this.populateRemainingFriends(friendsWithMessagesList.friend_list, friendsWithMessagesList.used_rids);
             this.loading = false;
+            friendsWithMessagesList.friend_list.sort(function (a, b) {
+                if (a.relationship.their_username.toLowerCase() < b.relationship.their_username.toLowerCase())
+                  return -1
+                if ( a.relationship.their_username.toLowerCase() > b.relationship.their_username.toLowerCase())
+                  return 1
+                return 0
+            });
             return this.makeList(friendsWithMessagesList.friend_list);
-          }).catch(() => {
-              console.log('listpage getNewMessages error');
+          }).catch((err) => {
+              console.log(err);
           });
         } else if (this.pageTitle == 'Sign Ins') {
           var my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
@@ -226,6 +234,9 @@ export class ListPage {
       // we could have multiple transactions per friendship
       // so make sure we're going using the rid once
       var item = collection[i];
+      if(!item.relationship || !item.relationship.their_username) {
+        continue
+      }
       if(used_rids.indexOf(item.rid) === -1) {
         friend_list.push(item);
         used_rids.push(item.rid);
@@ -237,7 +248,7 @@ export class ListPage {
     };
   }
 
-  populateRemainingFriends(used_rids, friend_list) {
+  populateRemainingFriends(friend_list, used_rids) {
     // now add everyone else
     for (var i=0; i < this.graphService.graph.friends.length; i++) {
       if (used_rids.indexOf(this.graphService.graph.friends[i].rid) === -1) {
@@ -266,7 +277,7 @@ export class ListPage {
   }
 
   itemTapped(event, item) {
-    if(this.pageTitle == 'Chat') {
+    if(this.pageTitle == 'Messages') {
       this.navCtrl.push(ChatPage, {
         item: item
       });
@@ -335,12 +346,14 @@ export class ListPage {
                       hash: hash, 
                       bulletin_secret: this.bulletinSecretService.bulletin_secret,
                       input: this.transactionService.transaction.inputs[0].id,
-                      id: this.transactionService.transaction.id
+                      id: this.transactionService.transaction.id,
+                      txn: this.transactionService.transaction
                   })
                   .subscribe((res) => {
                       //this.loadingModal2.dismiss();
                       try {
-                          this.transactionService.transaction.signatures = [JSON.parse(res['_body'])]
+                        let data = res.json();
+                        this.transactionService.transaction.signatures = [data.signature]
                           resolve();
                       } catch(err) {
                           reject();

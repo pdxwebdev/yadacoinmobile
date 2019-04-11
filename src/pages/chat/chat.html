@@ -11,19 +11,23 @@
     </button>
   </ion-navbar>
 </ion-header>
-<ion-content>
+<ion-content #content>
   <ion-refresher (ionRefresh)="refresh($event)">
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
   <ion-spinner *ngIf="loading"></ion-spinner>
 	<ion-list>
-	  <ion-item *ngFor="let item of chats" text-wrap [ngClass]="(item.public_key == public_key) ? 'speech-bubble-right' : 'speech-bubble-left'">
-			{{item.relationship.chatText}}
+	  <ion-item *ngFor="let item of chats" text-wrap>
+        <strong><span ion-text style="font-size: 20px;">{{(item.public_key == public_key) ? graphService.friends_indexed[item.rid].relationship.my_username : graphService.friends_indexed[item.rid].relationship.their_username}}</span> </strong><span style="font-size: 10px; color: rgb(88, 88, 88);" ion-text>{{item.time}}</span>
+        <h3>{{item.relationship.chatText}}</h3>
+        <hr />
 	  </ion-item>
 	</ion-list>
-	<ion-item>
-		<ion-label color="primary" floating>Chat text</ion-label>
-		<ion-input [(ngModel)]="chatText"></ion-input>
-	</ion-item>
-	<button ion-button (click)="send()">Send</button>
 </ion-content>
+<ion-footer>
+  <ion-item>
+    <ion-label floating>Chat text</ion-label>
+    <ion-input [(ngModel)]="chatText" (keyup.enter)="send()"></ion-input>
+  </ion-item>
+  <button ion-button (click)="send()">Send</button>
+</ion-footer>

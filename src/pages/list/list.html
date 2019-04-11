@@ -21,22 +21,14 @@
   </ion-card>
   <ion-list>
     <button ion-item *ngFor="let item of items" (click)="itemTapped($event, item)">
-      <span *ngIf="pageTitle =='Sent Requests' && !item.transaction.username">{{item.transaction.requested_rid}}</span>
-      <span *ngIf="pageTitle =='Sent Requests' && item.transaction.username">{{item.transaction.username}}</span>
-      <span *ngIf="pageTitle =='Friend Requests' && !item.transaction.username">{{item.transaction.requester_rid}}</span>
-      <span *ngIf="pageTitle =='Friend Requests' && item.transaction.username">{{item.transaction.username}}</span>
-      <span *ngIf="pageTitle =='Chat' && !item.transaction.username && !item.transaction.new">{{item.transaction.rid}}</span>
-      <span *ngIf="pageTitle =='Chat' && item.transaction.username && !item.transaction.new">{{item.transaction.username}}</span>
-      <span *ngIf="pageTitle =='Chat' && !item.transaction.username && item.transaction.new"><strong>{{item.transaction.rid}}</strong></span>
-      <span *ngIf="pageTitle =='Chat' && item.transaction.username && item.transaction.new"><strong>{{item.transaction.username}}</strong></span>
-      <span *ngIf="pageTitle =='Sign Ins' && !item.transaction.username && !item.transaction.new">{{item.transaction.rid}}</span>
-      <span *ngIf="pageTitle =='Sign Ins' && item.transaction.username && !item.transaction.new">{{item.transaction.username}}</span>
-      <span *ngIf="pageTitle =='Sign Ins' && !item.transaction.username && item.transaction.new"><strong>{{item.transaction.rid}}</strong></span>
-      <span *ngIf="pageTitle =='Sign Ins' && item.transaction.username && item.transaction.new"><strong>{{item.transaction.username}}</strong></span>
-      <span *ngIf="pageTitle =='Friends' && !item.transaction.username">{{item.transaction.rid}}</span>
-      <span *ngIf="pageTitle =='Friends' && item.transaction.username">{{item.transaction.username}}</span>
-      <span *ngIf="pageTitle =='Reacts Detail' && !item.transaction.username">{{item.transaction.relationship.react}} {{item.transaction.rid}}</span>
-      <span *ngIf="pageTitle =='Reacts Detail' && item.transaction.username">{{item.transaction.relationship.react}} {{item.transaction.username}}</span>
+      <span *ngIf="pageTitle =='Sent Requests'">{{item.transaction.relationship.their_username}}</span>
+      <span *ngIf="pageTitle =='Friend Requests'">{{item.transaction.username}}</span>
+      <span *ngIf="pageTitle =='Messages' && !item.transaction.new">{{item.transaction.relationship.their_username}}</span>
+      <span *ngIf="pageTitle =='Chat' && item.transaction.new"><strong>{{item.transaction.relationship.their_username}}</strong></span>
+      <span *ngIf="pageTitle =='Sign Ins' && !item.transaction.new">{{item.transaction.relationship.their_username}}</span>
+      <span *ngIf="pageTitle =='Sign Ins' && item.transaction.new"><strong>{{item.transaction.relationship.their_username}}</strong></span>
+      <span *ngIf="pageTitle =='Friends'">{{item.transaction.relationship.their_username}}</span>
+      <span *ngIf="pageTitle =='Reacts Detail'">{{item.transaction.relationship.react}} {{item.transaction.relationship.their_username}}</span>
     </button>
   </ion-list>
   <div *ngIf="selectedItem && pageTitle =='Sent Requests'" padding>
@@ -44,10 +36,12 @@
   <div *ngIf="selectedItem && pageTitle =='Friend Requests'" padding>
 
     <ion-card *ngIf="friend_request">
-      <button ion-button secondary (click)="accept()">Accept</button>
-      <ngx-qrcode [qrc-value]="friend_request"></ngx-qrcode>
+      <ion-card-header>
+        <p><strong>New friend request from {{friend_request.username}}</strong> </p>
+      </ion-card-header>
       <ion-card-content>
-        <p>{{friend_request.username}}</p>
+        <p>{{friend_request.username}} would like to be your friend!</p>
+        <button ion-button secondary (click)="accept()">Accept</button>
       </ion-card-content>
     </ion-card>
     <!-- for now, we can't do p2p on WKWebView

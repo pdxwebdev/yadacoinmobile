@@ -43,29 +43,24 @@ export class BulletinSecretService {
 
     setKeyName(keys) {
         return new Promise((resolve, reject) => {
-            if (keys.length === 0) {
-                this.keyname = 'usernames-';
-                resolve();
-            } else {
-                keys.sort(function (a, b) {
-                    if (a.idx < b.idx)
-                      return -1
-                    if ( a.idx > b.idx)
-                      return 1
-                    return 0
-                });
-                if (!this.keyname) {
-                    this.storage.get('last-keyname').then((key) => {
-                        if(key && typeof key == 'string') {
-                            this.keyname = key;
-                        } else {
-                            this.keyname = keys[0].idx
-                        }
-                        resolve(keys);
-                    });
-                } else {
+            keys.sort(function (a, b) {
+                if (a.idx < b.idx)
+                    return -1
+                if ( a.idx > b.idx)
+                    return 1
+                return 0
+            });
+            if (!this.keyname) {
+                this.storage.get('last-keyname').then((key) => {
+                    if(key && typeof key == 'string') {
+                        this.keyname = key;
+                    } else {
+                        this.keyname = keys[0].idx
+                    }
                     resolve(keys);
-                }
+                });
+            } else {
+                resolve(keys);
             }
         });
     }
@@ -73,30 +68,9 @@ export class BulletinSecretService {
     setKey() {
         return new Promise((resolve, reject) => {
             this.storage.get(this.keyname).then((key) => {
-                if(key && typeof key == 'string') {
-                    if (this.keyname.substr('usernames-'.length) == '') {
-                        this.username = '';
-                        this.key = foobar.bitcoin.ECPair.fromWIF(key);
-                        this.bulletin_secret = this.generate_bulletin_secret();
-                        this.storage.set(this.keyname, key);
-                    } else {
-                        this.key = foobar.bitcoin.ECPair.fromWIF(key);
-                        this.username = this.keyname.substr('usernames-'.length);
-                        this.bulletin_secret = this.generate_bulletin_secret();
-                    }
-                } else {
-                    if (this.keyname.substr('usernames-'.length) == '') {
-                        this.username = '';
-                        this.key =  null;
-                        this.bulletin_secret = null;
-                        this.storage.set(this.keyname, '');
-                    } else {
-                        this.username = this.keyname.substr('usernames-'.length);
-                        this.key = foobar.bitcoin.ECPair.makeRandom();
-                        this.storage.set(this.keyname, this.key.toWIF());
-                        this.bulletin_secret = this.generate_bulletin_secret();
-                    }
-                }
+                this.key = foobar.bitcoin.ECPair.fromWIF(key);
+                this.username = this.keyname.substr('usernames-'.length);
+                this.bulletin_secret = this.generate_bulletin_secret();
                 return resolve();
             });
         });
@@ -132,7 +106,12 @@ export class BulletinSecretService {
         return new Promise((resolve, reject) => {
             if (!username) return reject();
             this.keyname = 'usernames-' + username;
-            this.storage.set('last-keyname', this.keyname)
+            this.storage.set('last-keyname', this.keyname);
+
+            this.username = username;
+            this.key = foobar.bitcoin.ECPair.makeRandom();
+            this.storage.set(this.keyname, this.key.toWIF());
+            this.bulletin_secret = this.generate_bulletin_secret();
             return this.get().then(() => {
                 return resolve();
             });

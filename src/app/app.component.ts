@@ -24,7 +24,7 @@ export class MyApp {
 
   rootPage: any;
 
-  pagesForRegisteredUser: Array<{title: string, label: string, component: any, count: any, color: any}>;
+  pagesForRegisteredUser: Array<{title: string, label: string, component: any}>;
   pagesForUnregisteredUser: Array<{title: string, label: string, component: any, count: any, color: any}>;
   defaultPages: Array<{title: string, label: string, component: any, count: any, color: any}>;
   noUrlPages: any;
@@ -62,10 +62,11 @@ export class MyApp {
     });
 
     this.pagesForRegisteredUser = [
-      { title: 'Home', label: 'App', component: HomePage, count: false, color: '' },
-      { title: 'Messages', label: 'Messages', component: ListPage, count: false, color: '' },
-      { title: 'Friend Requests', label: 'Friend Requests', component: ListPage, count: this.graphService.friend_request_count, color: this.graphService.friend_request_count > 0 ? 'danger' : '' },
-      { title: 'Sent Requests', label: 'Sent Requests', component: ListPage, count: 0, color: '' }
+      { title: 'Home', label: 'App', component: HomePage },
+      { title: 'Friends', label: 'Friends', component: ListPage },
+      { title: 'Messages', label: 'Messages', component: ListPage },
+      { title: 'Friend Requests', label: 'Friend Requests', component: ListPage },
+      { title: 'Sent Requests', label: 'Sent Requests', component: ListPage }
     ];
 
     this.pagesForUnregisteredUser = [

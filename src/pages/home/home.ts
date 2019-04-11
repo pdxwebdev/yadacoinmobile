@@ -135,6 +135,28 @@ export class HomePage {
         });
     }
 
+    saveToFavorites() {
+        var buttons = [];
+        buttons.push({
+            text: 'Add favorite',
+            handler: (data) => {
+                this.storage.set('favorites-'+data.label, this.settingsService.remoteSettingsUrl)
+            }
+        });
+        let alert = this.alertCtrl.create({
+            inputs: [
+                {
+                    name: 'label',
+                    placeholder: 'Type label here...'
+                }
+            ],
+            buttons: buttons
+        });
+        alert.setTitle('Save favorite');
+        alert.setSubTitle('Give is favorite a label.');
+        alert.present();
+    }
+
     sendTokenToServer(token) {
       this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/fcm-token', {
         rid: this.graphService.graph.rid,
@@ -332,16 +354,17 @@ export class HomePage {
         this.walletService.get()
         .then(() => {
             this.balance = this.walletService.wallet.balance;
-            for(var i=0; i < this.walletService.wallet.unspent_transactions.length; i++) {
-                var txn = this.walletService.wallet.unspent_transactions[i];
+            this.txnId = '';
+            for(var i=0; i < this.walletService.wallet.txns_for_fastgraph.length; i++) {
+                var txn = this.walletService.wallet.txns_for_fastgraph[i];
                 if ((txn.signatures) && txn.rid == this.graphService.graph.rid) {
-                    this.txnId = txn.id;
+                    this.txnId = txn.id; // will always select the wrong txn id
                 }
             }
             this.loadingBalance = false;
             let options = new RequestOptions({ withCredentials: true });
 
-            this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '?rid=' + this.graphService.graph.rid + '&id=' + (this.txnId || ''), options).subscribe((res) => {
+            this.ahttp.get(this.settingsService.remoteSettings['authenticatedUrl'] + '?rid=' + this.graphService.graph.rid + '&id=' + '' + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret, options).subscribe((res) => {
                 var data = JSON.parse(res['_body']);
                 this.signedIn = data.authenticated;
                 this.loading = false;
@@ -361,8 +384,8 @@ export class HomePage {
             this.friendRequestColor = this.graphService.friend_request_count > 0 ? 'danger' : '';
             this.chatColor = this.graphService.new_messages_count > 0 ? 'danger' : '';
             this.signInColor = this.graphService.new_sign_ins_count > 0 ? 'danger' : '';
-        }).catch(() => {
-            console.log('homepage getFriends error');
+        }).catch((err) => {
+            console.log('homepage getFriends error: ' + err);
             this.loadingModal.dismiss().catch(() => {});
         });
 
@@ -655,12 +678,14 @@ export class HomePage {
                             hash: hash, 
                             bulletin_secret: this.bulletinSecretService.bulletin_secret,
                             input: this.transactionService.transaction.inputs[0].id,
-                            id: this.transactionService.transaction.id
+                            id: this.transactionService.transaction.id,
+                            txn: this.transactionService.transaction
                         })
                         .subscribe((res) => {
                             //this.loadingModal2.dismiss();
                             try {
-                                this.transactionService.transaction.signatures = [JSON.parse(res['_body'])]
+                                let data = res.json();
+                                this.transactionService.transaction.signatures = [data.signature]
                                 resolve();
                             } catch(err) {
                                 reject();
@@ -736,12 +761,14 @@ export class HomePage {
                             hash: hash, 
                             bulletin_secret: this.bulletinSecretService.bulletin_secret,
                             input: this.transactionService.transaction.inputs[0].id,
-                            id: this.transactionService.transaction.id
+                            id: this.transactionService.transaction.id,
+                            txn: this.transactionService.transaction
                         })
                         .subscribe((res) => {
                             //this.loadingModal2.dismiss();
                             try {
-                                this.transactionService.transaction.signatures = [JSON.parse(res['_body'])]
+                                let data = res.json();
+                                this.transactionService.transaction.signatures = [data.signature]
                                 resolve();
                             } catch(err) {
                                 reject();
@@ -807,11 +834,13 @@ export class HomePage {
                     hash: hash,
                     bulletin_secret: this.bulletinSecretService.bulletin_secret,
                     input: this.transactionService.transaction.inputs[0].id,
-                    id: this.transactionService.transaction.id
+                    id: this.transactionService.transaction.id,
+                    txn: this.transactionService.transaction
                 })
                 .subscribe((res) => {
                     try {
-                        this.transactionService.transaction.signatures = [JSON.parse(res['_body']).signature]
+                        let data = res.json();
+                        this.transactionService.transaction.signatures = [data.signature]
                         resolve();
                     } catch(err) {
                         reject();

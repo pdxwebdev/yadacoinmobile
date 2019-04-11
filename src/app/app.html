@@ -13,9 +13,34 @@
 
     <ion-content>
       <ion-list *ngIf="graphService.graph.registered === true">
-        <button menuClose ion-item *ngFor="let p of pagesForRegisteredUser" (click)="openPage(p)">
-          {{p.label}}
-        </button>
+        <ng-container *ngFor="let p of pagesForRegisteredUser">
+          <button 
+            menuClose 
+            ion-item 
+            (click)="openPage(p)"
+            [color]="graphService.friend_request_count > 0 ? 'primary' : 'grey'"
+            *ngIf="p.title == 'Friend Requests'"
+          >
+            {{p.label}}
+          </button>
+          <button 
+            menuClose 
+            ion-item 
+            (click)="openPage(p)"
+            [color]="graphService.new_messages_count > 0 ? 'primary' : 'grey'"
+            *ngIf="p.title == 'Messages'"
+          >
+            {{p.label}}
+          </button>
+          <button 
+            menuClose 
+            ion-item 
+            (click)="openPage(p)"
+            *ngIf="['Messages', 'Friend Requests'].indexOf(p.title) < 0"
+          >
+            {{p.label}}
+          </button>
+        </ng-container>
       </ion-list>
       <ion-list *ngIf="graphService.graph.registered === false">
         <button menuClose ion-item *ngFor="let p of pagesForUnregisteredUser" (click)="openPage(p)">
