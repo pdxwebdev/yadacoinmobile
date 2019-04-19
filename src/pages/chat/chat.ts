@@ -136,14 +136,14 @@ export class ChatPage {
                             try {
                                 let data = res.json();
                                 this.transactionService.transaction.signatures = [data.signature]
-                                resolve();
+                                return resolve();
                             } catch(err) {
-                                reject(err);
-                                this.loadingModal.dismiss().catch(() => {});
+                                return reject(err);
+                                //this.loadingModal.dismiss().catch(() => {});
                             }
                         },
                         (err) => {
-                            reject(err);
+                            return reject(err);
                         });
                     });
                 }).then((txn) => {

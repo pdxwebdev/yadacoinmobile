@@ -36,6 +36,7 @@ export class SettingsService {
                         duration: 2000
                     });
                     toast.present();
+                    return reject();
                 }
             );
         });

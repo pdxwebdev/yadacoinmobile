@@ -187,6 +187,10 @@ export class ListPage {
           var graphArray = this.navParams.get('detail');
           this.loading = false;
           return this.makeList(graphArray);
+        } else if (this.pageTitle == 'Comment Reacts Detail') {
+          var graphArray = this.navParams.get('detail');
+          this.loading = false;
+          return this.makeList(graphArray);
         }
       } else {
         this.loading = false;

@@ -106,9 +106,9 @@
               {{item.title}}
             </ion-card-title>
             <h2>{{item.username}}</h2>
-            <p *ngIf="item.description" style="text-overflow:ellipsis;" text-wrap>
+            <h1 *ngIf="item.description" style="text-overflow:ellipsis;" text-wrap>
               {{item.description}}
-            </p>
+            </h1>
             <span *ngIf="item.fileName">Files:</span><br>
             <a *ngIf="item.fileName" style="text-overflow:ellipsis; margin-top:50px;" text-wrap (click)="download(item)">
               <strong>{{item.fileName}}</strong>
@@ -132,7 +132,7 @@
             </button>
           </ion-col>
           <ion-item>
-            <ion-input type="text" placeholder="Comment text..." [(ngModel)]="commentInputs[item.id]">
+            <ion-input type="text" placeholder="Comment text..." [(ngModel)]="commentInputs[item.id]" (keyup.enter)="comment(item)">
             </ion-input>
           </ion-item>
           <ion-col text-right>
@@ -145,7 +145,7 @@
         <ion-row>
           <ion-list col-lg-7>
             <ion-item *ngFor="let comment of graphService.graph.comments[item.id]">
-              <button style="z-index:1000;"ion-button clear small icon-start (click)="toggled[comment.id] = !toggled[comment.id]" [(emojiPickerIf)]="toggled[comment.id]" [emojiPickerDirection]="'right'" (emojiPickerSelect)="react($event, comment)">
+              <button style="z-index:1000;"ion-button clear small icon-start (click)="toggled[comment.id] = !toggled[comment.id]" [(emojiPickerIf)]="toggled[comment.id]" [emojiPickerDirection]="'right'" (emojiPickerSelect)="commentReact($event, comment)">
                 <ion-icon name='sunny'></ion-icon>
                 React
               </button>

@@ -28,7 +28,8 @@
       <span *ngIf="pageTitle =='Sign Ins' && !item.transaction.new">{{item.transaction.relationship.their_username}}</span>
       <span *ngIf="pageTitle =='Sign Ins' && item.transaction.new"><strong>{{item.transaction.relationship.their_username}}</strong></span>
       <span *ngIf="pageTitle =='Friends'">{{item.transaction.relationship.their_username}}</span>
-      <span *ngIf="pageTitle =='Reacts Detail'">{{item.transaction.relationship.react}} {{item.transaction.relationship.their_username}}</span>
+      <span *ngIf="pageTitle =='Reacts Detail'">{{item.transaction.relationship.react}} {{item.transaction.username}}</span>
+      <span *ngIf="pageTitle =='Comment Reacts Detail'">{{item.transaction.relationship.react}} {{item.transaction.username}}</span>
     </button>
   </ion-list>
   <div *ngIf="selectedItem && pageTitle =='Sent Requests'" padding>

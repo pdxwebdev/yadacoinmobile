@@ -173,6 +173,7 @@ export class HomePage {
     }
 
     react(e, item) {
+        this.toggled[item.id] = false;
         return this.walletService.get()
         .then(() => {
             return this.transactionService.generateTransaction({
@@ -197,7 +198,7 @@ export class HomePage {
             return toast.present();
         })
         .then(() => {
-            this.graphService.getReacts(this.ids_to_get)
+            this.graphService.getReacts([item.id])
         })
         .catch((err) => {
             const toast = this.toastCtrl.create({
@@ -237,7 +238,10 @@ export class HomePage {
             return toast.present();
         })
         .then(() => {
-            this.graphService.getComments(this.ids_to_get)
+            this.graphService.getComments(this.ids_to_get);
+        })
+        .then(() => {
+            this.commentInputs[item.id] = '';
         })
         .catch((err) => {
             const toast = this.toastCtrl.create({
@@ -249,6 +253,7 @@ export class HomePage {
     }
 
     commentReact(e, item) {
+        this.toggled[item.id] = false;
         return this.walletService.get()
         .then(() => {
             return this.transactionService.generateTransaction({
@@ -271,6 +276,14 @@ export class HomePage {
                 duration: 2000
             });
             return toast.present();
+        })
+        .then(() => {
+            for (var i=0; i < Object.keys(this.graphService.graph.comments).length; i++) {
+                for (var j=0; j < this.graphService.graph.comments[Object.keys(this.graphService.graph.comments)[i]].length; j++) {
+                    this.comment_ids_to_get.push(this.graphService.graph.comments[Object.keys(this.graphService.graph.comments)[i]][j].id);
+                }
+            }
+            return this.graphService.getCommentReacts(this.comment_ids_to_get);
         })
         .then(() => {
             this.graphService.getCommentReacts(this.comment_ids_to_get)
@@ -313,6 +326,14 @@ export class HomePage {
             return toast.present();
         })
         .then(() => {
+            for (var i=0; i < Object.keys(this.graphService.graph.comments).length; i++) {
+                for (var j=0; j < this.graphService.graph.comments[Object.keys(this.graphService.graph.comments)[i]].length; j++) {
+                    this.comment_ids_to_get.push(this.graphService.graph.comments[Object.keys(this.graphService.graph.comments)[i]][j].id);
+                }
+            }
+            return this.graphService.getCommentReacts(this.comment_ids_to_get);
+        })
+        .then(() => {
             this.graphService.getCommentReplies(this.comment_ids_to_get)
         })
         .catch((err) => {
@@ -339,6 +360,11 @@ export class HomePage {
         this.navCtrl.push(ListPage, data);
     }
 
+    commentReactsDetail(item) {
+        var data = {pageTitle: {title:"Comment Reacts Detail"}, detail: this.graphService.graph.commentReacts[item.id]};
+        this.navCtrl.push(ListPage, data);
+    }
+
     refresh(refresher) {
         this.loading = true;
         this.loadingBalance = true;
@@ -350,8 +376,17 @@ export class HomePage {
         this.storage.get('blockchainAddress').then((blockchainAddress) => {
             this.blockchainAddress = blockchainAddress;
         });
+        //put ourselves in the faucet
+        this.ahttp.get(
+            this.settingsService.remoteSettings['baseUrl'] + '/faucet?address=' + this.bulletinSecretService.key.getAddress()
+        )
+        .subscribe(()=>{}, () => {});
+        this.color = this.graphService.friend_request_count > 0 ? 'danger' : '';
+        this.friendRequestColor = this.graphService.friend_request_count > 0 ? 'danger' : '';
+        this.chatColor = this.graphService.new_messages_count > 0 ? 'danger' : '';
+        this.signInColor = this.graphService.new_sign_ins_count > 0 ? 'danger' : '';
         //update our wallet
-        this.walletService.get()
+        return this.walletService.get()
         .then(() => {
             this.balance = this.walletService.wallet.balance;
             this.txnId = '';
@@ -367,49 +402,18 @@ export class HomePage {
             this.ahttp.get(this.settingsService.remoteSettings['authenticatedUrl'] + '?rid=' + this.graphService.graph.rid + '&id=' + '' + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret, options).subscribe((res) => {
                 var data = JSON.parse(res['_body']);
                 this.signedIn = data.authenticated;
-                this.loading = false;
-                this.loadingModal.dismiss().catch(() => {});
             });
         })
-        .catch(() => {
-            console.log('homepage walletService error');
-        });
-        
-        //check for friend requests
-        this.graphService.getFriends()
         .then(() => {
-            //put ourselves in the faucet
-            this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/faucet?address=' + this.bulletinSecretService.key.getAddress()).subscribe(()=>{});
-            this.color = this.graphService.friend_request_count > 0 ? 'danger' : '';
-            this.friendRequestColor = this.graphService.friend_request_count > 0 ? 'danger' : '';
-            this.chatColor = this.graphService.new_messages_count > 0 ? 'danger' : '';
-            this.signInColor = this.graphService.new_sign_ins_count > 0 ? 'danger' : '';
-        }).catch((err) => {
-            console.log('homepage getFriends error: ' + err);
-            this.loadingModal.dismiss().catch(() => {});
-        });
-
-        //check for new messages
-        this.graphService.getNewMessages()
+            return this.graphService.getFriends()
+        })
         .then(() => {
-            this.chatColor = this.graphService.new_messages_count > 0 ? 'danger' : '';
-        }).catch(() => {
-            console.log('homepage getNewMessages error');
-            this.loadingModal.dismiss().catch(() => {});
-        });
-
-        //check for new sign ins
-        this.graphService.getNewSignIns()
+            return this.graphService.getNewMessages()
+        })
         .then(() => {
-            this.chatColor = this.graphService.new_sign_ins_count > 0 ? 'danger' : '';
-        }).catch(() => {
-            console.log('homepage getNewSignIns error');
-            this.loadingModal.dismiss().catch(() => {});
-        });
-
-        if(refresher) refresher.complete();
-        //this is our blocking procedure, update our posts for the main feed
-        return this.graphService.getPosts().then(() => {
+            return this.graphService.getNewSignIns();
+        })
+        .then(() => {
             return this.generateFeed();
         })
         .then(() => {
@@ -430,9 +434,15 @@ export class HomePage {
             return this.graphService.getCommentReplies(this.comment_ids_to_get);
         })
         .then(() => {
+            this.loading = false;
             this.loadingModal.dismiss().catch(() => {});
+            if(refresher) refresher.complete();
+            this.chatColor = this.graphService.new_messages_count > 0 ? 'danger' : '';
+            this.chatColor = this.graphService.new_sign_ins_count > 0 ? 'danger' : '';
         })
         .catch(() => {
+            this.loading = false;
+            this.loadingModal.dismiss().catch(() => {});
         });
     }
 
@@ -444,7 +454,7 @@ export class HomePage {
             var graphArray = this.graphService.graph.posts;
             if (graphArray.length == 0) {
                 this.loading = false;
-                //this.loadingModal.dismiss().catch(() => {});
+                this.loadingModal.dismiss().catch(() => {});
             }
             graphArray.sort(function (a, b) {
             if (a.height < b.height)
@@ -465,7 +475,7 @@ export class HomePage {
                             this.items.push(data);
                             if ((graphArray.length - 1) == i) {
                                 this.loading = false;
-                                //this.loadingModal.dismiss().catch(() => {});
+                                this.loadingModal.dismiss().catch(() => {});
                             }
                         });
                     } else {
@@ -475,7 +485,7 @@ export class HomePage {
                             this.items.push(data);
                             if ((graphArray.length - 1) == i) {
                                 this.loading = false;
-                                //this.loadingModal.dismiss().catch(() => {});
+                                this.loadingModal.dismiss().catch(() => {});
                             }
                         });
                     }
@@ -493,7 +503,7 @@ export class HomePage {
                     this.items.push(data);
                     if ((graphArray.length - 1) == i) {
                         this.loading = false;
-                        //this.loadingModal.dismiss().catch(() => {});
+                        this.loadingModal.dismiss().catch(() => {});
                     }
                 }
             }

@@ -117,7 +117,6 @@ export class PostModal {
                 })
                 .then(() => {
                     this.dismiss();
-                    this.logicalParent.refresh(null);
                 })
                 .catch((err) => {
                     console.log('could not generate hash');
