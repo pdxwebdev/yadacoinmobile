@@ -414,6 +414,9 @@ export class HomePage {
             return this.graphService.getNewSignIns();
         })
         .then(() => {
+            return this.graphService.getPosts();
+        })
+        .then(() => {
             return this.generateFeed();
         })
         .then(() => {
