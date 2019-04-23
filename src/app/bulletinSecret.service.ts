@@ -118,15 +118,18 @@ export class BulletinSecretService {
         });
     }
 
-    import (keyWif) {
+    import (keyWif, username) {
         return new Promise((resolve, reject) => {
-            this.keyname = 'usernames-';
+            if (!username) return reject();
+            this.keyname = 'usernames-' + username;
             this.storage.set('last-keyname', this.keyname);
+
+            this.username = username;
             this.storage.set(this.keyname, keyWif.trim());
-            resolve();
-        })
-        .then(() => {
-            return this.get();
+            this.bulletin_secret = this.generate_bulletin_secret();
+            return this.get().then(() => {
+                return resolve();
+            });
         });
     }
 

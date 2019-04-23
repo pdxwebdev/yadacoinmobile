@@ -460,11 +460,11 @@ export class HomePage {
                 this.loadingModal.dismiss().catch(() => {});
             }
             graphArray.sort(function (a, b) {
-            if (a.height < b.height)
-                return 1
-            if ( a.height > b.height)
-                return -1
-            return 0
+                if (parseInt(a.time) < parseInt(b.time))
+                    return 1
+                if (parseInt(a.time) > parseInt(b.time))
+                    return -1
+                return 0
             });
             this.ids_to_get = [];
             this.items = [];

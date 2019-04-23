@@ -147,11 +147,52 @@ export class Settings {
     }
 
     importKey() {
-        this.bulletinSecretService.import(this.importedKey).then(() => {
-            return this.refresh(null);
+        new Promise((resolve, reject) => {
+            let alert = this.alertCtrl.create({
+                title: 'Set username',
+                inputs: [
+                {
+                    name: 'username',
+                    placeholder: 'Username'
+                }
+                ],
+                buttons: [
+                {
+                    text: 'Cancel',
+                    role: 'cancel',
+                    handler: data => {
+                        console.log('Cancel clicked');
+                        reject();
+                    }
+                },
+                {
+                    text: 'Save',
+                    handler: data => {
+                        const toast = this.toastCtrl.create({
+                            message: 'Identity created',
+                            duration: 2000
+                        });
+                        toast.present();
+                        resolve(data.username);
+                    }
+                }
+                ]
+            });
+            alert.present();
+        })
+        .then((username) => {
+            return this.bulletinSecretService.import(this.importedKey, username);
         })
         .then(() => {
-            this.navCtrl.push(ProfilePage);
+            this.importedKey = '';
+            return this.refresh(null);
+        })
+        .catch(() => {
+            const toast = this.toastCtrl.create({
+                message: 'Error importing identity!',
+                duration: 2000
+            });
+            toast.present();
         });
     }
 
