@@ -25,7 +25,13 @@ export class SettingsService {
                 toast.present();
                 return resolve();
             }
-            this.ahttp.get(this.remoteSettingsUrl + '/yada_config.json').subscribe(
+            let remoteSettingsUrl = '';
+            if (this.remoteSettingsUrl.substr(-1) === '/') {
+                remoteSettingsUrl = this.remoteSettingsUrl.substr(0, this.remoteSettingsUrl.length-1);
+            } else {
+                remoteSettingsUrl = this.remoteSettingsUrl;
+            }
+            this.ahttp.get(remoteSettingsUrl + '/yada_config.json').subscribe(
                 (res) => {
                     this.remoteSettings = res.json();
                     resolve();

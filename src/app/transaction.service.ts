@@ -105,15 +105,22 @@ export class TransactionService {
                 } else {
                     this.info.relationship = this.info.relationship || {};
                     if (
-                        (this.info.requester_rid && this.info.requested_rid) ||
-                        this.info.relationship.postText ||
-                        this.info.relationship.comment ||
-                        this.info.relationship.react ||
-                        this.info.relationship.chatText ||
-                        this.info.relationship.signIn
+                        (this.info.requester_rid && this.info.requested_rid) || // is friend request/accept
+                        this.info.relationship.postText || // is post
+                        this.info.relationship.comment || // is comment
+                        this.info.relationship.react || // is react
+                        this.info.relationship.chatText || // is chat
+                        this.info.relationship.signIn || // is signin
+                        (!this.info.requester_rid && !this.info.requested_rid && this.rid) || // is register, we now only allow registration and friend request/accept from non-fastgraph inputs
+                        Object.keys(this.info.relationship).length == 0 // is transfer
                     ) {
                         unspent_transactions = this.walletService.wallet.txns_for_fastgraph;
                     } else {
+                        return reject('either no unspent outputs or wrong transaction type for unspent outputs')
+                    }
+                    if (unspent_transactions.length == 0 &&
+                        this.info.requester_rid && this.info.requested_rid &&
+                        this.info.dh_public_key && this.info.relationship.dh_private_key) { //creating a new relationship is the only txn we allow to come from non-fastgraph
                         unspent_transactions = this.walletService.wallet.unspent_transactions;
                     }
                     unspent_transactions.sort(function (a, b) {
@@ -132,24 +139,27 @@ export class TransactionService {
                         if (unspent_output.to === this.key.getAddress()) {
                             inputs.push({id: unspent_transaction.id});
                             input_sum += parseFloat(unspent_output.value);
-                            if (input_sum > transaction_total) {
+                            if (input_sum >= transaction_total) {
                                 let value: any;
-                                value = (input_sum - transaction_total).toFixed(8);
     
                                 this.transaction.outputs.push({
                                     to: this.key.getAddress(),
-                                    value: value / 1
+                                    value: (input_sum - transaction_total)
                                 })
-                                break dance;
-                            } else if (input_sum === transaction_total) {
                                 break dance;
                             }
                         }
                     }
                 }
             }
-
-            if (this.transaction.outputs.length == 0) {
+            var myAddress = this.key.getAddress();
+            var found = false;
+            for (var j=0; j < this.transaction.outputs.length; j++) {
+                if (this.transaction.outputs[j].to == myAddress) {
+                    found = true;
+                }
+            }
+            if (!found) {
                 this.transaction.outputs.push({
                     to: this.key.getAddress(),
                     value: 0

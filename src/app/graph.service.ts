@@ -337,7 +337,7 @@ export class GraphService {
                 };
             }
             var decrypted = this.decrypt(sent_friend_request['relationship']);
-            if (decrypted.indexOf('{') === 0) {
+            try {
                 var relationship = JSON.parse(decrypted);
                 sent_friend_requestsObj[sent_friend_request.rid] = sent_friend_request;
                 //not sure how this affects the friends list yet, since we can't return friends from here
@@ -347,7 +347,7 @@ export class GraphService {
                 if (this.keys[sent_friend_request.rid].dh_private_keys.indexOf(relationship.dh_private_key) === -1 && relationship.dh_private_key) {
                     this.keys[sent_friend_request.rid].dh_private_keys.push(relationship.dh_private_key);
                 }
-            } else {
+            } catch(err) {
                 if (this.keys[sent_friend_request.rid].dh_public_keys.indexOf(sent_friend_request.dh_public_key) === -1 && sent_friend_request.dh_public_key) {
                     this.keys[sent_friend_request.rid].dh_public_keys.push(sent_friend_request.dh_public_key);
                 }
@@ -395,7 +395,7 @@ export class GraphService {
                 };
             }
             var decrypted = this.decrypt(friend_request.relationship);
-            if (decrypted.indexOf('{') === 0) {
+            try {
                 var relationship = JSON.parse(decrypted);
                 this.graph.friends.push(friend_request);
                 delete friend_requestsObj[friend_request.rid];
@@ -404,7 +404,7 @@ export class GraphService {
                 if (this.keys[friend_request.rid].dh_private_keys.indexOf(relationship.dh_private_key) === -1 && relationship.dh_private_key) {
                     this.keys[friend_request.rid].dh_private_keys.push(relationship.dh_private_key);
                 }
-            } else {
+            } catch(err) {
                 friend_requestsObj[friend_request.rid] = friend_request;
                 if (this.keys[friend_request.rid].dh_public_keys.indexOf(friend_request.dh_public_key) === -1 && friend_request.dh_public_key) {
                     this.keys[friend_request.rid].dh_public_keys.push(friend_request.dh_public_key);
@@ -461,7 +461,7 @@ export class GraphService {
                 } else {
                     decrypted = this.decrypt(friend.relationship);
                 }
-                if (decrypted.indexOf('{') === 0 || bypassDecrypt) {
+                try {
                     var relationship;
                     if (!bypassDecrypt) {
                         relationship = JSON.parse(decrypted);
@@ -471,7 +471,7 @@ export class GraphService {
                     if (this.keys[friend.rid].dh_private_keys.indexOf(relationship.dh_private_key) === -1 && relationship.dh_private_key) {
                         this.keys[friend.rid].dh_private_keys.push(relationship.dh_private_key);
                     }
-                } else {
+                } catch(err) {
                     if (this.keys[friend.rid].dh_public_keys.indexOf(friend.dh_public_key) === -1 && friend.dh_public_key) {
                         this.keys[friend.rid].dh_public_keys.push(friend.dh_public_key);
                     }
@@ -546,34 +546,36 @@ export class GraphService {
                         catch(error) {
                             continue
                         }
-                        if(decrypted.indexOf('{') === 0) {
+                        try {
                             var messageJson = JSON.parse(decrypted);
-                            if(messageJson[messageType]) {
-                                message.relationship = messageJson;
-                                message.shared_secret = shared_secret.shared_secret
-                                message.dh_public_key = shared_secret.dh_public_key
-                                message.dh_private_key = shared_secret.dh_private_key
-                                message.username = this.usernames[message.rid];
-                                messages[message.rid] = message;
-                                if (!chats[message.rid]) {
-                                    chats[message.rid] = [];
-                                }
-                                chats[message.rid].push(message);
-                                if(this[graphCounts][message.rid]) {
-                                    if(message.height > this[graphCounts][message.rid]) {
-                                        this[graphCount]++;
-                                        if(!this[graphCounts][message.rid]) {
-                                            this[graphCounts][message.rid] = 0;
-                                        }
-                                        this[graphCounts][message.rid]++;
-                                    }
-                                } else {
-                                    this[graphCounts][message.rid] = 1;
-                                    this[graphCount]++;
-                                }
-                            }
-                            continue dance;
+                        } catch(err) {
+                            continue;
                         }
+                        if(messageJson[messageType]) {
+                            message.relationship = messageJson;
+                            message.shared_secret = shared_secret.shared_secret
+                            message.dh_public_key = shared_secret.dh_public_key
+                            message.dh_private_key = shared_secret.dh_private_key
+                            message.username = this.usernames[message.rid];
+                            messages[message.rid] = message;
+                            if (!chats[message.rid]) {
+                                chats[message.rid] = [];
+                            }
+                            chats[message.rid].push(message);
+                            if(this[graphCounts][message.rid]) {
+                                if(message.height > this[graphCounts][message.rid]) {
+                                    this[graphCount]++;
+                                    if(!this[graphCounts][message.rid]) {
+                                        this[graphCounts][message.rid] = 0;
+                                    }
+                                    this[graphCounts][message.rid]++;
+                                }
+                            } else {
+                                this[graphCounts][message.rid] = 1;
+                                this[graphCount]++;
+                            }
+                        }
+                        continue dance;
                     }
                 }
                 resolve(chats);

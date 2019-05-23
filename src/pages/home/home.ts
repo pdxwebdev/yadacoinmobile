@@ -399,7 +399,7 @@ export class HomePage {
             this.loadingBalance = false;
             let options = new RequestOptions({ withCredentials: true });
 
-            this.ahttp.get(this.settingsService.remoteSettings['authenticatedUrl'] + '?rid=' + this.graphService.graph.rid + '&id=' + '' + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret, options).subscribe((res) => {
+            this.ahttp.get(this.settingsService.remoteSettings['authenticatedUrl'] + '?rid=' + this.graphService.graph.rid + '&id=' + '' + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret + '&origin=' + window.location.origin, options).subscribe((res) => {
                 var data = JSON.parse(res['_body']);
                 this.signedIn = data.authenticated;
             });
@@ -543,7 +543,7 @@ export class HomePage {
                     resolve(hash);
                 });
             });
-        })
+        }) // we cannot do fastgraph registrations. The signing process verifies a relationship. So one must already exist.
         .then((hash) => {
             return this.transactionService.sendTransaction();
         })
@@ -818,7 +818,7 @@ export class HomePage {
         }).then((args) => {
             return new Promise((resolve, reject) => {
                 let options = new RequestOptions({ withCredentials: true });
-                this.ahttp.get(this.settingsService.remoteSettings['loginUrl'], options)
+                this.ahttp.get(this.settingsService.remoteSettings['loginUrl'] + '?origin=' + window.location.origin, options)
                 .subscribe((res) => {
                     try {
                         return this.transactionService.generateTransaction({

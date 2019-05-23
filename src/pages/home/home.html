@@ -74,12 +74,12 @@
         <ion-icon name="signIn"></ion-icon>
         Sign in
       </button>
-      <a ion-button large secondary href="#" (click)="addFriend()" item-start *ngIf="graphService.graph.registered">
+      <button ion-button large secondary (click)="addFriend()" item-start *ngIf="graphService.graph.registered">
         Add friend&nbsp;<ion-icon name="search"></ion-icon>
-      </a>
-      <a ion-button large secondary href="#" (click)="presentModal()" *ngIf="graphService.graph.registered && signedIn === true">
+      </button>
+      <button ion-button large secondary (click)="presentModal()" *ngIf="graphService.graph.registered && signedIn === true">
         Post&nbsp;<ion-icon name="create"></ion-icon>
-      </a>
+      </button>
       <a ion-button large secondary href="{{settingsService.remoteSettings['baseUrl']}}" target="_blank" item-end *ngIf="graphService.graph.registered && signedIn === true">
         Visit&nbsp;<ion-icon name="open"></ion-icon>
       </a>

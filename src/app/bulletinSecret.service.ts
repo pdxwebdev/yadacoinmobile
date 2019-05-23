@@ -123,9 +123,10 @@ export class BulletinSecretService {
             if (!username) return reject();
             this.keyname = 'usernames-' + username;
             this.storage.set('last-keyname', this.keyname);
-
+            
             this.username = username;
             this.storage.set(this.keyname, keyWif.trim());
+            this.key = foobar.bitcoin.ECPair.fromWIF(keyWif.trim());
             this.bulletin_secret = this.generate_bulletin_secret();
             return this.get().then(() => {
                 return resolve();

@@ -315,7 +315,7 @@ export class Settings {
             return this.set(this.bulletinSecretService.keyname.substr(this.prefix.length));
         })
         .then(() => {
-            this.navCtrl.push(HomePage);
+            this.navCtrl.setRoot(HomePage);
         })
         .then(() => { 
             this.loadingModal.dismiss();

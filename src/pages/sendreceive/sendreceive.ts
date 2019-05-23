@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { NavController } from 'ionic-angular';
-import { AlertController } from 'ionic-angular';
+import { AlertController, LoadingController } from 'ionic-angular';
 import { WalletService } from '../../app/wallet.service';
 import { TransactionService } from '../../app/transaction.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service'
@@ -8,6 +8,7 @@ import { QRScanner, QRScannerStatus } from '@ionic-native/qr-scanner';
 import { SettingsService } from '../../app/settings.service';
 import { SocialSharing } from '@ionic-native/social-sharing';
 import { ListPage } from '../list/list';
+import { Http, RequestOptions } from '@angular/http';
 
 @Component({
   selector: 'page-sendreceive',
@@ -21,6 +22,7 @@ export class SendReceive {
     loadingBalance: any;
     balance = null;
     isDevice = null;
+    loadingModal: any;
     constructor(
         private navCtrl: NavController,
         private qrScanner: QRScanner,
@@ -29,8 +31,13 @@ export class SendReceive {
         private bulletinSecretService: BulletinSecretService,
         private walletService: WalletService,
         private socialSharing: SocialSharing,
+        public loadingCtrl: LoadingController,
+        private ahttp: Http,
         private settingsService: SettingsService
     ) {
+        this.loadingModal = this.loadingCtrl.create({
+            content: 'Please wait...'
+        });
         this.bulletinSecretService.get().then(() => {
             this.createdCode = bulletinSecretService.key.getAddress();
             this.refresh(null);
@@ -85,9 +92,34 @@ export class SendReceive {
         alert.addButton({
             text: 'Confirm',
             handler: (data: any) => {
+                this.loadingModal.present();
                 this.transactionService.generateTransaction({
                     to: this.address,
                     value: value
+                }).then((hash) => {
+                    return new Promise((resolve, reject) => {
+                        this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/sign-raw-transaction', {
+                            hash: hash, 
+                            bulletin_secret: this.bulletinSecretService.bulletin_secret,
+                            input: this.transactionService.transaction.inputs[0].id,
+                            id: this.transactionService.transaction.id,
+                            txn: this.transactionService.transaction
+                        })
+                        .subscribe((res) => {
+                            //this.loadingModal2.dismiss();
+                            try {
+                              let data = res.json();
+                              this.transactionService.transaction.signatures = [data.signature]
+                                resolve();
+                            } catch(err) {
+                                reject();
+                                this.loadingModal.dismiss().catch(() => {});
+                            }
+                        },
+                        (err) => {
+                            //this.loadingModal2.dismiss();
+                        });
+                    });
                 }).then(() => {
                     return this.transactionService.sendTransaction();
                 }).then((txn) => {
@@ -105,9 +137,11 @@ export class SendReceive {
                     this.value = null;
                     this.address = null;
                     this.refresh(null);
+                    this.loadingModal.dismiss().catch(() => {});
                 })
                 .catch((err) => {
                     console.log(err);
+                    this.loadingModal.dismiss().catch(() => {});
                 });
             }
         });
@@ -115,7 +149,7 @@ export class SendReceive {
     }
     refresh(refresher) {
         this.loadingBalance = true;
-        this.walletService.get()
+        this.walletService.get(false)
         .then(() => {
             this.loadingBalance = false;
             this.balance = this.walletService.wallet.balance;

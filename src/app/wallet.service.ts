@@ -19,12 +19,12 @@ export class WalletService {
         this.wallet = {};
     }
 
-    get() {
+    get(fastgraph=true) {
         return new Promise((resolve, reject) => {
             if (!this.settingsService.remoteSettings['walletUrl']) return resolve();
             this.bulletinSecretService.get()
             .then(() => {
-                return this.walletPromise();
+                return this.walletPromise(fastgraph);
             })
             .then(() => {
                 return resolve();  
@@ -35,13 +35,13 @@ export class WalletService {
         })
     }
 
-    walletPromise() {
+    walletPromise(fastgraph=true) {
         return new Promise((resolve, reject) => {
             if(!this.settingsService.remoteSettings['walletUrl']) {
                 return reject()
             }
             if(this.bulletinSecretService.username) {
-                this.ahttp.get(this.settingsService.remoteSettings['walletUrl'] + '?address=' + this.bulletinSecretService.key.getAddress() + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret).
+                this.ahttp.get(this.settingsService.remoteSettings['walletUrl'] + '?fastgraph=' + fastgraph + '&address=' + this.bulletinSecretService.key.getAddress() + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret).
                 subscribe((data) => {
                     if(data['_body']) {
                         this.walletError = false;
