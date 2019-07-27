@@ -62,7 +62,9 @@ export class MyApp {
     });
 
     this.pagesForRegisteredUser = [
-      { title: 'Home', label: 'App', component: HomePage },
+      { title: 'Home', label: 'Timeline', component: HomePage },
+      { title: 'Groups', label: 'Groups', component: ListPage },
+      //{ title: 'Following', label: 'Following', component: FollowingPage },
       { title: 'Friends', label: 'Friends', component: ListPage },
       { title: 'Messages', label: 'Messages', component: ListPage },
       { title: 'Friend Requests', label: 'Friend Requests', component: ListPage },
@@ -70,11 +72,13 @@ export class MyApp {
     ];
 
     this.pagesForUnregisteredUser = [
-      { title: 'Home', label: 'App', component: HomePage, count: false, color: '' }
+      { title: 'Home', label: 'Timeline', component: HomePage, count: false, color: '' },
+      { title: 'Groups', label: 'Groups', component: ListPage, count: false, color: ''  }
     ];
 
     this.defaultPages = [
-      { title: 'Wallet', label: 'Wallet', component: SendReceive, count: false, color: '' },
+      { title: 'Home', label: 'Timeline', component: HomePage, count: false, color: '' },
+      { title: 'Groups', label: 'Groups', component: ListPage, count: false, color: ''  }
     ];
 
     this.noUrlPages = [

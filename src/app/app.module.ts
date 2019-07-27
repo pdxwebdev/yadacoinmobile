@@ -11,6 +11,7 @@ import { ListPage } from '../pages/list/list';
 import { Settings } from '../pages/settings/settings';
 import { ChatPage } from '../pages/chat/chat';
 import { ProfilePage } from '../pages/profile/profile';
+import { GroupPage } from '../pages/group/group';
 
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
@@ -45,7 +46,8 @@ import { File } from '@ionic-native/file';
     Settings,
     SendReceive,
     ChatPage,
-    ProfilePage
+    ProfilePage,
+    GroupPage
   ],
   imports: [
     BrowserModule,
@@ -68,7 +70,8 @@ import { File } from '@ionic-native/file';
     Settings,
     SendReceive,
     ChatPage,
-    ProfilePage
+    ProfilePage,
+    GroupPage
   ],
   providers: [
     StatusBar,

@@ -154,6 +154,8 @@ export class SendReceive {
             this.loadingBalance = false;
             this.balance = this.walletService.wallet.balance;
             if(refresher) refresher.complete();
+        }).catch((err) => {
+            console.log(err);  
         });
     }
 

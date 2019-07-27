@@ -18,6 +18,7 @@ export class TransactionService {
     callbackurl = null;
     blockchainurl = null;
     bulletin_secret = null;
+    their_bulletin_secret = null;
     shared_secret = null;
     to = null;
     txnattempts = null;
@@ -45,6 +46,7 @@ export class TransactionService {
             this.txnattempts = [12, 5, 4];
             this.cbattempts = [12, 5, 4];
             this.info = info;
+            this.their_bulletin_secret = this.info.their_bulletin_secret;
             this.unspent_transaction_override = this.info.unspent_transaction;
             this.blockchainurl = this.info.blockchainurl;
             this.callbackurl = this.info.callbackurl;
@@ -105,7 +107,7 @@ export class TransactionService {
                 } else {
                     this.info.relationship = this.info.relationship || {};
                     if (
-                        (this.info.requester_rid && this.info.requested_rid) || // is friend request/accept
+                        (this.info.requester_rid && this.info.requested_rid) || // is friend request/accept or group message
                         this.info.relationship.postText || // is post
                         this.info.relationship.comment || // is comment
                         this.info.relationship.react || // is react
@@ -224,23 +226,42 @@ export class TransactionService {
                     inputs_hashes_concat +
                     outputs_hashes_concat
                 ).toString('hex')
-            } else if (this.info.relationship.postText) {
-                // post
+            } else if (this.info.relationship.groupChatText) {
+                // group chat
     
-                this.transaction.relationship = this.shared_encrypt(this.bulletin_secret, JSON.stringify(this.info.relationship));                    
+                this.transaction.relationship = this.shared_encrypt(this.their_bulletin_secret, JSON.stringify(this.info.relationship));                    
     
                 hash = foobar.bitcoin.crypto.sha256(
                     this.transaction.public_key +
                     this.transaction.time +
+                    this.transaction.rid +
                     this.transaction.relationship +
                     this.transaction.fee.toFixed(8) +
+                    this.transaction.requester_rid +
+                    this.transaction.requested_rid +
+                    inputs_hashes_concat +
+                    outputs_hashes_concat
+                ).toString('hex')
+            } else if (this.info.relationship.postText) {
+                // group post
+    
+                this.transaction.relationship = this.shared_encrypt(this.their_bulletin_secret, JSON.stringify(this.info.relationship));                    
+    
+                hash = foobar.bitcoin.crypto.sha256(
+                    this.transaction.public_key +
+                    this.transaction.time +
+                    this.transaction.rid +
+                    this.transaction.relationship +
+                    this.transaction.fee.toFixed(8) +
+                    this.transaction.requester_rid +
+                    this.transaction.requested_rid +
                     inputs_hashes_concat +
                     outputs_hashes_concat
                 ).toString('hex')
             } else if (this.info.relationship.comment) {
-                // comment
+                // group comment
     
-                this.transaction.relationship = this.shared_encrypt(this.bulletin_secret, JSON.stringify(this.info.relationship));                    
+                this.transaction.relationship = this.shared_encrypt(this.their_bulletin_secret, JSON.stringify(this.info.relationship));                    
     
                 hash = foobar.bitcoin.crypto.sha256(
                     this.transaction.public_key +
@@ -251,9 +272,9 @@ export class TransactionService {
                     outputs_hashes_concat
                 ).toString('hex')
             } else if (this.info.relationship.react) {
-                // react
+                // group react
     
-                this.transaction.relationship = this.shared_encrypt(this.bulletin_secret, JSON.stringify(this.info.relationship));                    
+                this.transaction.relationship = this.shared_encrypt(this.their_bulletin_secret, JSON.stringify(this.info.relationship));                    
     
                 hash = foobar.bitcoin.crypto.sha256(
                     this.transaction.public_key +

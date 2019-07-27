@@ -21,6 +21,7 @@
   </ion-card>
   <ion-list>
     <button ion-item *ngFor="let item of items" (click)="itemTapped($event, item)">
+      <span *ngIf="pageTitle =='Groups'">{{item.transaction.relationship.their_username}}</span>
       <span *ngIf="pageTitle =='Sent Requests'">{{item.transaction.relationship.their_username}}</span>
       <span *ngIf="pageTitle =='Friend Requests'">{{item.transaction.username}}</span>
       <span *ngIf="pageTitle =='Messages' && !item.transaction.new">{{item.transaction.relationship.their_username}}</span>

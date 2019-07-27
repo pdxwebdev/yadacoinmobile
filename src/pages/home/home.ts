@@ -18,6 +18,8 @@ import { Events } from 'ionic-angular';
 declare var forge;
 declare var X25519;
 declare var firebase;
+declare var foobar;
+declare var Base64;
 
 @Component({
     selector: 'page-home',
@@ -414,7 +416,7 @@ export class HomePage {
             return this.graphService.getNewSignIns();
         })
         .then(() => {
-            return this.graphService.getPosts();
+            return this.graphService.getNewGroupMessages();
         })
         .then(() => {
             return this.generateFeed();
@@ -601,6 +603,155 @@ export class HomePage {
         alert.setTitle('Request Friend');
         alert.setSubTitle('How do you want to request this friend?');
         alert.present();
+    }
+
+    createGroup() {
+        new Promise((resolve, reject) => {
+            let alert = this.alertCtrl.create({
+                title: 'Set group name',
+                inputs: [
+                {
+                    name: 'groupname',
+                    placeholder: 'Group name'
+                }
+                ],
+                buttons: [
+                {
+                    text: 'Cancel',
+                    role: 'cancel',
+                    handler: data => {
+                        console.log('Cancel clicked');
+                        reject();
+                    }
+                },
+                {
+                    text: 'Save',
+                    handler: data => {
+                        const toast = this.toastCtrl.create({
+                            message: 'Group created',
+                            duration: 2000
+                        });
+                        toast.present();
+                        resolve(data.groupname);
+                    }
+                }
+                ]
+            });
+            alert.present();
+        })
+        .then((username) => {
+            return new Promise((resolve, reject) => {
+                if (!username) return reject();
+                let keyname = 'usernames-' + username;
+
+                let key = foobar.bitcoin.ECPair.makeRandom();
+                let wif = key.toWIF();
+                let pubKey = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
+                let bulletin_secret = foobar.base64.fromByteArray(key.sign(foobar.bitcoin.crypto.sha256(username)).toDER());
+                var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
+                var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
+                var dh_private_key = this.toHex(raw_dh_private_key);
+                var dh_public_key = this.toHex(raw_dh_public_key);
+                resolve({
+                    public_key: pubKey,
+                    bulletin_secret: bulletin_secret,
+                    wif: wif,
+                    dh_public_key: dh_public_key,
+                    dh_private_key: dh_private_key,
+                    username: username,
+                    address: key.getAddress()
+                })
+            });
+        })
+        .then((info) => {
+            return this.transactionService.generateTransaction({
+                relationship: {
+                    dh_private_key: info.dh_private_key,
+                    their_bulletin_secret: info.bulletin_secret,
+                    their_username: info.username,
+                    my_bulletin_secret: this.bulletinSecretService.generate_bulletin_secret(),
+                    my_username: this.bulletinSecretService.username,
+                    public_key: info.public_key,
+                    wif: info.wif,
+                    bulletin_secret: info.bulletin_secret,
+                    group: true
+                },
+                dh_public_key: info.dh_public_key,
+                to: info.address
+            })
+        
+        }).then((txn) => {
+            return this.transactionService.sendTransaction();
+        })
+        .then((hash) => {
+            if (this.settingsService.remoteSettings['walletUrl']) {
+                return this.graphService.getInfo();
+            }
+        })
+        .then(() => {
+            return this.refresh(null)
+        })
+        .then(() => {
+            this.events.publish('pages-settings');
+        })
+        .catch(() => {
+            this.events.publish('pages');
+        });
+    }
+
+    joinGroup() {
+        let alert = this.alertCtrl.create();
+        alert.setTitle('Invite');
+        alert.setSubTitle('copy and paste this entire string of characters');
+        alert.addButton('Done');
+        alert.addInput({
+            type: 'text',
+            placeholder: 'Past invite characters'     
+        })
+        alert.present();
+    }
+
+    unlockWallet() {
+        return new Promise((resolve, reject) => {
+            let alert = this.alertCtrl.create({
+                title: 'Set group name',
+                inputs: [
+                {
+                    name: 'key_or_wif',
+                    placeholder: 'Group name'
+                }
+                ],
+                buttons: [
+                {
+                    text: 'Cancel',
+                    role: 'cancel',
+                    handler: data => {
+                        console.log('Cancel clicked');
+                        reject();
+                    }
+                },
+                {
+                    text: 'Unlock',
+                    handler: data => {
+                        let options = new RequestOptions({ withCredentials: true });
+                        this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/auth?origin=' + encodeURIComponent(window.location.href), {key_or_wif: data.key_or_wif}, options)
+                        .subscribe((res) => {
+                            const toast = this.toastCtrl.create({
+                                message: 'Wallet unlocked',
+                                duration: 2000
+                            });
+                            toast.present();
+                            resolve(res);
+                        },
+                        (err) => {
+                            reject(data.groupname);
+                        });
+                    }
+                }
+                ]
+            });
+            alert.present();
+        });
     }
 
     pasteFriend(phrase) {

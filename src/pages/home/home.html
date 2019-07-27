@@ -31,10 +31,7 @@
        Pending approval, please wait.
       </ion-item>
       <ion-item *ngIf="walletService.wallet.balance === 0" text-wrap>
-        Your wallet has a ballance of zero. To register with YadaCoin apps, you need YadaCoins.
-      </ion-item>
-      <ion-item *ngIf="walletService.wallet.balance === 0" text-wrap>
-        <ion-icon large name="arrow-dropleft"></ion-icon>&nbsp;&nbsp;Goto the wallet tab to receive coins from other users.
+        Your wallet has a ballance of zero. To register with YadaCoin apps, you need YadaCoins. Request an invite!
       </ion-item>
     </ion-col>
   </ion-row>
@@ -55,6 +52,12 @@
     </ion-col>
   </ion-row>
   <ion-row *ngIf="settingsService.remoteSettings['walletUrl']">
+    <ion-col col-lg-3 col-md-4 col-sm-4 text-center *ngIf="!graphService.graph.registered">
+      <button large ion-button title="request invite" (click)="request_invite()" full *ngIf="!graphService.graph.pending_registration && !graphService.graph.registered && walletService.wallet.balance === 0">
+        <ion-icon name="requestinvite"></ion-icon>
+        Request Invite
+      </button>
+    </ion-col>
     <ion-col col-lg-3 col-md-4 col-sm-4 text-center *ngIf="!graphService.graph.registered">
       <button large ion-button title="register" (click)="register()" full *ngIf="!graphService.graph.pending_registration && walletService.wallet.balance > 0">
         <ion-icon name="register"></ion-icon>
@@ -77,8 +80,14 @@
       <button ion-button large secondary (click)="addFriend()" item-start *ngIf="graphService.graph.registered">
         Add friend&nbsp;<ion-icon name="search"></ion-icon>
       </button>
-      <button ion-button large secondary (click)="presentModal()" *ngIf="graphService.graph.registered && signedIn === true">
-        Post&nbsp;<ion-icon name="create"></ion-icon>
+      <button ion-button large secondary (click)="createGroup()" *ngIf="walletService.wallet.balance > 0">
+        Create Group&nbsp;<ion-icon name="create"></ion-icon>
+      </button>
+      <button ion-button large secondary (click)="joinGroup()" *ngIf="walletService.wallet.balance > 0">
+        Join Group&nbsp;<ion-icon name="create"></ion-icon>
+      </button>
+      <button ion-button large secondary (click)="unlockWallet()">
+        Unlock wallet&nbsp;<ion-icon name="create"></ion-icon>
       </button>
       <a ion-button large secondary href="{{settingsService.remoteSettings['baseUrl']}}" target="_blank" item-end *ngIf="graphService.graph.registered && signedIn === true">
         Visit&nbsp;<ion-icon name="open"></ion-icon>

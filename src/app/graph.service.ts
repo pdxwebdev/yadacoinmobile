@@ -3,7 +3,7 @@ import { Storage } from '@ionic/storage';
 import { BulletinSecretService } from './bulletinSecret.service';
 import { SettingsService } from './settings.service';
 import { Badge } from '@ionic-native/badge';
-import { Http } from '@angular/http';
+import { Http, RequestOptions } from '@angular/http';
 import { Platform } from 'ionic-angular';
 import { LoadingController } from 'ionic-angular';
 
@@ -26,12 +26,15 @@ export class GraphService {
     storingSecretsModal: any;
     new_messages_count: any; //total new messages
     new_messages_counts: any; //new messages by rid
+    new_group_messages_count: any; //total new group messages
+    new_group_messages_counts: any; //new group messages by rid
     new_sign_ins_count: any; //total new sign ins
     new_sign_ins_counts: any; //new sign ins by rid
     friend_request_count: any; //total friend requests
     friends_indexed: any;
     getGraphError = false;
     getSentFriendRequestsError = false;
+    getGroupsRequestsError = false;
     getFriendRequestsError = false;
     getFriendsError = false;
     getMessagesError = false;
@@ -59,6 +62,8 @@ export class GraphService {
         this.keys = {};
         this.new_messages_count = 0;
         this.new_messages_counts = {};
+        this.new_group_messages_count = 0;
+        this.new_group_messages_counts = {};
         this.new_sign_ins_count = this.new_sign_ins_count || 0;
         this.new_sign_ins_counts = {};
         this.friend_request_count = this.friend_request_count || 0;
@@ -68,14 +73,17 @@ export class GraphService {
 
     endpointRequest(endpoint, ids=null) {
         return new Promise((resolve, reject) => {
+            let options = new RequestOptions({ withCredentials: true });
             if (ids) {
                 var promise = this.ahttp.post(
-                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?bulletin_secret=' + this.bulletinSecretService.bulletin_secret,
-                    {ids: ids}
+                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.href) + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret,
+                    {ids: ids},
+                    options
                 );
             } else {
                 var promise = this.ahttp.get(
-                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?bulletin_secret=' + this.bulletinSecretService.bulletin_secret
+                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.href) + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret,
+                    options
                 )
             }
             
@@ -164,6 +172,22 @@ export class GraphService {
         });
     }
 
+    getGroups() {
+        return new Promise((resolve, reject) => {
+            this.endpointRequest('get-graph-sent-friend-requests')
+            .then((data: any) => {
+                return this.parseGroups(data.sent_friend_requests);
+            }).then((groups) => {
+                this.getGroupsRequestsError = false;
+                this.graph.groups = groups;
+                resolve();
+            }).catch((err) => {
+                this.getGroupsRequestsError = true;
+                reject(null);
+            });
+        });
+    }
+
     getMessages(rid) {
         //get messages for a specific friend
         return new Promise((resolve, reject) => {
@@ -203,6 +227,54 @@ export class GraphService {
             })
             .then((newChats: any) => {
                 this.graph.newMessages = newChats;
+                this.getNewMessagesError = false;
+                resolve(newChats);
+            }).catch((err) => {
+                this.getNewMessagesError = true;
+                reject(err);
+            });
+        });
+    }
+
+    getGroupMessages(key, rid) {
+        //get messages for a specific friend
+        return new Promise((resolve, reject) => {
+            this.endpointRequest('get-graph-messages')
+            .then((data: any) => {
+                return this.parseGroupMessages(key, data.messages, 'new_group_messages_counts', 'new_group_messages_count', rid, 'groupChatText', 'last_group_message_height')
+            })
+            .then((chats: any) => {
+                if (!this.graph.messages) {
+                    this.graph.messages = {};
+                }
+                if (chats[rid]){
+                    this.graph.messages[rid] = chats[rid];
+                    this.graph.messages[rid].sort(function (a, b) {
+                        if (parseInt(a.time) > parseInt(b.time))
+                        return 1
+                        if ( parseInt(a.time) < parseInt(b.time))
+                        return -1
+                        return 0
+                    });
+                }
+                this.getMessagesError = false;                
+                return resolve(chats[rid]);
+            }).catch((err) => {
+                this.getMessagesError = true;
+                reject(err);
+            });
+        });
+    }
+
+    getNewGroupMessages() {
+        //get the latest message for each friend
+        return new Promise((resolve, reject) => {
+            this.endpointRequest('get-graph-new-messages')
+            .then((data: any) => {
+                return this.parseNewMessages(data.new_messages, 'new_group_messages_counts', 'new_group_messages_count', 'last_group_message_height');
+            })
+            .then((newChats: any) => {
+                this.graph.newGroupMessages = newChats;
                 this.getNewMessagesError = false;
                 resolve(newChats);
             }).catch((err) => {
@@ -255,25 +327,11 @@ export class GraphService {
         });
     }
 
-    getPosts() {
-        return new Promise((resolve, reject) => {
-            this.endpointRequest('get-graph-posts')
-            .then((data: any) => {
-                this.graph.posts = this.parsePosts(data.posts);
-                this.getPostsError = false;
-                resolve(data.posts);
-            }).catch(() => {
-                this.getPostsError = true;
-                reject(null);
-            });
-        });
-    }
-
-    getReacts(ids) {
+    getReacts(ids, rid=null) {
         return new Promise((resolve, reject) => {
             this.endpointRequest('get-graph-reacts', ids)
             .then((data: any) => {
-                this.graph.reacts = this.parsePosts(data.reacts);
+                this.graph.reacts = this.parseMessages(data.reacts, 'new_reacts_counts', 'new_reacts_count', rid, 'chatText', 'last_react_height');
                 this.getReactsError = false;
                 resolve(data.reacts);
             }).catch(() => {
@@ -283,11 +341,11 @@ export class GraphService {
         });
     }
 
-    getComments(ids) {
+    getComments(ids, rid=null) {
         return new Promise((resolve, reject) => {
             this.endpointRequest('get-graph-comments', ids)
             .then((data: any) => {
-                this.graph.comments = this.parsePosts(data.comments);
+                this.graph.comments = this.parseMessages(data.reacts, 'new_comments_counts', 'new_comments_count', rid, 'chatText', 'last_comment_height');
                 this.getCommentsError = false;
                 resolve(data.comments);
             }).catch(() => {
@@ -297,11 +355,11 @@ export class GraphService {
         });
     }
 
-    getCommentReacts(ids) {
+    getCommentReacts(ids, rid=null) {
         return new Promise((resolve, reject) => {
             this.endpointRequest('get-graph-reacts', ids)
             .then((data: any) => {
-                this.graph.commentReacts = this.parsePosts(data.reacts);
+                this.graph.commentReacts = this.parseMessages(data.reacts, 'new_comment_reacts_counts', 'new_comment_reacts_count', rid, 'chatText', 'last_comment_react_height');
                 this.getcommentReactsError = false;
                 resolve(data.comment_reacts);
             }).catch(() => {
@@ -311,11 +369,11 @@ export class GraphService {
         });
     }
 
-    getCommentReplies(ids) {
+    getCommentReplies(ids, rid=null) {
         return new Promise((resolve, reject) => {
             this.endpointRequest('get-graph-comments', ids)
             .then((data: any) => {
-                this.graph.commentReplies = this.parsePosts(data.comments);
+                this.graph.commentReplies = this.parseMessages(data.reacts, 'new_comment_comments_counts', 'new_comment_comments_count', rid, 'chatText', 'last_comment_comment_height');
                 this.getcommentRepliesError = false;
                 resolve(data.comments);
             }).catch(() => {
@@ -520,6 +578,73 @@ export class GraphService {
         });
     }
 
+    parseGroups(groups) {
+        // we must call getSentFriendRequests and getFriendRequests before getting here
+        // because we need this.keys to be populated with the dh_public_keys and dh_private_keys from the requests
+        // though friends really should be cached
+        // should be key: shared-secret_rid|pub_key[:26]priv_key[:26], value: {shared_secret: <shared_secret>, friend: [transaction.dh_public_key, transaction.dh_private_key]}
+        return new Promise((resolve, reject) => {
+            //start "just do dedup yada server because yada server adds itself to the friends array automatically straight from the api"
+            var groupsObj = {};
+            if (!this.graph.groups) this.graph.groups = [];
+            groups = groups.concat(this.graph.groups);
+            for(var i=0; i<groups.length; i++) {
+                var group = groups[i];
+                if (!this.keys[group.rid]) {
+                    this.keys[group.rid] = {
+                        dh_private_keys: [],
+                        dh_public_keys: []
+                    };
+                }
+                var decrypted;
+                var bypassDecrypt = false;
+                if (typeof group.relationship == 'object') {
+                    var bypassDecrypt = true;
+                } else {
+                    decrypted = this.decrypt(group.relationship);
+                }
+                try {
+                    var relationship;
+                    if (!bypassDecrypt) {
+                        relationship = JSON.parse(decrypted);
+                        group['relationship'] = relationship;
+                    }
+                    if (!group.relationship.group) {
+                        continue;
+                    }
+                    groupsObj[group.rid] = group;
+                    if (this.keys[group.rid].dh_private_keys.indexOf(relationship.dh_private_key) === -1 && relationship.dh_private_key) {
+                        this.keys[group.rid].dh_private_keys.push(relationship.dh_private_key);
+                    }
+                } catch(err) {
+                    if (this.keys[group.rid].dh_public_keys.indexOf(group.dh_public_key) === -1 && group.dh_public_key) {
+                        this.keys[group.rid].dh_public_keys.push(group.dh_public_key);
+                    }
+                }
+            }
+
+            var arr_friends = Object.keys(groupsObj);
+
+            groups = []
+            let friends_diff = new Set(arr_friends);
+            if(arr_friends.length > 0) {
+                let arr_friends_keys = Array.from(friends_diff.keys())
+                for(i=0; i<arr_friends_keys.length; i++) {
+                    groups.push(groupsObj[arr_friends_keys[i]])
+                    if (groupsObj[arr_friends_keys[i]].relationship && groupsObj[arr_friends_keys[i]].relationship.their_username) {
+                        this.usernames[groupsObj[arr_friends_keys[i]].rid] = groupsObj[arr_friends_keys[i]].relationship.their_username;
+                    }
+                    if (groupsObj[arr_friends_keys[i]].username) {
+                        this.usernames[groupsObj[arr_friends_keys[i]].rid] = groupsObj[arr_friends_keys[i]].username;
+                    }
+                }
+            }
+
+            resolve(groups);
+            return groups;
+        });
+    }
+
     parseMessages(messages, graphCounts, graphCount, rid=null, messageType=null, messageHeightType=null) {
         this[graphCount] = 0;
         return new Promise((resolve, reject) => {
@@ -612,8 +737,53 @@ export class GraphService {
         });
     }
 
-    parsePosts(posts) {
-        return posts;
+    parseGroupMessages(key, messages, graphCounts, graphCount, rid=null, messageType=null, messageHeightType=null) {
+        this[graphCount] = 0;
+        return new Promise((resolve, reject) => {
+            this.getGroupMessageHeights(graphCounts, messageHeightType)
+            .then(() => {
+                var chats = {};
+                for(var i=0; i<messages.length; i++) {
+                    var message = messages[i];
+                    //hopefully we've prepared the stored_secrets option before getting here 
+                    //by calling getSentFriendRequests and getFriendRequests
+                    try {
+                        var decrypted = this.shared_decrypt(key, message.relationship);
+                        console.log(decrypted);
+                    } 
+                    catch(error) {
+                        continue
+                    }
+                    try {
+                        var messageJson = JSON.parse(decrypted);
+                    } catch(err) {
+                        continue;
+                    }
+                    if(messageJson[messageType]) {
+                        message.relationship = messageJson;
+                        message.username = this.usernames[message.rid];
+                        messages[message.rid] = message;
+                        if (!chats[message.rid]) {
+                            chats[message.rid] = [];
+                        }
+                        chats[message.rid].push(message);
+                        if(this[graphCounts][message.rid]) {
+                            if(message.height > this[graphCounts][message.rid]) {
+                                this[graphCount]++;
+                                if(!this[graphCounts][message.rid]) {
+                                    this[graphCounts][message.rid] = 0;
+                                }
+                                this[graphCounts][message.rid]++;
+                            }
+                        } else {
+                            this[graphCounts][message.rid] = 1;
+                            this[graphCount]++;
+                        }
+                    }
+                }
+                resolve(chats);
+            });
+        });
     }
 
     getSharedSecrets() {
@@ -672,6 +842,21 @@ export class GraphService {
     }
 
     getMessageHeights(graphCounts, heightType) {
+        this[graphCounts] = {};
+        return new Promise((resolve, reject) => {
+            this.storage.forEach((value, key) => {
+                if (key.indexOf(heightType) === 0) {
+                    var rid = key.slice(heightType + '-'.length);
+                    this[graphCounts][rid] = parseInt(value);
+                }
+            })
+            .then(() => {
+                resolve();
+            });
+        });
+    }
+
+    getGroupMessageHeights(graphCounts, heightType) {
         this[graphCounts] = {};
         return new Promise((resolve, reject) => {
             this.storage.forEach((value, key) => {

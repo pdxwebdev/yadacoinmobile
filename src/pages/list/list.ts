@@ -9,6 +9,7 @@ import { TransactionService } from '../../app/transaction.service';
 import { SettingsService } from '../../app/settings.service';
 import { SocialSharing } from '@ionic-native/social-sharing';
 import { ChatPage } from '../chat/chat';
+import { GroupPage } from '../group/group';
 import { Events } from 'ionic-angular';
 import { Http, RequestOptions } from '@angular/http';
 
@@ -113,6 +114,28 @@ export class ListPage {
             this.loading = false;
           }).catch((err) => {
               console.log('listpage getFriends error: ' + err);
+          });
+        } else if (this.pageTitle == 'Groups') {
+          var my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
+          return this.graphService.getGroups()
+          .then(() => {
+            return this.graphService.getNewGroupMessages();
+          })
+          .then((graphArray) => {
+            var messages = this.markNew(my_public_key, graphArray, this.graphService.new_group_messages_counts);
+            var groupsWithMessagesList = this.getDistinctGroups(messages);
+            this.populateRemainingGroups(groupsWithMessagesList.group_list, groupsWithMessagesList.used_rids);
+            this.loading = false;
+            groupsWithMessagesList.group_list.sort(function (a, b) {
+                if (a.relationship.their_username.toLowerCase() < b.relationship.their_username.toLowerCase())
+                  return -1
+                if ( a.relationship.their_username.toLowerCase() > b.relationship.their_username.toLowerCase())
+                  return 1
+                return 0
+            });
+            return this.makeList(groupsWithMessagesList.group_list);
+          }).catch((err) => {
+              console.log(err);
           });
         } else if (this.pageTitle == 'Messages') {
           var my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
@@ -252,12 +275,45 @@ export class ListPage {
     };
   }
 
+  getDistinctGroups(collection) {
+    // using the rids from new items
+    // make a list of friends sorted by block height descending (most recent)
+    var group_list = [];
+    var used_rids = [];
+    for (var i=0; i < collection.length; i++) {
+      // we could have multiple transactions per friendship
+      // so make sure we're going using the rid once
+      var item = collection[i];
+      if(!item.relationship || !item.relationship.their_username) {
+        continue
+      }
+      if(used_rids.indexOf(item.rid) === -1) {
+        group_list.push(item);
+        used_rids.push(item.rid);
+      }
+    }
+    return {
+      group_list: group_list,
+      used_rids: used_rids
+    };
+  }
+
   populateRemainingFriends(friend_list, used_rids) {
     // now add everyone else
     for (var i=0; i < this.graphService.graph.friends.length; i++) {
       if (used_rids.indexOf(this.graphService.graph.friends[i].rid) === -1) {
         friend_list.push(this.graphService.graph.friends[i]);
         used_rids.push(this.graphService.graph.friends[i].rid);
+      }
+    }
+  }
+
+  populateRemainingGroups(friend_list, used_rids) {
+    // now add everyone else
+    for (var i=0; i < this.graphService.graph.groups.length; i++) {
+      if (used_rids.indexOf(this.graphService.graph.groups[i].rid) === -1) {
+        friend_list.push(this.graphService.graph.groups[i]);
+        used_rids.push(this.graphService.graph.groups[i].rid);
       }
     }
   }
@@ -283,6 +339,10 @@ export class ListPage {
   itemTapped(event, item) {
     if(this.pageTitle == 'Messages') {
       this.navCtrl.push(ChatPage, {
+        item: item
+      });
+    } else if(this.pageTitle == 'Groups') {
+      this.navCtrl.push(GroupPage, {
         item: item
       });
     } else if(this.pageTitle == 'Friends' && this.context == 'newChat') {
