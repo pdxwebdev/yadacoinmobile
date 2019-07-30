@@ -236,7 +236,7 @@ export class GraphService {
         });
     }
 
-    getGroupMessages(key, rid) {
+    getGroupMessages(key, requested_rid, rid) {
         //get messages for a specific friend
         return new Promise((resolve, reject) => {
             this.endpointRequest('get-graph-messages')
@@ -247,9 +247,10 @@ export class GraphService {
                 if (!this.graph.messages) {
                     this.graph.messages = {};
                 }
-                if (chats[rid]){
-                    this.graph.messages[rid] = chats[rid];
-                    this.graph.messages[rid].sort(function (a, b) {
+                var choice_rid = requested_rid || rid;
+                if (choice_rid){
+                    this.graph.messages[choice_rid] = chats[choice_rid];
+                    this.graph.messages[choice_rid].sort(function (a, b) {
                         if (parseInt(a.time) > parseInt(b.time))
                         return 1
                         if ( parseInt(a.time) < parseInt(b.time))
@@ -258,7 +259,7 @@ export class GraphService {
                     });
                 }
                 this.getMessagesError = false;                
-                return resolve(chats[rid]);
+                return resolve(chats[choice_rid]);
             }).catch((err) => {
                 this.getMessagesError = true;
                 reject(err);
@@ -759,24 +760,26 @@ export class GraphService {
                     } catch(err) {
                         continue;
                     }
+
+                    var group_message_rid = message.requested_rid || message.rid;
                     if(messageJson[messageType]) {
                         message.relationship = messageJson;
-                        message.username = this.usernames[message.rid];
-                        messages[message.rid] = message;
-                        if (!chats[message.rid]) {
-                            chats[message.rid] = [];
+                        message.username = this.usernames[group_message_rid];
+                        messages[group_message_rid] = message;
+                        if (!chats[group_message_rid]) {
+                            chats[group_message_rid] = [];
                         }
-                        chats[message.rid].push(message);
-                        if(this[graphCounts][message.rid]) {
-                            if(message.height > this[graphCounts][message.rid]) {
+                        chats[group_message_rid].push(message);
+                        if(this[graphCounts][group_message_rid]) {
+                            if(message.height > this[graphCounts][group_message_rid]) {
                                 this[graphCount]++;
-                                if(!this[graphCounts][message.rid]) {
-                                    this[graphCounts][message.rid] = 0;
+                                if(!this[graphCounts][group_message_rid]) {
+                                    this[graphCounts][group_message_rid] = 0;
                                 }
-                                this[graphCounts][message.rid]++;
+                                this[graphCounts][group_message_rid]++;
                             }
                         } else {
-                            this[graphCounts][message.rid] = 1;
+                            this[graphCounts][group_message_rid] = 1;
                             this[graphCount]++;
                         }
                     }

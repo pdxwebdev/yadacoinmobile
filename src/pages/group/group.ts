@@ -12,6 +12,7 @@ import { Http, RequestOptions } from '@angular/http';
 
 declare var X25519;
 declare var Base64;
+declare var foobar;
 
 @Component({
     selector: 'page-group',
@@ -26,14 +27,16 @@ export class GroupPage {
     blockchainAddress: any;
     chats: any;
     rid: any;
-    public_key: any;
+    their_public_key: any;
     loading: any;
     loadingModal: any;
     content: any;
     wallet_mode: any;
     their_bulletin_secret: any;
+    their_username: any;
     requester_rid: any;
     requested_rid: any;
+    their_address: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -51,13 +54,15 @@ export class GroupPage {
         this.rid = navParams.data.item.transaction.rid;
         this.requester_rid = navParams.data.item.transaction.requester_rid;
         this.requested_rid = navParams.data.item.transaction.requested_rid;
+        this.their_address = navParams.data.item.transaction.relationship.their_address;
+        this.their_public_key = navParams.data.item.transaction.relationship.their_public_key;
         this.their_bulletin_secret = navParams.data.item.transaction.relationship.their_bulletin_secret;
+        this.their_username = navParams.data.item.transaction.relationship.their_username;
         var key = 'last_message_height-' + navParams.data.item.transaction.rid;
         if(navParams.data.item.transaction.height) this.storage.set(key, navParams.data.item.transaction.time);
         this.storage.get('blockchainAddress').then((blockchainAddress) => {
             this.blockchainAddress = blockchainAddress;
         });
-        this.public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
         this.refresh(null, true);
     }
 
@@ -69,8 +74,11 @@ export class GroupPage {
         alert.addInput({
             type: 'text',
             value: Base64.encode(JSON.stringify({
+                their_public_key: this.their_public_key,
                 their_bulletin_secret: this.their_bulletin_secret,
-                requested_rid: this.requested_rid || this.rid
+                requested_rid: this.requested_rid || this.rid,
+                their_username: this.their_username,
+                their_address: this.their_address
             }))            
         })
         alert.present();
@@ -91,7 +99,7 @@ export class GroupPage {
         if (showLoading) {
             this.loading = true;
         }
-        this.graphService.getGroupMessages(this.their_bulletin_secret, this.rid)
+        this.graphService.getGroupMessages(this.their_bulletin_secret, this.requested_rid, this.rid)
         .then(() => {
             this.loading = false;
             if(refresher) refresher.complete();
@@ -117,7 +125,9 @@ export class GroupPage {
                 .then(() => {
                     return this.transactionService.generateTransaction({
                         relationship: {
-                            groupChatText: this.groupChatText 
+                            groupChatText: this.groupChatText,
+                            my_bulletin_secret: this.bulletinSecretService.generate_bulletin_secret(),
+                            my_username: this.bulletinSecretService.username
                         },
                         their_bulletin_secret: this.their_bulletin_secret,
                         rid: this.rid,
@@ -185,5 +195,14 @@ export class GroupPage {
             return ('0' + (byte & 0xFF).toString(16)).slice(-2);
         }
         return Array.from(byteArray, callback).join('')
+    }
+
+    hexToBytes(s) {
+        var arr = []
+        for (var i = 0; i < s.length; i += 2) {
+            var c = s.substr(i, 2);
+            arr.push(parseInt(c, 16));
+        }
+        return String.fromCharCode.apply(null, arr);
     }
 }

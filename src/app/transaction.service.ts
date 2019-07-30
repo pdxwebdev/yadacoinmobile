@@ -107,7 +107,8 @@ export class TransactionService {
                 } else {
                     this.info.relationship = this.info.relationship || {};
                     if (
-                        (this.info.requester_rid && this.info.requested_rid) || // is friend request/accept or group message
+                        this.info.requester_rid || 
+                        this.info.requested_rid || // is friend request/accept or group message
                         this.info.relationship.postText || // is post
                         this.info.relationship.comment || // is comment
                         this.info.relationship.react || // is react

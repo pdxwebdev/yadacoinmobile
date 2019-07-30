@@ -646,20 +646,21 @@ export class HomePage {
 
                 let key = foobar.bitcoin.ECPair.makeRandom();
                 let wif = key.toWIF();
-                let pubKey = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
+                let pubKey = key.getPublicKeyBuffer().toString('hex');
+                let address = key.getAddress();
                 let bulletin_secret = foobar.base64.fromByteArray(key.sign(foobar.bitcoin.crypto.sha256(username)).toDER());
                 var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
                 var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
                 var dh_private_key = this.toHex(raw_dh_private_key);
                 var dh_public_key = this.toHex(raw_dh_public_key);
                 resolve({
-                    public_key: pubKey,
-                    bulletin_secret: bulletin_secret,
+                    their_public_key: pubKey,
+                    their_address: address,
+                    their_bulletin_secret: bulletin_secret,
+                    their_username: username,
                     wif: wif,
                     dh_public_key: dh_public_key,
-                    dh_private_key: dh_private_key,
-                    username: username,
-                    address: key.getAddress()
+                    dh_private_key: dh_private_key
                 })
             });
         })
@@ -667,17 +668,17 @@ export class HomePage {
             return this.transactionService.generateTransaction({
                 relationship: {
                     dh_private_key: info.dh_private_key,
-                    their_bulletin_secret: info.bulletin_secret,
-                    their_username: info.username,
+                    their_bulletin_secret: info.their_bulletin_secret,
+                    their_public_key: info.their_public_key,
+                    their_username: info.their_username,
+                    their_address: info.their_address,
                     my_bulletin_secret: this.bulletinSecretService.generate_bulletin_secret(),
                     my_username: this.bulletinSecretService.username,
-                    public_key: info.public_key,
                     wif: info.wif,
-                    bulletin_secret: info.bulletin_secret,
                     group: true
                 },
                 dh_public_key: info.dh_public_key,
-                to: info.address
+                to: info.their_address
             })
         
         }).then((txn) => {
@@ -700,15 +701,82 @@ export class HomePage {
     }
 
     joinGroup() {
-        let alert = this.alertCtrl.create();
-        alert.setTitle('Invite');
-        alert.setSubTitle('copy and paste this entire string of characters');
-        alert.addButton('Done');
-        alert.addInput({
-            type: 'text',
-            placeholder: 'Past invite characters'     
+        new Promise((resolve, reject) => {
+            let alert = this.alertCtrl.create();
+            alert.setTitle('Invite');
+            alert.setSubTitle('copy and paste this entire string of characters');
+            alert.addButton({
+                text: 'Join',
+                handler: data => {
+                    const toast = this.toastCtrl.create({
+                        message: 'Group joined!',
+                        duration: 2000
+                    });
+                    toast.present();
+                    resolve(data.groupinvite);
+                }
+            });
+            alert.addInput({
+                type: 'text',
+                placeholder: 'Past invite characters',
+                name: 'groupinvite'
+            })
+            alert.present();
         })
-        alert.present();
+        .then((groupinvite) => {
+            return new Promise((resolve, reject) => {
+                if (!groupinvite) return reject();
+                let invite = JSON.parse(Base64.decode(groupinvite));
+                var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
+                var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
+                var dh_private_key = this.toHex(raw_dh_private_key);
+                var dh_public_key = this.toHex(raw_dh_public_key);
+                resolve({
+                    their_address: invite.their_address,
+                    their_public_key: invite.their_public_key,
+                    their_bulletin_secret: invite.their_bulletin_secret,
+                    their_username: invite.their_username,
+                    dh_public_key: dh_public_key,
+                    dh_private_key: dh_private_key,
+                    requested_rid: invite.requested_rid
+                })
+            });
+        })
+        .then((info) => {
+            return this.transactionService.generateTransaction({
+                relationship: {
+                    dh_private_key: info.dh_private_key,
+                    my_bulletin_secret: this.bulletinSecretService.generate_bulletin_secret(),
+                    my_username: this.bulletinSecretService.username,
+                    their_address: info.their_address,
+                    their_public_key: info.their_public_key,
+                    their_bulletin_secret: info.their_bulletin_secret,
+                    their_username: info.their_username,
+                    group: true
+                },
+                requester_rid: info.requester_rid,
+                requested_rid: info.requested_rid,
+                dh_public_key: info.dh_public_key,
+                to: info.their_address
+            })
+        
+        }).then((txn) => {
+            return this.transactionService.sendTransaction();
+        })
+        .then((hash) => {
+            if (this.settingsService.remoteSettings['walletUrl']) {
+                return this.graphService.getInfo();
+            }
+        })
+        .then(() => {
+            return this.refresh(null)
+        })
+        .then(() => {
+            this.events.publish('pages-settings');
+        })
+        .catch((err) => {
+            this.events.publish('pages');
+        });
     }
 
     unlockWallet() {
@@ -744,7 +812,7 @@ export class HomePage {
                             resolve(res);
                         },
                         (err) => {
-                            reject(data.groupname);
+                            reject(data.key_or_wif);
                         });
                     }
                 }
