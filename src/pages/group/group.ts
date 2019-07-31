@@ -85,8 +85,9 @@ export class GroupPage {
     }
 
     parseChats() {
-        if(this.graphService.graph.messages[this.rid]) {
-            this.chats = this.graphService.graph.messages[this.rid];
+        let rid_to_use = this.requested_rid || this.rid;
+        if(this.graphService.graph.messages[rid_to_use]) {
+            this.chats = this.graphService.graph.messages[rid_to_use];
             for(var i=0; i < this.chats.length; i++) {
                 this.chats[i].time = new Date(parseInt(this.chats[i].time)).toISOString().slice(0, 19).replace('T', ' ');
             }
@@ -107,6 +108,9 @@ export class GroupPage {
         })
         .then(() => {
             setTimeout(() => this.content.scrollToBottom(1000), 500);
+        })
+        .catch((err) => {
+            console.log(err);
         });
     }
 
