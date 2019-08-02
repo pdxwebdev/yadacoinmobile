@@ -78,7 +78,7 @@ export class TransactionService {
                 requester_rid: typeof this.info.requester_rid == 'undefined' ? '' : this.info.requester_rid,
                 requested_rid: typeof this.info.requested_rid == 'undefined' ? '' : this.info.requested_rid,
                 outputs: [],
-                time: (+ new Date()).toString(),
+                time: parseInt(((+ new Date()) / 1000).toString()).toString(),
                 public_key: this.key.getPublicKeyBuffer().toString('hex')
             };
             if (this.info.dh_public_key && this.info.relationship.dh_private_key) {

@@ -248,7 +248,7 @@ export class GraphService {
                     this.graph.messages = {};
                 }
                 var choice_rid = requested_rid || rid;
-                if (choice_rid){
+                if (choice_rid && chats[choice_rid]){
                     this.graph.messages[choice_rid] = chats[choice_rid];
                     this.graph.messages[choice_rid].sort(function (a, b) {
                         if (parseInt(a.time) > parseInt(b.time))
