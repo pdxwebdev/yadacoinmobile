@@ -15,13 +15,13 @@
   <ion-card *ngIf="items && items.length == 0">
       <ion-card-content>
         <ion-card-title style="text-overflow:ellipsis;" text-wrap>
-          No items to display.
+          No items to display. Is your wallet unlocked?
       </ion-card-title>
     </ion-card-content>
   </ion-card>
   <ion-list>
     <button ion-item *ngFor="let item of items" (click)="itemTapped($event, item)">
-      <span *ngIf="pageTitle =='Groups'">{{item.transaction.relationship.their_username}}</span>
+      <span *ngIf="pageTitle =='Groups'">{{item.transaction.relationship.their_username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
       <span *ngIf="pageTitle =='Sent Requests'">{{item.transaction.relationship.their_username}}</span>
       <span *ngIf="pageTitle =='Friend Requests'">{{item.transaction.username}}</span>
       <span *ngIf="pageTitle =='Messages' && !item.transaction.new">{{item.transaction.relationship.their_username}}</span>

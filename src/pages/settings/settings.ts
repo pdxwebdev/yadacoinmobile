@@ -50,8 +50,8 @@ export class Settings {
         public events: Events,
         public toastCtrl: ToastController
     ) {
-        this.refresh(null).catch(() => {
-
+        this.refresh(null).catch((err) => {
+            console.log(err)
         });
         this.prefix = 'usernames-';
     }
@@ -78,9 +78,9 @@ export class Settings {
             })
             .then(() => {
                 if (favorites.length == 0) {
-                    this.favorites = null;
-                    resolve(null);
-                    return;
+                    var host = window.location.protocol + '//' + window.location.host
+                    this.storage.set('favorites-local', host);
+                    favorites.push({label: 'Home', url: host});
                 }
                 this.favorites = favorites;
                 resolve(favorites);

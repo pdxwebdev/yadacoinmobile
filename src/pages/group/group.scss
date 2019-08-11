@@ -43,5 +43,11 @@ page-chat {
 		border-bottom: 0;
 		margin-top: -0.922em;
 		margin-left: -1.844em;
-	}
+    }
+}
+.redToast .toast-wrapper {
+    background-color: red;
+}
+.greenToast .toast-wrapper {
+    background-color: green;
 }

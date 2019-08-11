@@ -19,7 +19,7 @@
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
   <ion-spinner *ngIf="loading"></ion-spinner>
-  <ion-row *ngIf="!graphService.graph.registered && settingsService.remoteSettings['walletUrl']">
+  <ion-row *ngIf="settingsService.remoteSettingsUrl.indexOf(location.hostname) === -1 && !graphService.graph.registered && settingsService.remoteSettings['walletUrl']">
     <ion-col col-lg-6 col-md-4 col-sm-4 text-center>
       <ion-item *ngIf="!graphService.graph.pending_registration && walletService.wallet.balance > 0">
         You've connected to a new service! To sign in, you must register first.
@@ -35,7 +35,7 @@
       </ion-item>
     </ion-col>
   </ion-row>
-  <ion-row *ngIf="graphService.graph.registered && settingsService.remoteSettings['walletUrl']">
+  <ion-row *ngIf="settingsService.remoteSettingsUrl.indexOf(location.hostname) === -1 && graphService.graph.registered && settingsService.remoteSettings['walletUrl']">
     <ion-col col-lg-6 col-md-4 col-sm-4 text-center>
       <ion-item *ngIf="signedIn === false">
         Welcome back.
@@ -46,12 +46,9 @@
       <ion-item *ngIf="signedIn === false">
         Click the sign in button below and confirm the transaction to sign into.
       </ion-item>
-      <ion-item *ngIf="walletService.wallet.balance === 0">
-        You have a zero wallet ballance. To authenticate with YadaCoin apps, you need YadaCoins. Goto your wallet and receive coins from other users.
-      </ion-item>
     </ion-col>
   </ion-row>
-  <ion-row *ngIf="settingsService.remoteSettings['walletUrl']">
+  <ion-row *ngIf="settingsService.remoteSettingsUrl.indexOf(location.hostname) === -1 && settingsService.remoteSettings['walletUrl']">
     <ion-col col-lg-3 col-md-4 col-sm-4 text-center *ngIf="!graphService.graph.registered">
       <button large ion-button title="request invite" (click)="request_invite()" full *ngIf="!graphService.graph.pending_registration && !graphService.graph.registered && walletService.wallet.balance === 0">
         <ion-icon name="requestinvite"></ion-icon>
@@ -80,10 +77,14 @@
       <button ion-button large secondary (click)="addFriend()" item-start *ngIf="graphService.graph.registered">
         Add friend&nbsp;<ion-icon name="search"></ion-icon>
       </button>
-      <button ion-button large secondary (click)="createGroup()" *ngIf="walletService.wallet.balance > 0">
+    </ion-col>
+  </ion-row>
+  <ion-row *ngIf="settingsService.remoteSettingsUrl.indexOf(location.hostname) > 0">
+    <ion-col col-lg-4 col-md-4 col-sm-4 text-center>
+      <button ion-button large secondary (click)="createGroup()">
         Create Group&nbsp;<ion-icon name="create"></ion-icon>
       </button>
-      <button ion-button large secondary (click)="joinGroup()" *ngIf="walletService.wallet.balance > 0">
+      <button ion-button large secondary (click)="joinGroup()">
         Join Group&nbsp;<ion-icon name="create"></ion-icon>
       </button>
       <button ion-button large secondary (click)="unlockWallet()">

@@ -69,9 +69,6 @@ export class TransactionService {
                 this.rid = '';
             }
             var res = null;
-            if(this.walletService.wallet.balance <= 0) {
-                return reject("no money");
-            }
             this.transaction = {
                 rid:  this.rid,
                 fee: 0.00,

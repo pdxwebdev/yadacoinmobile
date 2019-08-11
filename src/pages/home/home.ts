@@ -55,6 +55,7 @@ export class HomePage {
     prefix: any;
     signedIn: any;
     txnId: any;
+    location: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -74,6 +75,7 @@ export class HomePage {
         public events: Events,
         public toastCtrl: ToastController
     ) {
+        this.location = window.location;
         this.prefix = 'usernames-';
         if(!settingsService.remoteSettingsUrl){
             this.bulletinSecretService.get().then(() => {
@@ -639,16 +641,15 @@ export class HomePage {
             });
             alert.present();
         })
-        .then((username) => {
+        .then((groupname) => {
             return new Promise((resolve, reject) => {
-                if (!username) return reject();
-                let keyname = 'usernames-' + username;
+                if (!groupname) return reject();
 
                 let key = foobar.bitcoin.ECPair.makeRandom();
                 let wif = key.toWIF();
                 let pubKey = key.getPublicKeyBuffer().toString('hex');
                 let address = key.getAddress();
-                let bulletin_secret = foobar.base64.fromByteArray(key.sign(foobar.bitcoin.crypto.sha256(username)).toDER());
+                let bulletin_secret = foobar.base64.fromByteArray(key.sign(foobar.bitcoin.crypto.sha256(groupname)).toDER());
                 var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
                 var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
                 var dh_private_key = this.toHex(raw_dh_private_key);
@@ -657,14 +658,14 @@ export class HomePage {
                     their_public_key: pubKey,
                     their_address: address,
                     their_bulletin_secret: bulletin_secret,
-                    their_username: username,
+                    their_username: groupname,
                     wif: wif,
                     dh_public_key: dh_public_key,
                     dh_private_key: dh_private_key
                 })
             });
         })
-        .then((info) => {
+        .then((info: any) => {
             return this.transactionService.generateTransaction({
                 relationship: {
                     dh_private_key: info.dh_private_key,
@@ -695,7 +696,8 @@ export class HomePage {
         .then(() => {
             this.events.publish('pages-settings');
         })
-        .catch(() => {
+        .catch((err) => {
+            console.log(err);
             this.events.publish('pages');
         });
     }
@@ -703,8 +705,8 @@ export class HomePage {
     joinGroup() {
         new Promise((resolve, reject) => {
             let alert = this.alertCtrl.create();
-            alert.setTitle('Invite');
-            alert.setSubTitle('copy and paste this entire string of characters');
+            alert.setTitle('Join');
+            alert.setSubTitle('Copy and paste the entire string of characters from the invite');
             alert.addButton({
                 text: 'Join',
                 handler: data => {
@@ -742,7 +744,7 @@ export class HomePage {
                 })
             });
         })
-        .then((info) => {
+        .then((info: any) => {
             return this.transactionService.generateTransaction({
                 relationship: {
                     dh_private_key: info.dh_private_key,
@@ -782,11 +784,11 @@ export class HomePage {
     unlockWallet() {
         return new Promise((resolve, reject) => {
             let alert = this.alertCtrl.create({
-                title: 'Set group name',
+                title: 'Paste the private key or WIF of the server.',
                 inputs: [
                 {
                     name: 'key_or_wif',
-                    placeholder: 'Group name'
+                    placeholder: 'Private key or WIF'
                 }
                 ],
                 buttons: [

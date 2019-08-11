@@ -4,7 +4,7 @@ import { Storage } from '@ionic/storage';
 import { GraphService } from '../../app/graph.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { WalletService } from '../../app/wallet.service';
-import { AlertController, LoadingController } from 'ionic-angular';
+import { AlertController, LoadingController, ToastController } from 'ionic-angular';
 import { TransactionService } from '../../app/transaction.service';
 import { SettingsService } from '../../app/settings.service';
 import { ListPage } from '../list/list';
@@ -37,6 +37,7 @@ export class GroupPage {
     requester_rid: any;
     requested_rid: any;
     their_address: any;
+    extraInfo: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -48,8 +49,10 @@ export class GroupPage {
         public loadingCtrl: LoadingController,
         public bulletinSecretService: BulletinSecretService,
         public settingsService: SettingsService,
-        public ahttp: Http
+        public ahttp: Http,
+        public toastCtrl: ToastController
     ) {
+        this.extraInfo = {};
         this.wallet_mode = true;
         this.rid = navParams.data.item.transaction.rid;
         this.requester_rid = navParams.data.item.transaction.requester_rid;
@@ -114,10 +117,20 @@ export class GroupPage {
         });
     }
 
+    toggleExtraInfo(pending) {
+        const toast = this.toastCtrl.create({
+            message: pending ? "Not yet saved on the blockchain" : "Saved on the blockchain",
+            duration: 2000,
+            cssClass: pending ? 'redToast' : 'greenToast',
+            position: 'top'
+        });
+        toast.present();
+    }
+
     send() {
         let alert = this.alertCtrl.create();
         alert.setTitle('Approve transaction');
-        alert.setSubTitle('You are about to spend 0.01 coins ( 0.01 fee)');
+        alert.setSubTitle('You are about to spend 0.00 coins ( 0.00 fee). Everything is free for now.');
         alert.addButton('Cancel');
         alert.addButton({
             text: 'Confirm',

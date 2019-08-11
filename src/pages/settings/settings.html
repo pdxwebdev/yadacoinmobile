@@ -22,7 +22,7 @@
     <h3 *ngIf="!favorites && settingsService.remoteSettingsUrl" [ngClass]="settingsService.remoteSettingsUrl && bulletinSecretService.keyname ? 'inactive' : 'active'">2. Select an identity <ion-icon large large name="arrow-down"></ion-icon></h3>
     <h3 *ngIf="!favorites && settingsService.remoteSettingsUrl && bulletinSecretService.keyname" [ngClass]="settingsService.remoteSettings['walletUrl'] ? 'inactive' : 'active'">3. Select an identity below <ion-icon large large name="arrow-down"></ion-icon></h3>
   </ion-list>
-  <h3 *ngIf="favorites">Favorites</h3>
+  <h3 *ngIf="favorites">Favorite servers</h3>
   <button ion-button primary *ngIf="favorites && !removeFavorites" (click)="removeFavorites = true">Remove favorites</button>
   <button ion-button color="danger" *ngIf="removeFavorites" (click)="removeFavorites = false">Done removing favorites</button>
   <ion-row>
@@ -55,9 +55,6 @@
         </button>
       </ion-col>
     </ion-row>
-  </ion-list>
-  <ion-list *ngIf="settingsService.remoteSettingsUrl">
-    <button ion-button secondary (click)="createKey()">Create New Identity</button>
   </ion-list>
   <ion-list *ngIf="bulletinSecretService.keyname">
     <hr/>
