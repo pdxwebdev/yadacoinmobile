@@ -79,7 +79,7 @@ export class Settings {
             .then(() => {
                 if (favorites.length == 0) {
                     var host = window.location.protocol + '//' + window.location.host
-                    this.storage.set('favorites-local', host);
+                    this.storage.set('favorites-Home', host);
                     favorites.push({label: 'Home', url: host});
                 }
                 this.favorites = favorites;

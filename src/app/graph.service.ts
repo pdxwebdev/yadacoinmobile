@@ -588,7 +588,6 @@ export class GraphService {
             //start "just do dedup yada server because yada server adds itself to the friends array automatically straight from the api"
             var groupsObj = {};
             if (!this.graph.groups) this.graph.groups = [];
-            groups = groups.concat(this.graph.groups);
             for(var i=0; i<groups.length; i++) {
                 var group = groups[i];
                 if (!this.keys[group.rid]) {
