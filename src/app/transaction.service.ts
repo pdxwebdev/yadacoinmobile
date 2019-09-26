@@ -359,9 +359,9 @@ export class TransactionService {
     sendTransaction() {
         return new Promise((resolve, reject) => {
             if (this.transaction.signatures && this.transaction.signatures.length > 0) {
-                var url = this.settingsService.remoteSettings['fastgraphUrl'] + '?bulletin_secret=' + this.bulletin_secret
+                var url = this.settingsService.remoteSettings['fastgraphUrl'] + '?bulletin_secret=' + this.bulletin_secret + '&to=' + this.key.getAddress() + '&username=' + this.username
             } else {
-                var url = this.settingsService.remoteSettings['transactionUrl'] + '?bulletin_secret=' + this.bulletin_secret
+                var url = this.settingsService.remoteSettings['transactionUrl'] + '?bulletin_secret=' + this.bulletin_secret + '&to=' + this.key.getAddress() + '&username=' + this.username
             }
             this.ahttp.post(
                 url,

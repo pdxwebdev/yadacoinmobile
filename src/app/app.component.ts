@@ -24,11 +24,7 @@ export class MyApp {
 
   rootPage: any;
 
-  pagesForRegisteredUser: Array<{title: string, label: string, component: any}>;
-  pagesForUnregisteredUser: Array<{title: string, label: string, component: any, count: any, color: any}>;
-  defaultPages: Array<{title: string, label: string, component: any, count: any, color: any}>;
-  noUrlPages: any;
-
+  pages: Array<{title: string, label: string, component: any, count: any, color: any}>;
   graph: any;
   friend_request_count: any;
   new_messages_count: any;
@@ -61,27 +57,14 @@ export class MyApp {
       this.rootPage = Settings;
     });
 
-    this.pagesForRegisteredUser = [
+    this.pages = [
       { title: 'Home', label: 'Timeline', component: HomePage },
       { title: 'Groups', label: 'Groups', component: ListPage },
       //{ title: 'Following', label: 'Following', component: FollowingPage },
       { title: 'Friends', label: 'Friends', component: ListPage },
       { title: 'Messages', label: 'Messages', component: ListPage },
       { title: 'Friend Requests', label: 'Friend Requests', component: ListPage },
-      { title: 'Sent Requests', label: 'Sent Requests', component: ListPage }
-    ];
-
-    this.pagesForUnregisteredUser = [
-      { title: 'Home', label: 'Timeline', component: HomePage, count: false, color: '' },
-      { title: 'Groups', label: 'Groups', component: ListPage, count: false, color: ''  }
-    ];
-
-    this.defaultPages = [
-      { title: 'Home', label: 'Timeline', component: HomePage, count: false, color: '' },
-      { title: 'Groups', label: 'Groups', component: ListPage, count: false, color: ''  }
-    ];
-
-    this.noUrlPages = [
+      { title: 'Sent Requests', label: 'Sent Requests', component: ListPage },
       { title: 'Identity', label: 'Identity', component: Settings, count: false, color: '' }
     ];
   }

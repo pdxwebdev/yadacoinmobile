@@ -12,8 +12,8 @@
     </ion-header>
 
     <ion-content>
-      <ion-list *ngIf="graphService.graph.registered === true">
-        <ng-container *ngFor="let p of pagesForRegisteredUser">
+      <ion-list *ngIf="bulletinSecretService.key">
+        <ng-container *ngFor="let p of pages">
           <button 
             menuClose 
             ion-item 
@@ -41,21 +41,6 @@
             {{p.label}}
           </button>
         </ng-container>
-      </ion-list>
-      <ion-list *ngIf="graphService.graph.registered === false">
-        <button menuClose ion-item *ngFor="let p of pagesForUnregisteredUser" (click)="openPage(p)">
-          {{p.label}}
-        </button>
-      </ion-list>
-      <ion-list *ngIf="settingsService.remoteSettings['walletUrl']">
-        <button menuClose ion-item *ngFor="let p of defaultPages" (click)="openPage(p)">
-          {{p.label}}
-        </button>
-      </ion-list>
-      <ion-list>
-        <button menuClose ion-item *ngFor="let p of noUrlPages" (click)="openPage(p)">
-          {{p.label}}
-        </button>
       </ion-list>
       <img src="assets/img/yadacoinlogosmall.png" class="logo">
     </ion-content>

@@ -1,107 +1,156 @@
 import { Injectable } from '@angular/core';
-import { GraphService } from './graph.service';
+import { Storage } from '@ionic/storage';
+import { Http } from '@angular/http';
+import { timeout } from 'rxjs/operators';
 import { BulletinSecretService } from './bulletinSecret.service';
+import { WalletService } from './wallet.service';
+import { TransactionService } from './transaction.service';
+import { SettingsService } from './settings.service';
 
-declare var Peer;
-declare var foobar;
-declare var forge;
+declare var X25519;
 
 @Injectable()
 export class PeerService {
-    peer = null;
-    conn = null;
-    relationship = null;
-    callback = null;
-    rid = null;
-    key = null;
-    baseUrl = null;
-    constructor(private graphService: GraphService, private bulletinSecretService: BulletinSecretService) {
+    seeds = null;
+    loading = false;
+    constructor(
+        private ahttp: Http,
+        public walletService: WalletService,
+        public transactionService: TransactionService,
+        public bulletinSecretService: BulletinSecretService,
+        public settingsService: SettingsService,
+        public storage: Storage
+    ) {
+        this.seeds = [
+            {"host": "0.0.0.0","port": 8001 },
+            //{"host": "34.237.46.10","port": 80 },
+            //{"host": "51.15.86.249","port": 8000 },
+            //{"host": "178.32.96.27","port": 8000 },
+            //{"host": "188.165.250.78","port": 8000 },
+            //{"host": "116.203.24.126","port": 8000 }
+        ]
     }
 
-    init() {
-      !this.peer ? true : this.peer.destroy();
-      this.peer = new Peer({
-        config: {'iceServers': [
-          { url: 'turn:34.237.46.10:3478', credential: 'root', username: 'user' }
-        ]},
-        host:'34.237.46.10',
-        port: 9000,
-        // Set highest debug level (log everything!).
-        debug: 3,
-
-        logFunction: function() {
-          var copy = Array.prototype.slice.call(arguments).join(' ');
-          console.log(copy);
-        }
-      });
-      this.peer.on('open', (id) => {
-        for(var i=0; i < this.graphService.graph.friends.length; i++) {
-          var xhr = new XMLHttpRequest();
-          xhr.open('GET', this.baseUrl + '/add-peer?rid=' + this.graphService.graph.friends[i].rid + '&peer_id=' + id, true);
-          xhr.send();
-        }
-      });
-      this.peer.on('connection', (connection) => {
-        // This `connection` is a DataConnection object with which we can send
-        // data.
-        // The `open` event firing means that the connection is now ready to
-        // transmit data.onnection.
-        console.log('connected');
-        connection.on('open', function() {
-          // Send 'Hello' on the connection.
-          console.log('opened');
-        });
-        // The `data` event is fired when data is received on the connection.
-        //: step 2 in friend accept process
-        connection.on('data', (data) => {
-          // Append the data to body.
-          console.log(data);
-          var person_to_lookup = JSON.parse(data);
-          var rids = [this.bulletinSecretService.bulletin_secret, person_to_lookup.bulletin_secret].sort(function (a, b) {
-              return a.toLowerCase().localeCompare(b.toLowerCase());
-          });
-          var testrid = foobar.bitcoin.crypto.sha256(rids[0] + rids[1]).toString('hex');
-
-          var xhr = new XMLHttpRequest();
-          xhr.open('GET', this.baseUrl + '/transaction?rid=' + testrid, true);
-          xhr.onreadystatechange = () => {
-            if (xhr.readyState === 4) {
-                  var transactions = JSON.parse(xhr.responseText);
-                  for (var i=0; i < transactions.length; i++) {
-                      var encrypted_relationship = transactions[i].relationship;
-                      var decrypted_relationship = this.decrypt(encrypted_relationship);
-                      if (decrypted_relationship.data.indexOf('shared_secret') > 0) {
-                          var shared_secret = JSON.parse(decrypted_relationship.data).shared_secret;
-                          break;
-                      }
-                  }
-                  if(typeof shared_secret != 'undefined') {
-                      connection.send(JSON.stringify({
-                          bulletin_secret: this.bulletinSecretService.bulletin_secret,
-                          shared_secret: shared_secret,
-                          to: this.key.getAddress()
-                      }));
-                  }
+    go() {
+        if (this.loading) return;
+        this.loading = true;
+        return this.storage.get('node')
+        .then((node) => {
+            return new Promise((resolve, reject) => {
+                var seedPeer = '';
+                if (node) {
+                    this.settingsService.remoteSettingsUrl = node;
+                } else {
+                    var min = 0; 
+                    var max = this.seeds.length - 1;
+                    var number = Math.floor(Math.random() * (+max - +min)) + +min;
+                    seedPeer = 'http://' + this.seeds[number]['host'] + ':' + this.seeds[number]['port'];
+                }
+                return resolve(seedPeer);
+            })            
+        })
+        .then((seedPeer) => {
+            if(this.settingsService.remoteSettingsUrl) {
+                return this.getConfig();
+            } else {
+                return this.getPeers(seedPeer);
             }
-          }
-          xhr.send();
+        })
+        .then((step) => {
+            if(step === 'config') {
+                return this.getConfig();
+            }
+            return new Promise((resolve, reject) => {
+                return resolve();
+            });
+        })
+        .then(() => {
+            return this.walletService.get();
+        })
+        .then(() => {
+            return this.setupRelationship();
+        })
+        .catch((e) => {
+            this.loading = false;
+            console.log('faled getting peers' + e);
+            setTimeout(() => this.go(), 1000);
         });
-      });
     }
 
-    connect(peerId, callback) {
-        this.conn = this.peer.connect(peerId);
-        this.conn.on('open', callback);
+    getPeers(seedPeer) {
+        return new Promise((resolve, reject) => {
+            this.ahttp.get(seedPeer + '/get-peers').pipe(timeout(1000)).subscribe(
+                (res) => {
+                    var peers = res.json().peers;
+                    var min = 0; 
+                    var max = peers.length - 1;
+                    var number = Math.floor(Math.random() * (+max - +min)) + +min;
+                    this.settingsService.remoteSettingsUrl = 'http://' + peers[number]['host'] + ':' + peers[number]['port'];
+                    this.storage.set('node', this.settingsService.remoteSettingsUrl);
+                    resolve('config');
+                },
+                (err) => {
+                    this.loading = false;
+                    setTimeout(() => this.go(), 1000);
+                    return reject(err);
+                }
+            );
+        });
     }
 
-    decrypt(message) {
-        var key = forge.pkcs5.pbkdf2(forge.sha256.create().update(this.key.toWIF()).digest().toHex(), 'salt', 400, 32);
-        var decipher = forge.cipher.createDecipher('AES-CBC', key);
-        var enc = this.hexToBytes(message);
-        decipher.start({iv: enc.slice(0,16)});
-        decipher.update(forge.util.createBuffer(enc.slice(16)));
-        decipher.finish();
-        return decipher.output
+    getConfig() {
+        return new Promise((resolve, reject) => {
+            this.ahttp.get(this.settingsService.remoteSettingsUrl + '/yada_config.json',).pipe(timeout(1000)).subscribe(
+                (res) => {
+                    this.loading = false;
+                    this.settingsService.remoteSettings = res.json();
+                    resolve();
+                },
+                (err) => {
+                    this.loading = false;
+                    setTimeout(() => this.go(), 1000);
+                    return reject(err);
+                }
+            );
+        });
+    }
+
+    setupRelationship() {
+        return new Promise((resolve, reject) => {
+            this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/register')
+            .subscribe((res) => {
+                var data = JSON.parse(res['_body']);
+                var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
+                var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
+                var dh_private_key = this.toHex(raw_dh_private_key);
+                var dh_public_key = this.toHex(raw_dh_public_key);
+                data.dh_private_key = dh_private_key;
+                data.dh_public_key = dh_public_key;
+
+                var hash = this.transactionService.generateTransaction({
+                    relationship: {
+                        dh_private_key: data.dh_private_key,
+                        their_bulletin_secret: data.bulletin_secret,
+                        their_username: data.username,
+                        my_bulletin_secret: this.bulletinSecretService.bulletin_secret,
+                        my_username: this.bulletinSecretService.username
+                    },
+                    dh_public_key: data.dh_public_key,
+                    requested_rid: data.requested_rid,
+                    requester_rid: data.requester_rid,
+                    callbackurl: data.callbackurl,
+                    to: data.to,
+                    resolve: resolve
+                });
+                resolve(hash);
+            });
+        }) // we cannot do fastgraph registrations. The signing process verifies a relationship. So one must already exist.
+        .then((hash) => {
+            return this.transactionService.sendTransaction();
+        })
+        .catch((err) => {
+            console.log(err);
+        });
     }
 
     hexToBytes(s) {
@@ -111,5 +160,12 @@ export class PeerService {
             arr.push(parseInt(c, 16));
         }
         return String.fromCharCode.apply(null, arr);
+    }
+
+    toHex(byteArray) {
+        var callback = function(byte) {
+            return ('0' + (byte & 0xFF).toString(16)).slice(-2);
+        }
+        return Array.from(byteArray, callback).join('')
     }
 }

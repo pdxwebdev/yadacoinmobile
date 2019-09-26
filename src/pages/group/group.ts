@@ -92,7 +92,7 @@ export class GroupPage {
         if(this.graphService.graph.messages[rid_to_use]) {
             this.chats = this.graphService.graph.messages[rid_to_use];
             for(var i=0; i < this.chats.length; i++) {
-                this.chats[i].time = new Date(parseInt(this.chats[i].time)).toISOString().slice(0, 19).replace('T', ' ');
+                this.chats[i].time = new Date(parseInt(this.chats[i].time)*1000).toISOString().slice(0, 19).replace('T', ' ');
             }
         } else {
             this.chats = [];

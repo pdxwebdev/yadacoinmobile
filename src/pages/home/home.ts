@@ -77,59 +77,49 @@ export class HomePage {
     ) {
         this.location = window.location;
         this.prefix = 'usernames-';
-        if(!settingsService.remoteSettingsUrl){
-            this.bulletinSecretService.get().then(() => {
-                const toast = this.toastCtrl.create({
-                    message: 'Enter an address up top',
-                    duration: 2000
-                });
-                toast.present();
-            });
-        } else {
-            this.refresh(null)
-            .then(() => {
-                if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
-                return this.firebaseService.initFirebase();
-                } else {
-                    // Initialize Firebase
-                    var config = {
-                    apiKey: "AIzaSyAcJWjePVMBkEF8A3M-7oY_lT0MMXRDrpA",
-                    authDomain: "yadacoin-bcaae.firebaseapp.com",
-                    databaseURL: "https://yadacoin-bcaae.firebaseio.com",
-                    projectId: "yadacoin-bcaae",
-                    storageBucket: "yadacoin-bcaae.appspot.com",
-                    messagingSenderId: "805178314562"
-                    };
-                    try {
-                        firebase.initializeApp(config);
-                        const messaging = firebase.messaging();
-                        messaging.usePublicVapidKey('BLuv1UWDqzAyTtK5xlNaY4tFOz6vKbjuutTQ0KmBRG5btvVbydsrMTA-UeyMqY4oCC1Gu3sDwLfsg-iWtAg6IB0');
-                        messaging.requestPermission().then(() => {
-                        console.log('Notification permission granted.');
-                        // TODO(developer): Retrieve an Instance ID token for use with FCM.
-                        // ...
-                        }).catch((err) => {
-                        console.log('Unable to get permission to notify.', err);
-                        });
-                        return messaging.getToken().then((currentToken) => {
-                        if (currentToken) {
-                            this.sendTokenToServer(currentToken);
-                            this.updateUIForPushEnabled(currentToken);
-                        } else {
-                            // Show permission request.
-                            console.log('No Instance ID token available. Request permission to generate one.');
-                            // Show permission UI.
-                            this.updateUIForPushPermissionRequired();
-                        }
-                        }).catch((err) => {
-                        console.log('An error occurred while retrieving token. ', err);
-                        });
-                    } catch(err) {
-
+        this.refresh(null)
+        .then(() => {
+            if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
+            return this.firebaseService.initFirebase();
+            } else {
+                // Initialize Firebase
+                var config = {
+                apiKey: "AIzaSyAcJWjePVMBkEF8A3M-7oY_lT0MMXRDrpA",
+                authDomain: "yadacoin-bcaae.firebaseapp.com",
+                databaseURL: "https://yadacoin-bcaae.firebaseio.com",
+                projectId: "yadacoin-bcaae",
+                storageBucket: "yadacoin-bcaae.appspot.com",
+                messagingSenderId: "805178314562"
+                };
+                try {
+                    firebase.initializeApp(config);
+                    const messaging = firebase.messaging();
+                    messaging.usePublicVapidKey('BLuv1UWDqzAyTtK5xlNaY4tFOz6vKbjuutTQ0KmBRG5btvVbydsrMTA-UeyMqY4oCC1Gu3sDwLfsg-iWtAg6IB0');
+                    messaging.requestPermission().then(() => {
+                    console.log('Notification permission granted.');
+                    // TODO(developer): Retrieve an Instance ID token for use with FCM.
+                    // ...
+                    }).catch((err) => {
+                    console.log('Unable to get permission to notify.', err);
+                    });
+                    return messaging.getToken().then((currentToken) => {
+                    if (currentToken) {
+                        this.sendTokenToServer(currentToken);
+                        this.updateUIForPushEnabled(currentToken);
+                    } else {
+                        // Show permission request.
+                        console.log('No Instance ID token available. Request permission to generate one.');
+                        // Show permission UI.
+                        this.updateUIForPushPermissionRequired();
                     }
+                    }).catch((err) => {
+                    console.log('An error occurred while retrieving token. ', err);
+                    });
+                } catch(err) {
+
                 }
-            });
-        }
+            }
+        });
     }
 
     go() {
@@ -821,6 +811,8 @@ export class HomePage {
                 ]
             });
             alert.present();
+        }).catch(() => {
+          console.log('canceled unlock')  
         });
     }
 

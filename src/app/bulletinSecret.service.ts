@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { SettingsService } from './settings.service';
 import { Storage } from '@ionic/storage';
 import { Events } from 'ionic-angular';
 
@@ -16,7 +15,6 @@ export class BulletinSecretService {
     keykeys = null;
     username = null;
     constructor(
-        private settingsService: SettingsService,
         private storage: Storage,
         public events: Events
     ) {}

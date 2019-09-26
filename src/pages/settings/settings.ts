@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { NavController, NavParams, ToastController } from 'ionic-angular';
 import { Storage } from '@ionic/storage';
 import { SettingsService } from '../../app/settings.service';
+import { PeerService } from '../../app/peer.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { FirebaseService } from '../../app/firebase.service';
 import { ListPage } from '../list/list';
@@ -48,7 +49,8 @@ export class Settings {
         private socialSharing: SocialSharing,
         private walletService: WalletService,
         public events: Events,
-        public toastCtrl: ToastController
+        public toastCtrl: ToastController,
+        public peerService: PeerService
     ) {
         this.refresh(null).catch((err) => {
             console.log(err)
@@ -310,7 +312,7 @@ export class Settings {
             reacts: "",
             commentReacts: ""
         };
-        this.settingsService.go()
+        this.peerService.go()
         .then(() => {
             return this.set(this.bulletinSecretService.keyname.substr(this.prefix.length));
         })
