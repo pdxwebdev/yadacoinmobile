@@ -11,7 +11,7 @@ import { SocialSharing } from '@ionic-native/social-sharing';
 import { ChatPage } from '../chat/chat';
 import { GroupPage } from '../group/group';
 import { Events } from 'ionic-angular';
-import { Http, RequestOptions } from '@angular/http';
+import { Http } from '@angular/http';
 
 declare var X25519;
 
@@ -98,6 +98,8 @@ export class ListPage {
         // Let's populate this page with some filler content for funzies
         this.icons = ['flask', 'wifi', 'beer', 'football', 'basketball', 'paper-plane',
         'american-football', 'boat', 'bluetooth', 'build'];
+        var my_public_key = '';
+        var graphArray = [];
         if (this.pageTitle == 'Friends') {
           return this.graphService.getFriends()
           .then(() => {
@@ -116,7 +118,7 @@ export class ListPage {
               console.log('listpage getFriends error: ' + err);
           });
         } else if (this.pageTitle == 'Groups') {
-          var my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
+          my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
           return this.graphService.getGroups()
           .then(() => {
             return this.graphService.getNewGroupMessages();
@@ -138,7 +140,7 @@ export class ListPage {
               console.log(err);
           });
         } else if (this.pageTitle == 'Messages') {
-          var my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
+          my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
           return this.graphService.getFriends()
           .then(() => {
             return this.graphService.getNewMessages();
@@ -160,7 +162,7 @@ export class ListPage {
               console.log(err);
           });
         } else if (this.pageTitle == 'Sign Ins') {
-          var my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
+          my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
           return this.graphService.getFriends()
           .then(() => {
             return this.graphService.getNewSignIns();
@@ -207,11 +209,11 @@ export class ListPage {
               console.log('listpage getSentFriendRequests error');
           });
         } else if (this.pageTitle == 'Reacts Detail') {
-          var graphArray = this.navParams.get('detail');
+          graphArray = this.navParams.get('detail');
           this.loading = false;
           return this.makeList(graphArray);
         } else if (this.pageTitle == 'Comment Reacts Detail') {
-          var graphArray = this.navParams.get('detail');
+          graphArray = this.navParams.get('detail');
           this.loading = false;
           return this.makeList(graphArray);
         }

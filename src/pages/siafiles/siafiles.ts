@@ -5,21 +5,24 @@ import { AlertController } from 'ionic-angular';
 import { TransactionService } from '../../app/transaction.service';
 import { OpenGraphParserService } from '../../app/opengraphparser.service'
 import { SettingsService } from '../../app/settings.service';
+import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { Http, Headers, RequestOptions } from '@angular/http';
 
 declare var Base64
 
 @Component({
-    selector: 'modal-post',
-    templateUrl: 'postmodal.html'
+    selector: 'modal-files',
+    templateUrl: 'siafiles.html'
 })
-export class PostModal {
-	blockchainAddress = null;
-	postText = null;
+export class SiaFiles {
 	logicalParent = null;
+    mode = '';
+	postText = null;
     post = {};
     files = null;
     selectedFile = null;
+    filepath = '';
+    group = null;
     constructor(
         public navParams: NavParams,
         public viewCtrl: ViewController,
@@ -28,25 +31,26 @@ export class PostModal {
         private transactionService: TransactionService,
         private openGraphParserService: OpenGraphParserService,
         private settingsService: SettingsService,
+        private bulletinSecretService: BulletinSecretService,
         private ahttp: Http
     ) {
-        this.blockchainAddress = navParams.data.blockchainAddress;
+        this.group = navParams.data.group;
+        this.mode = navParams.data.mode || 'page';
         this.logicalParent = navParams.data.logicalParent;
         let headers = new Headers();
-        headers.append('Authorization', 'basic ' + Base64.encode(this.settingsService.remoteSettings['siaPassword']));
-        let options = new RequestOptions({ headers: headers, withCredentials: true });
-        this.ahttp.get(this.settingsService.remoteSettings['siaUrl'] + '/renter/files', options)
+        headers.append('Authorization', 'Bearer ' + this.settingsService.tokens[this.bulletinSecretService.keyname]);
+        let options = new RequestOptions({ headers: headers});
+        this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/sia-files', options)
         .subscribe((res) => {
             this.files = res.json()['files'];
         })
     }
 
-    change() {
-    	if (this.openGraphParserService.isURL(this.postText)) {
-    	    this.openGraphParserService.parseFromUrl(this.postText).then((data) => {
-                this.post = data;
-            });
-        }
+    upload() {
+        this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/sia-upload?filepath=' + encodeURIComponent(this.filepath))
+        .subscribe((res) => {
+            let sharefiledata = res.json()['filedata'];
+        })
     }
 
     submit() {
@@ -54,9 +58,9 @@ export class PostModal {
         	return new Promise((resolve, reject) => {
                 if (this.selectedFile) {
 
-                    this.ahttp.get(this.settingsService.remoteSettings['siaUrl'] + '/renter/shareascii?siapaths=' + this.selectedFile[0])
+                    this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/share-file?siapath=' + this.selectedFile)
                     .subscribe((res) => {
-                        let sharefiledata = res.json()['asciisia'];
+                        let sharefiledata = res.json()['filedata'];
                         this.approveTxn(sharefiledata, resolve);
                     })
                 } else {
@@ -82,10 +86,16 @@ export class PostModal {
                     if (sharefiledata) {
                         return this.transactionService.generateTransaction({
                             relationship: {
-                                postText: this.postText,
-                                postFile: sharefiledata,
-                                postFileName: this.selectedFile[0]
-                            }
+                                groupChatText: this.postText,
+                                groupChatFile: sharefiledata,
+                                groupChatFileName: this.selectedFile,
+                                my_bulletin_secret: this.bulletinSecretService.generate_bulletin_secret(),
+                                my_username: this.bulletinSecretService.username
+                            },
+                            their_bulletin_secret: this.group.their_bulletin_secret,
+                            rid: this.group.rid,
+                            requester_rid: this.group.requester_rid,
+                            requested_rid: this.group.requested_rid
                         })
                         .then(() => {
                             resolve()
@@ -106,9 +116,6 @@ export class PostModal {
                             reject();
                         });
                     }
-                })
-                .then(() => {
-                    return this.transactionService.getFastGraphSignature();
                 })
                 .then((hash) => {
                     return this.transactionService.sendTransaction();

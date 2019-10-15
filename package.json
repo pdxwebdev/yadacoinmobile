@@ -69,6 +69,7 @@
     "es6-promise-plugin": "^4.1.0",
     "ionic-angular": "3.7.1",
     "ionic-native": "^2.9.0",
+    "ionic2-auto-complete": "^1.6.2-alpha",
     "ionicons": "3.0.0",
     "metascraper": "^1.0.7",
     "ngx-qrcode2": "0.0.5",

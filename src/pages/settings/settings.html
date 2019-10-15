@@ -3,6 +3,14 @@
     <button ion-button menuToggle color="{{color}}">
       <ion-icon name="menu"></ion-icon>
     </button>
+    <ion-item *ngIf="peerService.mode">
+      <a button clear href="https://youtube.com/w=lajksdf98" target="_blank" item-start>
+        <ion-icon large name="help-circle"></ion-icon>
+      </a>
+      <ion-label color="primary" text-right>Node address: </ion-label>
+      <ion-input color="primary" type="text" placeholder="Enter a url" [(ngModel)]="settingsService.remoteSettingsUrl"></ion-input>
+      <button ion-button primary (click)="saveToFavorites()" item-end>Save</button>
+    </ion-item>
   </ion-navbar>
 </ion-header>
 
@@ -10,6 +18,27 @@
   <ion-refresher (ionRefresh)="refresh($event)">
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
+  <ion-item col-md-2>
+    <ion-toggle color="primary" class="wallet-toggle" [(ngModel)]="peerService.mode"></ion-toggle>
+    <ion-label>Manual mode</ion-label>
+  </ion-item>
+  <h3 *ngIf="peerService.mode">Nodes</h3>
+  <ion-list *ngIf="peerService.mode">
+    <ion-row>
+      <ion-col col-lg-3 col-md-4 col-sm-4 *ngFor="let favorite of favorites">
+        <button ion-item (click)="selectFavorite(favorite)" [color]="favorite.active ? 'secondary' : 'dark'">
+          <ion-card padding>
+            <img src="assets/img/yadacoinlogotextsmall.png">
+            <ion-card-content>
+              <ion-card-title style="text-overflow:ellipsis;" text-wrap>
+                  {{favorite.label}}
+              </ion-card-title>
+            </ion-card-content>
+          </ion-card>
+        </button>
+      </ion-col>
+    </ion-row>
+  </ion-list>
   <h3>Identities</h3>
   <ion-list>
     <ion-row>

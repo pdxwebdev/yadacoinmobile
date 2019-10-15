@@ -12,6 +12,7 @@ import { Settings } from '../pages/settings/settings';
 import { ChatPage } from '../pages/chat/chat';
 import { ProfilePage } from '../pages/profile/profile';
 import { GroupPage } from '../pages/group/group';
+import { SiaFiles } from '../pages/siafiles/siafiles';
 
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
@@ -35,6 +36,8 @@ import { Deeplinks } from '@ionic-native/deeplinks';
 import { Firebase } from '@ionic-native/firebase';
 import { EmojiPickerModule } from '@ionic-tools/emoji-picker';
 import { File } from '@ionic-native/file';
+import { AutoCompleteModule } from 'ionic2-auto-complete';
+import { CompleteTestService } from './autocomplete.provider';
 
 
 @NgModule({
@@ -47,10 +50,12 @@ import { File } from '@ionic-native/file';
     SendReceive,
     ChatPage,
     ProfilePage,
-    GroupPage
+    GroupPage,
+    SiaFiles
   ],
   imports: [
     BrowserModule,
+    AutoCompleteModule,
     IonicModule.forRoot(MyApp),
     IonicStorageModule.forRoot({
       name: '__mydb',
@@ -71,7 +76,8 @@ import { File } from '@ionic-native/file';
     SendReceive,
     ChatPage,
     ProfilePage,
-    GroupPage
+    GroupPage,
+    SiaFiles
   ],
   providers: [
     StatusBar,
@@ -92,7 +98,8 @@ import { File } from '@ionic-native/file';
     Deeplinks,
     Firebase,
     FirebaseService,
-    File
+    File,
+    CompleteTestService
   ]
 })
 export class AppModule {}

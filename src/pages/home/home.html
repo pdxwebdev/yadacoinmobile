@@ -12,18 +12,13 @@
   </ion-refresher>
   <ion-spinner *ngIf="loading"></ion-spinner>
   <ion-row>
+    <ion-auto-complete [dataProvider]="completeTestService"></ion-auto-complete>
     <ion-col col-lg-12 col-md-12 col-sm-12>
-      <button ion-button large secondary (click)="unlockWallet()">
+      <button ion-button large secondary (click)="unlockWallet()" *ngIf="peerService.mode">
         Unlock wallet&nbsp;<ion-icon name="create"></ion-icon>
-      </button>
-      <button ion-button large secondary (click)="addFriend()">
-        Add friend&nbsp;<ion-icon name="search"></ion-icon>
       </button>
       <button ion-button large secondary (click)="createGroup()">
         Create Group&nbsp;<ion-icon name="create"></ion-icon>
-      </button>
-      <button ion-button large secondary (click)="joinGroup()">
-        Join Group&nbsp;<ion-icon name="create"></ion-icon>
       </button>
     </ion-col>
   </ion-row>

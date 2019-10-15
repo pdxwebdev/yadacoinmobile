@@ -11,8 +11,9 @@ import { Events } from 'ionic-angular';
 import { HomePage } from '../pages/home/home';
 import { ListPage } from '../pages/list/list';
 import { Settings } from '../pages/settings/settings';
-import { ProfilePage } from '../pages/profile/profile';
-import { SendReceive } from '../pages/sendreceive/sendreceive';
+import { SiaFiles } from '../pages/siafiles/siafiles';
+//import { ProfilePage } from '../pages/profile/profile';
+//import { SendReceive } from '../pages/sendreceive/sendreceive';
 
 declare var forge;
 
@@ -58,13 +59,14 @@ export class MyApp {
     });
 
     this.pages = [
-      { title: 'Home', label: 'Timeline', component: HomePage },
-      { title: 'Groups', label: 'Groups', component: ListPage },
-      //{ title: 'Following', label: 'Following', component: FollowingPage },
-      { title: 'Friends', label: 'Friends', component: ListPage },
-      { title: 'Messages', label: 'Messages', component: ListPage },
-      { title: 'Friend Requests', label: 'Friend Requests', component: ListPage },
-      { title: 'Sent Requests', label: 'Sent Requests', component: ListPage },
+      { title: 'Home', label: 'Dashboard', component: HomePage, count: false, color: '' },
+      { title: 'Groups', label: 'Groups', component: ListPage, count: false, color: '' },
+      { title: 'Files', label: 'Files', component: SiaFiles, count: false, color: '' },
+      //{ title: 'Following', label: 'Following', component: FollowingPage, count: false, color: '' },
+      { title: 'Friends', label: 'Friends', component: ListPage, count: false, color: '' },
+      { title: 'Messages', label: 'Messages', component: ListPage, count: false, color: '' },
+      { title: 'Friend Requests', label: 'Friend Requests', component: ListPage, count: false, color: '' },
+      { title: 'Sent Requests', label: 'Sent Requests', component: ListPage, count: false, color: '' },
       { title: 'Identity', label: 'Identity', component: Settings, count: false, color: '' }
     ];
   }

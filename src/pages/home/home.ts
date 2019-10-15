@@ -6,14 +6,16 @@ import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { WalletService } from '../../app/wallet.service';
 import { GraphService } from '../../app/graph.service';
 import { TransactionService } from '../../app/transaction.service';
+import { PeerService } from '../../app/peer.service';
 import { ListPage } from '../list/list';
 import { PostModal } from './postmodal';
 import { OpenGraphParserService } from '../../app/opengraphparser.service'
 import { SocialSharing } from '@ionic-native/social-sharing';
 import { SettingsService } from '../../app/settings.service';
 import { FirebaseService } from '../../app/firebase.service';
-import { Http, RequestOptions } from '@angular/http';
+import { Http, Headers, RequestOptions } from '@angular/http';
 import { Events } from 'ionic-angular';
+import { CompleteTestService } from '../../app/autocomplete.provider';
 
 declare var forge;
 declare var X25519;
@@ -56,6 +58,8 @@ export class HomePage {
     signedIn: any;
     txnId: any;
     location: any;
+    searchResults: any;
+    searchTerm: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -73,7 +77,9 @@ export class HomePage {
         private ahttp: Http,
         private firebaseService: FirebaseService,
         public events: Events,
-        public toastCtrl: ToastController
+        public toastCtrl: ToastController,
+        public peerService: PeerService,
+        public completeTestService: CompleteTestService
     ) {
         this.location = window.location;
         this.prefix = 'usernames-';
@@ -123,32 +129,10 @@ export class HomePage {
     }
 
     go() {
-        return this.settingsService.go()
+        return this.peerService.go()
         .then(() => {
             return this.refresh(null);
         });
-    }
-
-    saveToFavorites() {
-        var buttons = [];
-        buttons.push({
-            text: 'Add favorite',
-            handler: (data) => {
-                this.storage.set('favorites-'+data.label, this.settingsService.remoteSettingsUrl)
-            }
-        });
-        let alert = this.alertCtrl.create({
-            inputs: [
-                {
-                    name: 'label',
-                    placeholder: 'Type label here...'
-                }
-            ],
-            buttons: buttons
-        });
-        alert.setTitle('Save favorite');
-        alert.setSubTitle('Give is favorite a label.');
-        alert.present();
     }
 
     sendTokenToServer(token) {
@@ -390,10 +374,11 @@ export class HomePage {
                     this.txnId = txn.id; // will always select the wrong txn id
                 }
             }
-            this.loadingBalance = false;
-            let options = new RequestOptions({ withCredentials: true });
-
-            this.ahttp.get(this.settingsService.remoteSettings['authenticatedUrl'] + '?rid=' + this.graphService.graph.rid + '&id=' + '' + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret + '&origin=' + window.location.origin, options).subscribe((res) => {
+            this.loadingBalance = false;;
+            let headers = new Headers();
+            headers.append('Authorization', 'Bearer ' + this.settingsService.tokens[this.bulletinSecretService.keyname]);
+            let options = new RequestOptions({ headers: headers, withCredentials: true });
+            this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/unlocked?rid=' + this.graphService.graph.rid + '&id=' + '' + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret + '&origin=' + window.location.origin, options).subscribe((res) => {
                 var data = JSON.parse(res['_body']);
                 this.signedIn = data.authenticated;
             });
@@ -441,6 +426,15 @@ export class HomePage {
             this.loading = false;
             this.loadingModal.dismiss().catch(() => {});
         });
+    }
+
+    search() {
+        return this.ahttp.get(
+            this.settingsService.remoteSettings['baseUrl'] + '/search?searchTerm=' + this.searchTerm
+        )
+        .subscribe((res)=>{
+            this.searchResults = res.json()
+        }, () => {});
     }
 
     generateFeed() {
@@ -608,14 +602,6 @@ export class HomePage {
                 }
                 ],
                 buttons: [
-                {
-                    text: 'Cancel',
-                    role: 'cancel',
-                    handler: data => {
-                        console.log('Cancel clicked');
-                        reject();
-                    }
-                },
                 {
                     text: 'Save',
                     handler: data => {
@@ -794,8 +780,9 @@ export class HomePage {
                     text: 'Unlock',
                     handler: data => {
                         let options = new RequestOptions({ withCredentials: true });
-                        this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/auth?origin=' + encodeURIComponent(window.location.href), {key_or_wif: data.key_or_wif}, options)
+                        this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/unlock?origin=' + encodeURIComponent(window.location.href), {key_or_wif: data.key_or_wif}, options)
                         .subscribe((res) => {
+                            this.settingsService.tokens[this.bulletinSecretService.keyname] = res.json()['token']
                             const toast = this.toastCtrl.create({
                                 message: 'Wallet unlocked',
                                 duration: 2000

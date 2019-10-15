@@ -8,7 +8,7 @@ import { QRScanner, QRScannerStatus } from '@ionic-native/qr-scanner';
 import { SettingsService } from '../../app/settings.service';
 import { SocialSharing } from '@ionic-native/social-sharing';
 import { ListPage } from '../list/list';
-import { Http, RequestOptions } from '@angular/http';
+import { Http } from '@angular/http';
 
 @Component({
   selector: 'page-sendreceive',

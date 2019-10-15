@@ -3,9 +3,8 @@ import { Storage } from '@ionic/storage';
 import { BulletinSecretService } from './bulletinSecret.service';
 import { SettingsService } from './settings.service';
 import { Badge } from '@ionic-native/badge';
-import { Http, RequestOptions } from '@angular/http';
+import { Http, RequestOptions, Headers } from '@angular/http';
 import { Platform } from 'ionic-angular';
-import { LoadingController } from 'ionic-angular';
 
 
 declare var forge;
@@ -53,7 +52,6 @@ export class GraphService {
         private settingsService: SettingsService,
         private badge: Badge,
         private platform: Platform,
-        private loadingCtrl: LoadingController,
         private ahttp: Http
     ) {
         this.stored_secrets = {};
@@ -73,15 +71,18 @@ export class GraphService {
 
     endpointRequest(endpoint, ids=null) {
         return new Promise((resolve, reject) => {
-            let options = new RequestOptions({ withCredentials: true });
+            let headers = new Headers();
+            headers.append('Authorization', 'Bearer ' + this.settingsService.tokens[this.bulletinSecretService.keyname]);
+            let options = new RequestOptions({ headers: headers, withCredentials: true });
+            var promise = null;
             if (ids) {
-                var promise = this.ahttp.post(
+                promise = this.ahttp.post(
                     this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.href) + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret,
                     {ids: ids},
                     options
                 );
             } else {
-                var promise = this.ahttp.get(
+                promise = this.ahttp.get(
                     this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.href) + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret,
                     options
                 )
@@ -241,7 +242,7 @@ export class GraphService {
         return new Promise((resolve, reject) => {
             this.endpointRequest('get-graph-messages')
             .then((data: any) => {
-                return this.parseGroupMessages(key, data.messages, 'new_group_messages_counts', 'new_group_messages_count', rid, 'groupChatText', 'last_group_message_height')
+                return this.parseGroupMessages(key, data.messages, 'new_group_messages_counts', 'new_group_messages_count', rid, ['groupChatText', 'groupChatFileName'], 'last_group_message_height')
             })
             .then((chats: any) => {
                 if (!this.graph.messages) {
@@ -386,9 +387,10 @@ export class GraphService {
 
     parseSentFriendRequests(sent_friend_requests) {
         var sent_friend_requestsObj = {};
+        let sent_friend_request: any;
         if (!this.graph.friends) this.graph.friends = [];
         for(var i=0; i < sent_friend_requests.length; i++) {
-            var sent_friend_request = sent_friend_requests[i];
+            sent_friend_request = sent_friend_requests[i];
             if (!this.keys[sent_friend_request.rid]) {
                 this.keys[sent_friend_request.rid] = {
                     dh_private_keys: [],
@@ -412,8 +414,8 @@ export class GraphService {
                 }
             }
         }
-        for(var i=0; i < sent_friend_requests.length; i++) {
-            var sent_friend_request = sent_friend_requests[i];
+        for(var j=0; j < sent_friend_requests.length; j++) {
+            sent_friend_request = sent_friend_requests[j];
             if(typeof(sent_friend_request['relationship']) != 'object') {
                 //TODO: VERIFY THE BULLETIN SECRET!
                 if(sent_friend_requestsObj[sent_friend_request.rid]) {
@@ -516,7 +518,7 @@ export class GraphService {
                 var decrypted;
                 var bypassDecrypt = false;
                 if (typeof friend.relationship == 'object') {
-                    var bypassDecrypt = true;
+                    bypassDecrypt = true;
                 } else {
                     decrypted = this.decrypt(friend.relationship);
                 }
@@ -599,7 +601,7 @@ export class GraphService {
                 var decrypted;
                 var bypassDecrypt = false;
                 if (typeof group.relationship == 'object') {
-                    var bypassDecrypt = true;
+                    bypassDecrypt = true;
                 } else {
                     decrypted = this.decrypt(group.relationship);
                 }
@@ -761,7 +763,7 @@ export class GraphService {
                     }
 
                     var group_message_rid = message.requested_rid || message.rid;
-                    if(messageJson[messageType]) {
+                    if(messageJson[messageType[0]] || messageJson[messageType[1]]) {
                         message.relationship = messageJson;
                         message.username = this.usernames[group_message_rid];
                         messages[group_message_rid] = message;

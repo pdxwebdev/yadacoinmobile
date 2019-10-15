@@ -5,7 +5,6 @@ import { Events } from 'ionic-angular';
 
 declare var foobar;
 declare var forge;
-declare var uuid4;
 
 @Injectable()
 export class BulletinSecretService {

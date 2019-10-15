@@ -16,7 +16,9 @@
       <ion-list>
         <ion-item *ngFor="let item of chats" text-wrap (click)="toggleExtraInfo(item.pending)">
           <strong><span ion-text style="font-size: 20px;">{{item.relationship.my_username || 'Anonymous'}}</span> </strong><span style="font-size: 10px; color: rgb(88, 88, 88);" ion-text>{{item.time}}</span>
-          <h3>{{item.relationship.groupChatText}}</h3>
+          <h3 *ngIf="!item.relationship.groupChatFileName">{{item.relationship.groupChatText}}</h3>
+          <h3 *ngIf="item.relationship.groupChatFileName" (click)="receive(item.relationship)">{{item.relationship.groupChatFileName}}</h3>
+          <button *ngIf="item.relationship.groupChatFileName" ion-button (click)="import(item.relationship)">Import</button>
           <ion-note color="primary">{{item.fee}} YADA</ion-note>
           <ion-note *ngIf="item.pending" color="danger">Pending</ion-note>
           <ion-note *ngIf="!item.pending" color="secondary">Saved</ion-note>
@@ -30,4 +32,5 @@
       <ion-input [(ngModel)]="groupChatText" (keyup.enter)="send()"></ion-input>
     </ion-item>
     <button ion-button (click)="send()">Send</button>
+    <button ion-button (click)="presentModal()">Send</button>
   </ion-footer>

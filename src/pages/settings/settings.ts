@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Injectable } from '@angular/core';
 import { NavController, NavParams, ToastController } from 'ionic-angular';
 import { Storage } from '@ionic/storage';
 import { SettingsService } from '../../app/settings.service';
@@ -6,13 +6,15 @@ import { PeerService } from '../../app/peer.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { FirebaseService } from '../../app/firebase.service';
 import { ListPage } from '../list/list';
-import { ProfilePage } from '../profile/profile';
 import { AlertController, LoadingController } from 'ionic-angular';
 import { GraphService } from '../../app/graph.service';
 import { WalletService } from '../../app/wallet.service';
 import { SocialSharing } from '@ionic-native/social-sharing';
 import { Events } from 'ionic-angular';
 import { HomePage } from '../home/home';
+import { Http, Headers, RequestOptions } from '@angular/http';
+
+
 
 @Component({
   selector: 'page-settings',
@@ -70,6 +72,32 @@ export class Settings {
 
     }
 
+    saveToFavorites() {
+        let alert = this.alertCtrl.create({
+            title: 'Set group name',
+            inputs: [
+            {
+                name: 'groupname',
+                placeholder: 'Group name'
+            }
+            ],
+            buttons: [
+            {
+                text: 'Save',
+                handler: data => {
+                    this.storage.set('favorites-' + data.groupname, this.settingsService.remoteSettingsUrl);
+                    this.getFavorites();
+                }
+            }
+            ]
+        });
+        alert.present();
+        
+    }
+    getResults(keyword:string) {
+      return ['234234','234234']
+    }
+
     getFavorites() {
         return new Promise((resolve, reject) => {
             var favorites = [];
@@ -91,6 +119,10 @@ export class Settings {
     }
 
     selectFavorite(favorite) {
+        for(var i=0; i < this.favorites.length; i++) {
+            this.favorites[i].active = false;
+        }
+        favorite.active = true;
         this.settingsService.remoteSettingsUrl = favorite.url;
     }
 

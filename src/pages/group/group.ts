@@ -1,5 +1,5 @@
 import { Component, ViewChild } from '@angular/core';
-import { NavController, NavParams } from 'ionic-angular';
+import { NavController, NavParams, ModalController } from 'ionic-angular';
 import { Storage } from '@ionic/storage';
 import { GraphService } from '../../app/graph.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
@@ -8,11 +8,10 @@ import { AlertController, LoadingController, ToastController } from 'ionic-angul
 import { TransactionService } from '../../app/transaction.service';
 import { SettingsService } from '../../app/settings.service';
 import { ListPage } from '../list/list';
-import { Http, RequestOptions } from '@angular/http';
+import { SiaFiles } from '../siafiles/siafiles';
+import { Http } from '@angular/http';
 
-declare var X25519;
 declare var Base64;
-declare var foobar;
 
 @Component({
     selector: 'page-group',
@@ -38,6 +37,7 @@ export class GroupPage {
     requested_rid: any;
     their_address: any;
     extraInfo: any;
+    files: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -50,6 +50,7 @@ export class GroupPage {
         public bulletinSecretService: BulletinSecretService,
         public settingsService: SettingsService,
         public ahttp: Http,
+        public modalCtrl: ModalController,
         public toastCtrl: ToastController
     ) {
         this.extraInfo = {};
@@ -112,9 +113,41 @@ export class GroupPage {
         .then(() => {
             setTimeout(() => this.content.scrollToBottom(1000), 500);
         })
+        .then(() => {
+            return this.getSiaFiles();
+        })
         .catch((err) => {
             console.log(err);
         });
+    }
+
+    presentModal() {
+        
+        let modal = this.modalCtrl.create(SiaFiles, {
+            mode: 'modal',
+            logicalParent: this,
+            group: {
+                their_bulletin_secret: this.their_bulletin_secret,
+                rid: this.rid,
+                requester_rid: this.requester_rid,
+                requested_rid: this.requested_rid
+            }
+        });
+        modal.present();
+    }
+
+    import(relationship) {
+        return this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/share-file?origin=' + encodeURIComponent(window.location.href), relationship)
+        .subscribe((res) => {
+            var files = res.json();
+        })
+    }
+
+    getSiaFiles() {
+        return this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/sia-files')
+        .subscribe((res) => {
+            var files = res.json();
+        })
     }
 
     toggleExtraInfo(pending) {

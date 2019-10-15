@@ -68,7 +68,7 @@ export class TransactionService {
             } else {
                 this.rid = '';
             }
-            var res = null;
+
             this.transaction = {
                 rid:  this.rid,
                 fee: 0.00,
@@ -139,9 +139,7 @@ export class TransactionService {
                         if (unspent_output.to === this.key.getAddress()) {
                             inputs.push({id: unspent_transaction.id});
                             input_sum += parseFloat(unspent_output.value);
-                            if (input_sum >= transaction_total) {
-                                let value: any;
-    
+                            if (input_sum >= transaction_total) {    
                                 this.transaction.outputs.push({
                                     to: this.key.getAddress(),
                                     value: (input_sum - transaction_total)
@@ -154,8 +152,8 @@ export class TransactionService {
             }
             var myAddress = this.key.getAddress();
             var found = false;
-            for (var j=0; j < this.transaction.outputs.length; j++) {
-                if (this.transaction.outputs[j].to == myAddress) {
+            for (var h=0; h < this.transaction.outputs.length; h++) {
+                if (this.transaction.outputs[h].to == myAddress) {
                     found = true;
                 }
             }
@@ -201,7 +199,7 @@ export class TransactionService {
             var outputs_hashes_concat = outputs_hashes_arr.join('');
     
             if (this.info.relationship) {
-                var bulletin_secrets = [this.bulletin_secret, this.info.relationship.bulletin_secret].sort(function (a, b) {
+                bulletin_secrets = [this.bulletin_secret, this.info.relationship.bulletin_secret].sort(function (a, b) {
                     return a.toLowerCase().localeCompare(b.toLowerCase());
                 });
                 this.rid = foobar.bitcoin.crypto.sha256(bulletin_secrets[0] + bulletin_secrets[1]).toString('hex');
@@ -224,7 +222,7 @@ export class TransactionService {
                     inputs_hashes_concat +
                     outputs_hashes_concat
                 ).toString('hex')
-            } else if (this.info.relationship.groupChatText) {
+            } else if (typeof this.info.relationship.groupChatText !== 'undefined') {
                 // group chat
     
                 this.transaction.relationship = this.shared_encrypt(this.their_bulletin_secret, JSON.stringify(this.info.relationship));                    
@@ -358,10 +356,11 @@ export class TransactionService {
 
     sendTransaction() {
         return new Promise((resolve, reject) => {
+            var url = '';
             if (this.transaction.signatures && this.transaction.signatures.length > 0) {
-                var url = this.settingsService.remoteSettings['fastgraphUrl'] + '?bulletin_secret=' + this.bulletin_secret + '&to=' + this.key.getAddress() + '&username=' + this.username
+                url = this.settingsService.remoteSettings['fastgraphUrl'] + '?bulletin_secret=' + this.bulletin_secret + '&to=' + this.key.getAddress() + '&username=' + this.username
             } else {
-                var url = this.settingsService.remoteSettings['transactionUrl'] + '?bulletin_secret=' + this.bulletin_secret + '&to=' + this.key.getAddress() + '&username=' + this.username
+                url = this.settingsService.remoteSettings['transactionUrl'] + '?bulletin_secret=' + this.bulletin_secret + '&to=' + this.key.getAddress() + '&username=' + this.username
             }
             this.ahttp.post(
                 url,

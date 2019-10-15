@@ -13,6 +13,7 @@ declare var X25519;
 export class PeerService {
     seeds = null;
     loading = false;
+    mode: any;
     constructor(
         private ahttp: Http,
         public walletService: WalletService,
@@ -29,12 +30,23 @@ export class PeerService {
             //{"host": "188.165.250.78","port": 8000 },
             //{"host": "116.203.24.126","port": 8000 }
         ]
+        this.mode = false;
     }
 
     go() {
         if (this.loading) return;
         this.loading = true;
-        return this.storage.get('node')
+        return this.storage.get('static-node')
+        .then((node) => {
+            if (node) {
+                this.mode = true;
+                return new Promise((resolve, reject) => {
+                    return resolve(node);
+                });
+            } else {
+                return this.storage.get('node');
+            }
+        })
         .then((node) => {
             return new Promise((resolve, reject) => {
                 var seedPeer = '';
@@ -44,10 +56,11 @@ export class PeerService {
                     var min = 0; 
                     var max = this.seeds.length - 1;
                     var number = Math.floor(Math.random() * (+max - +min)) + +min;
+                    if (!this.seeds[number]) return reject(false);
                     seedPeer = 'http://' + this.seeds[number]['host'] + ':' + this.seeds[number]['port'];
                 }
                 return resolve(seedPeer);
-            })            
+            })
         })
         .then((seedPeer) => {
             if(this.settingsService.remoteSettingsUrl) {
@@ -73,6 +86,7 @@ export class PeerService {
         .catch((e) => {
             this.loading = false;
             console.log('faled getting peers' + e);
+            this.storage.remove(this.mode ? 'static-node' : 'node');
             setTimeout(() => this.go(), 1000);
         });
     }
@@ -85,13 +99,13 @@ export class PeerService {
                     var min = 0; 
                     var max = peers.length - 1;
                     var number = Math.floor(Math.random() * (+max - +min)) + +min;
+                    if (!peers[number]) return reject(false);
                     this.settingsService.remoteSettingsUrl = 'http://' + peers[number]['host'] + ':' + peers[number]['port'];
                     this.storage.set('node', this.settingsService.remoteSettingsUrl);
                     resolve('config');
                 },
                 (err) => {
                     this.loading = false;
-                    setTimeout(() => this.go(), 1000);
                     return reject(err);
                 }
             );
@@ -108,7 +122,6 @@ export class PeerService {
                 },
                 (err) => {
                     this.loading = false;
-                    setTimeout(() => this.go(), 1000);
                     return reject(err);
                 }
             );

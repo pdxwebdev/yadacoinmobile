@@ -8,7 +8,7 @@ import { AlertController, LoadingController } from 'ionic-angular';
 import { TransactionService } from '../../app/transaction.service';
 import { SettingsService } from '../../app/settings.service';
 import { ListPage } from '../list/list';
-import { Http, RequestOptions } from '@angular/http';
+import { Http } from '@angular/http';
 
 declare var X25519;
 
