@@ -46,10 +46,21 @@ export class SiaFiles {
         })
     }
 
+    changeListener($event) {
+        this.filepath = $event.target.files[0];
+    }
+
     upload() {
         this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/sia-upload?filepath=' + encodeURIComponent(this.filepath))
         .subscribe((res) => {
-            let sharefiledata = res.json()['filedata'];
+            this.files = res.json()['files'];
+        })
+    }
+
+    delete(siapath) {
+        this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/sia-delete?siapath=' + encodeURIComponent(siapath))
+        .subscribe((res) => {
+            this.files = res.json()['files'];
         })
     }
 
@@ -58,7 +69,7 @@ export class SiaFiles {
         	return new Promise((resolve, reject) => {
                 if (this.selectedFile) {
 
-                    this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/share-file?siapath=' + this.selectedFile)
+                    this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/sia-share-file?siapath=' + this.selectedFile)
                     .subscribe((res) => {
                         let sharefiledata = res.json()['filedata'];
                         this.approveTxn(sharefiledata, resolve);

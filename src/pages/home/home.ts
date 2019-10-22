@@ -347,23 +347,26 @@ export class HomePage {
         this.loading = true;
         this.loadingBalance = true;
 
-        this.loadingModal = this.loadingCtrl.create({
-            content: 'Please wait...'
-        });
-        this.loadingModal.present();
-        this.storage.get('blockchainAddress').then((blockchainAddress) => {
-            this.blockchainAddress = blockchainAddress;
-        });
+        // this.loadingModal = this.loadingCtrl.create({
+        //     content: 'Please wait...'
+        // });
+        // this.loadingModal.present();
+        // this.storage.get('blockchainAddress').then((blockchainAddress) => {
+        //     this.blockchainAddress = blockchainAddress;
+        // });
         //put ourselves in the faucet
+        /*
         this.ahttp.get(
             this.settingsService.remoteSettings['baseUrl'] + '/faucet?address=' + this.bulletinSecretService.key.getAddress()
         )
         .subscribe(()=>{}, () => {});
+        */
         this.color = this.graphService.friend_request_count > 0 ? 'danger' : '';
         this.friendRequestColor = this.graphService.friend_request_count > 0 ? 'danger' : '';
         this.chatColor = this.graphService.new_messages_count > 0 ? 'danger' : '';
         this.signInColor = this.graphService.new_sign_ins_count > 0 ? 'danger' : '';
         //update our wallet
+        /*
         return this.walletService.get()
         .then(() => {
             this.balance = this.walletService.wallet.balance;
@@ -426,6 +429,12 @@ export class HomePage {
             this.loading = false;
             this.loadingModal.dismiss().catch(() => {});
         });
+        */
+    //    this.loading = false;
+    //    this.loadingModal.dismiss().catch(() => {});
+       return new Promise((resolve, reject) => {
+           return resolve();
+       })
     }
 
     search() {
@@ -764,7 +773,8 @@ export class HomePage {
                 inputs: [
                 {
                     name: 'key_or_wif',
-                    placeholder: 'Private key or WIF'
+                    placeholder: 'Private key or WIF',
+                    type: 'password'
                 }
                 ],
                 buttons: [

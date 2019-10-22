@@ -25,7 +25,10 @@
     <ion-item *ngIf="mode == 'page'">
       <ion-list>
         <ion-item *ngFor="let file of files">
-          <a href="{{file.stream_url}}" target="_blank"><h3>{{file.siapath}}</h3></a>
+          <a *ngIf="file.available" href="{{file.stream_url}}" target="_blank">
+            <h3>{{file.siapath}}</h3>
+          </a>
+          <h3 *ngIf="!file.available">{{file.siapath}} (uploading...)</h3><button ion-button danger (click)="delete(file.siapath)">Delete</button>
         </ion-item>
       </ion-list>
     </ion-item>

@@ -69,7 +69,7 @@ export class GraphService {
         this.friends_indexed = {};
     }
 
-    endpointRequest(endpoint, ids=null) {
+    endpointRequest(endpoint, ids=null, rids=null) {
         return new Promise((resolve, reject) => {
             let headers = new Headers();
             headers.append('Authorization', 'Bearer ' + this.settingsService.tokens[this.bulletinSecretService.keyname]);
@@ -79,6 +79,12 @@ export class GraphService {
                 promise = this.ahttp.post(
                     this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.href) + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret,
                     {ids: ids},
+                    options
+                );
+            } else if (rids) {
+                promise = this.ahttp.post(
+                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.href) + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret,
+                    {rids: rids},
                     options
                 );
             } else {
@@ -239,8 +245,9 @@ export class GraphService {
 
     getGroupMessages(key, requested_rid, rid) {
         //get messages for a specific friend
+        var choice_rid = requested_rid || rid;
         return new Promise((resolve, reject) => {
-            this.endpointRequest('get-graph-messages')
+            this.endpointRequest('get-graph-messages', null, [choice_rid])
             .then((data: any) => {
                 return this.parseGroupMessages(key, data.messages, 'new_group_messages_counts', 'new_group_messages_count', rid, ['groupChatText', 'groupChatFileName'], 'last_group_message_height')
             })
@@ -248,7 +255,6 @@ export class GraphService {
                 if (!this.graph.messages) {
                     this.graph.messages = {};
                 }
-                var choice_rid = requested_rid || rid;
                 if (choice_rid && chats[choice_rid]){
                     this.graph.messages[choice_rid] = chats[choice_rid];
                     this.graph.messages[choice_rid].sort(function (a, b) {

@@ -13,6 +13,7 @@ import { ChatPage } from '../pages/chat/chat';
 import { ProfilePage } from '../pages/profile/profile';
 import { GroupPage } from '../pages/group/group';
 import { SiaFiles } from '../pages/siafiles/siafiles';
+import { StreamPage } from '../pages/stream/stream';
 
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
@@ -51,7 +52,8 @@ import { CompleteTestService } from './autocomplete.provider';
     ChatPage,
     ProfilePage,
     GroupPage,
-    SiaFiles
+    SiaFiles,
+    StreamPage
   ],
   imports: [
     BrowserModule,
@@ -77,7 +79,8 @@ import { CompleteTestService } from './autocomplete.provider';
     ChatPage,
     ProfilePage,
     GroupPage,
-    SiaFiles
+    SiaFiles,
+    StreamPage
   ],
   providers: [
     StatusBar,

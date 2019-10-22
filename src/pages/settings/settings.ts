@@ -314,14 +314,6 @@ export class Settings {
             this.bulletinSecretService.set(keyname).then(() => {
                 return this.refresh(null);
             }).then(() => {
-                if (this.settingsService.remoteSettings['walletUrl']) {
-                    return this.walletService.get();
-                }
-            }).then(() => {
-                if (this.settingsService.remoteSettings['walletUrl']) {
-                    return this.graphService.getInfo();
-                }
-            }).then(() => {
                 this.serverDown = false;
                 if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
                     this.firebaseService.initFirebase();

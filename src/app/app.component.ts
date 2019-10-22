@@ -12,6 +12,7 @@ import { HomePage } from '../pages/home/home';
 import { ListPage } from '../pages/list/list';
 import { Settings } from '../pages/settings/settings';
 import { SiaFiles } from '../pages/siafiles/siafiles';
+import { StreamPage } from '../pages/stream/stream';
 //import { ProfilePage } from '../pages/profile/profile';
 //import { SendReceive } from '../pages/sendreceive/sendreceive';
 
@@ -60,6 +61,7 @@ export class MyApp {
 
     this.pages = [
       { title: 'Home', label: 'Dashboard', component: HomePage, count: false, color: '' },
+      { title: 'Stream', label: 'Stream', component: StreamPage, count: false, color: '' },
       { title: 'Groups', label: 'Groups', component: ListPage, count: false, color: '' },
       { title: 'Files', label: 'Files', component: SiaFiles, count: false, color: '' },
       //{ title: 'Following', label: 'Following', component: FollowingPage, count: false, color: '' },
