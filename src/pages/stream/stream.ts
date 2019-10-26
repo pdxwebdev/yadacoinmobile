@@ -45,6 +45,7 @@ export class StreamPage {
     j: any;
     groups: any;
     selectedGroup: any;
+    label: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -62,6 +63,7 @@ export class StreamPage {
         private dom: DomSanitizer
     ) {
         this.streams = {};
+        this.label = this.navParams.get('pageTitle').label;
         // if (this.showLoading) {
         //     this.loading = true;
         // }
@@ -86,13 +88,12 @@ export class StreamPage {
             return Promise.all(promises)
         })
         .then((groups) => {
-            return new Promise((resolve, reject) => {
-                for(var i=0; i < groups.length; i++) {
-                    var group = groups[i];
-                    this.parseChats(group);
-                }
-                return resolve(groups);
-            });
+            var promises = []
+            for(var i=0; i < groups.length; i++) {
+                var group = groups[i];
+                promises.push(this.parseChats(group));
+            }
+            return Promise.all(promises);
         })
         .then((groups: Array<any>) => {
             this.i = 0;
@@ -167,6 +168,7 @@ export class StreamPage {
 
     parseChats(group) {
         return new Promise((resolve, reject) => {
+            if (!this.graphService.graph['messages'][group.rid]) return resolve(group);
             for(var j=0; j < this.graphService.graph['messages'][group.rid].length; j++) {
                 var message = this.graphService.graph['messages'][group.rid][j]
                 if (message['relationship']['groupChatFileName']) {
@@ -180,6 +182,7 @@ export class StreamPage {
             if (this.streams[group.rid].length === 0) {
                 delete this.streams[group.rid];
             }
+            resolve(group);
         });
     }
 

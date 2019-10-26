@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BulletinSecretService } from './bulletinSecret.service';
 import { SettingsService } from './settings.service';
-import { Http } from '@angular/http';
+import { Http, RequestOptions, Headers } from '@angular/http';
 
 
 @Injectable()
@@ -41,7 +41,10 @@ export class WalletService {
                 return reject()
             }
             if(this.bulletinSecretService.username) {
-                this.ahttp.get(this.settingsService.remoteSettings['walletUrl'] + '?fastgraph=' + fastgraph + '&address=' + this.bulletinSecretService.key.getAddress() + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret).
+                let headers = new Headers();
+                headers.append('Authorization', 'Bearer ' + this.settingsService.tokens[this.bulletinSecretService.keyname]);
+                let options = new RequestOptions({ headers: headers, withCredentials: true });
+                this.ahttp.get(this.settingsService.remoteSettings['walletUrl'] + '?fastgraph=' + fastgraph + '&address=' + this.bulletinSecretService.key.getAddress() + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret + '&origin=' + window.location.href, options).
                 subscribe((data) => {
                     if(data['_body']) {
                         this.walletError = false;

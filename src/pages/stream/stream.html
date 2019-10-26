@@ -1,5 +1,14 @@
-<ion-list>
-    <ion-item *ngFor="let group of groups">
-        <button (click)="selectGroup(group.requested_rid || group.rid)">{{group.relationship.their_username}}</button></ion-item>
-</ion-list>
-<iframe [src]="sanitize(streamUrl)" (load)="loaded()" width="100%" height="100%" border="0" *ngIf="streamUrl" id="iframe"></iframe>
+<ion-header>
+    <ion-navbar>
+        <button ion-button menuToggle color="{{color}}">
+            <ion-icon name="menu"></ion-icon>
+        </button>
+        <ion-title>{{label}}</ion-title>
+    </ion-navbar>
+</ion-header>
+<ion-content>
+    <ion-list>
+        <button ion-item *ngFor="let group of groups" (click)="selectGroup(group.requested_rid || group.rid)">{{group.relationship.their_username}}</button>
+    </ion-list>
+    <iframe [src]="sanitize(streamUrl)" width="100%" height="100%" border="0" *ngIf="streamUrl" id="iframe"></iframe>
+</ion-content>
