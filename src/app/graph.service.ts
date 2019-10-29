@@ -198,7 +198,7 @@ export class GraphService {
     getMessages(rid) {
         //get messages for a specific friend
         return new Promise((resolve, reject) => {
-            this.endpointRequest('get-graph-messages')
+            this.endpointRequest('get-graph-messages', null, [rid])
             .then((data: any) => {
                 return this.parseMessages(data.messages, 'new_messages_counts', 'new_messages_count', rid, 'chatText', 'last_message_height')
             })

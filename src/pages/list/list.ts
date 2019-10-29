@@ -371,7 +371,7 @@ export class ListPage {
     alert.addButton({
       text: 'Confirm',
       handler: (data: any) => {
-        this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/search?requester_rid=' + this.friend_request.requester_rid + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
+        this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/ns?requester_rid=' + this.friend_request.requester_rid + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
         .subscribe((res) => {
           let info = res.json();
           // camera permission was granted
@@ -405,30 +405,6 @@ export class ListPage {
                   requested_rid: info.requested_rid,
                   requester_rid: info.requester_rid,
                   to: info.to
-              });
-          }).then((hash) => {
-              return new Promise((resolve, reject) => {
-                  this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/sign-raw-transaction', {
-                      hash: hash, 
-                      bulletin_secret: this.bulletinSecretService.bulletin_secret,
-                      input: this.transactionService.transaction.inputs[0].id,
-                      id: this.transactionService.transaction.id,
-                      txn: this.transactionService.transaction
-                  })
-                  .subscribe((res) => {
-                      //this.loadingModal2.dismiss();
-                      try {
-                        let data = res.json();
-                        this.transactionService.transaction.signatures = [data.signature]
-                          resolve();
-                      } catch(err) {
-                          reject();
-                          this.loadingModal.dismiss().catch(() => {});
-                      }
-                  },
-                  (err) => {
-                      //this.loadingModal2.dismiss();
-                  });
               });
           }).then((txn) => {
               return this.transactionService.sendTransaction();

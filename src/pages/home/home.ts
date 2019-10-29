@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
+import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { NavController, NavParams, ModalController } from 'ionic-angular';
 import { AlertController, LoadingController, ToastController } from 'ionic-angular';
 import { Storage } from '@ionic/storage';
@@ -8,6 +9,7 @@ import { GraphService } from '../../app/graph.service';
 import { TransactionService } from '../../app/transaction.service';
 import { PeerService } from '../../app/peer.service';
 import { ListPage } from '../list/list';
+import { ProfilePage } from '../profile/profile';
 import { PostModal } from './postmodal';
 import { OpenGraphParserService } from '../../app/opengraphparser.service'
 import { SocialSharing } from '@ionic-native/social-sharing';
@@ -59,7 +61,7 @@ export class HomePage {
     txnId: any;
     location: any;
     searchResults: any;
-    searchTerm: any;
+    searchTerm: any;;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -128,11 +130,22 @@ export class HomePage {
         });
     }
 
+    myForm = new FormGroup({
+        searchTerm: new FormControl('', [Validators.required])
+    })
+    
+
     go() {
         return this.peerService.go()
         .then(() => {
             return this.refresh(null);
         });
+    }
+
+    submit() {
+        if (!this.myForm.valid) return false;
+        this.navCtrl.push(ProfilePage, {item: this.myForm.value.searchTerm});
+        console.log(this.myForm.value.searchTerm)
     }
 
     sendTokenToServer(token) {
@@ -430,7 +443,7 @@ export class HomePage {
             this.loadingModal.dismiss().catch(() => {});
         });
         */
-    //    this.loading = false;
+        this.loading = false;
     //    this.loadingModal.dismiss().catch(() => {});
        return new Promise((resolve, reject) => {
            return resolve();

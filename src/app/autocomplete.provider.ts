@@ -8,6 +8,7 @@ import 'rxjs/add/operator/map';
 @Injectable()
 export class CompleteTestService implements AutoCompleteService {
   labelAttribute = "name";
+  formValueAttribute = "value";
 
   constructor(
       private http: Http,
@@ -19,7 +20,7 @@ export class CompleteTestService implements AutoCompleteService {
     return this.http.get(this.settingsService.remoteSettings['baseUrl'] + '/ns?searchTerm=' + searchTerm + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
     .map((res) => {
         var result = res.json().map(item => {
-            return {name: item.relationship.their_username}
+            return {name: item.relationship.their_username, value: item}
         });
         return result;
     });

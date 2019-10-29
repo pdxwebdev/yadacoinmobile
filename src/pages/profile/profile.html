@@ -3,43 +3,30 @@
     <button ion-button menuToggle color="{{color}}">
       <ion-icon name="menu"></ion-icon>
     </button>
-    <button ion-button color="{{chatColor}}" title="Friend Requests" (click)="showFriendRequests()">
-      <ion-icon name="contacts"></ion-icon>
-    </button>
-    <button ion-button color="{{chatColor}}" title="Messages" (click)="showChat()">
-      <ion-icon name="chatboxes"></ion-icon>
-    </button>
   </ion-navbar>
 </ion-header>
 <ion-content padding>
-  <ion-item class="alert alert-danger" *ngIf="walletService.walletError" color="danger">Error accessing wallet.</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="graphService.getSentFriendRequestsError" color="danger">Error accessing sent friend requests.</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="graphService.getFriendsError" color="danger">Error accessing friend requests.</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="graphService.getMessagesError" color="danger">Error accessing messages.</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="graphService.getNewMessagesError" color="danger">Error accessing new messages.</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="graphService.getSignInsError" color="danger">Error accessing sign ins.</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="graphService.getNewSignInsError" color="danger">Error accessing new sign ins.</ion-item>
-  <ion-item class="alert alert-danger" *ngIf="graphService.getPostsError" color="danger">Error accessing posts.</ion-item>
   <ion-row>
     <ion-col text-center>
       <ion-item>
-        <ion-label color="primary" stacked>Username:</ion-label>
-        <ion-input type="text" [(ngModel)]="username" (ionChange)="change()">
-        </ion-input>
-        <button *ngIf="isCordova" ion-button outline item-end (click)="sharePhrase()">share&nbsp;<ion-icon name="share"></ion-icon></button>
-      </ion-item>
-      <ion-item>
-        <button ion-button title="Save" (click)="save()">
-          <ion-icon name="save"></ion-icon>
-          Save
-        </button>
-      </ion-item>
+        <h1>{{item.relationship.their_username}}</h1></ion-item>
     </ion-col>
-    <ion-item>
-      <b>Warning: </b> You cannot change your username after this.
-    </ion-item>
-    <ion-item>
-      <b>Warning: </b> If your servers are configured to point to your own wallet, this username must be identical to the username specified in your config file.
-    </ion-item>
+    <ion-col>
+      <button ion-button large secondary (click)="addFriend()" *ngIf="!isFriend && item.relationship.group !== true">
+        Add friend&nbsp;<ion-icon name="create"></ion-icon>
+      </button>
+      <button ion-button large secondary (click)="joinGroup()" *ngIf="!isFriend && item.relationship.group === true">
+        Join group&nbsp;<ion-icon name="create"></ion-icon>
+      </button>
+      <button ion-button large secondary (click)="message()" *ngIf="isFriend">
+        {{item.relationship.group === true ? "Group" : "Direct"}} message&nbsp;<ion-icon name="create"></ion-icon>
+      </button>
+      <button ion-button large secondary (click)="invite()" *ngIf="isFriend">
+        Invite&nbsp;<ion-icon name="create"></ion-icon>
+      </button>
+      <button ion-button large secondary (click)="refer()" *ngIf="isFriend">
+        Refer&nbsp;<ion-icon name="create"></ion-icon>
+      </button>
+    </ion-col>
   </ion-row>
 </ion-content>

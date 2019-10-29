@@ -37,7 +37,7 @@ import { Deeplinks } from '@ionic-native/deeplinks';
 import { Firebase } from '@ionic-native/firebase';
 import { EmojiPickerModule } from '@ionic-tools/emoji-picker';
 import { File } from '@ionic-native/file';
-import { AutoCompleteModule } from 'ionic2-auto-complete';
+import { AutoCompleteModule, AutoCompleteComponent } from 'ionic2-auto-complete';
 import { CompleteTestService } from './autocomplete.provider';
 
 
@@ -102,7 +102,8 @@ import { CompleteTestService } from './autocomplete.provider';
     Firebase,
     FirebaseService,
     File,
-    CompleteTestService
+    CompleteTestService,
+    AutoCompleteComponent
   ]
 })
 export class AppModule {}

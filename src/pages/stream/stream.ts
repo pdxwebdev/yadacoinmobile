@@ -115,6 +115,9 @@ export class StreamPage {
     cycleMedia() {
         if(!this.groups[this.i]) {
             this.i = 0;
+            if(!this.groups[this.i]) {
+                return;
+            }
         }
         var group = this.groups[this.i];
         var rid = this.selectedGroup || group.rid;

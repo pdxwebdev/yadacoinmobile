@@ -7,12 +7,15 @@
 </ion-header>
 
 <ion-content padding>
-  <ion-refresher (ionRefresh)="refresh($event)">
-    <ion-refresher-content></ion-refresher-content>
-  </ion-refresher>
   <ion-spinner *ngIf="loading"></ion-spinner>
   <ion-row>
-    <ion-auto-complete [dataProvider]="completeTestService"></ion-auto-complete>
+    <form [formGroup]="myForm" (ngSubmit)="submit()">
+      <ion-auto-complete [dataProvider]="completeTestService" formControlName="searchTerm" required></ion-auto-complete>
+      <button icon-left ion-button type="submit" block [disabled]="!myForm.valid">
+        <ion-icon name="eye"></ion-icon>
+        View profile
+      </button>
+    </form>
     <ion-col col-lg-12 col-md-12 col-sm-12>
       <button ion-button large secondary (click)="unlockWallet()" *ngIf="peerService.mode">
         Unlock wallet&nbsp;<ion-icon name="create"></ion-icon>
