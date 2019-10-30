@@ -77,19 +77,19 @@ export class GraphService {
             var promise = null;
             if (ids) {
                 promise = this.ahttp.post(
-                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.href) + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret,
+                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.origin) + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret,
                     {ids: ids},
                     options
                 );
             } else if (rids) {
                 promise = this.ahttp.post(
-                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.href) + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret,
+                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.origin) + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret,
                     {rids: rids},
                     options
                 );
             } else {
                 promise = this.ahttp.get(
-                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.href) + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret,
+                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.origin) + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret,
                     options
                 )
             }

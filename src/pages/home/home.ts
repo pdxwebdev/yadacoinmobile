@@ -677,7 +677,8 @@ export class HomePage {
                     group: true
                 },
                 dh_public_key: info.dh_public_key,
-                to: info.their_address
+                to: info.their_address,
+                requester_rid: this.graphService.graph.rid
             })
         
         }).then((txn) => {
@@ -803,7 +804,7 @@ export class HomePage {
                     text: 'Unlock',
                     handler: data => {
                         let options = new RequestOptions({ withCredentials: true });
-                        this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/unlock?origin=' + encodeURIComponent(window.location.href), {key_or_wif: data.key_or_wif}, options)
+                        this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/unlock?origin=' + encodeURIComponent(window.location.origin), {key_or_wif: data.key_or_wif}, options)
                         .subscribe((res) => {
                             this.settingsService.tokens[this.bulletinSecretService.keyname] = res.json()['token']
                             const toast = this.toastCtrl.create({

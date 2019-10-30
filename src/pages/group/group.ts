@@ -139,7 +139,7 @@ export class GroupPage {
     }
 
     import(relationship) {
-        return this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/sia-share-file?origin=' + encodeURIComponent(window.location.href), relationship)
+        return this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/sia-share-file?origin=' + encodeURIComponent(window.location.origin), relationship)
         .subscribe((res) => {
             var files = res.json();
         })

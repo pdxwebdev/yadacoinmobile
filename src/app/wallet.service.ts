@@ -44,7 +44,7 @@ export class WalletService {
                 let headers = new Headers();
                 headers.append('Authorization', 'Bearer ' + this.settingsService.tokens[this.bulletinSecretService.keyname]);
                 let options = new RequestOptions({ headers: headers, withCredentials: true });
-                this.ahttp.get(this.settingsService.remoteSettings['walletUrl'] + '?fastgraph=' + fastgraph + '&address=' + this.bulletinSecretService.key.getAddress() + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret + '&origin=' + window.location.href, options).
+                this.ahttp.get(this.settingsService.remoteSettings['walletUrl'] + '?fastgraph=' + fastgraph + '&address=' + this.bulletinSecretService.key.getAddress() + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret + '&origin=' + window.location.origin, options).
                 subscribe((data) => {
                     if(data['_body']) {
                         this.walletError = false;
