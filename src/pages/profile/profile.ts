@@ -48,7 +48,7 @@ export class ProfilePage {
     }
 
     refresh(refresher) {
-        this.isFriend = false;
+        this.isFriend = null;
         this.graphService.getFriends()
         .then(() => {
             for (var i=0; i < this.graphService.graph.friends.length; i++) {
@@ -57,6 +57,7 @@ export class ProfilePage {
                     this.isFriend = true;
                 }
             }
+            this.isFriend = this.isFriend || false;
         })
     }
 

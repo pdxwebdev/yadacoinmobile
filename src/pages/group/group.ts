@@ -8,10 +8,12 @@ import { AlertController, LoadingController, ToastController } from 'ionic-angul
 import { TransactionService } from '../../app/transaction.service';
 import { SettingsService } from '../../app/settings.service';
 import { ListPage } from '../list/list';
+import { ProfilePage } from '../profile/profile';
 import { SiaFiles } from '../siafiles/siafiles';
 import { Http } from '@angular/http';
 
 declare var Base64;
+declare var foobar;
 
 @Component({
     selector: 'page-group',
@@ -158,6 +160,26 @@ export class GroupPage {
             position: 'top'
         });
         toast.present();
+    }
+
+    viewProfile(item) {
+        var bulletin_secrets = [this.bulletinSecretService.bulletin_secret, item.relationship.my_bulletin_secret].sort(function (a, b) {
+            return a.toLowerCase().localeCompare(b.toLowerCase());
+        });
+        if (bulletin_secrets[0] === bulletin_secrets[1]) return;
+        return this.graphService.getFriends()
+        .then(() => {
+            var rid = foobar.bitcoin.crypto.sha256(bulletin_secrets[0] + bulletin_secrets[1]).toString('hex');
+            for (var i=0; i < this.graphService.graph.friends.length; i++) {
+                var friend = this.graphService.graph.friends[i];
+                if (friend.rid === rid) {
+                    item = friend;
+                }
+            }
+            this.navCtrl.push(ProfilePage, {
+                item: item
+            })
+        })
     }
 
     send() {

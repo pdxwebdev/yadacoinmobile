@@ -12,7 +12,7 @@
   <ion-spinner *ngIf="loading"></ion-spinner>
 	<ion-list>
 	  <ion-item *ngFor="let item of chats" text-wrap>
-        <strong><span ion-text style="font-size: 20px;">{{(item.public_key == public_key) ? graphService.friends_indexed[item.rid].relationship.my_username : graphService.friends_indexed[item.rid].relationship.their_username}}</span> </strong><span style="font-size: 10px; color: rgb(88, 88, 88);" ion-text>{{item.time}}</span>
+        <strong><span ion-text style="font-size: 20px;" (click)="viewProfile(item)">{{(item.public_key == public_key) ? graphService.friends_indexed[item.rid].relationship.my_username : graphService.friends_indexed[item.rid].relationship.their_username}}</span> </strong><span style="font-size: 10px; color: rgb(88, 88, 88);" ion-text>{{item.time}}</span>
         <h3>{{item.relationship.chatText}}</h3>
         <hr />
 	  </ion-item>

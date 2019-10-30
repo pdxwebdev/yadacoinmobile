@@ -12,19 +12,19 @@
         <h1>{{item.relationship.their_username}}</h1></ion-item>
     </ion-col>
     <ion-col>
-      <button ion-button large secondary (click)="addFriend()" *ngIf="!isFriend && item.relationship.group !== true">
+      <button ion-button large secondary (click)="addFriend()" *ngIf="isFriend === false && item.relationship.group !== true">
         Add friend&nbsp;<ion-icon name="create"></ion-icon>
       </button>
-      <button ion-button large secondary (click)="joinGroup()" *ngIf="!isFriend && item.relationship.group === true">
+      <button ion-button large secondary (click)="joinGroup()" *ngIf="isFriend === false && item.relationship.group === true">
         Join group&nbsp;<ion-icon name="create"></ion-icon>
       </button>
-      <button ion-button large secondary (click)="message()" *ngIf="isFriend">
+      <button ion-button large secondary (click)="message()" *ngIf="isFriend === true">
         {{item.relationship.group === true ? "Group" : "Direct"}} message&nbsp;<ion-icon name="create"></ion-icon>
       </button>
-      <button ion-button large secondary (click)="invite()" *ngIf="isFriend">
+      <button ion-button large secondary (click)="invite()" *ngIf="isFriend === true">
         Invite&nbsp;<ion-icon name="create"></ion-icon>
       </button>
-      <button ion-button large secondary (click)="refer()" *ngIf="isFriend">
+      <button ion-button large secondary (click)="refer()" *ngIf="isFriend === true">
         Refer&nbsp;<ion-icon name="create"></ion-icon>
       </button>
     </ion-col>

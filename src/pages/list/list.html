@@ -22,13 +22,13 @@
   <ion-list>
     <button ion-item *ngFor="let item of items" (click)="itemTapped($event, item)">
       <span *ngIf="pageTitle =='Groups'">{{item.transaction.relationship.their_username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
-      <span *ngIf="pageTitle =='Sent Requests'">{{item.transaction.relationship.their_username}}</span>
-      <span *ngIf="pageTitle =='Friend Requests'">{{item.transaction.username}}</span>
-      <span *ngIf="pageTitle =='Messages' && !item.transaction.new">{{item.transaction.relationship.their_username}}</span>
+      <span *ngIf="pageTitle =='Sent Requests'">{{item.transaction.relationship.their_username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
+      <span *ngIf="pageTitle =='Friend Requests'">{{item.transaction.username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
+      <span *ngIf="pageTitle =='Messages' && !item.transaction.new">{{item.transaction.relationship.their_username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
       <span *ngIf="pageTitle =='Chat' && item.transaction.new"><strong>{{item.transaction.relationship.their_username}}</strong></span>
       <span *ngIf="pageTitle =='Sign Ins' && !item.transaction.new">{{item.transaction.relationship.their_username}}</span>
       <span *ngIf="pageTitle =='Sign Ins' && item.transaction.new"><strong>{{item.transaction.relationship.their_username}}</strong></span>
-      <span *ngIf="pageTitle =='Friends'">{{item.transaction.relationship.their_username}}</span>
+      <span *ngIf="pageTitle =='Friends'">{{item.transaction.relationship.their_username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
       <span *ngIf="pageTitle =='Reacts Detail'">{{item.transaction.relationship.react}} {{item.transaction.username}}</span>
       <span *ngIf="pageTitle =='Comment Reacts Detail'">{{item.transaction.relationship.react}} {{item.transaction.username}}</span>
     </button>

@@ -40,6 +40,7 @@
     </ion-row>
   </ion-list>
   <h3>Identities</h3>
+  <button ion-button secondary (click)="createKey()">Create identity</button>
   <ion-list>
     <ion-row>
       <ion-col col-lg-3 col-md-4 col-sm-4 *ngFor="let key of keys">
@@ -58,24 +59,24 @@
   </ion-list>
   <ion-list *ngIf="bulletinSecretService.keyname">
     <hr/>
-    <h4>Export Identity</h4>
+    <h4>Export identity</h4>
     <ion-item>
       <ion-input type="text" [(ngModel)]="activeKey">
       </ion-input>
     </ion-item>
-    <h4>Bulletin Secret</h4>
+    <h4>Bulletin secret</h4>
     <ion-item>
       <ion-input type="text" [(ngModel)]="bulletinSecretService.bulletin_secret">
       </ion-input>
-      <button ion-button secondary (click)="exportKey()">Export Active Identity</button>
+      <button ion-button secondary (click)="exportKey()">Export active identity</button>
     </ion-item>
   </ion-list>
-  <ion-list *ngIf="settingsService.remoteSettingsUrl">
-    <h4>Import Identity</h4>
+  <ion-list>
+    <h4>Import identity</h4>
     <ion-item>
       <ion-input type="text" placeholder="Paste WIF key from your wallet..." [(ngModel)]="importedKey">
       </ion-input>
     </ion-item>
-    <button ion-button secondary (click)="importKey()">Import Identity</button>
+    <button ion-button secondary (click)="importKey()">Import identity</button>
   </ion-list>
 </ion-content>

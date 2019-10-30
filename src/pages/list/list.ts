@@ -10,6 +10,7 @@ import { SettingsService } from '../../app/settings.service';
 import { SocialSharing } from '@ionic-native/social-sharing';
 import { ChatPage } from '../chat/chat';
 import { GroupPage } from '../group/group';
+import { ProfilePage } from '../profile/profile';
 import { Events } from 'ionic-angular';
 import { Http } from '@angular/http';
 
@@ -347,9 +348,9 @@ export class ListPage {
       this.navCtrl.push(GroupPage, {
         item: item
       });
-    } else if(this.pageTitle == 'Friends' && this.context == 'newChat') {
-      this.navCtrl.push(ChatPage, {
-        item: item
+    } else if(this.pageTitle == 'Friends') {
+      this.navCtrl.push(ProfilePage, {
+        item: item.transaction
       });
     } else {
       this.navCtrl.push(ListPage, {

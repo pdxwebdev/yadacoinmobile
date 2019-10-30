@@ -21,7 +21,7 @@
     <ion-item>
       <ion-textarea placeholder="Shortened url (35 chars max)" [(ngModel)]="filepath"></ion-textarea>
     </ion-item>
-    <button ion-button secondary (click)="upload()" *ngIf="mode == 'page'">Upload</button>
+    <button ion-button secondary (click)="upload()" *ngIf="mode == 'page'" [disabled]="filepath">Upload</button>
     <ion-item *ngIf="mode == 'page'">
       <ion-list>
         <ion-item *ngFor="let file of files">

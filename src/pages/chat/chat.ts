@@ -8,9 +8,11 @@ import { AlertController, LoadingController } from 'ionic-angular';
 import { TransactionService } from '../../app/transaction.service';
 import { SettingsService } from '../../app/settings.service';
 import { ListPage } from '../list/list';
+import { ProfilePage } from '../profile/profile';
 import { Http } from '@angular/http';
 
 declare var X25519;
+declare var foobar;
 
 @Component({
     selector: 'page-chat',
@@ -78,6 +80,21 @@ export class ChatPage {
         });
     }
 
+    viewProfile(item) {
+        return this.graphService.getFriends()
+        .then(() => {
+            for (var i=0; i < this.graphService.graph.friends.length; i++) {
+                var friend = this.graphService.graph.friends[i];
+                if (friend.rid === item.rid) {
+                    item = friend;
+                }
+            }
+            this.navCtrl.push(ProfilePage, {
+                item: item
+            })
+        })
+    }
+
     send() {
         let alert = this.alertCtrl.create();
         alert.setTitle('Approve transaction');
@@ -122,30 +139,6 @@ export class ChatPage {
                             return reject();    
                         });                
                     }
-                }).then((hash) => {
-                    return new Promise((resolve, reject) => {
-                        this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/sign-raw-transaction', {
-                            hash: hash, 
-                            bulletin_secret: this.bulletinSecretService.bulletin_secret,
-                            input: this.transactionService.transaction.inputs[0].id,
-                            id: this.transactionService.transaction.id,
-                            txn: this.transactionService.transaction
-                        })
-                        .subscribe((res) => {
-                            //this.loadingModal2.dismiss();
-                            try {
-                                let data = res.json();
-                                this.transactionService.transaction.signatures = [data.signature]
-                                return resolve();
-                            } catch(err) {
-                                return reject(err);
-                                //this.loadingModal.dismiss().catch(() => {});
-                            }
-                        },
-                        (err) => {
-                            return reject(err);
-                        });
-                    });
                 }).then((txn) => {
                     return this.transactionService.sendTransaction();
                 }).then(() => {
