@@ -4,7 +4,7 @@ import { Storage } from '@ionic/storage';
 import { GraphService } from '../../app/graph.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { WalletService } from '../../app/wallet.service';
-import { AlertController, LoadingController } from 'ionic-angular';
+import { AlertController, LoadingController, ToastController } from 'ionic-angular';
 import { TransactionService } from '../../app/transaction.service';
 import { SettingsService } from '../../app/settings.service';
 import { ListPage } from '../list/list';
@@ -13,6 +13,7 @@ import { Http } from '@angular/http';
 
 declare var X25519;
 declare var foobar;
+declare var Base64;
 
 @Component({
     selector: 'page-chat',
@@ -42,7 +43,8 @@ export class ChatPage {
         public loadingCtrl: LoadingController,
         public bulletinSecretService: BulletinSecretService,
         public settingsService: SettingsService,
-        public ahttp: Http
+        public ahttp: Http,
+        public toastCtrl: ToastController
     ) {
         this.rid = navParams.data.item.transaction.rid;
         var key = 'last_message_height-' + navParams.data.item.transaction.rid;
@@ -93,6 +95,62 @@ export class ChatPage {
                 item: item
             })
         })
+    }
+
+    joinGroup(item) {
+        return new Promise((resolve, reject) => {
+            var invite = item.relationship.chatText;
+            var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
+            var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
+            var dh_private_key = this.toHex(raw_dh_private_key);
+            var dh_public_key = this.toHex(raw_dh_public_key);
+            resolve({
+                their_address: invite.their_address,
+                their_public_key: invite.their_public_key,
+                their_bulletin_secret: invite.their_bulletin_secret,
+                their_username: invite.their_username,
+                dh_public_key: dh_public_key,
+                dh_private_key: dh_private_key,
+                requested_rid: invite.requested_rid,
+                requester_rid: this.graphService.graph.rid
+            })
+        })
+        .then((info: any) => {
+            return this.transactionService.generateTransaction({
+                relationship: {
+                    dh_private_key: info.dh_private_key,
+                    my_bulletin_secret: this.bulletinSecretService.generate_bulletin_secret(),
+                    my_username: this.bulletinSecretService.username,
+                    their_address: info.their_address,
+                    their_public_key: info.their_public_key,
+                    their_bulletin_secret: info.their_bulletin_secret,
+                    their_username: info.their_username,
+                    group: true
+                },
+                requester_rid: info.requester_rid,
+                requested_rid: info.requested_rid,
+                dh_public_key: info.dh_public_key,
+                to: info.their_address
+            })
+        
+        }).then((txn) => {
+            return this.transactionService.sendTransaction();
+        })
+        .then((hash) => {
+            if (this.settingsService.remoteSettings['walletUrl']) {
+                return this.graphService.getInfo();
+            }
+        })
+        .then(() => {
+            const toast = this.toastCtrl.create({
+                message: 'Group joined!',
+                duration: 2000
+            });
+            toast.present();
+            return this.refresh(null)
+        })
+        .catch((err) => {
+        });
     }
 
     send() {

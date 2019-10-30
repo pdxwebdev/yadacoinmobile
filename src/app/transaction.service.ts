@@ -262,8 +262,11 @@ export class TransactionService {
                 hash = foobar.bitcoin.crypto.sha256(
                     this.transaction.public_key +
                     this.transaction.time +
+                    this.transaction.rid +
                     this.transaction.relationship +
                     this.transaction.fee.toFixed(8) +
+                    this.transaction.requester_rid +
+                    this.transaction.requested_rid +
                     inputs_hashes_concat +
                     outputs_hashes_concat
                 ).toString('hex')
@@ -275,8 +278,11 @@ export class TransactionService {
                 hash = foobar.bitcoin.crypto.sha256(
                     this.transaction.public_key +
                     this.transaction.time +
+                    this.transaction.rid +
                     this.transaction.relationship +
                     this.transaction.fee.toFixed(8) +
+                    this.transaction.requester_rid +
+                    this.transaction.requested_rid +
                     inputs_hashes_concat +
                     outputs_hashes_concat
                 ).toString('hex')
@@ -290,6 +296,8 @@ export class TransactionService {
                     this.transaction.rid +
                     this.transaction.relationship +
                     this.transaction.fee.toFixed(8) +
+                    this.transaction.requester_rid +
+                    this.transaction.requested_rid +
                     inputs_hashes_concat +
                     outputs_hashes_concat
                 ).toString('hex')
@@ -311,6 +319,7 @@ export class TransactionService {
                 hash = foobar.bitcoin.crypto.sha256(
                     this.transaction.public_key +
                     this.transaction.time +
+                    this.transaction.rid +
                     this.transaction.fee.toFixed(8) +
                     inputs_hashes_concat +
                     outputs_hashes_concat
@@ -366,7 +375,12 @@ export class TransactionService {
                 url,
                 this.transaction)
             .subscribe((data) => {
-                resolve(JSON.parse(data['_body']));
+                try {
+                    resolve(JSON.parse(data['_body']));
+                }
+                catch(err) {
+                    reject(err);
+                }                
             },
             (error) => {
                 if (this.txnattempts.length > 0) {

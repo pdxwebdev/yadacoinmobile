@@ -124,6 +124,7 @@ export class Settings {
         }
         favorite.active = true;
         this.settingsService.remoteSettingsUrl = favorite.url;
+        this.storage.set('node', favorite.url);
     }
 
     removeFavorite(favorite) {

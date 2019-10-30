@@ -23,8 +23,8 @@ export class PeerService {
         public storage: Storage
     ) {
         this.seeds = [
-            //{"host": "0.0.0.0","port": 8001 },
-            {"host": "34.237.46.10","port": 80 },
+            {"host": "0.0.0.0","port": 8001 },
+            //{"host": "34.237.46.10","port": 80 },
             //{"host": "51.15.86.249","port": 8000 },
             //{"host": "178.32.96.27","port": 8000 },
             //{"host": "188.165.250.78","port": 8000 },

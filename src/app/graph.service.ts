@@ -406,6 +406,7 @@ export class GraphService {
             var decrypted = this.decrypt(sent_friend_request['relationship']);
             try {
                 var relationship = JSON.parse(decrypted);
+                if (!relationship.their_username || !relationship.their_bulletin_secret) continue;
                 sent_friend_requestsObj[sent_friend_request.rid] = sent_friend_request;
                 //not sure how this affects the friends list yet, since we can't return friends from here
                 //friends[sent_friend_request.rid] = sent_friend_request;
@@ -693,6 +694,13 @@ export class GraphService {
                             messages[message.rid] = message;
                             if (!chats[message.rid]) {
                                 chats[message.rid] = [];
+                            }
+                            try {
+                                message.relationship.chatText = JSON.parse(Base64.decode(messageJson[messageType]));
+                                message.relationship.isInvite = true;
+                            }
+                            catch(err) {
+                                //not an invite, do nothing
                             }
                             chats[message.rid].push(message);
                             if(this[graphCounts][message.rid]) {

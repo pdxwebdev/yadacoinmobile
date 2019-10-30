@@ -14,6 +14,7 @@ import { Http } from '@angular/http';
 
 declare var Base64;
 declare var foobar;
+declare var X25519;
 
 @Component({
     selector: 'page-group',
@@ -40,6 +41,7 @@ export class GroupPage {
     their_address: any;
     extraInfo: any;
     files: any;
+    item: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -57,6 +59,7 @@ export class GroupPage {
     ) {
         this.extraInfo = {};
         this.wallet_mode = true;
+        this.item = navParams.data.item.transaction;
         this.rid = navParams.data.item.transaction.rid;
         this.requester_rid = navParams.data.item.transaction.requester_rid;
         this.requested_rid = navParams.data.item.transaction.requested_rid;
@@ -71,23 +74,89 @@ export class GroupPage {
         });
         this.refresh(null, true);
     }
-
+    
     showInvite() {
-        let alert = this.alertCtrl.create();
-        alert.setTitle('Invite');
-        alert.setSubTitle('copy and paste this entire string of characters');
-        alert.addButton('Done');
-        alert.addInput({
-            type: 'text',
-            value: Base64.encode(JSON.stringify({
-                their_public_key: this.their_public_key,
-                their_bulletin_secret: this.their_bulletin_secret,
-                requested_rid: this.requested_rid || this.rid,
-                their_username: this.their_username,
-                their_address: this.their_address
-            }))            
-        })
-        alert.present();
+        this.graphService.getFriends()
+        .then(() => {
+            let alert = this.alertCtrl.create();
+            alert.setTitle('Invite');
+            alert.setSubTitle('Select a friend to invite.');
+            alert.addButton({
+                text: 'Confirm',
+                handler: (data: any) => {
+                    this.walletService.get()
+                    .then(() => {
+                        var dh_public_key = this.graphService.keys[data.rid].dh_public_keys[0];
+                        var dh_private_key = this.graphService.keys[data.rid].dh_private_keys[0];
+    
+                        if(dh_public_key && dh_private_key) {
+                            var privk = new Uint8Array(dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
+                                return parseInt(h, 16)
+                            }));
+                            var pubk = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
+                                return parseInt(h, 16)
+                            }));
+                            var shared_secret = this.toHex(X25519.getSharedKey(privk, pubk));
+                        }
+                        var myAddress = this.bulletinSecretService.key.getAddress();
+                        var to = false;
+                        for (var h=0; h < data.outputs.length; h++) {
+                            if (data.outputs[h].to != myAddress) {
+                                to = data.outputs[h].to;
+                            }
+                        }
+                        return this.transactionService.generateTransaction({
+                            relationship: {
+                                chatText: Base64.encode(JSON.stringify({
+                                    their_public_key: this.item.public_key,
+                                    their_bulletin_secret: this.item.relationship.their_bulletin_secret,
+                                    
+                                    their_username: this.item.relationship.their_username,
+                                    their_address: this.item.relationship.their_address,
+                                    group: true,
+                                    requested_rid: this.requested_rid
+                                }))
+                            },
+                            their_bulletin_secret: data.relationship.their_bulletin_secret,
+                            rid: data.rid,
+                            requester_rid: data.requester_rid,
+                            requested_rid: data.requested_rid,
+                            shared_secret: shared_secret,
+                            to: to
+                        });
+                    }).then((txn) => {
+                        return this.transactionService.sendTransaction();
+                    }).then(() => {
+                        const toast = this.toastCtrl.create({
+                            message: "Group invite sent!",
+                            duration: 2000,
+                        });
+                        toast.present();
+                        this.groupChatText = '';
+                        this.refresh(null);
+                    })
+                    .catch((err) => {
+                       console.log(err); 
+                       let alert = this.alertCtrl.create();
+                       alert.setTitle('Message error');
+                       alert.setSubTitle(err);
+                       alert.addButton('Ok');
+                       alert.present();
+                    });
+                }
+            });
+            for (var i=0; i < this.graphService.graph.friends.length; i++) {
+                var friend = this.graphService.graph.friends[i];
+                alert.addInput({
+                    name: 'username',
+                    type: 'radio',
+                    label: friend.relationship.their_username,
+                    value: friend,
+                    checked: false
+                });
+            }
+            alert.present();
+        });
     }
 
     parseChats() {
@@ -247,7 +316,7 @@ export class GroupPage {
                    alert.addButton('Ok');
                    alert.present();
                 });
-               }
+            }
         });
         alert.present();
     }

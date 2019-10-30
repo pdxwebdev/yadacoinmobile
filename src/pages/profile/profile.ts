@@ -62,21 +62,24 @@ export class ProfilePage {
     }
 
     invite() {
-        let alert = this.alertCtrl.create();
-        alert.setTitle('Invite');
-        alert.setSubTitle('copy and paste this entire string of characters');
-        alert.addButton('Done');
-        alert.addInput({
-            type: 'text',
-            value: Base64.encode(JSON.stringify({
-                their_public_key: this.item.public_key,
-                their_bulletin_secret: this.item.relationship.their_bulletin_secret,
-                requested_rid: this.item.requested_rid || this.item.rid,
-                their_username: this.item.relationship.their_username,
-                their_address: this.item.relationship.their_address
-            }))            
-        })
-        alert.present();
+        this.graphService.getFriends()
+        .then(() => {
+            let alert = this.alertCtrl.create();
+            alert.setTitle('Invite');
+            alert.setSubTitle('Select a friend to invite.');
+            alert.addButton('Confirm');
+            alert.addInput({
+                name: 'radio1',
+                type: 'radio',
+                label: 'Radio 1',
+                value: 'value1',
+                checked: true
+            });
+            this.graphService.graph.friends.map((friend) => {
+                return friend;
+            });
+            alert.present();
+        });
     }
 
     addFriend() {
