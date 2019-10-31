@@ -23,6 +23,7 @@ export class SiaFiles {
     selectedFile = null;
     filepath = '';
     group = null;
+    error = '';
     constructor(
         public navParams: NavParams,
         public viewCtrl: ViewController,
@@ -43,6 +44,9 @@ export class SiaFiles {
         this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/sia-files', options)
         .subscribe((res) => {
             this.files = res.json()['files'];
+        },
+        (err) => {
+            this.error = err.json().message
         })
     }
 

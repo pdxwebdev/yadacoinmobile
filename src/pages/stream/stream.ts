@@ -46,6 +46,7 @@ export class StreamPage {
     groups: any;
     selectedGroup: any;
     label: any;
+    error: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -67,7 +68,10 @@ export class StreamPage {
         // if (this.showLoading) {
         //     this.loading = true;
         // }
-        this.graphService.getGroups()
+        this.getSiaFiles()
+        .then(() => {
+            this.graphService.getGroups()
+        })
         .then(() => {
             return new Promise((resolve, reject) => {
                 for(var i=0; i < this.graphService.graph.groups.length; i++) {
@@ -103,6 +107,7 @@ export class StreamPage {
             setInterval(() => this.cycleMedia(), 1200000)
         })
         .catch((err) => {
+            this.error = true;
             console.log(err);
         });
     }
@@ -113,6 +118,7 @@ export class StreamPage {
     }
 
     cycleMedia() {
+        if(this.error) return;
         if(!this.groups[this.i]) {
             this.i = 0;
             if(!this.groups[this.i]) {
@@ -153,6 +159,9 @@ export class StreamPage {
             console.log('New file imported:');
             console.log(res.json());
             var files = res.json();
+        },
+        (err) => {
+            this.error = true;
         })
     }
 
@@ -194,9 +203,16 @@ export class StreamPage {
     }
 
     getSiaFiles() {
-        return this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/sia-files')
-        .subscribe((res) => {
-            var files = res.json();
+        return new Promise((resolve, reject) => {
+            this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/sia-files')
+            .subscribe((res) => {
+                var files = res.json();
+                resolve(files);
+            },
+            (err) => {
+                this.error = true;
+                reject(this.error);
+            })
         })
     }
 }

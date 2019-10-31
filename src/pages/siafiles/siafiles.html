@@ -1,47 +1,48 @@
 <ion-header>
-    <ion-toolbar>
-      <ion-title>
-        Files
-      </ion-title>
-      <ion-buttons start *ngIf="mode == 'modal'">
-        <button ion-button (click)="dismiss()">
-          <span ion-text color="primary" showWhen="ios">Cancel</span>
-          <ion-icon name="md-close" showWhen="android,windows,core"></ion-icon>
-        </button>
-      </ion-buttons>
-    </ion-toolbar>
-  </ion-header>
-  <ion-content>
-    <ion-item *ngIf="mode == 'modal'">
-      <ion-label>Files</ion-label>
-      <ion-select [(ngModel)]="selectedFile">
-        <ion-option *ngFor="let file of files" value="{{file.siapath}}">{{file.siapath}}</ion-option>
-      </ion-select>
-    </ion-item>
-    <ion-item>
-      <ion-textarea placeholder="Shortened url (35 chars max)" [(ngModel)]="filepath"></ion-textarea>
-    </ion-item>
-    <button ion-button secondary (click)="upload()" *ngIf="mode == 'page'" [disabled]="filepath">Upload</button>
-    <ion-item *ngIf="mode == 'page'">
-      <ion-list>
-        <ion-item *ngFor="let file of files">
-          <a *ngIf="file.available" href="{{file.stream_url}}" target="_blank">
-            <h3>{{file.siapath}}</h3>
-          </a>
-          <h3 *ngIf="!file.available">{{file.siapath}} (uploading...)</h3><button ion-button danger (click)="delete(file.siapath)">Delete</button>
-        </ion-item>
-      </ion-list>
-    </ion-item>
-    <button ion-button secondary (click)="submit()" *ngIf="mode == 'modal'">Post</button>
-    <ion-card *ngIf="post.title">
-      <img src="{{post.image}}" *ngIf="post.image" />
-      <ion-card-content>
-        <ion-card-title>
-          {{post.title}}
-        </ion-card-title>
-        <p *ngIf="post.description">
-          {{post.description}}
-        </p>
-      </ion-card-content>
-    </ion-card>
-  </ion-content>
+  <ion-toolbar>
+    <ion-title>
+      Files
+    </ion-title>
+    <ion-buttons start *ngIf="mode == 'modal'">
+      <button ion-button (click)="dismiss()">
+        <span ion-text color="primary" showWhen="ios">Cancel</span>
+        <ion-icon name="md-close" showWhen="android,windows,core"></ion-icon>
+      </button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+<ion-content>
+  <ion-item *ngIf="mode == 'modal' && !error">
+    <ion-label>Files</ion-label>
+    <ion-select [(ngModel)]="selectedFile">
+      <ion-option *ngFor="let file of files" value="{{file.siapath}}">{{file.siapath}}</ion-option>
+    </ion-select>
+  </ion-item>
+  <ion-item *ngIf="!error">
+    <ion-textarea placeholder="Shortened url (35 chars max)" [(ngModel)]="filepath"></ion-textarea>
+  </ion-item>
+  <button ion-button secondary (click)="upload()" *ngIf="mode == 'page' && !error" [disabled]="filepath">Upload</button>
+  <ion-item *ngIf="mode == 'page' && !error">
+    <ion-list>
+      <ion-item *ngFor="let file of files">
+        <a *ngIf="file.available" href="{{file.stream_url}}" target="_blank">
+          <h3>{{file.siapath}}</h3>
+        </a>
+        <h3 *ngIf="!file.available">{{file.siapath}} (uploading...)</h3><button ion-button danger (click)="delete(file.siapath)">Delete</button>
+      </ion-item>
+    </ion-list>
+  </ion-item>
+  <button ion-button secondary (click)="submit()" *ngIf="mode == 'modal'">Post</button>
+  <ion-card *ngIf="post.title">
+    <img src="{{post.image}}" *ngIf="post.image" />
+    <ion-card-content>
+      <ion-card-title>
+        {{post.title}}
+      </ion-card-title>
+      <p *ngIf="post.description">
+        {{post.description}}
+      </p>
+    </ion-card-content>
+  </ion-card>
+  <ion-item *ngIf="error">You must download the <a href="https://github.com/pdxwebdev/yadacoin/releases/latest" target="_blank">full node</a> to store and share files.</ion-item>
+</ion-content>

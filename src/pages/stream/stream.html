@@ -7,8 +7,9 @@
     </ion-navbar>
 </ion-header>
 <ion-content>
-    <ion-list>
+    <ion-list *ngIf="!error">
         <button ion-item *ngFor="let group of groups" (click)="selectGroup(group.requested_rid || group.rid)">{{group.relationship.their_username}}</button>
     </ion-list>
-    <iframe [src]="sanitize(streamUrl)" width="100%" height="100%" border="0" *ngIf="streamUrl" id="iframe"></iframe>
+    <iframe [src]="sanitize(streamUrl)" width="100%" height="100%" border="0" *ngIf="streamUrl && !error" id="iframe"></iframe>
+    <ion-item *ngIf="error">You must download the <a href="https://github.com/pdxwebdev/yadacoin/releases/latest" target="_blank">full node</a> to stream content from the blockchain.</ion-item>
 </ion-content>

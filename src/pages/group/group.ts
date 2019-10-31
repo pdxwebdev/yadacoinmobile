@@ -117,7 +117,6 @@ export class GroupPage {
                                     requested_rid: this.requested_rid
                                 }))
                             },
-                            their_bulletin_secret: data.relationship.their_bulletin_secret,
                             rid: data.rid,
                             requester_rid: data.requester_rid,
                             requested_rid: data.requested_rid,

@@ -46,6 +46,7 @@ export class GraphService {
     getcommentReactsError = false;
     getcommentRepliesError = false;
     usernames = {};
+    bulletin_secret = '';
     constructor(
         private storage: Storage,
         private bulletinSecretService: BulletinSecretService,
@@ -99,6 +100,7 @@ export class GraphService {
                 try {
                     var info = JSON.parse(data['_body']);
                     this.graph.rid = info.rid;
+                    this.graph.bulletin_secret = info.bulletin_secret;
                     this.graph.registered = info.registered;
                     this.graph.pending_registration = info.pending_registration;
                     resolve(info);

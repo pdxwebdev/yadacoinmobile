@@ -614,30 +614,33 @@ export class HomePage {
     }
 
     createGroup() {
-        new Promise((resolve, reject) => {
-            let alert = this.alertCtrl.create({
-                title: 'Set group name',
-                inputs: [
-                {
-                    name: 'groupname',
-                    placeholder: 'Group name'
-                }
-                ],
-                buttons: [
-                {
-                    text: 'Save',
-                    handler: data => {
-                        const toast = this.toastCtrl.create({
-                            message: 'Group created',
-                            duration: 2000
-                        });
-                        toast.present();
-                        resolve(data.groupname);
+        this.graphService.getInfo()
+        .then(() => {
+            return new Promise((resolve, reject) => {
+                let alert = this.alertCtrl.create({
+                    title: 'Set group name',
+                    inputs: [
+                    {
+                        name: 'groupname',
+                        placeholder: 'Group name'
                     }
-                }
-                ]
-            });
-            alert.present();
+                    ],
+                    buttons: [
+                    {
+                        text: 'Save',
+                        handler: data => {
+                            const toast = this.toastCtrl.create({
+                                message: 'Group created',
+                                duration: 2000
+                            });
+                            toast.present();
+                            resolve(data.groupname);
+                        }
+                    }
+                    ]
+                });
+                alert.present();
+            })            
         })
         .then((groupname) => {
             return new Promise((resolve, reject) => {
@@ -660,10 +663,14 @@ export class HomePage {
                     wif: wif,
                     dh_public_key: dh_public_key,
                     dh_private_key: dh_private_key
-                })
+                });
             });
         })
         .then((info: any) => {
+            var bulletin_secrets = [this.graphService.graph.bulletin_secret, info.their_bulletin_secret].sort(function (a, b) {
+                return a.toLowerCase().localeCompare(b.toLowerCase());
+            });
+            var requested_rid = forge.sha256.create().update(bulletin_secrets[0] + bulletin_secrets[1]).digest().toHex();
             return this.transactionService.generateTransaction({
                 relationship: {
                     dh_private_key: info.dh_private_key,
@@ -678,7 +685,8 @@ export class HomePage {
                 },
                 dh_public_key: info.dh_public_key,
                 to: info.their_address,
-                requester_rid: this.graphService.graph.rid
+                requester_rid: this.graphService.graph.rid,
+                requested_rid: requested_rid
             })
         
         }).then((txn) => {
