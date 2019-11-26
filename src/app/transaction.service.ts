@@ -103,26 +103,7 @@ export class TransactionService {
                     unspent_transactions = [this.unspent_transaction_override];
                 } else {
                     this.info.relationship = this.info.relationship || {};
-                    if (
-                        this.info.requester_rid || 
-                        this.info.requested_rid || // is friend request/accept or group message
-                        this.info.relationship.postText || // is post
-                        this.info.relationship.comment || // is comment
-                        this.info.relationship.react || // is react
-                        this.info.relationship.chatText || // is chat
-                        this.info.relationship.signIn || // is signin
-                        (!this.info.requester_rid && !this.info.requested_rid && this.rid) || // is register, we now only allow registration and friend request/accept from non-fastgraph inputs
-                        Object.keys(this.info.relationship).length == 0 // is transfer
-                    ) {
-                        unspent_transactions = this.walletService.wallet.txns_for_fastgraph;
-                    } else {
-                        return reject('either no unspent outputs or wrong transaction type for unspent outputs')
-                    }
-                    if (unspent_transactions.length == 0 &&
-                        this.info.requester_rid && this.info.requested_rid &&
-                        this.info.dh_public_key && this.info.relationship.dh_private_key) { //creating a new relationship is the only txn we allow to come from non-fastgraph
-                        unspent_transactions = this.walletService.wallet.unspent_transactions;
-                    }
+                    unspent_transactions = this.walletService.wallet.unspent_transactions;
                     unspent_transactions.sort(function (a, b) {
                         if (a.height < b.height)
                           return -1
@@ -366,11 +347,8 @@ export class TransactionService {
     sendTransaction() {
         return new Promise((resolve, reject) => {
             var url = '';
-            if (this.transaction.signatures && this.transaction.signatures.length > 0) {
-                url = this.settingsService.remoteSettings['fastgraphUrl'] + '?bulletin_secret=' + this.bulletin_secret + '&to=' + this.key.getAddress() + '&username=' + this.username
-            } else {
-                url = this.settingsService.remoteSettings['transactionUrl'] + '?bulletin_secret=' + this.bulletin_secret + '&to=' + this.key.getAddress() + '&username=' + this.username
-            }
+            url = this.settingsService.remoteSettings['transactionUrl'] + '?bulletin_secret=' + this.bulletin_secret + '&to=' + this.key.getAddress() + '&username=' + this.username
+
             this.ahttp.post(
                 url,
                 this.transaction)

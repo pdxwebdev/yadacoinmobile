@@ -28,6 +28,8 @@ export class ChatPage {
     blockchainAddress: any;
     chats: any;
     rid: any;
+    requester_rid: any;
+    requested_rid: any;
     public_key: any;
     loading: any;
     loadingModal: any;
@@ -47,6 +49,8 @@ export class ChatPage {
         public toastCtrl: ToastController
     ) {
         this.rid = navParams.data.item.transaction.rid;
+        this.requester_rid = navParams.data.item.transaction.requester_rid || '';
+        this.requested_rid = navParams.data.item.transaction.requested_rid || '';
         var key = 'last_message_height-' + navParams.data.item.transaction.rid;
         if(navParams.data.item.transaction.height) this.storage.set(key, navParams.data.item.transaction.time);
         this.storage.get('blockchainAddress').then((blockchainAddress) => {
@@ -185,7 +189,9 @@ export class ChatPage {
                                 chatText: this.chatText 
                             },
                             shared_secret: shared_secret,
-                            rid: this.rid
+                            rid: this.rid,
+                            requester_rid: this.requester_rid,
+                            requested_rid: this.requested_rid,
                         });
                     } else {
                         return new Promise((resolve, reject) => {

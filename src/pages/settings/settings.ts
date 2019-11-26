@@ -54,6 +54,7 @@ export class Settings {
         public toastCtrl: ToastController,
         public peerService: PeerService
     ) {
+        if (typeof this.peerService.mode == 'undefined') this.peerService.mode = true;
         this.refresh(null).catch((err) => {
             console.log(err)
         });
@@ -266,10 +267,18 @@ export class Settings {
             alert.present();
         })
         .then((username) => {
-            return this.bulletinSecretService.create(username);
+            return new Promise((resolve, reject) => {
+                this.bulletinSecretService.create(username)
+                .then(() => {
+                    resolve(username);
+                });
+            })
         })
-        .then(() => {
-            return this.doSet(this.bulletinSecretService.keyname);
+        .then((key) => {
+            this.set(key)
+            .then(() => {
+                this.save();
+            });
         })
         .then(() => {
             if (this.settingsService.remoteSettings['walletUrl']) {
@@ -288,11 +297,6 @@ export class Settings {
     }
 
     selectIdentity(key) {
-        const toast = this.toastCtrl.create({
-            message: 'Now click the "go" button',
-            duration: 2000
-        });
-        toast.present();
         this.set(key)
         .then(() => {
             this.save();

@@ -14,6 +14,7 @@ export class PeerService {
     seeds = null;
     loading = false;
     mode: any;
+    failed_peers: any;
     constructor(
         private ahttp: Http,
         public walletService: WalletService,
@@ -30,7 +31,8 @@ export class PeerService {
             //{"host": "188.165.250.78","port": 8000 },
             //{"host": "116.203.24.126","port": 8000 }
         ]
-        this.mode = false;
+        this.mode = true;
+        this.failed_peers = [];
     }
 
     go() {
@@ -123,6 +125,7 @@ export class PeerService {
                     resolve();
                 },
                 (err) => {
+                    this.failed_peers.push(this.settingsService.remoteSettingsUrl)
                     this.loading = false;
                     return reject(err);
                 }

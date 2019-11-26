@@ -38,9 +38,10 @@ export class SendReceive {
         this.loadingModal = this.loadingCtrl.create({
             content: 'Please wait...'
         });
+        this.value = 0;
         this.bulletinSecretService.get().then(() => {
             this.createdCode = bulletinSecretService.key.getAddress();
-            this.refresh(null);
+            this.refresh();
         });
     }
 
@@ -93,32 +94,11 @@ export class SendReceive {
             text: 'Confirm',
             handler: (data: any) => {
                 this.loadingModal.present();
-                this.transactionService.generateTransaction({
-                    to: this.address,
-                    value: value
-                }).then((hash) => {
-                    return new Promise((resolve, reject) => {
-                        this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/sign-raw-transaction', {
-                            hash: hash, 
-                            bulletin_secret: this.bulletinSecretService.bulletin_secret,
-                            input: this.transactionService.transaction.inputs[0].id,
-                            id: this.transactionService.transaction.id,
-                            txn: this.transactionService.transaction
-                        })
-                        .subscribe((res) => {
-                            //this.loadingModal2.dismiss();
-                            try {
-                              let data = res.json();
-                              this.transactionService.transaction.signatures = [data.signature]
-                                resolve();
-                            } catch(err) {
-                                reject();
-                                this.loadingModal.dismiss().catch(() => {});
-                            }
-                        },
-                        (err) => {
-                            //this.loadingModal2.dismiss();
-                        });
+                this.walletService.get(this.value)
+                .then(() => {
+                    return this.transactionService.generateTransaction({
+                        to: this.address,
+                        value: value
                     });
                 }).then(() => {
                     return this.transactionService.sendTransaction();
@@ -134,9 +114,9 @@ export class SendReceive {
                     alert.setSubTitle(message);
                     alert.addButton('Ok');
                     alert.present();
-                    this.value = null;
-                    this.address = null;
-                    this.refresh(null);
+                    this.value = '0';
+                    this.address = '';
+                    this.refresh();
                     this.loadingModal.dismiss().catch(() => {});
                 })
                 .catch((err) => {
@@ -147,13 +127,12 @@ export class SendReceive {
         });
         alert.present();
     }
-    refresh(refresher) {
+    refresh() {
         this.loadingBalance = true;
-        this.walletService.get(false)
+        return this.walletService.get(this.value)
         .then(() => {
             this.loadingBalance = false;
             this.balance = this.walletService.wallet.balance;
-            if(refresher) refresher.complete();
         }).catch((err) => {
             console.log(err);  
         });

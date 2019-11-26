@@ -20,7 +20,8 @@
   </ion-refresher>
   <ion-item col-md-2>
     <ion-toggle color="primary" class="wallet-toggle" [(ngModel)]="peerService.mode"></ion-toggle>
-    <ion-label>Manual mode</ion-label>
+    <ion-label>Wallet mode</ion-label>
+    <ion-item *ngIf="!peerService.mode">Will connect to any available YadaCoin node. You can send YadaCoins in this mode but social interaction data is limited.</ion-item>
   </ion-item>
   <h3 *ngIf="peerService.mode">Nodes</h3>
   <ion-list *ngIf="peerService.mode">

@@ -13,6 +13,7 @@ import { ListPage } from '../pages/list/list';
 import { Settings } from '../pages/settings/settings';
 import { SiaFiles } from '../pages/siafiles/siafiles';
 import { StreamPage } from '../pages/stream/stream';
+import { SendReceive } from '../pages/sendreceive/sendreceive';
 //import { ProfilePage } from '../pages/profile/profile';
 //import { SendReceive } from '../pages/sendreceive/sendreceive';
 
@@ -64,11 +65,11 @@ export class MyApp {
       { title: 'Stream', label: 'Stream', component: StreamPage, count: false, color: '' },
       { title: 'Groups', label: 'Groups', component: ListPage, count: false, color: '' },
       { title: 'Files', label: 'Files', component: SiaFiles, count: false, color: '' },
-      //{ title: 'Following', label: 'Following', component: FollowingPage, count: false, color: '' },
       { title: 'Friends', label: 'Friends', component: ListPage, count: false, color: '' },
       { title: 'Messages', label: 'Messages', component: ListPage, count: false, color: '' },
       { title: 'Friend Requests', label: 'Friend Requests', component: ListPage, count: false, color: '' },
       { title: 'Sent Requests', label: 'Sent Requests', component: ListPage, count: false, color: '' },
+      { title: 'Send / Receive', label: 'Send / Receive', component: SendReceive, count: false, color: '' },
       { title: 'Identity', label: 'Identity', component: Settings, count: false, color: '' }
     ];
   }

@@ -19,12 +19,12 @@ export class WalletService {
         this.wallet = {};
     }
 
-    get(fastgraph=true) {
+    get(amount_needed=0) {
         return new Promise((resolve, reject) => {
             if (!this.settingsService.remoteSettings['walletUrl']) return resolve();
             this.bulletinSecretService.get()
             .then(() => {
-                return this.walletPromise(fastgraph);
+                return this.walletPromise(amount_needed);
             })
             .then(() => {
                 return resolve();  
@@ -35,7 +35,7 @@ export class WalletService {
         })
     }
 
-    walletPromise(fastgraph=true) {
+    walletPromise(amount_needed=0) {
         return new Promise((resolve, reject) => {
             if(!this.settingsService.remoteSettings['walletUrl']) {
                 return reject()
@@ -44,7 +44,7 @@ export class WalletService {
                 let headers = new Headers();
                 headers.append('Authorization', 'Bearer ' + this.settingsService.tokens[this.bulletinSecretService.keyname]);
                 let options = new RequestOptions({ headers: headers, withCredentials: true });
-                this.ahttp.get(this.settingsService.remoteSettings['walletUrl'] + '?fastgraph=' + fastgraph + '&address=' + this.bulletinSecretService.key.getAddress() + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret + '&origin=' + window.location.origin, options).
+                this.ahttp.get(this.settingsService.remoteSettings['walletUrl'] + '?amount_needed=' + amount_needed + '&address=' + this.bulletinSecretService.key.getAddress() + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret + '&origin=' + window.location.origin, options).
                 subscribe((data) => {
                     if(data['_body']) {
                         this.walletError = false;

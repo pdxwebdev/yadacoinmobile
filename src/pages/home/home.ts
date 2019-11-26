@@ -87,6 +87,19 @@ export class HomePage {
         this.prefix = 'usernames-';
         this.refresh(null)
         .then(() => {
+            return this.graphService.getInfo()
+        })
+        .then(() => {
+            return new Promise((resolve, reject) => {
+                let options = new RequestOptions({ withCredentials: true });
+                this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/fcm-token?origin=' + window.location.origin, {
+                  rid: this.graphService.graph.rid,
+                }, options).subscribe(() => {
+                    resolve();
+                });
+            })
+        })
+        .then(() => {
             if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
             return this.firebaseService.initFirebase();
             } else {
@@ -149,10 +162,16 @@ export class HomePage {
     }
 
     sendTokenToServer(token) {
-      this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/fcm-token', {
-        rid: this.graphService.graph.rid,
-        token: token,
-      }).subscribe(() => {});
+      return new Promise((resolve, reject) => {
+        let headers = new Headers({'Content-Type': 'application/json'});
+        let options = new RequestOptions({headers: headers, withCredentials: true });
+        this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/fcm-token?origin=' + window.location.origin, {
+          rid: this.graphService.graph.rid,
+          token: token,
+        }, options).subscribe(() => {
+            resolve();
+        });
+      })
     }
 
     updateUIForPushEnabled(token) {
