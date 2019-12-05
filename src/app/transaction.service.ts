@@ -92,7 +92,7 @@ export class TransactionService {
             } else {
                 transaction_total = this.transaction.fee;
             }
-            if ((this.info.relationship && this.info.relationship.dh_private_key && this.walletService.wallet.balance < (this.transaction.outputs[0].value + this.transaction.fee)) /* || this.walletService.wallet.unspent_transactions.length == 0*/) {
+            if ((this.info.relationship && this.info.relationship.dh_private_key && this.walletService.wallet.balance < transaction_total) /* || this.walletService.wallet.unspent_transactions.length == 0*/) {
                 reject("not enough money");
                 return
             } else {

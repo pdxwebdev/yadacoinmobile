@@ -17,12 +17,15 @@
       </button>
     </form>
     <ion-col col-lg-12 col-md-12 col-sm-12>
-      <button ion-button large secondary (click)="unlockWallet()" *ngIf="peerService.mode">
-        Unlock wallet&nbsp;<ion-icon name="create"></ion-icon>
-      </button>
       <button ion-button large secondary (click)="createGroup()">
         Create Group&nbsp;<ion-icon name="create"></ion-icon>
       </button>
+      <button large ion-button title="Sign in" (click)="signIn()" *ngIf="!settingsService.tokens[bulletinSecretService.keyname]">
+        Sign in&nbsp;<ion-icon name="create"></ion-icon>
+      </button>
+      <a ion-button large secondary href="{{settingsService.remoteSettings['baseUrl']}}/mfa?origin={{location.origin}}&rid={{graphService.graph.rid}}&id={{txnId}}&redirect=/" *ngIf="graphService.graph.rid && txnId" target="_blank">
+        Visit&nbsp;<ion-icon name="arrow-dropright"></ion-icon>
+      </a>
     </ion-col>
   </ion-row>
   <ion-list col-lg-7>

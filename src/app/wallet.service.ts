@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BulletinSecretService } from './bulletinSecret.service';
 import { SettingsService } from './settings.service';
 import { Http, RequestOptions, Headers } from '@angular/http';
+import { timeout } from 'rxjs/operators';
 
 
 @Injectable()
@@ -44,8 +45,9 @@ export class WalletService {
                 let headers = new Headers();
                 headers.append('Authorization', 'Bearer ' + this.settingsService.tokens[this.bulletinSecretService.keyname]);
                 let options = new RequestOptions({ headers: headers, withCredentials: true });
-                this.ahttp.get(this.settingsService.remoteSettings['walletUrl'] + '?amount_needed=' + amount_needed + '&address=' + this.bulletinSecretService.key.getAddress() + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret + '&origin=' + window.location.origin, options).
-                subscribe((data) => {
+                this.ahttp.get(this.settingsService.remoteSettings['walletUrl'] + '?amount_needed=' + amount_needed + '&address=' + this.bulletinSecretService.key.getAddress() + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret + '&origin=' + window.location.origin, options)
+                .pipe(timeout(30000))
+                .subscribe((data) => {
                     if(data['_body']) {
                         this.walletError = false;
                         this.wallet = JSON.parse(data['_body']);

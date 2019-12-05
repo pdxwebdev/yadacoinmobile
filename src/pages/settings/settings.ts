@@ -52,7 +52,8 @@ export class Settings {
         private walletService: WalletService,
         public events: Events,
         public toastCtrl: ToastController,
-        public peerService: PeerService
+        public peerService: PeerService,
+        private ahttp: Http
     ) {
         if (typeof this.peerService.mode == 'undefined') this.peerService.mode = true;
         this.refresh(null).catch((err) => {
@@ -280,6 +281,9 @@ export class Settings {
                 this.save();
             });
         })
+        .then(() => { 
+            this.selectIdentity(this.bulletinSecretService.keyname.substr(this.prefix.length));
+        })
         .then(() => {
             if (this.settingsService.remoteSettings['walletUrl']) {
                 return this.graphService.getInfo();
@@ -297,9 +301,48 @@ export class Settings {
     }
 
     selectIdentity(key) {
-        this.set(key)
+        this.loadingModal = this.loadingCtrl.create({
+            content: 'Finding node...'
+        });
+        this.loadingModal.present();
+        return this.peerService.go()
         .then(() => {
-            this.save();
+            return this.set(key);
+        })
+        .then(() => {
+            return this.refresh(null);
+        })
+        .then(() => {
+            return this.unlockWallet();
+        })
+        .then(() => { 
+            this.loadingModal.dismiss();
+        })
+        .then(() => {
+            this.navCtrl.setRoot(HomePage);
+        })
+        .catch((err)  => {
+            this.loadingModal.dismiss();  
+        });
+    }
+
+    unlockWallet() {
+        return new Promise((resolve, reject) => {
+            let options = new RequestOptions({ withCredentials: true });
+            this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/unlock?origin=' + encodeURIComponent(window.location.origin), {key_or_wif: this.activeKey}, options)
+            .subscribe((res) => {
+                this.settingsService.tokens[this.bulletinSecretService.keyname] = res.json()['token']
+                if (!this.settingsService.tokens[this.bulletinSecretService.keyname]) return resolve(res);
+                const toast = this.toastCtrl.create({
+                    message: 'Wallet unlocked!',
+                    duration: 2000
+                });
+                toast.present();
+                resolve(res);
+            },
+            (err) => {
+                return reject('cannot unlock wallet');
+            });
         });
     }
 
@@ -332,28 +375,13 @@ export class Settings {
     }
 
     save() {
-        this.loadingModal = this.loadingCtrl.create({
-            content: 'Please wait...'
-        });
-        this.loadingModal.present();
         this.graphService.graph = {
             comments: "",
             reacts: "",
             commentReacts: ""
         };
-        this.peerService.go()
-        .then(() => {
-            return this.set(this.bulletinSecretService.keyname.substr(this.prefix.length));
-        })
-        .then(() => {
-            this.navCtrl.setRoot(HomePage);
-        })
-        .then(() => { 
-            this.loadingModal.dismiss();
-        })
-        .catch((err)  => {
-            this.loadingModal.dismiss();  
-        });
+        
+        return this.set(this.bulletinSecretService.keyname.substr(this.prefix.length));
     }
 
     showChat() {

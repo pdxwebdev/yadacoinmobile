@@ -14,7 +14,9 @@ export class PeerService {
     seeds = null;
     loading = false;
     mode: any;
-    failed_peers: any;
+    failedSeedPeers: any;
+    peerLocked: any;
+    failedConfigPeers: any;
     constructor(
         private ahttp: Http,
         public walletService: WalletService,
@@ -24,35 +26,31 @@ export class PeerService {
         public storage: Storage
     ) {
         this.seeds = [
-            //{"host": "0.0.0.0","port": 8001 },
+            {"host": "0.0.0.0","port": 8000 },
             {"host": "34.237.46.10","port": 80 },
-            //{"host": "51.15.86.249","port": 8000 },
-            //{"host": "178.32.96.27","port": 8000 },
-            //{"host": "188.165.250.78","port": 8000 },
-            //{"host": "116.203.24.126","port": 8000 }
+            {"host": "51.15.86.249","port": 8000 },
+            {"host": "178.32.96.27","port": 8000 },
+            {"host": "188.165.250.78","port": 8000 },
+            {"host": "116.203.24.126","port": 8000 }
         ]
         this.mode = true;
-        this.failed_peers = [];
+        this.failedSeedPeers = new Set();
+        this.failedConfigPeers = new Set();
     }
 
     go() {
+        return new Promise(this.peerRoutine.bind(this));
+    }
+
+    peerRoutine(resolve, reject) {
+        this.peerLocked = false;
         if (this.loading) return;
         this.loading = true;
-        return this.storage.get('static-node')
+        return this.storage.get('node')
         .then((node) => {
-            if (node) {
-                this.mode = true;
-                return new Promise((resolve, reject) => {
-                    return resolve(node);
-                });
-            } else {
-                return this.storage.get('node');
-            }
-        })
-        .then((node) => {
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve2, reject2) => {
                 var seedPeer = '';
-                if (node) {
+                if (node && !this.failedSeedPeers.has(node)) {
                     this.settingsService.remoteSettingsUrl = node;
                 } else {
                     var min = 0; 
@@ -60,8 +58,13 @@ export class PeerService {
                     var number = Math.floor(Math.random() * (+max - +min)) + +min;
                     if (!this.seeds[number]) return reject(false);
                     seedPeer = 'http://' + this.seeds[number]['host'] + ':' + this.seeds[number]['port'];
+                    while (this.failedSeedPeers.has(seedPeer)) {
+                        number = Math.floor(Math.random() * (+max - +min)) + +min;
+                        if (!this.seeds[number]) return reject(false);
+                        seedPeer = 'http://' + this.seeds[number]['host'] + ':' + this.seeds[number]['port'];
+                    }
                 }
-                return resolve(seedPeer);
+                return resolve2(seedPeer);
             })
         })
         .then((seedPeer) => {
@@ -75,23 +78,40 @@ export class PeerService {
             if(step === 'config') {
                 return this.getConfig();
             }
-            return new Promise((resolve, reject) => {
-                return resolve();
+            return new Promise((resolve2, reject2) => {
+                return resolve2();
             });
         })
         .then(() => {
-            return this.walletService.get();
+            return new Promise((resolve2, reject2) => {
+                return this.walletService.get()
+                .then(() => {
+                    return resolve2();
+                })
+                .catch((err) => {
+                    this.failedConfigPeers.add(this.settingsService.remoteSettingsUrl);
+                    return reject2('config')
+                });
+            })
         })
         .then(() => {
             return this.setupRelationship();
+        })
+        .then(() => {
+            this.peerLocked = true;
+            return this.storage.set('node', this.settingsService.remoteSettingsUrl);
+        })
+        .then(() => {
+            return resolve(true);
         })
         .catch((e) => {
             this.settingsService.remoteSettings = {};
             this.settingsService.remoteSettingsUrl = null;
             this.loading = false;
-            console.log('faled getting peers' + e);
-            this.storage.remove(this.mode ? 'static-node' : 'node');
-            setTimeout(() => this.go(), 1000);
+            this.storage.remove('node');
+            setTimeout(() => {
+                this.peerRoutine(resolve, reject);
+            }, 100)
         });
     }
 
@@ -105,12 +125,18 @@ export class PeerService {
                     var number = Math.floor(Math.random() * (+max - +min)) + +min;
                     if (!peers[number]) return reject(false);
                     this.settingsService.remoteSettingsUrl = 'http://' + peers[number]['host'] + ':' + peers[number]['port'];
+                    while (this.failedConfigPeers.has(this.settingsService.remoteSettingsUrl)) {
+                        number = Math.floor(Math.random() * (+max - +min)) + +min;
+                        if (!peers[number]) return reject(false);
+                        this.settingsService.remoteSettingsUrl = 'http://' + peers[number]['host'] + ':' + peers[number]['port'];
+                    }
                     this.storage.set('node', this.settingsService.remoteSettingsUrl);
                     resolve('config');
                 },
                 (err) => {
+                    this.failedSeedPeers.add(seedPeer);
                     this.loading = false;
-                    return reject(err);
+                    return reject('seed');
                 }
             );
         });
@@ -125,9 +151,9 @@ export class PeerService {
                     resolve();
                 },
                 (err) => {
-                    this.failed_peers.push(this.settingsService.remoteSettingsUrl)
+                    this.failedConfigPeers.add(this.settingsService.remoteSettingsUrl)
                     this.loading = false;
-                    return reject(err);
+                    return reject('config');
                 }
             );
         });

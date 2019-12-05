@@ -61,7 +61,8 @@ export class HomePage {
     txnId: any;
     location: any;
     searchResults: any;
-    searchTerm: any;;
+    searchTerm: any;
+    origin: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -84,6 +85,7 @@ export class HomePage {
         public completeTestService: CompleteTestService
     ) {
         this.location = window.location;
+        this.origin = encodeURIComponent(this.location.origin);
         this.prefix = 'usernames-';
         this.refresh(null)
         .then(() => {
@@ -807,53 +809,6 @@ export class HomePage {
         });
     }
 
-    unlockWallet() {
-        return new Promise((resolve, reject) => {
-            let alert = this.alertCtrl.create({
-                title: 'Paste the private key or WIF of the server.',
-                inputs: [
-                {
-                    name: 'key_or_wif',
-                    placeholder: 'Private key or WIF',
-                    type: 'password'
-                }
-                ],
-                buttons: [
-                {
-                    text: 'Cancel',
-                    role: 'cancel',
-                    handler: data => {
-                        console.log('Cancel clicked');
-                        reject();
-                    }
-                },
-                {
-                    text: 'Unlock',
-                    handler: data => {
-                        let options = new RequestOptions({ withCredentials: true });
-                        this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/unlock?origin=' + encodeURIComponent(window.location.origin), {key_or_wif: data.key_or_wif}, options)
-                        .subscribe((res) => {
-                            this.settingsService.tokens[this.bulletinSecretService.keyname] = res.json()['token']
-                            const toast = this.toastCtrl.create({
-                                message: 'Wallet unlocked',
-                                duration: 2000
-                            });
-                            toast.present();
-                            resolve(res);
-                        },
-                        (err) => {
-                            reject(data.key_or_wif);
-                        });
-                    }
-                }
-                ]
-            });
-            alert.present();
-        }).catch(() => {
-          console.log('canceled unlock')  
-        });
-    }
-
     pasteFriend(phrase) {
         //this.loadingModal2 = this.loadingCtrl.create({
         //    content: 'Please wait...'
@@ -1064,6 +1019,10 @@ export class HomePage {
     }
 
     signIn() {
+        this.loadingModal = this.loadingCtrl.create({
+            content: 'Preparing session...'
+        });
+        this.loadingModal.present();
         this.walletService.get().then((signin_code) => {
             return this.graphService.getSharedSecretForRid(this.graphService.graph.rid);
         }).then((args) => {
@@ -1076,7 +1035,7 @@ export class HomePage {
                             dh_public_key: args['dh_public_key'],
                             dh_private_key: args['dh_private_key'],
                             relationship: {
-                                signIn: JSON.parse(res['_body']).signin_code
+                                signIn: res.json().signin_code
                             },
                             shared_secret: args['shared_secret'],
                             rid: this.graphService.graph.rid
@@ -1092,34 +1051,16 @@ export class HomePage {
                 (err) => {
                 });
             });
-        }).then((hash) => {
-            return new Promise((resolve, reject) => {
-                this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/sign-raw-transaction', {
-                    hash: hash,
-                    bulletin_secret: this.bulletinSecretService.bulletin_secret,
-                    input: this.transactionService.transaction.inputs[0].id,
-                    id: this.transactionService.transaction.id,
-                    txn: this.transactionService.transaction
-                })
-                .subscribe((res) => {
-                    try {
-                        let data = res.json();
-                        this.transactionService.transaction.signatures = [data.signature]
-                        resolve();
-                    } catch(err) {
-                        reject();
-                    }
-                },
-                (err) => {
-                });
-            });
         }).then(() => {
             return this.transactionService.sendTransaction();
         }).then(() => {
             this.signedIn = true;
             this.refresh(null);
+        }).then(() => {
+            this.loadingModal.dismiss().catch(() => {});
         }).catch((err) => {
             alert(err);
+            this.loadingModal.dismiss().catch(() => {});
         });
     }
 

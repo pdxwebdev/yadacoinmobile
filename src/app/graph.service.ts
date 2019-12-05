@@ -5,6 +5,7 @@ import { SettingsService } from './settings.service';
 import { Badge } from '@ionic-native/badge';
 import { Http, RequestOptions, Headers } from '@angular/http';
 import { Platform } from 'ionic-angular';
+import { timeout } from 'rxjs/operators';
 
 
 declare var forge;
@@ -96,6 +97,7 @@ export class GraphService {
             }
             
             promise
+            .pipe(timeout(30000))
             .subscribe((data) => {
                 try {
                     var info = JSON.parse(data['_body']);
