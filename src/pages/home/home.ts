@@ -24,6 +24,7 @@ declare var X25519;
 declare var firebase;
 declare var foobar;
 declare var Base64;
+declare var shortid;
 
 @Component({
     selector: 'page-home',
@@ -1055,6 +1056,36 @@ export class HomePage {
             return this.transactionService.sendTransaction();
         }).then(() => {
             this.signedIn = true;
+            this.refresh(null);
+        }).then(() => {
+            this.loadingModal.dismiss().catch(() => {});
+        }).catch((err) => {
+            alert(err);
+            this.loadingModal.dismiss().catch(() => {});
+        });
+    }
+
+    signInRemote() {
+        this.signInCode = shortid.js.generate()
+        this.loadingModal = this.loadingCtrl.create({
+            content: 'Preparing session...'
+        });
+        this.loadingModal.present();
+        this.walletService.get().then((signin_code) => {
+            return this.graphService.getSharedSecretForRid(this.graphService.graph.rid);
+        }).then((args) => {
+            return this.transactionService.generateTransaction({
+                dh_public_key: args['dh_public_key'],
+                dh_private_key: args['dh_private_key'],
+                relationship: {
+                    signIn: this.signInCode
+                },
+                shared_secret: args['shared_secret'],
+                rid: this.graphService.graph.rid
+            });
+        }).then(() => {
+            return this.transactionService.sendTransaction();
+        }).then(() => {
             this.refresh(null);
         }).then(() => {
             this.loadingModal.dismiss().catch(() => {});

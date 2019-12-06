@@ -27,6 +27,14 @@
         Visit&nbsp;<ion-icon name="arrow-dropright"></ion-icon>
       </a>
     </ion-col>
+    <ion-col col-lg-4 col-md-12 col-sm-12>
+      <ion-item>
+        <ion-input type="text" placeholder="Sign-in code" [(ngModel)]="signInCode"></ion-input>
+        <button large ion-button item-right title="Sign in" (click)="signInRemote()" *ngIf="!settingsService.tokens[bulletinSecretService.keyname]">
+            Remote Sign in&nbsp;<ion-icon name="create"></ion-icon>
+        </button>
+      </ion-item>
+    </ion-col>
   </ion-row>
   <ion-list col-lg-7>
     <ion-item *ngFor="let item of items">
