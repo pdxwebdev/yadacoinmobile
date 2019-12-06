@@ -1070,6 +1070,7 @@ export class HomePage {
         this.loadingModal = this.loadingCtrl.create({
             content: 'Preparing session...'
         });
+        this.txnId = null;
         this.loadingModal.present();
         this.walletService.get().then((signin_code) => {
             return this.graphService.getSharedSecretForRid(this.graphService.graph.rid);
