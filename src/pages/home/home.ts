@@ -18,6 +18,7 @@ import { FirebaseService } from '../../app/firebase.service';
 import { Http, Headers, RequestOptions } from '@angular/http';
 import { Events } from 'ionic-angular';
 import { CompleteTestService } from '../../app/autocomplete.provider';
+import { Geolocation } from '@ionic-native/geolocation';
 
 declare var forge;
 declare var X25519;
@@ -635,6 +636,24 @@ export class HomePage {
         alert.present();
     }
 
+    createGeoWallet() {
+        return new Promise((resolve, reject) => {
+            this.loadingModal = this.loadingCtrl.create({
+                content: 'Burying treasure at this location...'
+            });
+            return this.loadingModal.present()
+            .then(() => {
+                return resolve();
+            });
+        })
+        .then(() => {
+            return this.graphService.createRecovery(this.bulletinSecretService.username);
+        })
+        .then(() => {
+            return this.loadingModal.dismiss();
+        });
+    }
+
     createGroup() {
         this.graphService.getInfo()
         .then(() => {
@@ -662,57 +681,10 @@ export class HomePage {
                     ]
                 });
                 alert.present();
-            })            
-        })
-        .then((groupname) => {
-            return new Promise((resolve, reject) => {
-                if (!groupname) return reject();
-
-                let key = foobar.bitcoin.ECPair.makeRandom();
-                let wif = key.toWIF();
-                let pubKey = key.getPublicKeyBuffer().toString('hex');
-                let address = key.getAddress();
-                let bulletin_secret = foobar.base64.fromByteArray(key.sign(foobar.bitcoin.crypto.sha256(groupname)).toDER());
-                var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
-                var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
-                var dh_private_key = this.toHex(raw_dh_private_key);
-                var dh_public_key = this.toHex(raw_dh_public_key);
-                resolve({
-                    their_public_key: pubKey,
-                    their_address: address,
-                    their_bulletin_secret: bulletin_secret,
-                    their_username: groupname,
-                    wif: wif,
-                    dh_public_key: dh_public_key,
-                    dh_private_key: dh_private_key
-                });
             });
         })
-        .then((info: any) => {
-            var bulletin_secrets = [this.graphService.graph.bulletin_secret, info.their_bulletin_secret].sort(function (a, b) {
-                return a.toLowerCase().localeCompare(b.toLowerCase());
-            });
-            var requested_rid = forge.sha256.create().update(bulletin_secrets[0] + bulletin_secrets[1]).digest().toHex();
-            return this.transactionService.generateTransaction({
-                relationship: {
-                    dh_private_key: info.dh_private_key,
-                    their_bulletin_secret: info.their_bulletin_secret,
-                    their_public_key: info.their_public_key,
-                    their_username: info.their_username,
-                    their_address: info.their_address,
-                    my_bulletin_secret: this.bulletinSecretService.generate_bulletin_secret(),
-                    my_username: this.bulletinSecretService.username,
-                    wif: info.wif,
-                    group: true
-                },
-                dh_public_key: info.dh_public_key,
-                to: info.their_address,
-                requester_rid: this.graphService.graph.rid,
-                requested_rid: requested_rid
-            })
-        
-        }).then((txn) => {
-            return this.transactionService.sendTransaction();
+        .then((groupName) => {
+            return this.graphService.createGroup(groupName);
         })
         .then((hash) => {
             if (this.settingsService.remoteSettings['walletUrl']) {

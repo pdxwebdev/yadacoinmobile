@@ -112,13 +112,17 @@ export class TransactionService {
                         return 0
                     });
                 }
+                let already_added = []
                 dance:
                 for (var i=0; i < unspent_transactions.length; i++) {
                     var unspent_transaction = unspent_transactions[i];
                     for (var j=0; j < unspent_transaction.outputs.length; j++) {
                         var unspent_output = unspent_transaction.outputs[j];
                         if (unspent_output.to === this.key.getAddress()) {
-                            inputs.push({id: unspent_transaction.id});
+                            if (already_added.indexOf(unspent_transaction.id) === -1){
+                                already_added.push(unspent_transaction.id);
+                                inputs.push({id: unspent_transaction.id});
+                            }
                             input_sum += parseFloat(unspent_output.value);
                             if (input_sum >= transaction_total) {    
                                 this.transaction.outputs.push({
@@ -292,6 +296,21 @@ export class TransactionService {
                     this.transaction.rid +
                     this.transaction.relationship +
                     this.transaction.fee.toFixed(8) +
+                    inputs_hashes_concat +
+                    outputs_hashes_concat
+                ).toString('hex')
+            } else if (this.info.relationship.wif) {
+                // recovery
+                this.transaction.relationship = this.shared_encrypt(this.info.shared_secret, JSON.stringify(this.info.relationship));
+    
+                hash = foobar.bitcoin.crypto.sha256(
+                    this.transaction.public_key +
+                    this.transaction.time +
+                    this.transaction.rid +
+                    this.transaction.relationship +
+                    this.transaction.fee.toFixed(8) +
+                    this.transaction.requester_rid +
+                    this.transaction.requested_rid +
                     inputs_hashes_concat +
                     outputs_hashes_concat
                 ).toString('hex')

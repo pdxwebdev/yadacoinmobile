@@ -39,6 +39,7 @@ import { EmojiPickerModule } from '@ionic-tools/emoji-picker';
 import { File } from '@ionic-native/file';
 import { AutoCompleteModule, AutoCompleteComponent } from 'ionic2-auto-complete';
 import { CompleteTestService } from './autocomplete.provider';
+import { Geolocation } from '@ionic-native/geolocation';
 
 
 @NgModule({
@@ -61,7 +62,7 @@ import { CompleteTestService } from './autocomplete.provider';
     IonicModule.forRoot(MyApp),
     IonicStorageModule.forRoot({
       name: '__mydb',
-         driverOrder: ['sqlite', 'websql', 'indexeddb']
+         driverOrder: ['websql', 'sqlite', 'indexeddb']
     }),
     NgxQRCodeModule,
     HttpModule,
@@ -103,7 +104,8 @@ import { CompleteTestService } from './autocomplete.provider';
     FirebaseService,
     File,
     CompleteTestService,
-    AutoCompleteComponent
+    AutoCompleteComponent,
+    Geolocation
   ]
 })
 export class AppModule {}

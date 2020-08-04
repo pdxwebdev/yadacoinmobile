@@ -17,7 +17,10 @@ export class WalletService {
         private bulletinSecretService: BulletinSecretService,
         private settingsService: SettingsService,
     ) {
-        this.wallet = {};
+        this.wallet = {
+            balance: 0,
+            unspent_transactions: []
+        };
     }
 
     get(amount_needed=0) {
@@ -51,6 +54,7 @@ export class WalletService {
                     if(data['_body']) {
                         this.walletError = false;
                         this.wallet = JSON.parse(data['_body']);
+                        this.wallet.balance = parseFloat(this.wallet.balance); //pasefloat
                         this.wallet.balancePretty = this.wallet.balance.toFixed(2);
                         resolve(data['_body']);
                     } else {

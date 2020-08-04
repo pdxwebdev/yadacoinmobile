@@ -1,16 +1,19 @@
 import { Injectable } from '@angular/core';
 import { Storage } from '@ionic/storage';
 import { BulletinSecretService } from './bulletinSecret.service';
+import { TransactionService } from './transaction.service';
 import { SettingsService } from './settings.service';
 import { Badge } from '@ionic-native/badge';
 import { Http, RequestOptions, Headers } from '@angular/http';
 import { Platform } from 'ionic-angular';
 import { timeout } from 'rxjs/operators';
+import { Geolocation } from '@ionic-native/geolocation';
 
 
 declare var forge;
 declare var X25519;
 declare var Base64;
+declare var foobar;
 
 @Injectable()
 export class GraphService {
@@ -54,7 +57,9 @@ export class GraphService {
         private settingsService: SettingsService,
         private badge: Badge,
         private platform: Platform,
-        private ahttp: Http
+        private ahttp: Http,
+        private transactionService: TransactionService,
+        private geolocation: Geolocation
     ) {
         this.stored_secrets = {};
         this.stored_secrets_by_rid = {};
@@ -891,6 +896,130 @@ export class GraphService {
                 resolve();
             });
         });
+    }
+
+    createGroup(groupname) {
+        return new Promise((resolve, reject) => {
+            if (!groupname) return reject();
+
+            let key = foobar.bitcoin.ECPair.makeRandom();
+            let wif = key.toWIF();
+            let pubKey = key.getPublicKeyBuffer().toString('hex');
+            let address = key.getAddress();
+            let bulletin_secret = foobar.base64.fromByteArray(key.sign(foobar.bitcoin.crypto.sha256(groupname)).toDER());
+            var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
+            var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
+            var dh_private_key = this.toHex(raw_dh_private_key);
+            var dh_public_key = this.toHex(raw_dh_public_key);
+            resolve({
+                their_public_key: pubKey,
+                their_address: address,
+                their_bulletin_secret: bulletin_secret,
+                their_username: groupname,
+                wif: wif,
+                dh_public_key: dh_public_key,
+                dh_private_key: dh_private_key
+            });
+        })
+        .then((info: any) => {
+            var bulletin_secrets = [this.graph.bulletin_secret, info.their_bulletin_secret].sort(function (a, b) {
+                return a.toLowerCase().localeCompare(b.toLowerCase());
+            });
+            var requested_rid = forge.sha256.create().update(bulletin_secrets[0] + bulletin_secrets[1]).digest().toHex();
+            return this.transactionService.generateTransaction({
+                relationship: {
+                    dh_private_key: info.dh_private_key,
+                    their_bulletin_secret: info.their_bulletin_secret,
+                    their_public_key: info.their_public_key,
+                    their_username: info.their_username,
+                    their_address: info.their_address,
+                    my_bulletin_secret: this.bulletinSecretService.generate_bulletin_secret(),
+                    my_username: this.bulletinSecretService.username,
+                    wif: info.wif,
+                    group: true
+                },
+                dh_public_key: info.dh_public_key,
+                to: info.their_address,
+                requester_rid: this.graph.rid,
+                requested_rid: requested_rid
+            })
+
+        }).then((txn) => {
+            return this.transactionService.sendTransaction();
+        })
+    }
+
+    generateRecovery(username) {
+        return new Promise((resolve, reject) => {
+            return this.geolocation.getCurrentPosition().then((resp) => {
+                let result = resp.coords.longitude + (resp.coords.latitude + username);
+                let target = 0x00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+                let rid;
+                let password;
+                for(var i=0; i === i; i++) {
+                    result = forge.sha256.create().update(result).digest().toHex();
+                    if (parseInt(result, 16) < target && password) {
+                        result = forge.sha256.create().update(result).digest().toHex();
+                        rid = result
+                        break
+                    }
+                    if (parseInt(result, 16) < target && !password) {
+                        result = forge.sha256.create().update(result).digest().toHex();
+                        password = result
+                    }
+                }
+                return resolve([rid, password, username]);
+            }).catch((error) => {
+                console.log('Error getting location', error);
+            });
+        })
+    }
+
+    createRecovery(username) {
+        this.generateRecovery(username)
+        .then((args) => {
+            let rid = args[0];
+            let shared_secret = args[1];
+            return new Promise((resolve, reject) => {
+                if (!username) return reject();
+
+                return this.storage.get(this.bulletinSecretService.keyname).then((wif) => {
+                    let key = foobar.bitcoin.ECPair.fromWIF(wif);
+                    let pubKey = key.getPublicKeyBuffer().toString('hex');
+                    let address = key.getAddress();
+                    let bulletin_secret = foobar.base64.fromByteArray(key.sign(foobar.bitcoin.crypto.sha256(username)).toDER());
+                    resolve({
+                        their_public_key: pubKey,
+                        their_address: address,
+                        their_bulletin_secret: bulletin_secret,
+                        their_username: username,
+                        wif: wif,
+                        rid: rid,
+                        shared_key: shared_secret
+                    });
+                });
+            })
+        })
+        .then((info: any) => {
+            return this.transactionService.generateTransaction({
+                relationship: {
+                    their_bulletin_secret: info.their_bulletin_secret,
+                    their_public_key: info.their_public_key,
+                    their_username: info.their_username,
+                    their_address: info.their_address,
+                    my_bulletin_secret: this.bulletinSecretService.generate_bulletin_secret(),
+                    my_username: this.bulletinSecretService.username,
+                    wif: info.wif,
+                    group: true
+                },
+                to: info.their_address,
+                rid: info.rid,
+                shared_secret: info.shared_key
+            })
+        
+        }).then((txn) => {
+            return this.transactionService.sendTransaction();
+        })
     }
 
     decrypt(message) {

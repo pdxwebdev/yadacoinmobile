@@ -29,6 +29,7 @@
     "@ionic-native/deeplinks": "^4.4.2",
     "@ionic-native/file": "^4.9.0",
     "@ionic-native/firebase": "^4.20.0",
+    "@ionic-native/geolocation": "^4.20.0",
     "@ionic-native/http": "^4.3.1",
     "@ionic-native/push": "^4.7.0",
     "@ionic-native/qr-scanner": "^4.3.0",
@@ -53,6 +54,7 @@
     "cordova-plugin-compat": "^1.2.0",
     "cordova-plugin-device": "^1.1.7",
     "cordova-plugin-file": "^6.0.2",
+    "cordova-plugin-geolocation": "4.0.2",
     "cordova-plugin-iosrtc": "^4.0.2",
     "cordova-plugin-keyboard": "^1.2.0",
     "cordova-plugin-mixpanel": "^4.7.0",
@@ -74,7 +76,7 @@
     "ngx-qrcode2": "0.0.5",
     "node-forge": "^0.7.1",
     "rxjs": "^6.5.2",
-    "rxjs-compat": "^6.5.2",
+    "rxjs-compat": "^6.5.4",
     "sia.js": "^0.4.2",
     "sw-toolbox": "3.6.0",
     "uglify-js": "^3.1.4",
@@ -109,7 +111,8 @@
       "cordova-plugin-mixpanel": {
         "PLAY_SERVICES_VERSION": "+",
         "FIREBASE_VERSION": "+"
-      }
+      },
+      "cordova-plugin-geolocation": {}
     },
     "platforms": [
       "browser",

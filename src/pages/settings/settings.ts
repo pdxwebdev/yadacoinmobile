@@ -13,7 +13,11 @@ import { SocialSharing } from '@ionic-native/social-sharing';
 import { Events } from 'ionic-angular';
 import { HomePage } from '../home/home';
 import { Http, Headers, RequestOptions } from '@angular/http';
+import { Geolocation } from '@ionic-native/geolocation';
 
+
+declare var forge;
+declare var foobar;
 
 
 @Component({
@@ -36,8 +40,7 @@ export class Settings {
     serverDown = false;
     noUsername = false;
     key = null;
-    favorites = null;
-    removeFavorites = null;
+    geoWalletUsername: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -53,7 +56,8 @@ export class Settings {
         public events: Events,
         public toastCtrl: ToastController,
         public peerService: PeerService,
-        private ahttp: Http
+        private ahttp: Http,
+        private geolocation: Geolocation
     ) {
         if (typeof this.peerService.mode == 'undefined') this.peerService.mode = true;
         this.refresh(null).catch((err) => {
@@ -67,76 +71,13 @@ export class Settings {
         return this.bulletinSecretService.all().then((keys) => {
             this.setKey(keys);
         }).then(() => {
-            this.getFavorites();
-        }).then(() => {
             if(refresher) refresher.complete();
         });
 
     }
 
-    saveToFavorites() {
-        let alert = this.alertCtrl.create({
-            title: 'Set group name',
-            inputs: [
-            {
-                name: 'groupname',
-                placeholder: 'Group name'
-            }
-            ],
-            buttons: [
-            {
-                text: 'Save',
-                handler: data => {
-                    this.storage.set('favorites-' + data.groupname, this.settingsService.remoteSettingsUrl);
-                    this.getFavorites();
-                }
-            }
-            ]
-        });
-        alert.present();
-        
-    }
     getResults(keyword:string) {
       return ['234234','234234']
-    }
-
-    getFavorites() {
-        return new Promise((resolve, reject) => {
-            var favorites = [];
-            this.storage.forEach((value, key) => {
-                if (key.substr(0, 'favorites-'.length) === 'favorites-') {
-                    favorites.push({label: key.substr('favorites-'.length), url: value});
-                }
-            })
-            .then(() => {
-                if (favorites.length == 0) {
-                    var host = window.location.protocol + '//' + window.location.host
-                    this.storage.set('favorites-Home', host);
-                    favorites.push({label: 'Home', url: host});
-                }
-                this.favorites = favorites;
-                resolve(favorites);
-            });
-        });
-    }
-
-    selectFavorite(favorite) {
-        for(var i=0; i < this.favorites.length; i++) {
-            this.favorites[i].active = false;
-        }
-        favorite.active = true;
-        this.settingsService.remoteSettingsUrl = favorite.url;
-        this.storage.set('node', favorite.url);
-    }
-
-    removeFavorite(favorite) {
-        this.storage.remove('favorites-' + favorite.label);
-        this.getFavorites()
-        .then((favorites) => {
-            if (!favorites) {
-                this.removeFavorites = null;
-            }
-        });
     }
 
     setKey(keys) {
@@ -233,7 +174,7 @@ export class Settings {
         });
     }
 
-    createKey() {
+    createWallet() {
         new Promise((resolve, reject) => {
             let alert = this.alertCtrl.create({
                 title: 'Set username',
@@ -268,12 +209,16 @@ export class Settings {
             alert.present();
         })
         .then((username) => {
-            return new Promise((resolve, reject) => {
-                this.bulletinSecretService.create(username)
-                .then(() => {
-                    resolve(username);
-                });
-            })
+            return this.createKey(username);
+        })
+    }
+
+    createKey(username) {
+        return new Promise((resolve, reject) => {
+            this.bulletinSecretService.create(username)
+            .then(() => {
+                resolve(username);
+            });
         })
         .then((key) => {
             this.set(key)
@@ -302,18 +247,15 @@ export class Settings {
 
     selectIdentity(key) {
         this.loadingModal = this.loadingCtrl.create({
-            content: 'Finding node...'
+            content: 'initializing...'
         });
         this.loadingModal.present();
-        return this.peerService.go()
+        return this.set(key)
         .then(() => {
-            return this.set(key);
+            return this.peerService.go();
         })
         .then(() => {
             return this.refresh(null);
-        })
-        .then(() => {
-            return this.unlockWallet();
         })
         .then(() => { 
             this.loadingModal.dismiss();
@@ -322,6 +264,7 @@ export class Settings {
             this.navCtrl.setRoot(HomePage);
         })
         .catch((err)  => {
+            console.log(err);
             this.loadingModal.dismiss();  
         });
     }
