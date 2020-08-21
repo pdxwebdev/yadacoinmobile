@@ -14,6 +14,7 @@ import { Events } from 'ionic-angular';
 import { HomePage } from '../home/home';
 import { Http, Headers, RequestOptions } from '@angular/http';
 import { Geolocation } from '@ionic-native/geolocation';
+import { SendReceive } from '../sendreceive/sendreceive';
 
 
 declare var forge;
@@ -261,7 +262,7 @@ export class Settings {
             this.loadingModal.dismiss();
         })
         .then(() => {
-            this.navCtrl.setRoot(HomePage);
+            this.navCtrl.setRoot(SendReceive);
         })
         .catch((err)  => {
             console.log(err);
