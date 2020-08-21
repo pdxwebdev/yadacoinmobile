@@ -8,7 +8,7 @@ import { QRScanner, QRScannerStatus } from '@ionic-native/qr-scanner';
 import { SettingsService } from '../../app/settings.service';
 import { SocialSharing } from '@ionic-native/social-sharing';
 import { ListPage } from '../list/list';
-import { Http } from '@angular/http';
+import { Http, Headers, RequestOptions } from '@angular/http';
 
 @Component({
   selector: 'page-sendreceive',
@@ -23,6 +23,22 @@ export class SendReceive {
     balance = null;
     isDevice = null;
     loadingModal: any;
+    past_sent_transactions: String[];
+    past_sent_pending_transactions: String[];
+    past_received_transactions: String[];
+    past_received_pending_transactions: String[];
+    sentPage: any;
+    receivedPage: any;
+    sentPendingPage: any;
+    receivedPendingPage: any;
+    sentPendingLoading: any;
+    receivedPendingLoading: any;
+    sentLoading: any;
+    receivedLoading: any;
+    past_sent_page_cache: any;
+    past_sent_pending_page_cache: any;
+    past_received_page_cache: any;
+    past_received_pending_page_cache: any;
     constructor(
         private navCtrl: NavController,
         private qrScanner: QRScanner,
@@ -43,6 +59,22 @@ export class SendReceive {
             this.createdCode = bulletinSecretService.key.getAddress();
             this.refresh();
         });
+        this.sentPage = 1;
+        this.receivedPage = 1;
+        this.sentPendingPage = 1;
+        this.receivedPendingPage = 1;
+        this.past_sent_transactions = [];
+        this.past_sent_pending_transactions = [];
+        this.past_received_transactions = [];
+        this.past_received_pending_transactions = [];
+        this.sentPendingLoading = false;
+        this.receivedPendingLoading = false;
+        this.sentLoading = false;
+        this.receivedLoading = false;
+        this.past_sent_page_cache = {}
+        this.past_sent_pending_page_cache = {}
+        this.past_received_page_cache = {}
+        this.past_received_pending_page_cache = {}
     }
 
     scan() {
@@ -133,9 +165,189 @@ export class SendReceive {
         .then(() => {
             this.loadingBalance = false;
             this.balance = this.walletService.wallet.balance;
+        })
+        .then(() => {
+            this.getSentHistory();
+        })
+        .then(() => {
+            this.getSentPendingHistory();
+        })
+        .then(() => {
+            this.getReceivedHistory();
+        })
+        .then(() => {
+            this.getReceivedPendingHistory();
         }).catch((err) => {
             console.log(err);  
         });
+    }
+
+    convertDateTime(timestamp) {
+        var a = new Date(timestamp * 1000);
+        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        var year = a.getFullYear();
+        var month = months[a.getMonth()];
+        var date = a.getDate();
+        var hour = '0' + a.getHours();
+        var min = '0' + a.getMinutes();
+        var time = date + '-' + month + '-' + year + ' ' + hour.substr(-2) + ':' + min.substr(-2) ;
+        return time;
+    }
+
+    getSentPendingHistory() {
+        return new Promise((resolve, reject) => {
+            this.sentPendingLoading = true;
+            let options = new RequestOptions({ withCredentials: true });
+            this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/get-past-pending-sent-txns?page=' + this.sentPendingPage + '&public_key=' + this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex') + '&origin=' + encodeURIComponent(window.location.origin), options)
+            .subscribe((res) => {
+                this.sentPendingLoading = false;
+                this.past_sent_pending_transactions = res.json()['past_pending_transactions'].sort(this.sortFunc);
+                this.past_sent_pending_page_cache[this.sentPendingPage] = this.past_sent_pending_transactions;
+                resolve(res);
+            },
+            (err) => {
+                return reject('cannot unlock wallet');
+            });
+        })
+    }
+
+    getSentHistory() {
+        return new Promise((resolve, reject) => {
+            this.sentLoading = true;
+            let options = new RequestOptions({ withCredentials: true });
+            this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/get-past-sent-txns?page=' + this.sentPage + '&public_key=' + this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex') + '&origin=' + encodeURIComponent(window.location.origin), options)
+            .subscribe((res) => {
+                this.sentLoading = false;
+                this.past_sent_transactions = res.json()['past_transactions'].sort(this.sortFunc);
+                this.past_sent_page_cache[this.sentPage] = this.past_sent_transactions;
+                resolve(res);
+            },
+            (err) => {
+                return reject('cannot unlock wallet');
+            });
+        })
+    }
+
+    getReceivedPendingHistory() {
+        return new Promise((resolve, reject) => {
+            this.receivedPendingLoading = true;
+            let options = new RequestOptions({ withCredentials: true });
+            this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/get-past-pending-received-txns?page=' + this.receivedPendingPage + '&public_key=' + this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex') + '&origin=' + encodeURIComponent(window.location.origin), options)
+            .subscribe((res) => {
+                this.receivedPendingLoading = false;
+                this.past_received_pending_transactions = res.json()['past_pending_transactions'].sort(this.sortFunc);
+                this.past_received_pending_page_cache[this.receivedPendingPage] = this.past_received_pending_transactions;
+                resolve(res);
+            },
+            (err) => {
+                return reject('cannot unlock wallet');
+            });
+        })
+    }
+
+    getReceivedHistory() {
+        return new Promise((resolve, reject) => {
+            this.receivedLoading = true;
+            let options = new RequestOptions({ withCredentials: true });
+            this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/get-past-received-txns?page=' + this.receivedPage + '&public_key=' + this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex') + '&origin=' + encodeURIComponent(window.location.origin), options)
+            .subscribe((res) => {
+                this.receivedLoading = false;
+                this.past_received_transactions = res.json()['past_transactions'].sort(this.sortFunc);
+                this.past_received_page_cache[this.receivedPage] = this.past_received_transactions;
+                resolve(res);
+            },
+            (err) => {
+                return reject('cannot unlock wallet');
+            });
+        })
+    }
+
+    sortFunc(a, b) {
+        if (parseInt(a.time) < parseInt(b.time))
+            return 1
+        if ( parseInt(a.time) > parseInt(b.time))
+            return -1
+        return 0
+    }
+
+    prevReceivedPage() {
+        this.receivedPage--;
+        var result = this.past_received_page_cache[this.receivedPage] || [];
+        if(result.length > 0) {
+            this.past_received_transactions = result;
+            return;
+        }
+        return this.getReceivedHistory();
+    }
+
+    nextReceivedPage() {
+        this.receivedPage++;
+        var result = this.past_received_page_cache[this.receivedPage] || [];
+        if(result.length > 0) {
+            this.past_received_transactions = result;
+            return;
+        }
+        return this.getReceivedHistory();
+    }
+
+    prevReceivedPendingPage() {
+        this.receivedPendingPage--;
+        var result = this.past_received_pending_page_cache[this.receivedPendingPage] || [];
+        if(result.length > 0) {
+            this.past_received_pending_transactions = result;
+            return;
+        }
+        return this.getReceivedPendingHistory();
+    }
+
+    nextReceivedPendingPage() {
+        this.receivedPendingPage++;
+        var result = this.past_received_pending_transactions = this.past_received_pending_page_cache[this.receivedPendingPage] || [];
+        if(result.length > 0) {
+            this.past_sent_transactions = result;
+            return;
+        }
+        return this.getReceivedPendingHistory();
+    }
+
+    prevSentPage() {
+        this.sentPage--;
+        var result = this.past_sent_transactions = this.past_sent_page_cache[this.sentPage] || [];
+        if(result.length > 0) {
+            this.past_sent_transactions = result
+            return;
+        }
+        return this.getSentHistory();
+    }
+
+    nextSentPage() {
+        this.sentPage++;
+        var result = this.past_sent_page_cache[this.sentPage] || [];
+        if(result.length > 0) {
+            this.past_sent_transactions = result;
+            return;
+        }
+        return this.getSentHistory();
+    }
+
+    prevSentPendingPage() {
+        this.sentPendingPage--;
+        var result = this.past_sent_pending_transactions = this.past_sent_pending_page_cache[this.sentPendingPage] || [];
+        if(result.length > 0) {
+            this.past_sent_pending_transactions = result;
+            return;
+        }
+        return this.getSentPendingHistory();
+    }
+
+    nextSentPendingPage() {
+        this.sentPendingPage++;
+        var result = this.past_sent_pending_page_cache[this.sentPendingPage] || [];
+        if(result.length > 0) {
+            this.past_sent_pending_transactions = result;
+            return;
+        }
+        return this.getSentPendingHistory();
     }
 
     shareAddress() {

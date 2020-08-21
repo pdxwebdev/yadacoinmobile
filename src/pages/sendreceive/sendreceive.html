@@ -37,4 +37,42 @@
       <ngx-qrcode [qrc-value]="createdCode"></ngx-qrcode>
     </ion-card-content>
   </ion-card>
+  <h4>Pending Transactions</h4>
+  <strong>Received</strong><br>
+  <button ion-button small (click)="prevReceivedPendingPage()" [disabled]="receivedPendingPage <= 1">< Prev</button> <button ion-button small (click)="nextReceivedPendingPage()" [disabled]="past_received_pending_transactions.length === 0 || past_received_pending_transactions.length < 10">Next ></button>
+  <p *ngIf="past_received_pending_transactions.length === 0">No more results</p><span *ngIf="receivedPendingLoading"> (loading...)</span>
+  <ion-list>
+    <ion-item *ngFor="let txn of past_received_pending_transactions">
+      <ion-label>{{convertDateTime(txn.time)}}</ion-label>
+      <ion-label><a href="https://yadacoin.io/explorer?term={{txn.id}}" target="_blank">{{txn.id}}</a></ion-label>
+    </ion-item>
+  </ion-list>
+  <strong>Sent</strong><br>
+  <button ion-button small (click)="prevSentPendingPage()" [disabled]="sentPendingPage <= 1">< Prev</button> <button ion-button small (click)="nextSentPendingPage()" [disabled]="past_sent_pending_transactions.length === 0 || past_sent_pending_transactions.length < 10">Next ></button>
+  <p *ngIf="past_sent_pending_transactions.length === 0">No more results</p><span *ngIf="sentPendingLoading"> (loading...)</span>
+  <ion-list>
+    <ion-item *ngFor="let txn of past_sent_pending_transactions">
+      <ion-label>{{convertDateTime(txn.time)}}</ion-label>
+      <ion-label><a href="https://yadacoin.io/explorer?term={{txn.id}}" target="_blank">{{txn.id}}</a></ion-label>
+    </ion-item>
+  </ion-list>
+  <h4>Transaction history</h4>
+  <strong>Received</strong><br>
+  <button ion-button small (click)="prevReceivedPage()" [disabled]="receivedPage <= 1">< Prev</button> <button ion-button small (click)="nextReceivedPage()" [disabled]="past_received_transactions.length === 0 || past_received_transactions.length < 10">Next ></button>
+  <p *ngIf="past_received_transactions.length === 0">No more results</p><span *ngIf="receivedLoading"> (loading...)</span>
+  <ion-list>
+    <ion-item *ngFor="let txn of past_received_transactions">
+      <ion-label>{{convertDateTime(txn.time)}}</ion-label>
+      <ion-label><a href="https://yadacoin.io/explorer?term={{txn.id}}" target="_blank">{{txn.id}}</a></ion-label>
+    </ion-item>
+  </ion-list>
+  <strong>Sent</strong><br>
+  <button ion-button small (click)="prevSentPage()" [disabled]="sentPage <= 1">< Prev</button> <button ion-button small (click)="nextSentPage()" [disabled]="past_sent_transactions.length === 0 || past_sent_transactions.length < 10">Next ></button>
+  <p *ngIf="past_sent_transactions.length === 0">No more results</p><span *ngIf="sentLoading"> (loading...)</span>
+  <ion-list>
+    <ion-item *ngFor="let txn of past_sent_transactions">
+      <ion-label>{{convertDateTime(txn.time)}}</ion-label>
+      <ion-label><a href="https://yadacoin.io/explorer?term={{txn.id}}" target="_blank">{{txn.id}}</a></ion-label>
+    </ion-item>
+  </ion-list>
 </ion-content>
