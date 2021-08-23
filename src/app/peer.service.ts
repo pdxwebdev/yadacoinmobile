@@ -31,7 +31,7 @@ export class PeerService {
 
     go() {
         return new Promise((resolve, reject) => {
-            var domain = window.location.origin;
+            var domain = 'http://localhost:8000';
             this.settingsService.remoteSettingsUrl = domain;
             this.settingsService.remoteSettings = {
                 "baseUrl": domain,
@@ -42,7 +42,8 @@ export class PeerService {
                 "loginUrl": domain + "/login",
                 "registerUrl": domain + "/create-relationship",
                 "authenticatedUrl": domain + "/authenticated",
-                "logoData": ""
+                "logoData": "",
+                "identity": {}
             };
             return resolve();
         })
@@ -60,7 +61,9 @@ export class PeerService {
             this.ahttp.get(this.settingsService.remoteSettingsUrl + '/yada_config.json',).pipe(timeout(1000)).subscribe(
                 (res) => {
                     this.loading = false;
-                    this.settingsService.remoteSettings = res.json();
+                    const remoteSettings = res.json();
+                    this.settingsService.remoteSettings = remoteSettings;
+                    this.bulletinSecretService.identity.server_username_signature = remoteSettings.identity.username_signature
                     resolve();
                 },
                 (err) => {

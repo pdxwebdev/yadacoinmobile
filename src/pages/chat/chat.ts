@@ -111,7 +111,7 @@ export class ChatPage {
             resolve({
                 their_address: invite.their_address,
                 their_public_key: invite.their_public_key,
-                their_bulletin_secret: invite.their_bulletin_secret,
+                their_username_signature: invite.their_username_signature,
                 their_username: invite.their_username,
                 dh_public_key: dh_public_key,
                 dh_private_key: dh_private_key,
@@ -123,11 +123,11 @@ export class ChatPage {
             return this.transactionService.generateTransaction({
                 relationship: {
                     dh_private_key: info.dh_private_key,
-                    my_bulletin_secret: this.bulletinSecretService.generate_bulletin_secret(),
+                    my_username_signature: this.bulletinSecretService.generate_username_signature(),
                     my_username: this.bulletinSecretService.username,
                     their_address: info.their_address,
                     their_public_key: info.their_public_key,
-                    their_bulletin_secret: info.their_bulletin_secret,
+                    their_username_signature: info.their_username_signature,
                     their_username: info.their_username,
                     group: true
                 },
@@ -200,7 +200,7 @@ export class ChatPage {
                             alert.setSubTitle('Please wait a few minutes and try again');
                             alert.addButton('Ok');
                             alert.present();
-                            return reject();    
+                            return reject('failed to create friend request');    
                         });                
                     }
                 }).then((txn) => {

@@ -1,0 +1,25 @@
+.sender {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.subject {
+  margin-bottom: 5px;
+}
+
+.datetime {
+  color: gray;
+  font-size: 12px;
+  float: right;
+  margin-bottom: 5px;
+}
+
+.body {
+  text-overflow: ellipsis;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.success {
+  color:#32db64
+}

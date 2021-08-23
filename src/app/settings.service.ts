@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 
 @Injectable()
 export class SettingsService {
-    remoteSettings: any;
+    remoteSettings = {};
     remoteSettingsUrl = null;
     tokens = {};
     constructor(

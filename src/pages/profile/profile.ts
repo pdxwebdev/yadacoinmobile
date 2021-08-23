@@ -88,47 +88,10 @@ export class ProfilePage {
         buttons.push({
             text: 'Add',
             handler: (data) => {
-                // camera permission was granted
-                var requester_rid = this.graphService.graph.rid;
-                var requested_rid = this.item.rid;
-                if (requester_rid && requested_rid) {
-                    // get rid from bulletin secrets
-                } else {
-                    requester_rid = '';
-                    requested_rid = '';
-                }
-                //////////////////////////////////////////////////////////////////////////
-                // create and send transaction to create the relationship on the blockchain
-                //////////////////////////////////////////////////////////////////////////
-                var not_this_address = foobar.bitcoin.ECPair.fromPublicKeyBuffer(foobar.Buffer.Buffer.from(this.item.public_key, 'hex')).getAddress();
-                for (var h=0; h < this.item.outputs.length; h++) {
-                    if (this.item.outputs[h].to != not_this_address) {
-                        var address = this.item.outputs[h].to;
-                    }
-                }
-                this.walletService.get().then(() => {
-                    var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
-                    var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
-                    var dh_private_key = this.toHex(raw_dh_private_key);
-                    var dh_public_key = this.toHex(raw_dh_public_key);
-                    return this.transactionService.generateTransaction({
-                        relationship: {
-                            dh_private_key: dh_private_key,
-                            their_bulletin_secret: this.item.relationship.their_bulletin_secret,
-                            their_username: this.item.relationship.their_username,
-                            my_bulletin_secret: this.bulletinSecretService.generate_bulletin_secret(),
-                            my_username: this.bulletinSecretService.username
-                        },
-                        dh_public_key: dh_public_key,
-                        requested_rid: requested_rid,
-                        requester_rid: requester_rid,
-                        to: this.item.relationship.group === true ? this.item.relationship.their_address : address
-                    });
-                }).then((hash) => {
-                    return this.transactionService.sendTransaction();
-                }).then((txn) => {
+                return this.graphService.addFriend(data)
+                .then((txn) => {
                     var alert = this.alertCtrl.create();
-                    alert.setTitle('Friend Request Sent');
+                    alert.setTitle('Contact Request Sent');
                     alert.setSubTitle('Your Friend Request has been sent successfully.');
                     alert.addButton('Ok');
                     alert.present();
@@ -147,7 +110,7 @@ export class ProfilePage {
     }
 
     joinGroup() {
-        return this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/ns?requested_rid=' + this.item.rid + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
+        return this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/ns?requested_rid=' + this.item.rid + '&username_signature=' + this.bulletinSecretService.username_signature)
         .subscribe((res) => {
             return new Promise((resolve, reject) => {
                 let invite = res.json();
@@ -158,7 +121,7 @@ export class ProfilePage {
                 resolve({
                     their_address: invite.their_address,
                     their_public_key: invite.their_public_key,
-                    their_bulletin_secret: invite.their_bulletin_secret,
+                    their_username_signature: invite.their_username_signature,
                     their_username: invite.their_username,
                     dh_public_key: dh_public_key,
                     dh_private_key: dh_private_key,
@@ -170,11 +133,11 @@ export class ProfilePage {
                 return this.transactionService.generateTransaction({
                     relationship: {
                         dh_private_key: info.dh_private_key,
-                        my_bulletin_secret: this.bulletinSecretService.generate_bulletin_secret(),
+                        my_username_signature: this.bulletinSecretService.generate_username_signature(),
                         my_username: this.bulletinSecretService.username,
                         their_address: info.their_address,
                         their_public_key: info.their_public_key,
-                        their_bulletin_secret: info.their_bulletin_secret,
+                        their_username_signature: info.their_username_signature,
                         their_username: info.their_username,
                         group: true
                     },

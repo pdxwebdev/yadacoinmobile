@@ -12,6 +12,8 @@
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
   <ion-spinner *ngIf="loading"></ion-spinner>
+  <button *ngIf="pageTitle =='Messages'" ion-button secondary (click)="createMessage()">Compose</button>
+  <button *ngIf="pageTitle =='Contacts'" ion-button secondary (click)="addFriend()">Add contact</button>
   <ion-card *ngIf="items && items.length == 0">
       <ion-card-content>
         <ion-card-title style="text-overflow:ellipsis;" text-wrap>
@@ -21,38 +23,38 @@
   </ion-card>
   <ion-list>
     <button ion-item *ngFor="let item of items" (click)="itemTapped($event, item)">
-      <span *ngIf="pageTitle =='Groups'">{{item.transaction.relationship.their_username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
-      <span *ngIf="pageTitle =='Sent Requests'">{{item.transaction.relationship.their_username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
-      <span *ngIf="pageTitle =='Friend Requests'">{{item.transaction.username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
-      <span *ngIf="pageTitle =='Messages' && !item.transaction.new">{{item.transaction.relationship.their_username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
-      <span *ngIf="pageTitle =='Chat' && item.transaction.new"><strong>{{item.transaction.relationship.their_username}}</strong></span>
-      <span *ngIf="pageTitle =='Sign Ins' && !item.transaction.new">{{item.transaction.relationship.their_username}}</span>
-      <span *ngIf="pageTitle =='Sign Ins' && item.transaction.new"><strong>{{item.transaction.relationship.their_username}}</strong></span>
-      <span *ngIf="pageTitle =='Friends'">{{item.transaction.relationship.their_username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
-      <span *ngIf="pageTitle =='Reacts Detail'">{{item.transaction.relationship.react}} {{item.transaction.username}}</span>
-      <span *ngIf="pageTitle =='Comment Reacts Detail'">{{item.transaction.relationship.react}} {{item.transaction.username}}</span>
+      <span *ngIf="pageTitle =='Groups'">{{item.transaction.relationship.my_username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
+      <span *ngIf="pageTitle =='Sent Requests'">{{item.transaction.relationship.my_username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
+      <span *ngIf="pageTitle =='Contact Requests'">{{item.transaction.relationship.my_username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
+      <span *ngIf="pageTitle =='Messages' && !item.transaction.new">{{item.transaction.relationship.my_username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
+      <span *ngIf="pageTitle =='Chat' && item.transaction.new"><strong>{{item.transaction.relationship.my_username}}</strong></span>
+      <span *ngIf="pageTitle =='Sign Ins' && !item.transaction.new">{{item.transaction.relationship.my_username}}</span>
+      <span *ngIf="pageTitle =='Sign Ins' && item.transaction.new"><strong>{{item.transaction.relationship.my_username}}</strong></span>
+      <span *ngIf="pageTitle =='Contacts'">{{item.transaction.relationship.my_username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
+      <span *ngIf="pageTitle =='Reacts Detail'">{{item.transaction.relationship.react}} {{item.transaction.relationship.my_username}}</span>
+      <span *ngIf="pageTitle =='Comment Reacts Detail'">{{item.transaction.relationship.react}} {{item.transaction.relationship.my_username}}</span>
     </button>
   </ion-list>
   <div *ngIf="selectedItem && pageTitle =='Sent Requests'" padding>
   </div>
-  <div *ngIf="selectedItem && pageTitle =='Friend Requests'" padding>
+  <div *ngIf="selectedItem && pageTitle =='Contact Requests'" padding>
 
     <ion-card *ngIf="friend_request">
       <ion-card-header>
-        <p><strong>New friend request from {{friend_request.username}}</strong> </p>
+        <p><strong>New contact request from {{friend_request.relationship.their_username}}</strong> </p>
       </ion-card-header>
       <ion-card-content>
-        <p>{{friend_request.username}} would like to be your friend!</p>
+        <p>{{friend_request.relationship.their_username}} would like to be added as a contact</p>
         <button ion-button secondary (click)="accept()">Accept</button>
       </ion-card-content>
     </ion-card>
     <!-- for now, we can't do p2p on WKWebView
-    <button *ngIf="pageTitle == 'Friend Requests'" ion-button secondary (click)="accept(selectedItem.transaction)">Accept Request</button>
+    <button *ngIf="pageTitle == 'Contact Requests'" ion-button secondary (click)="accept(selectedItem.transaction)">Accept Request</button>
 
-    <button *ngIf="pageTitle == 'Friend Requests'" ion-button secondary (click)="send_receipt(selectedItem.transaction)">Send Receipt</button>
+    <button *ngIf="pageTitle == 'Contact Requests'" ion-button secondary (click)="send_receipt(selectedItem.transaction)">Send Receipt</button>
     -->
   </div>
-  <div *ngIf="selectedItem && pageTitle =='Friends'" padding>
+  <div *ngIf="selectedItem && pageTitle =='Contacts'" padding>
     You navigated here from <b>{{selectedItem.transaction.rid}}</b>
   </div>
   <div *ngIf="selectedItem && pageTitle =='Posts'" padding>
@@ -70,9 +72,9 @@
       </ion-card-content>
     </ion-card>
     <!-- for now, we can't do p2p on WKWebView
-    <button *ngIf="pageTitle == 'Friend Requests'" ion-button secondary (click)="accept(selectedItem.transaction)">Accept Request</button>
+    <button *ngIf="pageTitle == 'Contact Requests'" ion-button secondary (click)="accept(selectedItem.transaction)">Accept Request</button>
 
-    <button *ngIf="pageTitle == 'Friend Requests'" ion-button secondary (click)="send_receipt(selectedItem.transaction)">Send Receipt</button>
+    <button *ngIf="pageTitle == 'Contact Requests'" ion-button secondary (click)="send_receipt(selectedItem.transaction)">Send Receipt</button>
     -->
   </div>
 </ion-content>

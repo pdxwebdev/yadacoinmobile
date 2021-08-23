@@ -10,12 +10,14 @@ import { Events } from 'ionic-angular';
 
 import { HomePage } from '../pages/home/home';
 import { ListPage } from '../pages/list/list';
+import { CalendarPage } from '../pages/calendar/calendar';
 import { Settings } from '../pages/settings/settings';
 import { SiaFiles } from '../pages/siafiles/siafiles';
 import { StreamPage } from '../pages/stream/stream';
 import { SendReceive } from '../pages/sendreceive/sendreceive';
-//import { ProfilePage } from '../pages/profile/profile';
-//import { SendReceive } from '../pages/sendreceive/sendreceive';
+import { ProfilePage } from '../pages/profile/profile';
+import { MailPage } from '../pages/mail/mail';
+import { Deeplinks } from '@ionic-native/deeplinks';
 
 declare var forge;
 
@@ -31,6 +33,8 @@ export class MyApp {
   graph: any;
   friend_request_count: any;
   new_messages_count: any;
+  version: any;
+  menu: any;
 
   constructor(
     public platform: Platform,
@@ -40,7 +44,8 @@ export class MyApp {
     private graphService: GraphService,
     public settingsService: SettingsService,
     private bulletinSecretService: BulletinSecretService,
-    public events: Events
+    public events: Events,
+    private deeplinks: Deeplinks
   ) {
     events.subscribe('graph', () => {
       this.rootPage = HomePage;
@@ -53,29 +58,71 @@ export class MyApp {
       reacts: "",
       commentReacts: ""
     }
-    this.initializeApp();
-    this.walletService.get().then((data: any) => {
-      this.rootPage = Settings;
-    }).catch(() => {
-      this.rootPage = Settings;
-    });
-
+    this.rootPage = Settings;
+    this.menu = 'wallet';
     this.pages = [
-      { title: 'Home', label: 'Dashboard', component: HomePage, count: false, color: '' },
-      { title: 'Stream', label: 'Stream', component: StreamPage, count: false, color: '' },
-      { title: 'Groups', label: 'Groups', component: ListPage, count: false, color: '' },
-      { title: 'Files', label: 'Files', component: SiaFiles, count: false, color: '' },
-      { title: 'Friends', label: 'Friends', component: ListPage, count: false, color: '' },
-      { title: 'Messages', label: 'Messages', component: ListPage, count: false, color: '' },
-      { title: 'Friend Requests', label: 'Friend Requests', component: ListPage, count: false, color: '' },
-      { title: 'Sent Requests', label: 'Sent Requests', component: ListPage, count: false, color: '' },
-      { title: 'Send / Receive', label: 'Send / Receive', component: SendReceive, count: false, color: '' },
-      { title: 'Identity', label: 'Identity', component: Settings, count: false, color: '' }
+      { title: 'Send / Receive', label: 'Send / Receive', component: SendReceive, count: false, color: '' }
     ];
+  }
+  
+  ngAfterViewInit() {
+    this.initializeApp();
+  }
+
+  setMenu() {
+    if (this.menu == 'mail') {
+      this.pages = [
+        { title: 'Inbox', label: 'Inbox', component: MailPage, count: false, color: '' },
+        { title: 'Sent', label: 'Sent', component: MailPage, count: false, color: '' },
+      ];
+    } else if (this.menu == 'chat') {
+      this.pages = [
+        { title: 'Messages', label: 'Messages', component: ListPage, count: false, color: '' },
+      ];
+    } else if (this.menu == 'calendar') {
+      this.pages = [
+        { title: 'Calendar', label: 'Calendar', component: CalendarPage, count: false, color: '' },
+      ];
+    } else if (this.menu == 'contacts') {
+      this.pages = [
+        { title: 'Contacts', label: 'Contacts', component: ListPage, count: false, color: '' },
+        { title: 'Contact Requests', label: 'Contact Requests', component: ListPage, count: false, color: '' },
+        { title: 'Groups', label: 'Groups', component: ListPage, count: false, color: '' },
+      ];
+    } else if (this.menu == 'files') {
+      this.pages = [
+        { title: 'Files', label: 'Files', component: SiaFiles, count: false, color: '' },
+      ];
+    } else if (this.menu == 'wallet') {
+      this.pages = [
+        { title: 'Send / Receive', label: 'Send / Receive', component: SendReceive, count: false, color: '' }
+      ];
+    } else if (this.menu == 'stream') {
+      this.pages = [ 
+        { title: 'Stream', label: 'Stream', component: StreamPage, count: false, color: '' }
+      ]
+    } else if (this.menu == 'settings') {
+      this.pages = [
+        { title: 'Settings', label: 'Identity', component: Settings, count: false, color: '' },
+        { title: 'Profile', label: 'Profile', component: ProfilePage, count: false, color: '' }
+      ];
+    }
+    this.openPage(this.pages[0])
   }
 
   initializeApp() {
     this.platform.ready().then(() => {
+        this.deeplinks.routeWithNavController(this.nav, {
+            '/friends': ListPage
+        }).subscribe(match => {
+            // match.$route - the route we matched, which is the matched entry from the arguments to route()
+            // match.$args - the args passed in the link
+            // match.$link - the full link data
+            console.log('Successfully matched route', match);
+        }, nomatch => {
+            // nomatch.$link - the full link data
+            console.error('Got a deeplink that didn\'t match', nomatch);
+        });
       // Okay, so the platform is ready and our plugins are available.
       // Here you can do any higher level native things you might need.
       if (this.platform.is('android') || this.platform.is('ios')) {
@@ -89,6 +136,11 @@ export class MyApp {
     // Reset the content nav to have just this page
     // we wouldn't want the back button to show in this scenario
     this.nav.setRoot(page.component, {pageTitle: page});
+  }
+
+  segmentChanged(e) {
+    this.menu = e.value;
+    this.setMenu();
   }
 
   decrypt(message) {

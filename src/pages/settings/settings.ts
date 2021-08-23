@@ -1,5 +1,5 @@
 import { Component, Injectable } from '@angular/core';
-import { NavController, NavParams, ToastController } from 'ionic-angular';
+import { NavController, NavParams, Platform, ToastController } from 'ionic-angular';
 import { Storage } from '@ionic/storage';
 import { SettingsService } from '../../app/settings.service';
 import { PeerService } from '../../app/peer.service';
@@ -9,16 +9,19 @@ import { ListPage } from '../list/list';
 import { AlertController, LoadingController } from 'ionic-angular';
 import { GraphService } from '../../app/graph.service';
 import { WalletService } from '../../app/wallet.service';
+import { TransactionService } from '../../app/transaction.service';
 import { SocialSharing } from '@ionic-native/social-sharing';
 import { Events } from 'ionic-angular';
 import { HomePage } from '../home/home';
 import { Http, Headers, RequestOptions } from '@angular/http';
 import { Geolocation } from '@ionic-native/geolocation';
 import { SendReceive } from '../sendreceive/sendreceive';
+import { GoogleMaps, GoogleMapsEvent, LatLng, MarkerOptions, Marker } from "@ionic-native/google-maps";
 
 
 declare var forge;
 declare var foobar;
+declare var CenterIdentity;
 
 
 @Component({
@@ -42,6 +45,16 @@ export class Settings {
     noUsername = false;
     key = null;
     geoWalletUsername: any;
+    identity: any;
+    identityJson = '{}';
+    centerIdentityImportEnabled = false;
+    centerIdentityExportEnabled = false;
+    exportKeyEnabled = false;
+    centerIdentityLocation: any;
+    centerIdentityPrivateUsername = '';
+    ci: any;
+    centerIdentitySaveSuccess = false;
+    centerIdentityImportSuccess = false;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -54,17 +67,42 @@ export class Settings {
         private graphService: GraphService,
         private socialSharing: SocialSharing,
         private walletService: WalletService,
+        private transactionService: TransactionService,
         public events: Events,
         public toastCtrl: ToastController,
         public peerService: PeerService,
         private ahttp: Http,
-        private geolocation: Geolocation
+        private geolocation: Geolocation,
+        private platform: Platform
     ) {
         if (typeof this.peerService.mode == 'undefined') this.peerService.mode = true;
         this.refresh(null).catch((err) => {
             console.log(err)
         });
         this.prefix = 'usernames-';
+        this.ci = new CenterIdentity(undefined, undefined, undefined, undefined, true)
+    }
+
+    loadMap(mapType) {
+      /* The create() function will take the ID of your map element */
+      const map = GoogleMaps.create('map-' + mapType, {
+        mapTypeId: 'satellite'
+      });
+  
+      map.one( GoogleMapsEvent.MAP_READY ).then((data: any) => {
+        const coordinates: LatLng = new LatLng(41, -87);
+  
+        map.setCameraTarget(coordinates);
+        map.setCameraZoom(8);
+      });
+
+      map.on(GoogleMapsEvent.MAP_CLICK).subscribe((e) => {
+        map.clear();
+        this.centerIdentityLocation = e[0]
+        map.addMarker({
+          position: e[0]
+        })
+      })
     }
 
     refresh(refresher) {
@@ -96,6 +134,8 @@ export class Settings {
                     active: active
                 });
                 if (active) {
+                    this.identity = this.bulletinSecretService.identity
+                    this.identityJson = this.bulletinSecretService.identityJson()
                     this.activeKey = value;
                 }
             }
@@ -120,6 +160,7 @@ export class Settings {
             text: 'Ok',
             handler: (data: any) => {
                 this.socialSharing.share(this.bulletinSecretService.key.toWIF(), "Export Secret Key");
+                this.exportKeyEnabled = true;
             }
         });
         alert.present();
@@ -141,7 +182,7 @@ export class Settings {
                     role: 'cancel',
                     handler: data => {
                         console.log('Cancel clicked');
-                        reject();
+                        reject('Cancel clicked');
                     }
                 },
                 {
@@ -191,7 +232,7 @@ export class Settings {
                     role: 'cancel',
                     handler: data => {
                         console.log('Cancel clicked');
-                        reject();
+                        reject('Cancel clicked');
                     }
                 },
                 {
@@ -261,9 +302,6 @@ export class Settings {
         .then(() => { 
             this.loadingModal.dismiss();
         })
-        .then(() => {
-            this.navCtrl.setRoot(SendReceive);
-        })
         .catch((err)  => {
             console.log(err);
             this.loadingModal.dismiss();  
@@ -313,7 +351,7 @@ export class Settings {
                 return resolve();
             }).catch((error) => {
                 this.serverDown = true;
-                return reject();
+                return reject(error);
             });
         });
     }
@@ -336,5 +374,47 @@ export class Settings {
     showFriendRequests() {
       var item = {pageTitle: {title:"Friend Requests"}};
       this.navCtrl.push(ListPage, item);
+    }
+
+    enableCenterIdentityImport() {
+      this.centerIdentityImportEnabled = true
+      this.loadMap('import')
+    }
+
+    enableCenterIdentityExport() {
+      this.centerIdentityExportEnabled = true
+      this.loadMap('export')
+    }
+
+    getKeyUsingCenterIdentity() {
+      return this.ci.get(this.centerIdentityPrivateUsername, this.centerIdentityLocation.lat, this.centerIdentityLocation.lng)
+      .then((identity) => {
+        this.importedKey = identity.wif;
+        return this.importKey();
+      });
+    }
+
+    saveKeyUsingCenterIdentity() {
+      const fullIdentity = {
+        key: this.bulletinSecretService.key,
+        wif: this.bulletinSecretService.key.toWIF(),
+        public_key: this.identity.public_key,
+        username: this.centerIdentityPrivateUsername,
+      }
+      return this.walletService.get(1)
+      .then((txns) => {
+        return this.ci.set(fullIdentity, this.centerIdentityLocation.lat, this.centerIdentityLocation.lng);
+      })
+      .then((txns) => {
+        const friendTxn = txns[0];
+        this.transactionService.generateTransaction(friendTxn)
+        this.transactionService.sendTransaction('https://centeridentity.com/transaction');
+        const buryTxn = txns[1];
+        buryTxn.to = '1EWkrpUezWMpByE6nys6VXubjFLorgbZuP'
+        buryTxn.value = 1
+        this.transactionService.generateTransaction(buryTxn)
+        this.transactionService.sendTransaction('https://centeridentity.com/transaction');
+        this.centerIdentitySaveSuccess = true
+      })
     }
 }

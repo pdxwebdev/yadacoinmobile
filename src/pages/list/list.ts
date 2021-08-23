@@ -15,6 +15,7 @@ import { Events } from 'ionic-angular';
 import { Http } from '@angular/http';
 
 declare var X25519;
+declare var foobar;
 
 @Component({
   selector: 'page-list',
@@ -101,7 +102,7 @@ export class ListPage {
         'american-football', 'boat', 'bluetooth', 'build'];
         var my_public_key = '';
         var graphArray = [];
-        if (this.pageTitle == 'Friends') {
+        if (this.pageTitle == 'Contacts') {
           return this.graphService.getFriends()
           .then(() => {
             var graphArray = this.graphService.graph.friends;
@@ -162,6 +163,28 @@ export class ListPage {
           }).catch((err) => {
               console.log(err);
           });
+        } else if (this.pageTitle == 'Sent') {
+          my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
+          return this.graphService.getFriends()
+          .then(() => {
+            return this.graphService.getSentMessages();
+          })
+          .then((graphArray) => {
+            var messages = this.markNew(my_public_key, graphArray, this.graphService.new_messages_counts);
+            var friendsWithMessagesList = this.getDistinctFriends(messages);
+            this.populateRemainingFriends(friendsWithMessagesList.friend_list, friendsWithMessagesList.used_rids);
+            this.loading = false;
+            friendsWithMessagesList.friend_list.sort(function (a, b) {
+                if (a.relationship.their_username.toLowerCase() < b.relationship.their_username.toLowerCase())
+                  return -1
+                if ( a.relationship.their_username.toLowerCase() > b.relationship.their_username.toLowerCase())
+                  return 1
+                return 0
+            });
+            return this.makeList(friendsWithMessagesList.friend_list);
+          }).catch((err) => {
+              console.log(err);
+          });
         } else if (this.pageTitle == 'Sign Ins') {
           my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
           return this.graphService.getFriends()
@@ -177,7 +200,7 @@ export class ListPage {
           }).catch(() => {
               console.log('listpage getFriends or getNewSignIns error');
           });
-        } else if (this.pageTitle == 'Friend Requests') {
+        } else if (this.pageTitle == 'Contact Requests') {
           return this.graphService.getFriendRequests()
           .then(() => {
               var graphArray = this.graphService.graph.friend_requests;
@@ -224,7 +247,7 @@ export class ListPage {
         if (this.pageTitle == 'Sent Requests') {
           resolve();
         }
-        else if (this.pageTitle == 'Friend Requests') {
+        else if (this.pageTitle == 'Contact Requests') {
           this.friend_request = this.navParams.get('item').transaction;
           resolve();
         }
@@ -237,7 +260,7 @@ export class ListPage {
             resolve();
           }).catch(() => {
             console.log('listpage getSignIns error');
-            reject();
+            reject('listpage getSignIns error');
           });
         }
       }
@@ -348,7 +371,7 @@ export class ListPage {
       this.navCtrl.push(GroupPage, {
         item: item
       });
-    } else if(this.pageTitle == 'Friends') {
+    } else if(this.pageTitle == 'Contacts') {
       this.navCtrl.push(ProfilePage, {
         item: item.transaction
       });
@@ -360,76 +383,51 @@ export class ListPage {
   }
 
   accept() {
-    let alert = this.alertCtrl.create();
-    alert.setTitle('Approve Transaction');
-    alert.setSubTitle('You are about to spend 1.01 coins.');
-    alert.addButton({
-        text: 'Cancel',
-        handler: (data: any) => {
-            alert.dismiss();
-        }
-    });
-    alert.addButton({
-      text: 'Confirm',
-      handler: (data: any) => {
-        this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/ns?requester_rid=' + this.friend_request.requester_rid + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
-        .subscribe((res) => {
-          let info = res.json();
-          // camera permission was granted
-          var requester_rid = info.requester_rid;
-          var requested_rid = info.requested_rid;
-          if (requester_rid && requested_rid) {
-              // get rid from bulletin secrets
-          } else {
-              requester_rid = '';
-              requested_rid = '';
-          }
-          //////////////////////////////////////////////////////////////////////////
-          // create and send transaction to create the relationship on the blockchain
-          //////////////////////////////////////////////////////////////////////////
-          this.walletService.get().then(() => {
-              var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
-              var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
-              var dh_private_key = this.toHex(raw_dh_private_key);
-              var dh_public_key = this.toHex(raw_dh_public_key);
-              info.dh_private_key = dh_private_key;
-              info.dh_public_key = dh_public_key;
-              return this.transactionService.generateTransaction({
-                  relationship: {
-                      dh_private_key: info.dh_private_key,
-                      their_bulletin_secret: info.bulletin_secret,
-                      their_username: info.username,
-                      my_bulletin_secret: this.bulletinSecretService.generate_bulletin_secret(),
-                      my_username: this.bulletinSecretService.username
-                  },
-                  dh_public_key: info.dh_public_key,
-                  requested_rid: info.requested_rid,
-                  requester_rid: info.requester_rid,
-                  to: info.to
-              });
-          }).then((txn) => {
-              return this.transactionService.sendTransaction();
-          }).then((txn) => {
-            var alert = this.alertCtrl.create();
-            alert.setTitle('Friend Accept Sent');
-            alert.setSubTitle('Your Friend Request acceptance has been submitted successfully.');
-            alert.addButton('Ok');
-            alert.present();
-            
-            this.refresh(null).then(() => {
-              this.navCtrl.pop();
-            });
-          }).catch((err) => {
-              console.log(err);
-          });
+    return new Promise((resolve, reject) => {
+      return this.graphService.addFriend(
+        {
+          username: this.friend_request.relationship.my_username,
+          username_signature: this.friend_request.relationship.my_username_signature,
+          public_key: this.friend_request.relationship.my_public_key,
         },
-        (err) => {
-            //this.loadingModal2.dismiss();
-            console.log(err);
-        });
-      }
+        this.friend_request.requester_rid,
+        this.friend_request.requested_rid
+      )
+    }).then((txn) => {
+      var alert = this.alertCtrl.create();
+      alert.setTitle('Friend Accept Sent');
+      alert.setSubTitle('Your Friend Request acceptance has been submitted successfully.');
+      alert.addButton('Ok');
+      alert.present();
+      
+      this.refresh(null).then(() => {
+        this.navCtrl.pop();
+      });
+    }).catch((err) => {
+        console.log(err);
     });
-    alert.present();
+  }
+
+  addFriend() {
+      var buttons = [];
+      buttons.push({
+          text: 'Add',
+          handler: (data) => {
+              this.graphService.addFriend(JSON.parse(data.identity))
+          }
+      });
+      let alert = this.alertCtrl.create({
+          inputs: [
+              {
+                  name: 'identity',
+                  placeholder: 'Past friend identity here...'
+              }
+          ],
+          buttons: buttons
+      });
+      alert.setTitle('Request Friend');
+      alert.setSubTitle('How do you want to request this friend?');
+      alert.present();
   }
 
   sendSignIn() {

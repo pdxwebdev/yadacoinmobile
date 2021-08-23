@@ -25,7 +25,7 @@ export class WalletService {
 
     get(amount_needed=0) {
         return new Promise((resolve, reject) => {
-            if (!this.settingsService.remoteSettings['walletUrl']) return resolve();
+            if (!this.settingsService.remoteSettings || !this.settingsService.remoteSettings['walletUrl']) return resolve();
             this.bulletinSecretService.get()
             .then(() => {
                 return this.walletPromise(amount_needed);
@@ -33,8 +33,8 @@ export class WalletService {
             .then(() => {
                 return resolve();  
             })
-            .catch(() => {
-                return reject();  
+            .catch((err) => {
+                return reject(err);  
             });
         })
     }
@@ -42,13 +42,13 @@ export class WalletService {
     walletPromise(amount_needed=0) {
         return new Promise((resolve, reject) => {
             if(!this.settingsService.remoteSettings['walletUrl']) {
-                return reject()
+                return reject('no wallet url')
             }
             if(this.bulletinSecretService.username) {
                 let headers = new Headers();
                 headers.append('Authorization', 'Bearer ' + this.settingsService.tokens[this.bulletinSecretService.keyname]);
                 let options = new RequestOptions({ headers: headers, withCredentials: true });
-                this.ahttp.get(this.settingsService.remoteSettings['walletUrl'] + '?amount_needed=' + amount_needed + '&address=' + this.bulletinSecretService.key.getAddress() + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret + '&origin=' + window.location.origin, options)
+                this.ahttp.get(this.settingsService.remoteSettings['walletUrl'] + '?amount_needed=' + amount_needed + '&address=' + this.bulletinSecretService.key.getAddress() + '&username_signature=' + this.bulletinSecretService.username_signature + '&origin=' + window.location.origin, options)
                 .pipe(timeout(30000))
                 .subscribe((data) => {
                     if(data['_body']) {

@@ -104,10 +104,10 @@ export class SiaFiles {
                                 groupChatText: this.postText,
                                 groupChatFile: sharefiledata,
                                 groupChatFileName: this.selectedFile,
-                                my_bulletin_secret: this.bulletinSecretService.generate_bulletin_secret(),
+                                my_username_signature: this.bulletinSecretService.generate_username_signature(),
                                 my_username: this.bulletinSecretService.username
                             },
-                            their_bulletin_secret: this.group.their_bulletin_secret,
+                            their_username_signature: this.group.their_username_signature,
                             rid: this.group.rid,
                             requester_rid: this.group.requester_rid,
                             requested_rid: this.group.requested_rid
@@ -116,7 +116,7 @@ export class SiaFiles {
                             resolve()
                         })
                         .catch((err) => {
-                            reject();
+                            reject('failed generating transaction');
                         });
                     } else {
                         return this.transactionService.generateTransaction({
@@ -128,7 +128,7 @@ export class SiaFiles {
                             resolve()
                         })
                         .catch((err) => {
-                            reject();
+                            reject(err);
                         });
                     }
                 })

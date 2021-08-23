@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Storage } from '@ionic/storage';
 import { Events } from 'ionic-angular';
+import { GraphService } from './graph.service';
 
 
 declare var foobar;
@@ -9,10 +10,17 @@ declare var forge;
 @Injectable()
 export class BulletinSecretService {
     key = null;
-    bulletin_secret = null;
+    username_signature = null;
     keyname = null;
     keykeys = null;
     username = null;
+    public_key = null;
+    identity = {
+      username: '',
+      username_signature: '',
+      public_key: '',
+      server_username_signature: ''
+    };
     constructor(
         private storage: Storage,
         public events: Events
@@ -67,13 +75,24 @@ export class BulletinSecretService {
             this.storage.get(this.keyname).then((key) => {
                 this.key = foobar.bitcoin.ECPair.fromWIF(key);
                 this.username = this.keyname.substr('usernames-'.length);
-                this.bulletin_secret = this.generate_bulletin_secret();
+                this.public_key = this.key.getPublicKeyBuffer().toString('hex')
+                this.identity = {
+                  username: this.username,
+                  username_signature: this.username_signature,
+                  public_key: this.public_key,
+                  server_username_signature: ''
+                }
+                this.username_signature = this.generate_username_signature();
                 return resolve();
             });
         });
     }
 
-    generate_bulletin_secret() {
+    identityJson() {
+      return JSON.stringify(this.identity, null, 4)
+    }
+
+    generate_username_signature() {
         return foobar.base64.fromByteArray(this.key.sign(foobar.bitcoin.crypto.sha256(this.username)).toDER());
     }
 
@@ -93,22 +112,22 @@ export class BulletinSecretService {
             .then(() => {
                 return resolve();
             })
-            .catch(() => {
-                return reject();
+            .catch((err) => {
+                return reject(err);
             });
         });
     }
 
     create(username) {
         return new Promise((resolve, reject) => {
-            if (!username) return reject();
+            if (!username) return reject('username missing');
             this.keyname = 'usernames-' + username;
             this.storage.set('last-keyname', this.keyname);
 
             this.username = username;
             this.key = foobar.bitcoin.ECPair.makeRandom();
             this.storage.set(this.keyname, this.key.toWIF());
-            this.bulletin_secret = this.generate_bulletin_secret();
+            this.username_signature = this.generate_username_signature();
             return this.get().then(() => {
                 return resolve();
             });
@@ -117,14 +136,14 @@ export class BulletinSecretService {
 
     import (keyWif, username) {
         return new Promise((resolve, reject) => {
-            if (!username) return reject();
+            if (!username) return reject('username missing');
             this.keyname = 'usernames-' + username;
             this.storage.set('last-keyname', this.keyname);
             
             this.username = username;
             this.storage.set(this.keyname, keyWif.trim());
             this.key = foobar.bitcoin.ECPair.fromWIF(keyWif.trim());
-            this.bulletin_secret = this.generate_bulletin_secret();
+            this.username_signature = this.generate_username_signature();
             return this.get().then(() => {
                 return resolve();
             });

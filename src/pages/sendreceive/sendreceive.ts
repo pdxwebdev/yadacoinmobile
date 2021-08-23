@@ -202,7 +202,7 @@ export class SendReceive {
             .subscribe((res) => {
                 this.sentPendingLoading = false;
                 this.past_sent_pending_transactions = res.json()['past_pending_transactions'].sort(this.sortFunc);
-                this.getOutputValue(this.past_sent_pending_transactions);
+                this.getSentOutputValue(this.past_sent_pending_transactions);
                 this.past_sent_pending_page_cache[this.sentPendingPage] = this.past_sent_pending_transactions;
                 resolve(res);
             },
@@ -220,7 +220,7 @@ export class SendReceive {
             .subscribe((res) => {
                 this.sentLoading = false;
                 this.past_sent_transactions = res.json()['past_transactions'].sort(this.sortFunc);
-                this.getOutputValue(this.past_sent_transactions);
+                this.getSentOutputValue(this.past_sent_transactions);
                 this.past_sent_page_cache[this.sentPage] = this.past_sent_transactions;
                 resolve(res);
             },
@@ -238,7 +238,7 @@ export class SendReceive {
             .subscribe((res) => {
                 this.receivedPendingLoading = false;
                 this.past_received_pending_transactions = res.json()['past_pending_transactions'].sort(this.sortFunc);
-                this.getOutputValue(this.past_received_pending_transactions);
+                this.getReceivedOutputValue(this.past_received_pending_transactions);
                 this.past_received_pending_page_cache[this.receivedPendingPage] = this.past_received_pending_transactions;
                 resolve(res);
             },
@@ -256,7 +256,7 @@ export class SendReceive {
             .subscribe((res) => {
                 this.receivedLoading = false;
                 this.past_received_transactions = res.json()['past_transactions'].sort(this.sortFunc);
-                this.getOutputValue(this.past_received_transactions);
+                this.getReceivedOutputValue(this.past_received_transactions);
                 this.past_received_page_cache[this.receivedPage] = this.past_received_transactions;
                 resolve(res);
             },
@@ -266,7 +266,7 @@ export class SendReceive {
         })
     }
 
-    getOutputValue(array) {
+    getReceivedOutputValue(array) {
         for(var i=0; i < array.length; i++) {
             var txn = array[i];
             if (!array[i]['value']) {
@@ -275,6 +275,22 @@ export class SendReceive {
             for(var j=0; j < txn['outputs'].length; j++) {
                 var output = txn['outputs'][j];
                 if(this.bulletinSecretService.key.getAddress() === output.to) {
+                    array[i]['value'] += parseFloat(output.value);
+                }
+            }
+            array[i]['value'] = array[i]['value'].toFixed(8);
+        }
+    }
+
+    getSentOutputValue(array) {
+        for(var i=0; i < array.length; i++) {
+            var txn = array[i];
+            if (!array[i]['value']) {
+                array[i]['value'] = 0;
+            }
+            for(var j=0; j < txn['outputs'].length; j++) {
+                var output = txn['outputs'][j];
+                if(this.bulletinSecretService.key.getAddress() !== output.to) {
                     array[i]['value'] += parseFloat(output.value);
                 }
             }

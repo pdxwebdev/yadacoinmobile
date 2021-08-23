@@ -91,7 +91,7 @@ export class PostModal {
                             resolve()
                         })
                         .catch((err) => {
-                            reject();
+                            reject('failed to generate transaction');
                         });
                     } else {
                         return this.transactionService.generateTransaction({
@@ -103,7 +103,7 @@ export class PostModal {
                             resolve()
                         })
                         .catch((err) => {
-                            reject();
+                            reject('failed to generate transaction');
                         });
                     }
                 })

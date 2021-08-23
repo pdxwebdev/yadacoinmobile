@@ -32,7 +32,7 @@ export class StreamPage {
     loadingModal: any;
     content: any;
     wallet_mode: any;
-    their_bulletin_secret: any;
+    their_username_signature: any;
     their_username: any;
     requester_rid: any;
     requested_rid: any;
@@ -168,7 +168,7 @@ export class StreamPage {
     getGroupMessages(group) {
         return new Promise((resolve, reject) => {
             this.graphService.getGroupMessages(
-                group['relationship']['their_bulletin_secret'],
+                group['relationship']['their_username_signature'],
                 null,
                 group.rid
             )

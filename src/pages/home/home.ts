@@ -194,7 +194,7 @@ export class HomePage {
                 relationship: {
                     'react': e.char,
                     'id': item.id,
-                    'bulletin_secret': this.bulletinSecretService.bulletin_secret
+                    'username_signature': this.bulletinSecretService.username_signature
                 }
             });
         })
@@ -234,7 +234,7 @@ export class HomePage {
                 relationship: {
                     'comment': this.commentInputs[item.id],
                     'id': item.id,
-                    'bulletin_secret': this.bulletinSecretService.bulletin_secret
+                    'username_signature': this.bulletinSecretService.username_signature
                 }
             });
         })
@@ -274,7 +274,7 @@ export class HomePage {
                 relationship: {
                     'react': e.char,
                     'id': item.id,
-                    'bulletin_secret': this.bulletinSecretService.bulletin_secret
+                    'username_signature': this.bulletinSecretService.username_signature
                 }
             });
         })
@@ -322,7 +322,7 @@ export class HomePage {
                 relationship: {
                     'comment': this.commentInputs[item.id],
                     'id': item.id,
-                    'bulletin_secret': this.bulletinSecretService.bulletin_secret
+                    'username_signature': this.bulletinSecretService.username_signature
                 }
             });
         })
@@ -417,7 +417,7 @@ export class HomePage {
             let headers = new Headers();
             headers.append('Authorization', 'Bearer ' + this.settingsService.tokens[this.bulletinSecretService.keyname]);
             let options = new RequestOptions({ headers: headers, withCredentials: true });
-            this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/unlocked?rid=' + this.graphService.graph.rid + '&id=' + '' + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret + '&origin=' + window.location.origin, options).subscribe((res) => {
+            this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/unlocked?rid=' + this.graphService.graph.rid + '&id=' + '' + '&username_signature=' + this.bulletinSecretService.username_signature + '&origin=' + window.location.origin, options).subscribe((res) => {
                 var data = JSON.parse(res['_body']);
                 this.signedIn = data.authenticated;
             });
@@ -560,45 +560,13 @@ export class HomePage {
         });
     }
 
-    register() {
-        return new Promise((resolve, reject) => {
-            this.walletService.get().then(() => {
-                this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/register')
-                .subscribe((res) => {
-                    var data = JSON.parse(res['_body']);
-                    var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
-                    var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
-                    var dh_private_key = this.toHex(raw_dh_private_key);
-                    var dh_public_key = this.toHex(raw_dh_public_key);
-                    data.dh_private_key = dh_private_key;
-                    data.dh_public_key = dh_public_key;
-                    var hash = this.getTransaction(data, resolve);
-                    resolve(hash);
-                });
-            });
-        }) // we cannot do fastgraph registrations. The signing process verifies a relationship. So one must already exist.
-        .then((hash) => {
-            return this.transactionService.sendTransaction();
-        })
-        .then(() => {
-            return this.transactionService.sendCallback();
-        })
-        .then(() => {
-            this.refresh(null);
-        })
-        .catch(() => {
-            alert('error registering');
-            this.loadingModal.dismiss().catch(() => {});
-        });
-    }
-
     getTransaction(info, resolve) {
         return this.transactionService.generateTransaction({
             relationship: {
                 dh_private_key: info.dh_private_key,
-                their_bulletin_secret: info.bulletin_secret,
+                their_username_signature: info.username_signature,
                 their_username: info.username,
-                my_bulletin_secret: this.bulletinSecretService.bulletin_secret,
+                my_username_signature: this.bulletinSecretService.username_signature,
                 my_username: this.bulletinSecretService.username
             },
             dh_public_key: info.dh_public_key,
@@ -619,13 +587,13 @@ export class HomePage {
         buttons.push({
             text: 'Add',
             handler: (data) => {
-                this.pasteFriend(data.phrase);
+                this.graphService.addFriend(data.identity);
             }
         });
         let alert = this.alertCtrl.create({
             inputs: [
                 {
-                    name: 'phrase',
+                    name: 'identity',
                     placeholder: 'Type username here...'
                 }
             ],
@@ -728,7 +696,7 @@ export class HomePage {
         })
         .then((groupinvite) => {
             return new Promise((resolve, reject) => {
-                if (!groupinvite) return reject();
+                if (!groupinvite) return reject('failed to join group');
                 let invite = JSON.parse(Base64.decode(groupinvite));
                 var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
                 var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
@@ -737,7 +705,7 @@ export class HomePage {
                 resolve({
                     their_address: invite.their_address,
                     their_public_key: invite.their_public_key,
-                    their_bulletin_secret: invite.their_bulletin_secret,
+                    their_username_signature: invite.their_username_signature,
                     their_username: invite.their_username,
                     dh_public_key: dh_public_key,
                     dh_private_key: dh_private_key,
@@ -749,11 +717,11 @@ export class HomePage {
             return this.transactionService.generateTransaction({
                 relationship: {
                     dh_private_key: info.dh_private_key,
-                    my_bulletin_secret: this.bulletinSecretService.generate_bulletin_secret(),
+                    my_username_signature: this.bulletinSecretService.generate_username_signature(),
                     my_username: this.bulletinSecretService.username,
                     their_address: info.their_address,
                     their_public_key: info.their_public_key,
-                    their_bulletin_secret: info.their_bulletin_secret,
+                    their_username_signature: info.their_username_signature,
                     their_username: info.their_username,
                     group: true
                 },
@@ -782,215 +750,6 @@ export class HomePage {
         });
     }
 
-    pasteFriend(phrase) {
-        //this.loadingModal2 = this.loadingCtrl.create({
-        //    content: 'Please wait...'
-        //});
-        //this.loadingModal.present();
-        this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/search?phrase=' + phrase + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
-        .subscribe((res) => {
-            //this.loadingModal2.dismiss();
-            this.alertRoutine(JSON.parse(res['_body']));
-        },
-        (err) => {
-            //this.loadingModal2.dismiss();
-            alert('Username not found.');
-        });
-    }
-
-    alertRoutine(info) {
-        if (this.walletService.wallet.balance < 1.01) {
-            let alert = this.alertCtrl.create();
-            alert.setTitle('Insuficient Funds');
-            alert.setSubTitle('You need at least 1.01 YadaCoins');
-            alert.addButton('OK');
-            alert.present();
-            return
-        }
-        if (info.requester_rid && info.requested_rid && info.requester_rid === info.requested_rid) {
-            let alert = this.alertCtrl.create();
-            alert.setTitle('Oops!');
-            alert.setSubTitle('You are trying to request yourself. :)');
-            alert.addButton({
-                text: 'Cancel',
-                handler: (data: any) => {
-                    this.loadingModal.dismiss().catch(() => {});
-                }
-            });
-            alert.present();
-            return
-        }
-        let alert = this.alertCtrl.create();
-        alert.setTitle('Approve Transaction');
-        alert.setSubTitle('You are about to spend 1.01 coins (1 coin + 0.01 fee)');
-        alert.addButton({
-            text: 'Cancel',
-            handler: (data: any) => {
-                this.loadingModal.dismiss().catch(() => {});
-            }
-        });
-        alert.addButton({
-            text: 'Confirm',
-            handler: (data: any) => {
-                // camera permission was granted
-                var requester_rid = info.requester_rid;
-                var requested_rid = info.requested_rid;
-                if (requester_rid && requested_rid) {
-                    // get rid from bulletin secrets
-                } else {
-                    requester_rid = '';
-                    requested_rid = '';
-                }
-                //////////////////////////////////////////////////////////////////////////
-                // create and send transaction to create the relationship on the blockchain
-                //////////////////////////////////////////////////////////////////////////
-                this.walletService.get().then(() => {
-                    var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
-                    var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
-                    var dh_private_key = this.toHex(raw_dh_private_key);
-                    var dh_public_key = this.toHex(raw_dh_public_key);
-                    info.dh_private_key = dh_private_key;
-                    info.dh_public_key = dh_public_key;
-                    return this.transactionService.generateTransaction({
-                        relationship: {
-                            dh_private_key: info.dh_private_key,
-                            their_bulletin_secret: info.bulletin_secret,
-                            their_username: info.username,
-                            my_bulletin_secret: this.bulletinSecretService.generate_bulletin_secret(),
-                            my_username: this.bulletinSecretService.username
-                        },
-                        dh_public_key: info.dh_public_key,
-                        requested_rid: info.requested_rid,
-                        requester_rid: info.requester_rid,
-                        to: info.to
-                    });
-                }).then((hash) => {
-                    return new Promise((resolve, reject) => {
-                        this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/sign-raw-transaction', {
-                            hash: hash, 
-                            bulletin_secret: this.bulletinSecretService.bulletin_secret,
-                            input: this.transactionService.transaction.inputs[0].id,
-                            id: this.transactionService.transaction.id,
-                            txn: this.transactionService.transaction
-                        })
-                        .subscribe((res) => {
-                            //this.loadingModal2.dismiss();
-                            try {
-                                let data = res.json();
-                                this.transactionService.transaction.signatures = [data.signature]
-                                resolve();
-                            } catch(err) {
-                                reject();
-                                this.loadingModal.dismiss().catch(() => {});
-                            }
-                        },
-                        (err) => {
-                            //this.loadingModal2.dismiss();
-                        });
-                    });
-                }).then((txn) => {
-                    return this.transactionService.sendTransaction();
-                }).then((txn) => {
-                    this.loadingModal.dismiss().catch(() => {})
-                    var alert = this.alertCtrl.create();
-                    alert.setTitle('Friend Request Sent');
-                    alert.setSubTitle('Your Friend Request has been sent successfully.');
-                    alert.addButton('Ok');
-                    alert.present();
-                }).catch((err) => {
-                    console.log(err);
-                });
-            }
-        });
-        alert.present();
-    }
-
-    alertRoutineForMessage(info) {
-        if (this.walletService.wallet.balance < 0.01) {
-            let alert = this.alertCtrl.create();
-            alert.setTitle('Insuficient Funds');
-            alert.setSubTitle('You need at least 1.01 YadaCoins');
-            alert.addButton('OK');
-            alert.present();
-            return
-        }
-        let alert = this.alertCtrl.create();
-        alert.setTitle('Approve Transaction');
-        alert.setSubTitle('You are about to spend 0.01 coins (0.01 fee)');
-        alert.addButton({
-            text: 'Cancel',
-            handler: (data: any) => {
-                this.loadingModal.dismiss().catch(() => {});
-            }
-        });
-        alert.addButton({
-            text: 'Confirm',
-            handler: (data: any) => {
-                //////////////////////////////////////////////////////////////////////////
-                // create and send transaction to create the relationship on the blockchain
-                //////////////////////////////////////////////////////////////////////////
-                this.walletService.get().then((txn) => {
-                    return new Promise((resolve, reject) => {
-                        var hash = this.transactionService.generateTransaction({
-                            dh_public_key: info.dh_public_key,
-                            dh_private_key: info.dh_private_key,
-                            relationship: {
-                                signIn: info.relationship.signIn
-                            },
-                            shared_secret: info.shared_secret,
-                            resolve: resolve,
-                            rid: info.rid
-                        });
-                        if(hash) {
-                            resolve(hash);
-                        } else {
-                            reject('could not generate hash');
-                        }
-                    });
-                }).then((hash) => {
-                    return new Promise((resolve, reject) => {
-                        this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/sign-raw-transaction', {
-                            hash: hash, 
-                            bulletin_secret: this.bulletinSecretService.bulletin_secret,
-                            input: this.transactionService.transaction.inputs[0].id,
-                            id: this.transactionService.transaction.id,
-                            txn: this.transactionService.transaction
-                        })
-                        .subscribe((res) => {
-                            //this.loadingModal2.dismiss();
-                            try {
-                                let data = res.json();
-                                this.transactionService.transaction.signatures = [data.signature]
-                                resolve();
-                            } catch(err) {
-                                reject();
-                                this.loadingModal.dismiss().catch(() => {});
-                            }
-                        },
-                        (err) => {
-                            //this.loadingModal2.dismiss();
-                        });
-                    });
-                }).then(() => {
-                    return this.transactionService.sendTransaction();
-                }).then(() => {
-                    return this.transactionService.sendCallback();
-                }).then((txn) => {
-                    this.loadingModal.dismiss().catch(() => {})
-                    var alert = this.alertCtrl.create();
-                    alert.setTitle('Friend Request Sent');
-                    alert.setSubTitle('Your Friend Request has been sent successfully.');
-                    alert.addButton('Ok');
-                    alert.present();
-                }).catch((err) => {
-                    //alert('transaction error');
-                    this.loadingModal.dismiss().catch(() => {});
-                });
-            }
-        });
-        alert.present();
-    }
-
     signIn() {
         this.loadingModal = this.loadingCtrl.create({
             content: 'Preparing session...'
@@ -1017,7 +776,7 @@ export class HomePage {
                             resolve(hash);
                         });                       
                     } catch(err) {
-                        reject();
+                        reject('failed to generate transaction');
                         this.loadingModal.dismiss().catch(() => {});
                     }
                 },

@@ -14,6 +14,10 @@ import { ProfilePage } from '../pages/profile/profile';
 import { GroupPage } from '../pages/group/group';
 import { SiaFiles } from '../pages/siafiles/siafiles';
 import { StreamPage } from '../pages/stream/stream';
+import { MailPage } from '../pages/mail/mail';
+import { ComposePage } from '../pages/mail/compose';
+import { CalendarPage } from '../pages/calendar/calendar';
+
 
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
@@ -40,6 +44,8 @@ import { File } from '@ionic-native/file';
 import { AutoCompleteModule, AutoCompleteComponent } from 'ionic2-auto-complete';
 import { CompleteTestService } from './autocomplete.provider';
 import { Geolocation } from '@ionic-native/geolocation';
+import { GoogleMaps } from '@ionic-native/google-maps';
+import { MailItemPage } from '../pages/mail/mailitem';
 
 
 @NgModule({
@@ -54,7 +60,11 @@ import { Geolocation } from '@ionic-native/geolocation';
     ProfilePage,
     GroupPage,
     SiaFiles,
-    StreamPage
+    StreamPage,
+    MailPage,
+    ComposePage,
+    CalendarPage,
+    MailItemPage
   ],
   imports: [
     BrowserModule,
@@ -81,7 +91,11 @@ import { Geolocation } from '@ionic-native/geolocation';
     ProfilePage,
     GroupPage,
     SiaFiles,
-    StreamPage
+    StreamPage,
+    MailPage,
+    ComposePage,
+    CalendarPage,
+    MailItemPage
   ],
   providers: [
     StatusBar,
@@ -105,7 +119,8 @@ import { Geolocation } from '@ionic-native/geolocation';
     File,
     CompleteTestService,
     AutoCompleteComponent,
-    Geolocation
+    Geolocation,
+    GoogleMaps
   ]
 })
 export class AppModule {}

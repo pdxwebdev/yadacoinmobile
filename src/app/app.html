@@ -7,7 +7,7 @@
             YadaCoin
           </ion-note>
           <ion-note style="font-size: 12px">
-             v3.5.2
+            {{version}}
           </ion-note>
         </ion-title>
       </ion-toolbar>
@@ -15,13 +15,35 @@
 
     <ion-content>
       <ion-list *ngIf="bulletinSecretService.key">
+        <ng-container>
+          <ion-segment (ionChange)="segmentChanged($event)" [(ngModel)]="menu">
+            <ion-segment-button value="wallet">
+              <ion-icon name="cash"></ion-icon>
+            </ion-segment-button>
+            <ion-segment-button value="mail">
+              <ion-icon name="mail"></ion-icon>
+            </ion-segment-button>
+            <ion-segment-button value="chat">
+              <ion-icon name="chatboxes"></ion-icon>
+            </ion-segment-button>
+            <ion-segment-button value="calendar">
+              <ion-icon name="calendar"></ion-icon>
+            </ion-segment-button>
+            <ion-segment-button value="contacts">
+              <ion-icon name="contacts"></ion-icon>
+            </ion-segment-button>
+            <ion-segment-button value="settings">
+              <ion-icon name="settings"></ion-icon>
+            </ion-segment-button>
+          </ion-segment>
+        </ng-container>
         <ng-container *ngFor="let p of pages">
           <button 
             menuClose 
             ion-item 
             (click)="openPage(p)"
             [color]="graphService.friend_request_count > 0 ? 'primary' : 'grey'"
-            *ngIf="p.title == 'Friend Requests'"
+            *ngIf="p.title == 'Contact Requests'"
           >
             {{p.label}}
           </button>
@@ -38,7 +60,7 @@
             menuClose 
             ion-item 
             (click)="openPage(p)"
-            *ngIf="['Messages', 'Friend Requests'].indexOf(p.title) < 0"
+            *ngIf="['Messages', 'Contact Requests'].indexOf(p.title) < 0"
           >
             {{p.label}}
           </button>

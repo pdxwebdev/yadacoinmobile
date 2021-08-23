@@ -4,6 +4,7 @@ import { BulletinSecretService } from './bulletinSecret.service';
 import { AutoCompleteService } from 'ionic2-auto-complete';
 import { Http } from '@angular/http';
 import 'rxjs/add/operator/map';
+import { GraphService } from './graph.service';
 
 @Injectable()
 export class CompleteTestService implements AutoCompleteService {
@@ -13,16 +14,20 @@ export class CompleteTestService implements AutoCompleteService {
   constructor(
       private http: Http,
       private settingsService: SettingsService,
-      private bulletinSecretService: BulletinSecretService
-  ) {}
+      private bulletinSecretService: BulletinSecretService,
+      private graphService: GraphService
+  ) {
+    this.graphService.getFriends();
+  }
 
   getResults(searchTerm:string) {
-    return this.http.get(this.settingsService.remoteSettings['baseUrl'] + '/ns?searchTerm=' + searchTerm + '&bulletin_secret=' + this.bulletinSecretService.bulletin_secret)
-    .map((res) => {
-        var result = res.json().map(item => {
-            return {name: item.relationship.their_username, value: item}
-        });
-        return result;
+    return this.graphService.graph.friends.map((item) => {
+        const value = {
+          username: item.relationship.my_username,
+          username_signature: item.relationship.my_username_signature,
+          public_key: item.relationship.my_public_key
+        }
+        return {name: item.relationship.my_username, value: value}
     });
   }
 }

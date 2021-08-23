@@ -28,26 +28,75 @@
       </ion-col>
     </ion-row>
   </ion-list>
+  <ion-list *ngIf="bulletinSecretService.keyname && !centerIdentityExportEnabled">
+    <ion-item>
+      Make the active identity available anywhere using the YadaCoin blockchain and maps provided by Center Identity
+      <button ion-button secondary (click)="enableCenterIdentityExport()">Enable</button>
+    </ion-item>
+  </ion-list>
+  <ion-list *ngIf="bulletinSecretService.keyname && centerIdentityExportEnabled">
+    <ion-item style="background: linear-gradient(90deg, rgba(255,255,255,1) 0%, #191919 75%); color: black;"><img src="assets/center-identity-logo1024x500.png" height="65" style="vertical-align:middle"></ion-item>
+    <ion-item>
+      <ion-input type="text" placeholder="Public username" [(ngModel)]="identity.username" disabled></ion-input>
+    </ion-item>
+    <ion-item>
+      Pick a private username that nobody knows except for you (must be very memorable)
+    </ion-item>
+    <ion-item>
+      Pick a private username that nobody knows except for you (must be very memorable)
+      <ion-input type="text" placeholder="Private username" [(ngModel)]="centerIdentityPrivateUsername"></ion-input>
+    </ion-item>
+    <ion-item>
+      Pick a private location that nobody knows except for you (must be very memorable)
+      <div id="map-export" style="width:500px;height:500px;"></div>
+    </ion-item>
+    <ion-item *ngIf="!centerIdentitySaveSuccess">
+      <button ion-button secondary (click)="saveKeyUsingCenterIdentity()">Save to blockchain</button>
+    </ion-item>
+    <ion-item *ngIf="centerIdentitySaveSuccess">
+      <button ion-button primary (click)="saveKeyUsingCenterIdentity()" disabled>Success!</button>
+    </ion-item>
+  </ion-list>
   <ion-list *ngIf="bulletinSecretService.keyname">
     <hr/>
-    <h4>Export identity</h4>
-    <ion-item>
-      <ion-input type="text" [(ngModel)]="activeKey">
-      </ion-input>
-    </ion-item>
-    <h4>Bulletin secret</h4>
-    <ion-item>
-      <ion-input type="text" [(ngModel)]="bulletinSecretService.bulletin_secret">
-      </ion-input>
+    <h4>Export wif (private, do not share)</h4>
+    <ion-item *ngIf="!exportKeyEnabled">
       <button ion-button secondary (click)="exportKey()">Export active identity</button>
+    </ion-item>
+    <ion-item *ngIf="exportKeyEnabled">
+      <ion-input type="text" [(ngModel)]="activeKey"></ion-input>
+    </ion-item>
+    <h4>Public identity (share this with your friends)</h4>
+    <ion-item>
+      <ion-textarea type="text" [(ngModel)]="identityJson" autoGrow="true" rows=5></ion-textarea>
+    </ion-item>
+  </ion-list>
+  <ion-list *ngIf="!centerIdentityImportEnabled">
+    <ion-item>
+      <button ion-button secondary (click)="enableCenterIdentityImport()">Import Identity using Center Identity</button>
+    </ion-item>
+  </ion-list>
+  <ion-list *ngIf="centerIdentityImportEnabled">
+    <ion-item>
+      Enter your private username
+      <ion-input type="text" placeholder="Private username" [(ngModel)]="centerIdentityPrivateUsername"></ion-input>
+    </ion-item>
+    <ion-item>
+      Select your private location
+      <div id="map-import" style="width:500px;height:500px;"></div>
+    </ion-item>
+    <ion-item *ngIf="!centerIdentityImportSuccess">
+      <button ion-button secondary (click)="getKeyUsingCenterIdentity()">Get from blockchain</button>
+    </ion-item>
+    <ion-item *ngIf="centerIdentityImportSuccess">
+      <button ion-button primary (click)="getKeyUsingCenterIdentity()" disabled>Success!</button>
     </ion-item>
   </ion-list>
   <ion-list>
-    <h4>Import identity</h4>
+    <h4>Import wif</h4>
     <ion-item>
-      <ion-input type="text" placeholder="Paste WIF key from your wallet..." [(ngModel)]="importedKey">
-      </ion-input>
+      <ion-input type="text" placeholder="Paste WIF key from your wallet..." [(ngModel)]="importedKey"></ion-input>
+      <button ion-button secondary (click)="importKey()">Import identity</button>
     </ion-item>
-    <button ion-button secondary (click)="importKey()">Import identity</button>
   </ion-list>
 </ion-content>

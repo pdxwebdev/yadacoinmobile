@@ -1,0 +1,15 @@
+<ion-header>
+  <ion-navbar>
+    <button ion-button menuToggle color="{{color}}">
+      <ion-icon name="menu"></ion-icon>
+    </button>
+    <ion-title>{{item.subject}}</ion-title>
+  </ion-navbar>
+</ion-header>
+<ion-content padding>
+  <button ion-button secondary (click)="replyMail(item)">Reply</button>
+  <button ion-button secondary (click)="forwardMail(item)">Forward</button>
+  <div title="Verified" class="sender">{{item.sender.username}} <ion-icon name="checkmark-circle" class="success"></ion-icon></div>
+  <ion-item>{{item.datetime}}</ion-item>
+  <ion-item>{{item.body}}</ion-item>
+</ion-content>
