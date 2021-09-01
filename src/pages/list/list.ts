@@ -139,6 +139,9 @@ export class ListPage {
           my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
           return this.graphService.getFriends()
           .then(() => {
+            return this.graphService.getGroups();
+          })
+          .then(() => {
             return this.graphService.getNewMessages();
           })
           .then((graphArray) => {
@@ -147,9 +150,11 @@ export class ListPage {
             this.populateRemainingFriends(friendsWithMessagesList.friend_list, friendsWithMessagesList.used_rids);
             this.loading = false;
             friendsWithMessagesList.friend_list.sort(function (a, b) {
-                if (a.relationship.my_username.toLowerCase() < b.relationship.my_username.toLowerCase())
+                const ausername = a.relationship.my_username || a.relationship.username
+                const busername = a.relationship.my_username || a.relationship.username
+                if (ausername.toLowerCase() < busername.toLowerCase())
                   return -1
-                if ( a.relationship.my_username.toLowerCase() > b.relationship.my_username.toLowerCase())
+                if ( ausername.toLowerCase() > busername.toLowerCase())
                   return 1
                 return 0
             });
@@ -281,12 +286,12 @@ export class ListPage {
       // we could have multiple transactions per friendship
       // so make sure we're going using the rid once
       var item = collection[i];
-      if(!item.relationship || !item.relationship.their_username) {
+      if(!this.graphService.groups_indexed[item.requested_rid] && !this.graphService.friends_indexed[item.rid]) {
         continue
       }
-      if(used_rids.indexOf(item.rid) === -1) {
+      if(used_rids.indexOf(this.graphService.groups_indexed[item.requested_rid] || this.graphService.friends_indexed[item.rid]) === -1) {
         friend_list.push(item);
-        used_rids.push(item.rid);
+        used_rids.push(this.graphService.groups_indexed[item.requested_rid] || this.graphService.friends_indexed[item.rid]);
       }
     }
     return {
@@ -320,10 +325,17 @@ export class ListPage {
 
   populateRemainingFriends(friend_list, used_rids) {
     // now add everyone else
-    for (var i=0; i < this.graphService.graph.friends.length; i++) {
-      if (used_rids.indexOf(this.graphService.graph.friends[i].rid) === -1) {
-        friend_list.push(this.graphService.graph.friends[i]);
-        used_rids.push(this.graphService.graph.friends[i].rid);
+    const friendsAndGroupsList = this.graphService.graph.friends.concat(this.graphService.graph.groups)
+    for (var i=0; i < friendsAndGroupsList.length; i++) {
+      let rid;
+      if(this.graphService.groups_indexed[friendsAndGroupsList[i].requested_rid]) {
+        rid = friendsAndGroupsList[i].requested_rid;
+      } else {
+        rid = friendsAndGroupsList[i].rid;
+      }
+      if (used_rids.indexOf(rid) === -1) {
+        friend_list.push(friendsAndGroupsList[i]);
+        used_rids.push(rid);
       }
     }
   }

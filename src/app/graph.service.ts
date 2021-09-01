@@ -274,26 +274,15 @@ export class GraphService {
     }
 
     getMessages(rid) {
+        if(typeof rid === 'string') rid = [rid];
         //get messages for a specific friend
         return new Promise((resolve, reject) => {
-            this.endpointRequest('get-graph-collection', null, [rid])
+            this.endpointRequest('get-graph-collection', null, rid)
             .then((data: any) => {
                 return this.parseMessages(data.collection, 'new_messages_counts', 'new_messages_count', rid, 'chatText', 'last_message_height')
             })
             .then((chats: any) => {
-                if (!this.graph.messages) {
-                    this.graph.messages = {};
-                }
-                if (chats[rid]){
-                    this.graph.messages[rid] = chats[rid];
-                    this.graph.messages[rid].sort(function (a, b) {
-                        if (parseInt(a.time) > parseInt(b.time))
-                        return 1
-                        if ( parseInt(a.time) < parseInt(b.time))
-                        return -1
-                        return 0
-                    });
-                }
+                this.graph.messages = chats;
                 this.getMessagesError = false;
                 return resolve(chats[rid]);
             }).catch((err) => {
@@ -878,57 +867,104 @@ export class GraphService {
                 for(var i=0; i<messages.length; i++) {
                     var message = messages[i];
                     if(!rid && chats[message.rid]) continue;
-                    if(rid && message.rid !== rid) continue;
-                    if (!message.rid) continue;
-                    if (!this.stored_secrets[message.rid]) continue;
+                    if(rid && message.rid !== rid && rid.indexOf(message.rid) === -1 && rid.indexOf(message.requested_rid) === -1) continue;
+                    if (!message.rid && !message.requested_rid) continue;
                     if (message.dh_public_key) continue;
-                    //hopefully we've prepared the stored_secrets option before getting here
-                    //by calling getSentFriendRequests and getFriendRequests
-                    for(var j=0; j<this.stored_secrets[message.rid].length; j++) {
-                        var shared_secret = this.stored_secrets[message.rid][j];
-                        try {
-                            var decrypted = this.shared_decrypt(shared_secret.shared_secret, message.relationship);
-                        }
-                        catch(error) {
-                            continue
-                        }
-                        try {
-                            var messageJson = JSON.parse(decrypted);
-                        } catch(err) {
-                            continue;
-                        }
-                        if(messageJson[messageType]) {
-                            message.relationship = messageJson;
-                            message.shared_secret = shared_secret.shared_secret
-                            message.dh_public_key = shared_secret.dh_public_key
-                            message.dh_private_key = shared_secret.dh_private_key
-                            message.username = this.usernames[message.rid];
-                            messages[message.rid] = message;
-                            if (!chats[message.rid]) {
-                                chats[message.rid] = [];
-                            }
-                            try {
-                                message.relationship[messageType] = JSON.parse(Base64.decode(messageJson[messageType]));
-                                message.relationship.isInvite = true;
-                            }
-                            catch(err) {
-                                //not an invite, do nothing
-                            }
-                            chats[message.rid].push(message);
-                            if(this[graphCounts][message.rid]) {
-                                if(message.height > this[graphCounts][message.rid]) {
-                                    this[graphCount]++;
-                                    if(!this[graphCounts][message.rid]) {
-                                        this[graphCounts][message.rid] = 0;
-                                    }
-                                    this[graphCounts][message.rid]++;
-                                }
-                            } else {
-                                this[graphCounts][message.rid] = 1;
-                                this[graphCount]++;
-                            }
-                        }
-                        continue dance;
+                    if (this.groups_indexed[message.requested_rid]) {
+                      try {
+                          var decrypted = this.shared_decrypt(this.groups_indexed[message.requested_rid].relationship.username_signature, message.relationship);
+                      }
+                      catch(error) {
+                          continue
+                      }
+                      try {
+                          var messageJson = JSON.parse(decrypted);
+                      } catch(err) {
+                          continue;
+                      }
+                      if(messageJson[messageType]) {
+                          message.relationship = messageJson;
+                          message.username = this.usernames[message.requested_rid];
+                          messages[message.requested_rid] = message;
+                          if (!chats[message.requested_rid]) {
+                              chats[message.requested_rid] = [];
+                          }
+                          try {
+                              message.relationship[messageType] = JSON.parse(Base64.decode(messageJson[messageType]));
+                              message.relationship.isInvite = true;
+                          }
+                          catch(err) {
+                              //not an invite, do nothing
+                          }
+                          chats[message.requested_rid].push(message);
+                          if(this[graphCounts][message.requested_rid]) {
+                              if(message.height > this[graphCounts][message.requested_rid]) {
+                                  this[graphCount]++;
+                                  if(!this[graphCounts][message.requested_rid]) {
+                                      this[graphCounts][message.requested_rid] = 0;
+                                  }
+                                  this[graphCounts][message.requested_rid]++;
+                              }
+                          } else {
+                              this[graphCounts][message.requested_rid] = 1;
+                              this[graphCount]++;
+                          }
+                      }
+                      continue dance;
+
+                    } else {
+
+                      if (!this.stored_secrets[message.rid]) continue;
+                      var shared_secret = this.stored_secrets[message.rid][j];
+                      //hopefully we've prepared the stored_secrets option before getting here
+                      //by calling getSentFriendRequests and getFriendRequests
+                      for(var j=0; j<this.stored_secrets[message.rid].length; j++) {
+                          var shared_secret = this.stored_secrets[message.rid][j];
+                          try {
+                              var decrypted = this.shared_decrypt(shared_secret.shared_secret, message.relationship);
+                          }
+                          catch(error) {
+                              continue
+                          }
+                          try {
+                              var messageJson = JSON.parse(decrypted);
+                          } catch(err) {
+                              continue;
+                          }
+                          if(messageJson[messageType]) {
+                              message.relationship = messageJson;
+                              message.shared_secret = shared_secret.shared_secret
+                              message.dh_public_key = shared_secret.dh_public_key
+                              message.dh_private_key = shared_secret.dh_private_key
+                              message.username = this.usernames[message.rid];
+                              messages[message.rid] = message;
+                              if (!chats[message.rid]) {
+                                  chats[message.rid] = [];
+                              }
+                              try {
+                                  message.relationship[messageType] = JSON.parse(Base64.decode(messageJson[messageType]));
+                                  message.relationship.isInvite = true;
+                              }
+                              catch(err) {
+                                  //not an invite, do nothing
+                              }
+                              chats[message.rid].push(message);
+                              if(this[graphCounts][message.rid]) {
+                                  if(message.height > this[graphCounts][message.rid]) {
+                                      this[graphCount]++;
+                                      if(!this[graphCounts][message.rid]) {
+                                          this[graphCounts][message.rid] = 0;
+                                      }
+                                      this[graphCounts][message.rid]++;
+                                  }
+                              } else {
+                                  this[graphCounts][message.rid] = 1;
+                                  this[graphCount]++;
+                              }
+                          }
+                          continue dance;
+                      }
+
                     }
                 }
                 resolve(chats);

@@ -61,10 +61,16 @@ export class ChatPage {
     }
 
     parseChats() {
-        if(this.graphService.graph.messages[this.rid]) {
-            this.chats = this.graphService.graph.messages[this.rid];
+        let rid;
+        if (this.graphService.groups_indexed[this.requested_rid]) {
+          rid = this.requested_rid
+        } else {
+          rid = this.rid
+        }
+        if(this.graphService.graph.messages[rid]) {
+            this.chats = this.graphService.graph.messages[rid];
             for(var i=0; i < this.chats.length; i++) {
-                this.chats[i].time = new Date(parseInt(this.chats[i].time)).toISOString().slice(0, 19).replace('T', ' ');
+                this.chats[i].time = new Date(parseInt(this.chats[i].time) * 1000).toISOString().slice(0, 19).replace('T', ' ');
             }
         } else {
             this.chats = [];
@@ -75,7 +81,7 @@ export class ChatPage {
         if (showLoading) {
             this.loading = true;
         }
-        this.graphService.getMessages(this.rid)
+        this.graphService.getMessages([this.rid, this.requested_rid])
         .then(() => {
             this.loading = false;
             if(refresher) refresher.complete();
@@ -136,7 +142,7 @@ export class ChatPage {
                 dh_public_key: info.dh_public_key,
                 to: info.their_address
             })
-        
+
         }).then((txn) => {
             return this.transactionService.sendTransaction();
         })
@@ -170,38 +176,54 @@ export class ChatPage {
                     return this.graphService.getFriends();
                 })
                 .then(() => {
-                    var dh_public_key = this.graphService.keys[this.rid].dh_public_keys[0];
-                    var dh_private_key = this.graphService.keys[this.rid].dh_private_keys[0];
-
-                    if(dh_public_key && dh_private_key) {
-                        var privk = new Uint8Array(dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
-                            return parseInt(h, 16)
-                        }));
-                        var pubk = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
-                            return parseInt(h, 16)
-                        }));
-                        var shared_secret = this.toHex(X25519.getSharedKey(privk, pubk));
-                        // camera permission was granted
-                        return this.transactionService.generateTransaction({
-                            dh_public_key: dh_public_key,
-                            dh_private_key: dh_private_key,
-                            relationship: {
-                                chatText: this.chatText 
-                            },
-                            shared_secret: shared_secret,
-                            rid: this.rid,
-                            requester_rid: this.requester_rid,
-                            requested_rid: this.requested_rid,
-                        });
+                    return this.graphService.getGroups();
+                })
+                .then(() => {
+                    if (this.graphService.groups_indexed[this.requested_rid]) {
+                      return this.transactionService.generateTransaction({
+                          relationship: {
+                              chatText: this.chatText
+                          },
+                          rid: this.rid,
+                          requester_rid: this.requester_rid,
+                          requested_rid: this.requested_rid,
+                          group: true,
+                          their_username_signature: this.graphService.groups_indexed[this.requested_rid].relationship.username_signature
+                      });
                     } else {
-                        return new Promise((resolve, reject) => {
-                            let alert = this.alertCtrl.create();
-                            alert.setTitle('Friendship not yet processed');
-                            alert.setSubTitle('Please wait a few minutes and try again');
-                            alert.addButton('Ok');
-                            alert.present();
-                            return reject('failed to create friend request');    
-                        });                
+                      var dh_public_key = this.graphService.keys[this.rid].dh_public_keys[0];
+                      var dh_private_key = this.graphService.keys[this.rid].dh_private_keys[0];
+
+                      if(dh_public_key && dh_private_key) {
+                          var privk = new Uint8Array(dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
+                              return parseInt(h, 16)
+                          }));
+                          var pubk = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
+                              return parseInt(h, 16)
+                          }));
+                          var shared_secret = this.toHex(X25519.getSharedKey(privk, pubk));
+                          // camera permission was granted
+                          return this.transactionService.generateTransaction({
+                              dh_public_key: dh_public_key,
+                              dh_private_key: dh_private_key,
+                              relationship: {
+                                  chatText: this.chatText
+                              },
+                              shared_secret: shared_secret,
+                              rid: this.rid,
+                              requester_rid: this.requester_rid,
+                              requested_rid: this.requested_rid,
+                          });
+                      } else {
+                          return new Promise((resolve, reject) => {
+                              let alert = this.alertCtrl.create();
+                              alert.setTitle('Friendship not yet processed');
+                              alert.setSubTitle('Please wait a few minutes and try again');
+                              alert.addButton('Ok');
+                              alert.present();
+                              return reject('failed to create friend request');
+                          });
+                      }
                     }
                 }).then((txn) => {
                     return this.transactionService.sendTransaction();
@@ -210,7 +232,7 @@ export class ChatPage {
                     this.refresh(null);
                 })
                 .catch((err) => {
-                   console.log(err); 
+                   console.log(err);
                    let alert = this.alertCtrl.create();
                    alert.setTitle('Message error');
                    alert.setSubTitle(err);
