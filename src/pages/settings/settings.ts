@@ -288,6 +288,7 @@ export class Settings {
     }
 
     selectIdentity(key) {
+        this.graphService.graph = {};
         this.loadingModal = this.loadingCtrl.create({
             content: 'initializing...'
         });
@@ -301,6 +302,8 @@ export class Settings {
         })
         .then(() => { 
             this.loadingModal.dismiss();
+            this.settingsService.menu = 'wallet';
+            this.navCtrl.setRoot(SendReceive, {pageTitle: { title: 'Send / Receive', label: 'Send / Receive', component: SendReceive, count: false, color: '' }});
         })
         .catch((err)  => {
             console.log(err);

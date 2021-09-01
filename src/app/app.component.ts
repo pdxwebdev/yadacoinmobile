@@ -50,8 +50,9 @@ export class MyApp {
     events.subscribe('graph', () => {
       this.rootPage = HomePage;
     });
-    events.subscribe('pages-error', () => {
-      
+    events.subscribe('pages-settings', () => {
+      this.settingsService.menu = 'wallet';
+      this.setMenu();
     });
     this.graphService.graph = {
       comments: "",
@@ -59,7 +60,7 @@ export class MyApp {
       commentReacts: ""
     }
     this.rootPage = Settings;
-    this.menu = 'wallet';
+    this.settingsService.menu = 'wallet';
     this.pages = [
       { title: 'Send / Receive', label: 'Send / Receive', component: SendReceive, count: false, color: '' }
     ];
@@ -70,38 +71,38 @@ export class MyApp {
   }
 
   setMenu() {
-    if (this.menu == 'mail') {
+    if (this.settingsService.menu == 'mail') {
       this.pages = [
         { title: 'Inbox', label: 'Inbox', component: MailPage, count: false, color: '' },
         { title: 'Sent', label: 'Sent', component: MailPage, count: false, color: '' },
       ];
-    } else if (this.menu == 'chat') {
+    } else if (this.settingsService.menu == 'chat') {
       this.pages = [
-        { title: 'Messages', label: 'Messages', component: ListPage, count: false, color: '' },
+        { title: 'Messages', label: 'Chat', component: ListPage, count: false, color: '' },
       ];
-    } else if (this.menu == 'calendar') {
+    } else if (this.settingsService.menu == 'calendar') {
       this.pages = [
         { title: 'Calendar', label: 'Calendar', component: CalendarPage, count: false, color: '' },
       ];
-    } else if (this.menu == 'contacts') {
+    } else if (this.settingsService.menu == 'contacts') {
       this.pages = [
         { title: 'Contacts', label: 'Contacts', component: ListPage, count: false, color: '' },
         { title: 'Contact Requests', label: 'Contact Requests', component: ListPage, count: false, color: '' },
         { title: 'Groups', label: 'Groups', component: ListPage, count: false, color: '' },
       ];
-    } else if (this.menu == 'files') {
+    } else if (this.settingsService.menu == 'files') {
       this.pages = [
         { title: 'Files', label: 'Files', component: SiaFiles, count: false, color: '' },
       ];
-    } else if (this.menu == 'wallet') {
+    } else if (this.settingsService.menu == 'wallet') {
       this.pages = [
         { title: 'Send / Receive', label: 'Send / Receive', component: SendReceive, count: false, color: '' }
       ];
-    } else if (this.menu == 'stream') {
+    } else if (this.settingsService.menu == 'stream') {
       this.pages = [ 
         { title: 'Stream', label: 'Stream', component: StreamPage, count: false, color: '' }
       ]
-    } else if (this.menu == 'settings') {
+    } else if (this.settingsService.menu == 'settings') {
       this.pages = [
         { title: 'Settings', label: 'Identity', component: Settings, count: false, color: '' },
         { title: 'Profile', label: 'Profile', component: ProfilePage, count: false, color: '' }
@@ -139,7 +140,7 @@ export class MyApp {
   }
 
   segmentChanged(e) {
-    this.menu = e.value;
+    this.settingsService.menu = e.value;
     this.setMenu();
   }
 

@@ -43,7 +43,7 @@ export class TransactionService {
             this.key = this.bulletinSecretService.key;
             this.username_signature = this.bulletinSecretService.generate_username_signature();
             this.username = this.bulletinSecretService.username;
-    
+
             this.txnattempts = [12, 5, 4];
             this.cbattempts = [12, 5, 4];
             this.info = info;
@@ -126,7 +126,7 @@ export class TransactionService {
                                 input_sum += parseFloat(unspent_output.value);
                                 console.log(parseFloat(unspent_output.value));
                             }
-                            if (input_sum >= transaction_total) {    
+                            if (input_sum >= transaction_total) {
                                 this.transaction.outputs.push({
                                     to: this.key.getAddress(),
                                     value: (input_sum - transaction_total)
@@ -150,17 +150,17 @@ export class TransactionService {
                     value: 0
                 })
             }
-            
+
             if (input_sum < transaction_total) {
                 return reject(false);
             }
             this.transaction.inputs = inputs;
-    
+
             var inputs_hashes = [];
             for(i=0; i < inputs.length; i++) {
                 inputs_hashes.push(inputs[i].id);
             }
-    
+
             var inputs_hashes_arr = inputs_hashes.sort(function (a, b) {
                 if (a.toLowerCase() < b.toLowerCase())
                   return -1
@@ -168,14 +168,14 @@ export class TransactionService {
                   return 1
                 return 0
             });
-    
+
             var inputs_hashes_concat = inputs_hashes_arr.join('')
-    
+
             var outputs_hashes = [];
             for(i=0; i < this.transaction.outputs.length; i++) {
                 outputs_hashes.push(this.transaction.outputs[i].to+this.transaction.outputs[i].value.toFixed(8));
             }
-    
+
             var outputs_hashes_arr = outputs_hashes.sort(function (a, b) {
                 if (a.toLowerCase() < b.toLowerCase())
                   return -1
@@ -194,7 +194,7 @@ export class TransactionService {
             } else {
                 this.info.relationship = {};
             }
-    
+
             if (this.info.dh_public_key && this.info.relationship.dh_private_key) {
                 // creating new relationship
                 this.transaction.relationship = this.publicEncrypt(JSON.stringify(this.info.relationship), this.info.relationship.their_public_key)
@@ -210,11 +210,11 @@ export class TransactionService {
                     inputs_hashes_concat +
                     outputs_hashes_concat
                 ).toString('hex')
-            } else if (typeof this.info.relationship.groupChatText !== 'undefined') {
+            } else if (this.info.group) {
                 // group chat
-    
-                this.transaction.relationship = this.shared_encrypt(this.their_username_signature, JSON.stringify(this.info.relationship));                    
-    
+
+                this.transaction.relationship = this.shared_encrypt(this.their_username_signature, JSON.stringify(this.info.relationship));
+
                 hash = foobar.bitcoin.crypto.sha256(
                     this.transaction.public_key +
                     this.transaction.time +
@@ -228,9 +228,9 @@ export class TransactionService {
                 ).toString('hex')
             } else if (this.info.relationship.postText) {
                 // group post
-    
-                this.transaction.relationship = this.shared_encrypt(this.their_username_signature, JSON.stringify(this.info.relationship));                    
-    
+
+                this.transaction.relationship = this.shared_encrypt(this.their_username_signature, JSON.stringify(this.info.relationship));
+
                 hash = foobar.bitcoin.crypto.sha256(
                     this.transaction.public_key +
                     this.transaction.time +
@@ -244,9 +244,9 @@ export class TransactionService {
                 ).toString('hex')
             } else if (this.info.relationship.comment) {
                 // group comment
-    
-                this.transaction.relationship = this.shared_encrypt(this.their_username_signature, JSON.stringify(this.info.relationship));                    
-    
+
+                this.transaction.relationship = this.shared_encrypt(this.their_username_signature, JSON.stringify(this.info.relationship));
+
                 hash = foobar.bitcoin.crypto.sha256(
                     this.transaction.public_key +
                     this.transaction.time +
@@ -260,9 +260,9 @@ export class TransactionService {
                 ).toString('hex')
             } else if (this.info.relationship.react) {
                 // group react
-    
-                this.transaction.relationship = this.shared_encrypt(this.their_username_signature, JSON.stringify(this.info.relationship));                    
-    
+
+                this.transaction.relationship = this.shared_encrypt(this.their_username_signature, JSON.stringify(this.info.relationship));
+
                 hash = foobar.bitcoin.crypto.sha256(
                     this.transaction.public_key +
                     this.transaction.time +
@@ -276,8 +276,8 @@ export class TransactionService {
                 ).toString('hex')
             } else if (this.info.relationship.chatText || this.info.relationship.envelope) {
                 // chat
-                this.transaction.relationship = this.shared_encrypt(this.info.shared_secret, JSON.stringify(this.info.relationship));                    
-    
+                this.transaction.relationship = this.shared_encrypt(this.info.shared_secret, JSON.stringify(this.info.relationship));
+
                 hash = foobar.bitcoin.crypto.sha256(
                     this.transaction.public_key +
                     this.transaction.time +
@@ -291,8 +291,8 @@ export class TransactionService {
                 ).toString('hex')
             } else if (this.info.relationship.signIn) {
                 // sign in
-                this.transaction.relationship = this.shared_encrypt(this.info.shared_secret, JSON.stringify(this.info.relationship));                    
-    
+                this.transaction.relationship = this.shared_encrypt(this.info.shared_secret, JSON.stringify(this.info.relationship));
+
                 hash = foobar.bitcoin.crypto.sha256(
                     this.transaction.public_key +
                     this.transaction.time +
@@ -305,7 +305,7 @@ export class TransactionService {
             } else if (this.info.relationship.wif) {
                 // recovery
                 this.transaction.relationship = this.shared_encrypt(this.info.shared_secret, JSON.stringify(this.info.relationship));
-    
+
                 hash = foobar.bitcoin.crypto.sha256(
                     this.transaction.public_key +
                     this.transaction.time +
@@ -317,7 +317,37 @@ export class TransactionService {
                     inputs_hashes_concat +
                     outputs_hashes_concat
                 ).toString('hex')
-            } else {
+            } else if (this.info.relationship.event) {
+              // calendar event
+              this.transaction.relationship = this.encrypt();
+
+              hash = foobar.bitcoin.crypto.sha256(
+                  this.transaction.public_key +
+                  this.transaction.time +
+                  this.transaction.rid +
+                  this.transaction.relationship +
+                  this.transaction.fee.toFixed(8) +
+                  this.transaction.requester_rid +
+                  this.transaction.requested_rid +
+                  inputs_hashes_concat +
+                  outputs_hashes_concat
+              ).toString('hex')
+          } else if (this.info.relationship.username) {
+              // group or contact
+              this.transaction.relationship = this.encrypt();
+
+              hash = foobar.bitcoin.crypto.sha256(
+                  this.transaction.public_key +
+                  this.transaction.time +
+                  this.transaction.rid +
+                  this.transaction.relationship +
+                  this.transaction.fee.toFixed(8) +
+                  this.transaction.requester_rid +
+                  this.transaction.requested_rid +
+                  inputs_hashes_concat +
+                  outputs_hashes_concat
+              ).toString('hex')
+          } else {
                 //straight transaction
                 hash = foobar.bitcoin.crypto.sha256(
                     this.transaction.public_key +
@@ -327,9 +357,9 @@ export class TransactionService {
                     this.transaction.fee.toFixed(8) +
                     inputs_hashes_concat +
                     outputs_hashes_concat
-                ).toString('hex');            
+                ).toString('hex');
             }
-    
+
             this.transaction.hash = hash
             var attempt = this.txnattempts.pop();
             attempt = this.cbattempts.pop();
@@ -345,7 +375,7 @@ export class TransactionService {
     getFastGraphSignature() {
         return new Promise((resolve, reject) => {
             this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/sign-raw-transaction', {
-                hash: this.transaction.hash, 
+                hash: this.transaction.hash,
                 username_signature: this.bulletinSecretService.generate_username_signature(),
                 input: this.transaction.inputs[0].id,
                 id: this.transaction.id,
@@ -358,7 +388,7 @@ export class TransactionService {
                     return resolve(data);
                 } catch(err) {
                   return reject(err);
-                    
+
                 }
             },
             (err) => {
@@ -381,7 +411,7 @@ export class TransactionService {
                 }
                 catch(err) {
                     reject(err);
-                }                
+                }
             },
             (error) => {
                 if (this.txnattempts.length > 0) {
@@ -415,18 +445,18 @@ export class TransactionService {
             arr.push(parseInt(c, 16));
         }
         return String.fromCharCode.apply(null, arr);
-    }    
+    }
 
     hexToByteArray(str) {
       if (!str) {
         return new Uint8Array([]);
       }
-      
+
       var a = [];
       for (var i = 0, len = str.length; i < len; i+=2) {
         a.push(parseInt(str.substr(i,2),16));
       }
-      
+
       return new Uint8Array(a);
     }
 

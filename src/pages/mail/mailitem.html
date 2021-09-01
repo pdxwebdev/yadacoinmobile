@@ -9,7 +9,11 @@
 <ion-content padding>
   <button ion-button secondary (click)="replyMail(item)">Reply</button>
   <button ion-button secondary (click)="forwardMail(item)">Forward</button>
+  <button *ngIf="item.message_type == 'contract'" ion-button secondary (click)="signMail(item)">Sign</button>
+  <button *ngIf="item.message_type == 'event_meeting'" ion-button secondary (click)="addToCalendar(item)">Add to calendar</button>
   <div title="Verified" class="sender">{{item.sender.username}} <ion-icon name="checkmark-circle" class="success"></ion-icon></div>
+  <div *ngIf="item.message_type == 'contract_signed'"><strong>Contract signed</strong> <ion-icon name="checkmark-circle" class="success"></ion-icon></div>
   <ion-item>{{item.datetime}}</ion-item>
+  <ion-item>{{item.event_datetime}}</ion-item>
   <ion-item>{{item.body}}</ion-item>
 </ion-content>

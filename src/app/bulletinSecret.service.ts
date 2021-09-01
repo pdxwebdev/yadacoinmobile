@@ -18,8 +18,7 @@ export class BulletinSecretService {
     identity = {
       username: '',
       username_signature: '',
-      public_key: '',
-      server_username_signature: ''
+      public_key: ''
     };
     constructor(
         private storage: Storage,
@@ -79,8 +78,7 @@ export class BulletinSecretService {
                 this.identity = {
                   username: this.username,
                   username_signature: this.username_signature,
-                  public_key: this.public_key,
-                  server_username_signature: ''
+                  public_key: this.public_key
                 }
                 this.username_signature = this.generate_username_signature();
                 return resolve();

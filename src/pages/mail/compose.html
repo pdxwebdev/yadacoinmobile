@@ -6,10 +6,26 @@
   </ion-navbar>
 </ion-header>
 <ion-content padding>
+  What type of message is this?
+  <ion-segment [(ngModel)]="message_type">
+    <ion-segment-button value="mail">
+      Mail
+    </ion-segment-button>
+    <ion-segment-button value="contract">
+      Contract
+    </ion-segment-button>
+    <ion-segment-button value="event_meeting">
+      Event / Meeting
+    </ion-segment-button>
+  </ion-segment>
   <button ion-button secondary (click)="submit()">Send</button>
   <form [formGroup]="myForm" (ngSubmit)="submit()" *ngIf="!recipient">
     <ion-auto-complete #searchbar [(ngModel)]="recipient" [options]="{ placeholder : 'Recipient' }" [dataProvider]="completeTestService" formControlName="searchTerm" required></ion-auto-complete>
   </form>
+  <ion-item *ngIf="message_type === 'event_meeting'">
+    <ion-label floating>Date &amp; time</ion-label>
+    <ion-datetime displayFormat="D MMM YYYY H:mm" [(ngModel)]="event_datetime"></ion-datetime>
+  </ion-item>
   <ion-item *ngIf="recipient" title="Verified" class="sender">{{recipient.username}} <ion-icon name="checkmark-circle" class="success"></ion-icon></ion-item>
   <ion-item>
     <ion-label floating>Subject</ion-label>
@@ -18,5 +34,13 @@
   <ion-item>
     <ion-label floating>Body</ion-label>
     <ion-textarea type="text" [(ngModel)]="body" rows="5" autoGrow="true"></ion-textarea>
+  </ion-item>
+  <br>
+  <ion-item *ngIf="item && item.sender">
+    Previous message
+    <div title="Verified" class="sender">{{item.sender.username}} <ion-icon name="checkmark-circle" class="success"></ion-icon></div>
+    <div class="subject">{{item.subject}}</div>
+    <div class="datetime">{{item.datetime}}</div>
+    <div class="body">{{item.body}}</div>
   </ion-item>
 </ion-content>

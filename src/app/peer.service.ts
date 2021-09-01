@@ -63,7 +63,6 @@ export class PeerService {
                     this.loading = false;
                     const remoteSettings = res.json();
                     this.settingsService.remoteSettings = remoteSettings;
-                    this.bulletinSecretService.identity.server_username_signature = remoteSettings.identity.username_signature
                     resolve();
                 },
                 (err) => {

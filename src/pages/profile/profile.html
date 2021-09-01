@@ -9,7 +9,7 @@
   <ion-row>
     <ion-col text-center>
       <ion-item>
-        <h1>{{item.relationship.their_username}}</h1></ion-item>
+        <h1>{{item.relationship.my_username || item.relationship.username}}</h1></ion-item>
     </ion-col>
     <ion-col>
       <button ion-button large secondary (click)="addFriend()" *ngIf="isFriend === false && item.relationship.group !== true">
@@ -18,8 +18,11 @@
       <button ion-button large secondary (click)="joinGroup()" *ngIf="isFriend === false && item.relationship.group === true">
         Join group&nbsp;<ion-icon name="create"></ion-icon>
       </button>
+      <button ion-button large secondary (click)="compose()" *ngIf="isFriend === true">
+        Compose message&nbsp;<ion-icon name="create"></ion-icon>
+      </button>
       <button ion-button large secondary (click)="message()" *ngIf="isFriend === true">
-        {{item.relationship.group === true ? "Group" : "Direct"}} message&nbsp;<ion-icon name="create"></ion-icon>
+        {{group === true ? "Group message" : "Chat"}}&nbsp;<ion-icon name="create"></ion-icon>
       </button>
       <button ion-button large secondary (click)="invite()" *ngIf="isFriend === true">
         Invite&nbsp;<ion-icon name="create"></ion-icon>

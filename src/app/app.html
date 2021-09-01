@@ -16,24 +16,30 @@
     <ion-content>
       <ion-list *ngIf="bulletinSecretService.key">
         <ng-container>
-          <ion-segment (ionChange)="segmentChanged($event)" [(ngModel)]="menu">
-            <ion-segment-button value="wallet">
+          <ion-segment (ionChange)="segmentChanged($event)" [(ngModel)]="settingsService.menu">
+            <ion-segment-button value="wallet" title="wallet">
               <ion-icon name="cash"></ion-icon>
             </ion-segment-button>
-            <ion-segment-button value="mail">
+            <ion-segment-button value="mail" title="mail">
               <ion-icon name="mail"></ion-icon>
             </ion-segment-button>
-            <ion-segment-button value="chat">
+            <ion-segment-button value="chat" title="chat">
               <ion-icon name="chatboxes"></ion-icon>
             </ion-segment-button>
-            <ion-segment-button value="calendar">
+            <ion-segment-button value="calendar" title="calendar">
               <ion-icon name="calendar"></ion-icon>
             </ion-segment-button>
-            <ion-segment-button value="contacts">
+            <ion-segment-button value="contacts" title="contacts">
               <ion-icon name="contacts"></ion-icon>
             </ion-segment-button>
-            <ion-segment-button value="settings">
-              <ion-icon name="settings"></ion-icon>
+            <ion-segment-button value="files" title="files">
+              <ion-icon name="folder"></ion-icon>
+            </ion-segment-button>
+            <ion-segment-button value="community" title="community">
+              <ion-icon name="people"></ion-icon>
+            </ion-segment-button>
+            <ion-segment-button value="settings" title="identity">
+              <ion-icon name="contact"></ion-icon>
             </ion-segment-button>
           </ion-segment>
         </ng-container>

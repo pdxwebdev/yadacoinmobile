@@ -6,6 +6,7 @@ export class SettingsService {
     remoteSettings = {};
     remoteSettingsUrl = null;
     tokens = {};
+    menu = '';
     constructor(
     ) {
         this.tokens = {};

@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { NavController, NavParams } from 'ionic-angular';
+import { List, NavController, NavParams } from 'ionic-angular';
 import { AlertController, LoadingController } from 'ionic-angular';
 import { Storage } from '@ionic/storage';
 import { GraphService } from '../../app/graph.service';
@@ -108,9 +108,9 @@ export class ListPage {
             var graphArray = this.graphService.graph.friends;
             graphArray = this.getDistinctFriends(graphArray).friend_list;
             graphArray.sort(function (a, b) {
-                if (a.relationship.their_username.toLowerCase() < b.relationship.their_username.toLowerCase())
+                if (a.relationship.my_username.toLowerCase() < b.relationship.my_username.toLowerCase())
                   return -1
-                if ( a.relationship.their_username.toLowerCase() > b.relationship.their_username.toLowerCase())
+                if ( a.relationship.my_username.toLowerCase() > b.relationship.my_username.toLowerCase())
                   return 1
                 return 0
             });
@@ -120,24 +120,18 @@ export class ListPage {
               console.log('listpage getFriends error: ' + err);
           });
         } else if (this.pageTitle == 'Groups') {
-          my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
           return this.graphService.getGroups()
           .then(() => {
-            return this.graphService.getNewGroupMessages();
-          })
-          .then((graphArray) => {
-            var messages = this.markNew(my_public_key, graphArray, this.graphService.new_group_messages_counts);
-            var groupsWithMessagesList = this.getDistinctGroups(messages);
-            this.populateRemainingGroups(groupsWithMessagesList.group_list, groupsWithMessagesList.used_rids);
-            this.loading = false;
-            groupsWithMessagesList.group_list.sort(function (a, b) {
-                if (a.relationship.their_username.toLowerCase() < b.relationship.their_username.toLowerCase())
+            graphArray = this.graphService.graph.groups;
+            graphArray.sort(function (a, b) {
+                if (a.relationship.username.toLowerCase() < b.relationship.username.toLowerCase())
                   return -1
-                if ( a.relationship.their_username.toLowerCase() > b.relationship.their_username.toLowerCase())
+                if ( a.relationship.username.toLowerCase() > b.relationship.username.toLowerCase())
                   return 1
                 return 0
             });
-            return this.makeList(groupsWithMessagesList.group_list);
+            this.makeList(graphArray);
+            this.loading = false;
           }).catch((err) => {
               console.log(err);
           });
@@ -153,9 +147,9 @@ export class ListPage {
             this.populateRemainingFriends(friendsWithMessagesList.friend_list, friendsWithMessagesList.used_rids);
             this.loading = false;
             friendsWithMessagesList.friend_list.sort(function (a, b) {
-                if (a.relationship.their_username.toLowerCase() < b.relationship.their_username.toLowerCase())
+                if (a.relationship.my_username.toLowerCase() < b.relationship.my_username.toLowerCase())
                   return -1
-                if ( a.relationship.their_username.toLowerCase() > b.relationship.their_username.toLowerCase())
+                if ( a.relationship.my_username.toLowerCase() > b.relationship.my_username.toLowerCase())
                   return 1
                 return 0
             });
@@ -175,9 +169,9 @@ export class ListPage {
             this.populateRemainingFriends(friendsWithMessagesList.friend_list, friendsWithMessagesList.used_rids);
             this.loading = false;
             friendsWithMessagesList.friend_list.sort(function (a, b) {
-                if (a.relationship.their_username.toLowerCase() < b.relationship.their_username.toLowerCase())
+                if (a.relationship.my_username.toLowerCase() < b.relationship.my_username.toLowerCase())
                   return -1
-                if ( a.relationship.their_username.toLowerCase() > b.relationship.their_username.toLowerCase())
+                if ( a.relationship.my_username.toLowerCase() > b.relationship.my_username.toLowerCase())
                   return 1
                 return 0
             });
@@ -205,9 +199,9 @@ export class ListPage {
           .then(() => {
               var graphArray = this.graphService.graph.friend_requests;
               graphArray.sort(function (a, b) {
-                  if (a.username.toLowerCase() < b.username.toLowerCase())
+                  if (a.relationship.my_username.toLowerCase() < b.relationship.my_username.toLowerCase())
                     return -1
-                  if ( a.username.toLowerCase() > b.username.toLowerCase())
+                  if ( a.relationship.my_username.toLowerCase() > b.relationship.my_username.toLowerCase())
                     return 1
                   return 0
               });
@@ -221,9 +215,9 @@ export class ListPage {
           .then(() => {
               var graphArray = this.graphService.graph.sent_friend_requests;
               graphArray.sort(function (a, b) {
-                  if (a.username.toLowerCase() < b.username.toLowerCase())
+                  if (a.relationship.my_username.toLowerCase() < b.relationship.my_username.toLowerCase())
                     return -1
-                  if ( a.username.toLowerCase() > b.username.toLowerCase())
+                  if ( a.relationship.my_username.toLowerCase() > b.relationship.my_username.toLowerCase())
                     return 1
                   return 0
               });
@@ -368,8 +362,9 @@ export class ListPage {
         item: item
       });
     } else if(this.pageTitle == 'Groups') {
-      this.navCtrl.push(GroupPage, {
-        item: item
+      this.navCtrl.push(ProfilePage, {
+        item: item.transaction,
+        group: true
       });
     } else if(this.pageTitle == 'Contacts') {
       this.navCtrl.push(ProfilePage, {
@@ -383,26 +378,26 @@ export class ListPage {
   }
 
   accept() {
-    return new Promise((resolve, reject) => {
-      return this.graphService.addFriend(
-        {
-          username: this.friend_request.relationship.my_username,
-          username_signature: this.friend_request.relationship.my_username_signature,
-          public_key: this.friend_request.relationship.my_public_key,
-        },
-        this.friend_request.requester_rid,
-        this.friend_request.requested_rid
-      )
+    return this.graphService.addFriend(
+      {
+        username: this.friend_request.relationship.my_username,
+        username_signature: this.friend_request.relationship.my_username_signature,
+        public_key: this.friend_request.relationship.my_public_key
+      },
+      this.friend_request.requester_rid,
+      this.friend_request.requested_rid
+    ).then((txn) => {
+      return this.graphService.getFriends();
     }).then((txn) => {
+      return this.graphService.getFriendRequests();
+    })
+    .then(() => {
       var alert = this.alertCtrl.create();
       alert.setTitle('Friend Accept Sent');
       alert.setSubTitle('Your Friend Request acceptance has been submitted successfully.');
       alert.addButton('Ok');
       alert.present();
-      
-      this.refresh(null).then(() => {
-        this.navCtrl.pop();
-      });
+      this.navCtrl.setRoot(ListPage, {pageTitle: { title: 'Contacts', label: 'Contacts', component: ListPage, count: false, color: '' }});
     }).catch((err) => {
         console.log(err);
     });
@@ -420,13 +415,35 @@ export class ListPage {
           inputs: [
               {
                   name: 'identity',
-                  placeholder: 'Past friend identity here...'
+                  placeholder: 'Paste identity here...'
               }
           ],
           buttons: buttons
       });
-      alert.setTitle('Request Friend');
-      alert.setSubTitle('How do you want to request this friend?');
+      alert.setTitle('Request contact');
+      alert.setSubTitle('Paste the identity of your contact below');
+      alert.present();
+  }
+
+  addGroup() {
+      var buttons = [];
+      buttons.push({
+          text: 'Add',
+          handler: (data) => {
+              this.graphService.addGroup(JSON.parse(data.identity))
+          }
+      });
+      let alert = this.alertCtrl.create({
+          inputs: [
+              {
+                  name: 'identity',
+                  placeholder: 'Paste identity here...'
+              }
+          ],
+          buttons: buttons
+      });
+      alert.setTitle('Add group');
+      alert.setSubTitle('Paste the identity of your contact below');
       alert.present();
   }
 

@@ -12,8 +12,8 @@
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
   <ion-spinner *ngIf="loading"></ion-spinner>
-  <button *ngIf="pageTitle =='Messages'" ion-button secondary (click)="createMessage()">Compose</button>
   <button *ngIf="pageTitle =='Contacts'" ion-button secondary (click)="addFriend()">Add contact</button>
+  <button *ngIf="pageTitle =='Groups'" ion-button secondary (click)="addGroup()">Add group</button>
   <ion-card *ngIf="items && items.length == 0">
       <ion-card-content>
         <ion-card-title style="text-overflow:ellipsis;" text-wrap>
@@ -23,7 +23,7 @@
   </ion-card>
   <ion-list>
     <button ion-item *ngFor="let item of items" (click)="itemTapped($event, item)">
-      <span *ngIf="pageTitle =='Groups'">{{item.transaction.relationship.my_username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
+      <span *ngIf="pageTitle =='Groups'">{{item.transaction.relationship.username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
       <span *ngIf="pageTitle =='Sent Requests'">{{item.transaction.relationship.my_username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
       <span *ngIf="pageTitle =='Contact Requests'">{{item.transaction.relationship.my_username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
       <span *ngIf="pageTitle =='Messages' && !item.transaction.new">{{item.transaction.relationship.my_username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
@@ -41,10 +41,10 @@
 
     <ion-card *ngIf="friend_request">
       <ion-card-header>
-        <p><strong>New contact request from {{friend_request.relationship.their_username}}</strong> </p>
+        <p><strong>New contact request from {{friend_request.relationship.my_username}}</strong> </p>
       </ion-card-header>
       <ion-card-content>
-        <p>{{friend_request.relationship.their_username}} would like to be added as a contact</p>
+        <p>{{friend_request.relationship.my_username}} would like to be added as a contact</p>
         <button ion-button secondary (click)="accept()">Accept</button>
       </ion-card-content>
     </ion-card>

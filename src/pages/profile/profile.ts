@@ -12,6 +12,7 @@ import { Http } from '@angular/http';
 import { AlertController, LoadingController, ToastController } from 'ionic-angular';
 import { SettingsService } from '../../app/settings.service';
 import { Events } from 'ionic-angular';
+import { ComposePage } from '../mail/compose';
 
 declare var Base64;
 declare var forge;
@@ -28,6 +29,7 @@ export class ProfilePage {
     prev_name: any;
     item: any;
     isFriend: any;
+    group: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -44,15 +46,25 @@ export class ProfilePage {
         public events: Events
     ) {
         this.item = this.navParams.get('item');
+        this.group = this.navParams.get('group');
         this.refresh(null);
     }
 
     refresh(refresher) {
         this.isFriend = null;
-        this.graphService.getFriends()
+        let promise;
+        let collection;
+        if(this.group) {
+          promise = this.graphService.getGroups();
+          collection = this.graphService.graph.groups;
+        } else {
+          promise = this.graphService.getFriends();
+          collection = this.graphService.graph.friends;
+        }
+        promise
         .then(() => {
-            for (var i=0; i < this.graphService.graph.friends.length; i++) {
-                var friend = this.graphService.graph.friends[i];
+            for (var i=0; i < collection.length; i++) {
+                var friend = collection[i];
                 if (friend.rid === this.item.rid || friend.rid === this.item.requested_rid) {
                     this.isFriend = true;
                 }
@@ -171,8 +183,24 @@ export class ProfilePage {
         var page = this.item.relationship.group === true ? GroupPage : ChatPage;
         this.navCtrl.push(page, {
           item: {
-              transaction: this.item
+              transaction: this.item,
+              group: true
             }
+        });
+    }
+
+    compose() {
+        this.navCtrl.push(ComposePage, {
+          item: {
+            recipient: {
+              username: this.item.relationship.my_username || this.item.relationship.username,
+              username_signature: this.item.relationship.my_username_signature || this.item.relationship.username_signature,
+              public_key: this.item.relationship.my_public_key || this.item.relationship.public_key,
+              requester_rid: this.item.requester_rid,
+              requested_rid: this.item.requested_rid,
+            }
+          },
+          group: true
         });
     }
 
