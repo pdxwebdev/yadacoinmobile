@@ -163,6 +163,10 @@ export class BulletinSecretService {
         });
     }
 
+    publicKeyToAddress(public_key) {
+      foobar.bitcoin.ECPair.fromPublicKeyBuffer(foobar.Buffer.Buffer.from(public_key, 'hex')).getAddress()
+    }
+
     decrypt(message) {
         var key = forge.pkcs5.pbkdf2(forge.sha256.create().update(this.key.toWIF()).digest().toHex(), 'salt', 400, 32);
         var decipher = forge.cipher.createDecipher('AES-CBC', key);

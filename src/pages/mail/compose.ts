@@ -68,12 +68,14 @@ export class ComposePage {
       this.recipient = this.item.recipient
     }
 
-    if (this.item.message_type === 'group') {
+    if (this.item && this.item.message_type === 'group') {
       this.group = true;
     }
 
     if (this.group) {
-      this.message_type = 'group';
+      this.message_type = 'group_mail';
+    } else if (!this.message_type) {
+      this.message_type = 'mail'
     }
   }
 
@@ -124,7 +126,7 @@ export class ComposePage {
                         requester_rid: requester_rid,
                         requested_rid: requested_rid,
                         group: true,
-                        their_username_signature: this.recipient.username_signature
+                        group_username_signature: this.recipient.username_signature
                     });
                 } else {
                   var dh_public_key = this.graphService.keys[rid].dh_public_keys[0];

@@ -27,13 +27,13 @@ export class StreamPage {
     blockchainAddress: any;
     chats: any;
     rid: any;
-    their_public_key: any;
+    public_key: any;
     loading: any;
     loadingModal: any;
     content: any;
     wallet_mode: any;
-    their_username_signature: any;
-    their_username: any;
+    username_signature: any;
+    username: any;
     requester_rid: any;
     requested_rid: any;
     their_address: any;
@@ -168,7 +168,7 @@ export class StreamPage {
     getGroupMessages(group) {
         return new Promise((resolve, reject) => {
             this.graphService.getGroupMessages(
-                group['relationship']['their_username_signature'],
+                group['relationship']['username_signature'],
                 null,
                 group.rid
             )

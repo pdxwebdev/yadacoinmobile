@@ -29,13 +29,13 @@ export class GroupPage {
     blockchainAddress: any;
     chats: any;
     rid: any;
-    their_public_key: any;
+    public_key: any;
     loading: any;
     loadingModal: any;
     content: any;
     wallet_mode: any;
-    their_username_signature: any;
-    their_username: any;
+    username_signature: any;
+    username: any;
     requester_rid: any;
     requested_rid: any;
     their_address: any;
@@ -64,9 +64,9 @@ export class GroupPage {
         this.requester_rid = navParams.data.item.transaction.requester_rid;
         this.requested_rid = navParams.data.item.transaction.requested_rid;
         this.their_address = navParams.data.item.transaction.relationship.their_address;
-        this.their_public_key = navParams.data.item.transaction.relationship.their_public_key;
-        this.their_username_signature = navParams.data.item.transaction.relationship.their_username_signature;
-        this.their_username = navParams.data.item.transaction.relationship.their_username;
+        this.public_key = navParams.data.item.transaction.relationship.identity.public_key;
+        this.username_signature = navParams.data.item.transaction.relationship.identity.username_signature;
+        this.username = navParams.data.item.transaction.relationship.identity.username;
         var key = 'last_message_height-' + navParams.data.item.transaction.rid;
         if(navParams.data.item.transaction.height) this.storage.set(key, navParams.data.item.transaction.time);
         this.storage.get('blockchainAddress').then((blockchainAddress) => {
@@ -108,11 +108,9 @@ export class GroupPage {
                         return this.transactionService.generateTransaction({
                             relationship: {
                                 chatText: Base64.encode(JSON.stringify({
-                                    their_public_key: this.item.public_key,
-                                    their_username_signature: this.item.relationship.their_username_signature,
-                                    
-                                    their_username: this.item.relationship.their_username,
-                                    their_address: this.item.relationship.their_address,
+                                    public_key: this.item.public_key,
+                                    username_signature: this.item.relationship.identity.username_signature,
+                                    username: this.item.relationship.identity.username,
                                     group: true,
                                     requested_rid: this.requested_rid
                                 }))
@@ -149,7 +147,7 @@ export class GroupPage {
                 alert.addInput({
                     name: 'username',
                     type: 'radio',
-                    label: friend.relationship.their_username,
+                    label: friend.relationship.identity.username,
                     value: friend,
                     checked: false
                 });
@@ -174,7 +172,7 @@ export class GroupPage {
         if (showLoading) {
             this.loading = true;
         }
-        this.graphService.getGroupMessages(this.their_username_signature, this.requested_rid, this.rid)
+        this.graphService.getGroupMessages(this.username_signature, this.requested_rid, this.rid)
         .then(() => {
             this.loading = false;
             if(refresher) refresher.complete();
@@ -197,7 +195,7 @@ export class GroupPage {
             mode: 'modal',
             logicalParent: this,
             group: {
-                their_username_signature: this.their_username_signature,
+                username_signature: this.username_signature,
                 rid: this.rid,
                 requester_rid: this.requester_rid,
                 requested_rid: this.requested_rid
@@ -231,7 +229,7 @@ export class GroupPage {
     }
 
     viewProfile(item) {
-        var username_signatures = [this.bulletinSecretService.username_signature, item.relationship.my_username_signature].sort(function (a, b) {
+        var username_signatures = [this.bulletinSecretService.username_signature, item.relationship.identity.username_signature].sort(function (a, b) {
             return a.toLowerCase().localeCompare(b.toLowerCase());
         });
         if (username_signatures[0] === username_signatures[1]) return;
@@ -266,10 +264,10 @@ export class GroupPage {
                     return this.transactionService.generateTransaction({
                         relationship: {
                             groupChatText: this.groupChatText,
-                            my_username_signature: this.bulletinSecretService.generate_username_signature(),
-                            my_username: this.bulletinSecretService.username
+                            username_signature: this.bulletinSecretService.generate_username_signature(),
+                            username: this.bulletinSecretService.username
                         },
-                        their_username_signature: this.their_username_signature,
+                        username_signature: this.username_signature,
                         rid: this.rid,
                         requester_rid: this.requester_rid,
                         requested_rid: this.requested_rid

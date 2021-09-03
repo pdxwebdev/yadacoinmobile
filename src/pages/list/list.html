@@ -24,15 +24,15 @@
   <ion-list>
     <button ion-item *ngFor="let item of items" (click)="itemTapped($event, item)">
       <span *ngIf="pageTitle =='Groups'">{{item.transaction.relationship.username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
-      <span *ngIf="pageTitle =='Sent Requests'">{{item.transaction.relationship.my_username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
-      <span *ngIf="pageTitle =='Contact Requests'">{{item.transaction.relationship.my_username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
-      <span *ngIf="pageTitle =='Messages' && !item.transaction.new">{{item.transaction.relationship.my_username || item.transaction.relationship.username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
-      <span *ngIf="pageTitle =='Chat' && item.transaction.new"><strong>{{item.transaction.relationship.my_username}}</strong></span>
-      <span *ngIf="pageTitle =='Sign Ins' && !item.transaction.new">{{item.transaction.relationship.my_username}}</span>
-      <span *ngIf="pageTitle =='Sign Ins' && item.transaction.new"><strong>{{item.transaction.relationship.my_username}}</strong></span>
-      <span *ngIf="pageTitle =='Contacts'">{{item.transaction.relationship.my_username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
-      <span *ngIf="pageTitle =='Reacts Detail'">{{item.transaction.relationship.react}} {{item.transaction.relationship.my_username}}</span>
-      <span *ngIf="pageTitle =='Comment Reacts Detail'">{{item.transaction.relationship.react}} {{item.transaction.relationship.my_username}}</span>
+      <span *ngIf="pageTitle =='Sent Requests'">{{item.transaction.relationship.identity.username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
+      <span *ngIf="pageTitle =='Contact Requests'">{{item.transaction.relationship.identity.username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
+      <span *ngIf="pageTitle =='Messages' && !item.transaction.new">{{item.transaction.relationship.identity ? item.transaction.relationship.identity.username : item.transaction.relationship.username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
+      <span *ngIf="pageTitle =='Chat' && item.transaction.new"><strong>{{item.transaction.relationship.identity.username}}</strong></span>
+      <span *ngIf="pageTitle =='Sign Ins' && !item.transaction.new">{{item.transaction.relationship.identity.username}}</span>
+      <span *ngIf="pageTitle =='Sign Ins' && item.transaction.new"><strong>{{item.transaction.relationship.identity.username}}</strong></span>
+      <span *ngIf="pageTitle =='Contacts'">{{item.transaction.relationship.identity.username}} - <ion-note color="{{item.transaction.pending ? 'danger' : 'secondary'}}">{{item.transaction.pending ? 'Not yet saved on blockchain' : 'Saved on blockchain'}}</ion-note></span>
+      <span *ngIf="pageTitle =='Reacts Detail'">{{item.transaction.relationship.react}} {{item.transaction.relationship.identity.username}}</span>
+      <span *ngIf="pageTitle =='Comment Reacts Detail'">{{item.transaction.relationship.react}} {{item.transaction.relationship.identity.username}}</span>
     </button>
   </ion-list>
   <div *ngIf="selectedItem && pageTitle =='Sent Requests'" padding>
@@ -41,10 +41,10 @@
 
     <ion-card *ngIf="friend_request">
       <ion-card-header>
-        <p><strong>New contact request from {{friend_request.relationship.my_username}}</strong> </p>
+        <p><strong>New contact request from {{friend_request.relationship.identity.username}}</strong> </p>
       </ion-card-header>
       <ion-card-content>
-        <p>{{friend_request.relationship.my_username}} would like to be added as a contact</p>
+        <p>{{friend_request.relationship.identity.username}} would like to be added as a contact</p>
         <button ion-button secondary (click)="accept()">Accept</button>
       </ion-card-content>
     </ion-card>
@@ -64,7 +64,7 @@
 
     <ion-card>
       <ion-card-header>
-        <p><strong>{{selectedItem.transaction.username}}</strong> has sent you an authorization offer. Accept offer with the 'Sign in' button.</p>
+        <p><strong>{{selectedItem.transaction.identity.username}}</strong> has sent you an authorization offer. Accept offer with the 'Sign in' button.</p>
       </ion-card-header>
       <ion-card-content>
         <button ion-button secondary (click)="sendSignIn()">Sign in</button>

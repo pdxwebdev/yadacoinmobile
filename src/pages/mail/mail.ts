@@ -44,7 +44,12 @@ export class MailPage {
       )];
       const group_rids = [];
       for (let i=0; i < this.graphService.graph.groups.length; i++) {
-        group_rids.push(this.graphService.graph.groups[i].requested_rid)
+        const group = this.graphService.graph.groups[i];
+        group_rids.push(this.graphService.generateRid(
+          group.relationship.username_signature,
+          group.relationship.username_signature,
+          'group_mail'
+        ))
       }
       if (group_rids.length > 0) {
         rids = rids.concat(group_rids);
@@ -59,9 +64,9 @@ export class MailPage {
         const indexedItem = this.graphService.groups_indexed[item.requested_rid] || this.graphService.friends_indexed[item.rid];
         return {
           sender: item.public_key === this.bulletinSecretService.identity.public_key ? this.bulletinSecretService.identity : {
-            username: indexedItem.relationship.my_username || indexedItem.relationship.username,
-            username_signature: indexedItem.relationship.my_username_signature || indexedItem.relationship.username_signature,
-            public_key: indexedItem.relationship.my_public_key || indexedItem.relationship.public_key,
+            username: indexedItem.relationship.identity.username,
+            username_signature: indexedItem.relationship.identity.username_signature,
+            public_key: indexedItem.relationship.identity.public_key,
           },
           subject: item.relationship.envelope.subject,
           body: item.relationship.envelope.body,

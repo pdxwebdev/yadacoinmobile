@@ -30,6 +30,7 @@ export class ProfilePage {
     item: any;
     isFriend: any;
     group: any;
+    identity: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -46,7 +47,8 @@ export class ProfilePage {
         public events: Events
     ) {
         this.item = this.navParams.get('item');
-        this.group = this.navParams.get('group');
+        this.identity = this.item.relationship.identity || this.item.relationship;
+        this.group = this.navParams.get('group') || this.graphService.isGroup(this.identity);
         this.refresh(null);
     }
 
@@ -100,7 +102,7 @@ export class ProfilePage {
         buttons.push({
             text: 'Add',
             handler: (data) => {
-                return this.graphService.addFriend(data)
+                return this.graphService.addFriend(this.item)
                 .then((txn) => {
                     var alert = this.alertCtrl.create();
                     alert.setTitle('Contact Request Sent');
@@ -116,8 +118,8 @@ export class ProfilePage {
         let alert = this.alertCtrl.create({
             buttons: buttons
         });
-        alert.setTitle('Add friend');
-        alert.setSubTitle('Do you want to add ' + this.item.relationship.their_username + '?');
+        alert.setTitle('Add contact');
+        alert.setSubTitle('Do you want to add ' + this.item.username + '?');
         alert.present();
     }
 
@@ -126,41 +128,7 @@ export class ProfilePage {
         .subscribe((res) => {
             return new Promise((resolve, reject) => {
                 let invite = res.json();
-                var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
-                var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
-                var dh_private_key = this.toHex(raw_dh_private_key);
-                var dh_public_key = this.toHex(raw_dh_public_key);
-                resolve({
-                    their_address: invite.their_address,
-                    their_public_key: invite.their_public_key,
-                    their_username_signature: invite.their_username_signature,
-                    their_username: invite.their_username,
-                    dh_public_key: dh_public_key,
-                    dh_private_key: dh_private_key,
-                    requested_rid: invite.requested_rid,
-                    requester_rid: this.graphService.graph.rid
-                })
-            })
-            .then((info: any) => {
-                return this.transactionService.generateTransaction({
-                    relationship: {
-                        dh_private_key: info.dh_private_key,
-                        my_username_signature: this.bulletinSecretService.generate_username_signature(),
-                        my_username: this.bulletinSecretService.username,
-                        their_address: info.their_address,
-                        their_public_key: info.their_public_key,
-                        their_username_signature: info.their_username_signature,
-                        their_username: info.their_username,
-                        group: true
-                    },
-                    requester_rid: info.requester_rid,
-                    requested_rid: info.requested_rid,
-                    dh_public_key: info.dh_public_key,
-                    to: info.their_address
-                })
-            
-            }).then((txn) => {
-                return this.transactionService.sendTransaction();
+                this.graphService.addGroup(invite);
             })
             .then((hash) => {
                 if (this.settingsService.remoteSettings['walletUrl']) {
@@ -184,7 +152,7 @@ export class ProfilePage {
         this.navCtrl.push(page, {
           item: {
               transaction: this.item,
-              group: true
+              group: this.graphService.isGroup(this.identity)
             }
         });
     }
@@ -193,14 +161,14 @@ export class ProfilePage {
         this.navCtrl.push(ComposePage, {
           item: {
             recipient: {
-              username: this.item.relationship.my_username || this.item.relationship.username,
-              username_signature: this.item.relationship.my_username_signature || this.item.relationship.username_signature,
-              public_key: this.item.relationship.my_public_key || this.item.relationship.public_key,
+              username: this.identity.username,
+              username_signature: this.identity.username_signature,
+              public_key: this.identity.public_key,
               requester_rid: this.item.requester_rid,
               requested_rid: this.item.requested_rid,
             }
           },
-          group: true
+          group: this.graphService.isGroup(this.identity)
         });
     }
 

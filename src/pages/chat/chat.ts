@@ -34,6 +34,7 @@ export class ChatPage {
     loading: any;
     loadingModal: any;
     content: any;
+    transaction: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -48,6 +49,7 @@ export class ChatPage {
         public ahttp: Http,
         public toastCtrl: ToastController
     ) {
+        this.transaction = navParams.data.item.transaction
         this.rid = navParams.data.item.transaction.rid;
         this.requester_rid = navParams.data.item.transaction.requester_rid || '';
         this.requested_rid = navParams.data.item.transaction.requested_rid || '';
@@ -62,14 +64,20 @@ export class ChatPage {
 
     parseChats() {
         let rid;
+        let group;
         if (this.graphService.groups_indexed[this.requested_rid]) {
-          rid = this.requested_rid
+          rid = this.requested_rid;
+          group = true;
         } else {
-          rid = this.rid
+          rid = this.rid;
+          group = false;
         }
         if(this.graphService.graph.messages[rid]) {
             this.chats = this.graphService.graph.messages[rid];
             for(var i=0; i < this.chats.length; i++) {
+                if (!group) {
+                  this.chats[i].relationship.identity = this.chats[i].public_key === this.bulletinSecretService.identity.public_key ? this.bulletinSecretService.identity : this.graphService.friends_indexed[rid].relationship.identity
+                }
                 this.chats[i].time = new Date(parseInt(this.chats[i].time) * 1000).toISOString().slice(0, 19).replace('T', ' ');
             }
         } else {
@@ -95,72 +103,15 @@ export class ChatPage {
     viewProfile(item) {
         return this.graphService.getFriends()
         .then(() => {
-            for (var i=0; i < this.graphService.graph.friends.length; i++) {
-                var friend = this.graphService.graph.friends[i];
-                if (friend.rid === item.rid) {
-                    item = friend;
-                }
-            }
+            const rid = this.graphService.generateRid(
+              item.relationship.sender.username_signature,
+              this.bulletinSecretService.identity.username_signature
+            )
+            const identity = this.graphService.friends_indexed[rid];
             this.navCtrl.push(ProfilePage, {
-                item: item
+                item: identity ? identity.relationship : item.relationship.sender
             })
         })
-    }
-
-    joinGroup(item) {
-        return new Promise((resolve, reject) => {
-            var invite = item.relationship.chatText;
-            var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
-            var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
-            var dh_private_key = this.toHex(raw_dh_private_key);
-            var dh_public_key = this.toHex(raw_dh_public_key);
-            resolve({
-                their_address: invite.their_address,
-                their_public_key: invite.their_public_key,
-                their_username_signature: invite.their_username_signature,
-                their_username: invite.their_username,
-                dh_public_key: dh_public_key,
-                dh_private_key: dh_private_key,
-                requested_rid: invite.requested_rid,
-                requester_rid: this.graphService.graph.rid
-            })
-        })
-        .then((info: any) => {
-            return this.transactionService.generateTransaction({
-                relationship: {
-                    dh_private_key: info.dh_private_key,
-                    my_username_signature: this.bulletinSecretService.generate_username_signature(),
-                    my_username: this.bulletinSecretService.username,
-                    their_address: info.their_address,
-                    their_public_key: info.their_public_key,
-                    their_username_signature: info.their_username_signature,
-                    their_username: info.their_username,
-                    group: true
-                },
-                requester_rid: info.requester_rid,
-                requested_rid: info.requested_rid,
-                dh_public_key: info.dh_public_key,
-                to: info.their_address
-            })
-
-        }).then((txn) => {
-            return this.transactionService.sendTransaction();
-        })
-        .then((hash) => {
-            if (this.settingsService.remoteSettings['walletUrl']) {
-                return this.graphService.getInfo();
-            }
-        })
-        .then(() => {
-            const toast = this.toastCtrl.create({
-                message: 'Group joined!',
-                duration: 2000
-            });
-            toast.present();
-            return this.refresh(null)
-        })
-        .catch((err) => {
-        });
     }
 
     send() {
@@ -182,13 +133,14 @@ export class ChatPage {
                     if (this.graphService.groups_indexed[this.requested_rid]) {
                       return this.transactionService.generateTransaction({
                           relationship: {
-                              chatText: this.chatText
+                              chatText: this.chatText,
+                              identity: this.bulletinSecretService.identity
                           },
                           rid: this.rid,
                           requester_rid: this.requester_rid,
                           requested_rid: this.requested_rid,
                           group: true,
-                          their_username_signature: this.graphService.groups_indexed[this.requested_rid].relationship.username_signature
+                          group_username_signature: this.graphService.groups_indexed[this.requested_rid].relationship.username_signature
                       });
                     } else {
                       var dh_public_key = this.graphService.keys[this.rid].dh_public_keys[0];

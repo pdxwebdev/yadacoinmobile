@@ -23,11 +23,11 @@ export class CompleteTestService implements AutoCompleteService {
   getResults(searchTerm:string) {
     return this.graphService.graph.friends.map((item) => {
         const value = {
-          username: item.relationship.my_username,
-          username_signature: item.relationship.my_username_signature,
-          public_key: item.relationship.my_public_key
+          username: item.relationship.identity.username,
+          username_signature: item.relationship.identity.username_signature,
+          public_key: item.relationship.identity.public_key
         }
-        return {name: item.relationship.my_username, value: value}
+        return {name: item.relationship.identity.username, value: value}
     });
   }
 }

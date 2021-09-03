@@ -100,7 +100,7 @@ export class ListPage {
         // Let's populate this page with some filler content for funzies
         this.icons = ['flask', 'wifi', 'beer', 'football', 'basketball', 'paper-plane',
         'american-football', 'boat', 'bluetooth', 'build'];
-        var my_public_key = '';
+        var public_key = '';
         var graphArray = [];
         if (this.pageTitle == 'Contacts') {
           return this.graphService.getFriends()
@@ -108,9 +108,9 @@ export class ListPage {
             var graphArray = this.graphService.graph.friends;
             graphArray = this.getDistinctFriends(graphArray).friend_list;
             graphArray.sort(function (a, b) {
-                if (a.relationship.my_username.toLowerCase() < b.relationship.my_username.toLowerCase())
+                if (a.relationship.identity.username.toLowerCase() < b.relationship.identity.username.toLowerCase())
                   return -1
-                if ( a.relationship.my_username.toLowerCase() > b.relationship.my_username.toLowerCase())
+                if ( a.relationship.identity.username.toLowerCase() > b.relationship.identity.username.toLowerCase())
                   return 1
                 return 0
             });
@@ -124,9 +124,9 @@ export class ListPage {
           .then(() => {
             graphArray = this.graphService.graph.groups;
             graphArray.sort(function (a, b) {
-                if (a.relationship.username.toLowerCase() < b.relationship.username.toLowerCase())
+                if (a.relationship.identity.username.toLowerCase() < b.relationship.identity.username.toLowerCase())
                   return -1
-                if ( a.relationship.username.toLowerCase() > b.relationship.username.toLowerCase())
+                if ( a.relationship.identity.username.toLowerCase() > b.relationship.identity.username.toLowerCase())
                   return 1
                 return 0
             });
@@ -136,7 +136,7 @@ export class ListPage {
               console.log(err);
           });
         } else if (this.pageTitle == 'Messages') {
-          my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
+          public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
           return this.graphService.getFriends()
           .then(() => {
             return this.graphService.getGroups();
@@ -145,13 +145,13 @@ export class ListPage {
             return this.graphService.getNewMessages();
           })
           .then((graphArray) => {
-            var messages = this.markNew(my_public_key, graphArray, this.graphService.new_messages_counts);
+            var messages = this.markNew(public_key, graphArray, this.graphService.new_messages_counts);
             var friendsWithMessagesList = this.getDistinctFriends(messages);
             this.populateRemainingFriends(friendsWithMessagesList.friend_list, friendsWithMessagesList.used_rids);
             this.loading = false;
             friendsWithMessagesList.friend_list.sort(function (a, b) {
-                const ausername = a.relationship.my_username || a.relationship.username
-                const busername = a.relationship.my_username || a.relationship.username
+                const ausername = a.relationship.identity ? a.relationship.identity.username : a.relationship.username
+                const busername = b.relationship.identity ? b.relationship.identity.username : b.relationship.username
                 if (ausername.toLowerCase() < busername.toLowerCase())
                   return -1
                 if ( ausername.toLowerCase() > busername.toLowerCase())
@@ -163,20 +163,20 @@ export class ListPage {
               console.log(err);
           });
         } else if (this.pageTitle == 'Sent') {
-          my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
+          public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
           return this.graphService.getFriends()
           .then(() => {
             return this.graphService.getSentMessages();
           })
           .then((graphArray) => {
-            var messages = this.markNew(my_public_key, graphArray, this.graphService.new_messages_counts);
+            var messages = this.markNew(public_key, graphArray, this.graphService.new_messages_counts);
             var friendsWithMessagesList = this.getDistinctFriends(messages);
             this.populateRemainingFriends(friendsWithMessagesList.friend_list, friendsWithMessagesList.used_rids);
             this.loading = false;
             friendsWithMessagesList.friend_list.sort(function (a, b) {
-                if (a.relationship.my_username.toLowerCase() < b.relationship.my_username.toLowerCase())
+                if (a.relationship.identity.username.toLowerCase() < b.relationship.identity.username.toLowerCase())
                   return -1
-                if ( a.relationship.my_username.toLowerCase() > b.relationship.my_username.toLowerCase())
+                if ( a.relationship.identity.username.toLowerCase() > b.relationship.identity.username.toLowerCase())
                   return 1
                 return 0
             });
@@ -185,13 +185,13 @@ export class ListPage {
               console.log(err);
           });
         } else if (this.pageTitle == 'Sign Ins') {
-          my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
+          public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
           return this.graphService.getFriends()
           .then(() => {
             return this.graphService.getNewSignIns();
           })
           .then((graphArray) => {
-              var sign_ins = this.markNew(my_public_key, graphArray, this.graphService.new_sign_ins_counts);
+              var sign_ins = this.markNew(public_key, graphArray, this.graphService.new_sign_ins_counts);
               var friendsWithSignInsList = this.getDistinctFriends(sign_ins);
               this.populateRemainingFriends(friendsWithSignInsList.friend_list, friendsWithSignInsList.used_rids);
               this.loading = false;
@@ -204,9 +204,9 @@ export class ListPage {
           .then(() => {
               var graphArray = this.graphService.graph.friend_requests;
               graphArray.sort(function (a, b) {
-                  if (a.relationship.my_username.toLowerCase() < b.relationship.my_username.toLowerCase())
+                  if (a.relationship.identity.username.toLowerCase() < b.relationship.identity.username.toLowerCase())
                     return -1
-                  if ( a.relationship.my_username.toLowerCase() > b.relationship.my_username.toLowerCase())
+                  if ( a.relationship.identity.username.toLowerCase() > b.relationship.identity.username.toLowerCase())
                     return 1
                   return 0
               });
@@ -220,9 +220,9 @@ export class ListPage {
           .then(() => {
               var graphArray = this.graphService.graph.sent_friend_requests;
               graphArray.sort(function (a, b) {
-                  if (a.relationship.my_username.toLowerCase() < b.relationship.my_username.toLowerCase())
+                  if (a.relationship.identity.username.toLowerCase() < b.relationship.identity.username.toLowerCase())
                     return -1
-                  if ( a.relationship.my_username.toLowerCase() > b.relationship.my_username.toLowerCase())
+                  if ( a.relationship.identity.username.toLowerCase() > b.relationship.identity.username.toLowerCase())
                     return 1
                   return 0
               });
@@ -266,10 +266,10 @@ export class ListPage {
     });
   }
 
-  markNew(my_public_key, graphArray, graphCount) {
+  markNew(public_key, graphArray, graphCount) {
     var collection = [];
     for (let i in graphArray) {
-      if(my_public_key !== graphArray[i]['public_key'] && graphCount[i] && graphCount[i] < graphArray[i]['height']) {
+      if(public_key !== graphArray[i]['public_key'] && graphCount[i] && graphCount[i] < graphArray[i]['height']) {
         graphArray[i]['new'] = true;
       }
       collection.push(graphArray[i]);
@@ -309,7 +309,7 @@ export class ListPage {
       // we could have multiple transactions per friendship
       // so make sure we're going using the rid once
       var item = collection[i];
-      if(!item.relationship || !item.relationship.their_username) {
+      if(!item.relationship || !item.relationship.identity) {
         continue
       }
       if(used_rids.indexOf(item.rid) === -1) {
@@ -376,7 +376,7 @@ export class ListPage {
     } else if(this.pageTitle == 'Groups') {
       this.navCtrl.push(ProfilePage, {
         item: item.transaction,
-        group: true
+        group: this.graphService.isGroup(item.transaction.relationship.group)
       });
     } else if(this.pageTitle == 'Contacts') {
       this.navCtrl.push(ProfilePage, {
@@ -392,10 +392,11 @@ export class ListPage {
   accept() {
     return this.graphService.addFriend(
       {
-        username: this.friend_request.relationship.my_username,
-        username_signature: this.friend_request.relationship.my_username_signature,
-        public_key: this.friend_request.relationship.my_public_key
+        username: this.friend_request.relationship.identity.username,
+        username_signature: this.friend_request.relationship.identity.username_signature,
+        public_key: this.friend_request.relationship.identity.public_key
       },
+      this.friend_request.rid,
       this.friend_request.requester_rid,
       this.friend_request.requested_rid
     ).then((txn) => {

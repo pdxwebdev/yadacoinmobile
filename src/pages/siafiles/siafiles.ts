@@ -104,10 +104,10 @@ export class SiaFiles {
                                 groupChatText: this.postText,
                                 groupChatFile: sharefiledata,
                                 groupChatFileName: this.selectedFile,
-                                my_username_signature: this.bulletinSecretService.generate_username_signature(),
-                                my_username: this.bulletinSecretService.username
+                                username_signature: this.bulletinSecretService.generate_username_signature(),
+                                username: this.bulletinSecretService.username
                             },
-                            their_username_signature: this.group.their_username_signature,
+                            username_signature: this.group.username_signature,
                             rid: this.group.rid,
                             requester_rid: this.group.requester_rid,
                             requested_rid: this.group.requested_rid

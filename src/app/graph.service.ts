@@ -56,6 +56,7 @@ export class GraphService {
     usernames = {};
     username_signature = '';
     groups_indexed = {};
+    group_mails_indexed = {};
     constructor(
         private storage: Storage,
         private bulletinSecretService: BulletinSecretService,
@@ -511,7 +512,7 @@ export class GraphService {
             try {
                 var decrypted = this.publicDecrypt(sent_friend_request['relationship']);
                 var relationship = JSON.parse(decrypted);
-                if (!relationship.their_username || !relationship.their_username_signature) continue;
+                if (!relationship.identity.username) continue;
                 sent_friend_requestsObj[sent_friend_request.rid] = sent_friend_request;
                 //not sure how this affects the friends list yet, since we can't return friends from here
                 //friends[sent_friend_request.rid] = sent_friend_request;
@@ -541,8 +542,8 @@ export class GraphService {
         var arr_sent_friend_requests = [];
         for(let i in sent_friend_requestsObj) {
             arr_sent_friend_requests.push(sent_friend_requestsObj[i].rid);
-            if (sent_friend_requestsObj[i].relationship && sent_friend_requestsObj[i].relationship.their_username) {
-                this.usernames[sent_friend_requestsObj[i].rid] = sent_friend_requestsObj[i].their_username;
+            if (sent_friend_requestsObj[i].relationship && sent_friend_requestsObj[i].relationship.identity.username) {
+                this.usernames[sent_friend_requestsObj[i].rid] = sent_friend_requestsObj[i].relationship.identity.username;
             }
         }
 
@@ -589,8 +590,8 @@ export class GraphService {
         var arr_friend_requests = [];
         for(let i in friend_requestsObj) {
             arr_friend_requests.push(friend_requestsObj[i].rid);
-            if (friend_requestsObj[i].relationship && friend_requestsObj[i].relationship.their_username) {
-                this.usernames[friend_requestsObj[i].rid] = friend_requestsObj[i].relationship.their_username;
+            if (friend_requestsObj[i].relationship && friend_requestsObj[i].relationship.identity.username) {
+                this.usernames[friend_requestsObj[i].rid] = friend_requestsObj[i].relationship.identity.username;
             }
         }
 
@@ -723,6 +724,11 @@ export class GraphService {
                         group['relationship'] = relationship;
                     }
                     this.groups_indexed[group.requested_rid] = group;
+                    this.group_mails_indexed[this.generateRid(
+                      relationship.username_signature,
+                      relationship.username_signature,
+                      'group_mail'
+                    )] = group;
                 } catch(err) {
                 }
             }
@@ -735,8 +741,8 @@ export class GraphService {
                 let arr_friends_keys = Array.from(friends_diff.keys())
                 for(i=0; i<arr_friends_keys.length; i++) {
                     groups.push(this.groups_indexed[arr_friends_keys[i]])
-                    if (this.groups_indexed[arr_friends_keys[i]].relationship && this.groups_indexed[arr_friends_keys[i]].relationship.their_username) {
-                        this.usernames[this.groups_indexed[arr_friends_keys[i]].rid] = this.groups_indexed[arr_friends_keys[i]].relationship.their_username;
+                    if (this.groups_indexed[arr_friends_keys[i]].relationship && this.groups_indexed[arr_friends_keys[i]].relationship.username) {
+                        this.usernames[this.groups_indexed[arr_friends_keys[i]].rid] = this.groups_indexed[arr_friends_keys[i]].relationship.username;
                     }
                     if (this.groups_indexed[arr_friends_keys[i]].username) {
                         this.usernames[this.groups_indexed[arr_friends_keys[i]].rid] = this.groups_indexed[arr_friends_keys[i]].username;
@@ -765,10 +771,10 @@ export class GraphService {
                     if (message.dh_public_key) continue;
                     //hopefully we've prepared the stored_secrets option before getting here
                     //by calling getSentFriendRequests and getFriendRequests
-                    if (this.groups_indexed[message.requested_rid]) {
+                    if (this.group_mails_indexed[message.requested_rid]) {
 
                       try {
-                          var decrypted = this.shared_decrypt(this.groups_indexed[message.requested_rid].relationship.username_signature, message.relationship);
+                          var decrypted = this.shared_decrypt(this.group_mails_indexed[message.requested_rid].relationship.username_signature, message.relationship);
                       }
                       catch(error) {
                           continue
@@ -975,7 +981,7 @@ export class GraphService {
     parseNewMessages(messages, graphCounts, graphCount, heightType) {
         this[graphCount] = 0;
         this[graphCounts] = {}
-        var my_public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
+        var public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
         return new Promise((resolve, reject) => {
             return this.getMessageHeights(graphCounts, heightType)
             .then(() => {
@@ -983,7 +989,7 @@ export class GraphService {
                 for(var i=0; i<messages.length; i++) {
                     var message = messages[i];
                     message.username = this.usernames[message.rid];
-                    if (message.public_key != my_public_key) {
+                    if (message.public_key != public_key) {
                         if(this[graphCounts][message.rid]) {
                             if(parseInt(message.time) > this[graphCounts][message.rid]) {
                                 this[graphCounts][message.rid] = message.time;
@@ -1176,35 +1182,29 @@ export class GraphService {
             var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
             var dh_private_key = this.toHex(raw_dh_private_key);
             var dh_public_key = this.toHex(raw_dh_public_key);
-            resolve({
-                their_public_key: pubKey,
-                their_address: address,
-                their_username_signature: username_signature,
-                their_username: groupname,
+            const info = {
+                public_key: pubKey,
+                username_signature: username_signature,
+                username: groupname,
                 wif: wif,
                 dh_public_key: dh_public_key,
                 dh_private_key: dh_private_key
-            });
-        })
-        .then((info: any) => {
-            var username_signatures = [this.graph.username_signature, info.their_username_signature].sort(function (a, b) {
+            }
+            var username_signatures = [this.graph.username_signature, info.username_signature].sort(function (a, b) {
                 return a.toLowerCase().localeCompare(b.toLowerCase());
             });
             var requested_rid = forge.sha256.create().update(username_signatures[0] + username_signatures[1]).digest().toHex();
             return this.transactionService.generateTransaction({
                 relationship: {
-                    dh_private_key: info.dh_private_key,
-                    their_username_signature: info.their_username_signature,
-                    their_public_key: info.their_public_key,
-                    their_username: info.their_username,
-                    their_address: info.their_address,
-                    my_username_signature: this.bulletinSecretService.generate_username_signature(),
-                    my_username: this.bulletinSecretService.username,
-                    wif: info.wif,
-                    group: true
+                    group: {
+                      username_signature: info.username_signature,
+                      public_key: info.public_key,
+                      username: info.username,
+                      wif: info.wif
+                    },
+                    identity: this.bulletinSecretService.identity
                 },
-                dh_public_key: info.dh_public_key,
-                to: info.their_address,
+                to: this.bulletinSecretService.publicKeyToAddress(info.public_key),
                 requester_rid: this.graph.rid,
                 requested_rid: requested_rid
             })
@@ -1254,10 +1254,9 @@ export class GraphService {
                     let address = key.getAddress();
                     let username_signature = foobar.base64.fromByteArray(key.sign(foobar.bitcoin.crypto.sha256(username)).toDER());
                     resolve({
-                        their_public_key: pubKey,
-                        their_address: address,
-                        their_username_signature: username_signature,
-                        their_username: username,
+                        public_key: pubKey,
+                        username_signature: username_signature,
+                        username: username,
                         wif: wif,
                         rid: rid,
                         shared_key: shared_secret
@@ -1268,16 +1267,14 @@ export class GraphService {
         .then((info: any) => {
             return this.transactionService.generateTransaction({
                 relationship: {
-                    their_username_signature: info.their_username_signature,
-                    their_public_key: info.their_public_key,
-                    their_username: info.their_username,
-                    their_address: info.their_address,
-                    my_username_signature: this.bulletinSecretService.generate_username_signature(),
-                    my_username: this.bulletinSecretService.username,
+                    username_signature: info.username_signature,
+                    public_key: info.public_key,
+                    username: info.username,
+                    identity: this.bulletinSecretService.identity,
                     wif: info.wif,
                     group: true
                 },
-                to: info.their_address,
+                to: this.bulletinSecretService.publicKeyToAddress(info.public_key),
                 rid: info.rid,
                 shared_secret: info.shared_key
             })
@@ -1294,7 +1291,11 @@ export class GraphService {
       return forge.sha256.create().update(username_signatures[0] + username_signatures[1] + extra).digest().toHex();
     }
 
-    addFriend(identity, requester_rid='', requested_rid='') {
+    addFriend(identity, rid='', requester_rid='', requested_rid='') {
+      rid = rid || this.generateRid(
+        this.bulletinSecretService.identity.username_signature,
+        identity.username_signature
+      );
       requester_rid = requester_rid || this.generateRid(this.bulletinSecretService.identity.username_signature, this.bulletinSecretService.identity.username_signature);
       requested_rid = requested_rid || this.generateRid(identity.username_signature, identity.username_signature);
       if (requester_rid && requested_rid) {
@@ -1314,17 +1315,14 @@ export class GraphService {
           return this.transactionService.generateTransaction({
               relationship: {
                   dh_private_key: dh_private_key,
-                  their_username: identity.username,
-                  their_username_signature: identity.username_signature,
-                  their_public_key: identity.public_key,
-                  my_username: this.bulletinSecretService.identity.username,
-                  my_username_signature: this.bulletinSecretService.generate_username_signature(),
-                  my_public_key: this.bulletinSecretService.identity.public_key
+                  identity: this.bulletinSecretService.identity
               },
               dh_public_key: dh_public_key,
               requested_rid: requested_rid,
               requester_rid: requester_rid,
-              to: foobar.bitcoin.ECPair.fromPublicKeyBuffer(foobar.Buffer.Buffer.from(identity.public_key, 'hex')).getAddress()
+              rid: rid,
+              to: this.bulletinSecretService.publicKeyToAddress(identity.public_key),
+              recipient_identity: identity
           });
       }).then((hash) => {
           return this.transactionService.sendTransaction();
@@ -1361,7 +1359,7 @@ export class GraphService {
               relationship: identity,
               requested_rid: requested_rid,
               requester_rid: requester_rid,
-              to: foobar.bitcoin.ECPair.fromPublicKeyBuffer(foobar.Buffer.Buffer.from(identity.public_key, 'hex')).getAddress()
+              to: this.bulletinSecretService.publicKeyToAddress(identity.public_key)
           });
       }).then((hash) => {
           return this.transactionService.sendTransaction();
@@ -1371,6 +1369,11 @@ export class GraphService {
     publicDecrypt(message) {
       const decrypted = decrypt(this.bulletinSecretService.key.d.toHex(), Buffer.from(this.hexToByteArray(message))).toString();
       return decrypted
+    }
+
+    isGroup(identity) {
+      if (!identity) return false;
+      return this.groups_indexed[this.generateRid(identity.username_signature, identity.username_signature, 'group')] ? true : false;
     }
 
     decrypt(message) {

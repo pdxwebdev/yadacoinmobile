@@ -12,10 +12,12 @@
   <ion-spinner *ngIf="loading"></ion-spinner>
 	<ion-list>
 	  <ion-item *ngFor="let item of chats" text-wrap>
-        <strong *ngIf="!graphService.groups_indexed[item.requested_rid] && graphService.friends_indexed[item.rid]"><span ion-text style="font-size: 20px;" (click)="viewProfile(item)">{{(item.public_key == public_key) ? graphService.friends_indexed[item.rid].relationship.their_username : graphService.friends_indexed[item.rid].relationship.my_username}}</span> </strong><span style="font-size: 10px; color: rgb(88, 88, 88);" ion-text>{{item.time}}</span>
-        <strong *ngIf="graphService.groups_indexed[item.requested_rid]"><span ion-text style="font-size: 20px;" (click)="viewProfile(item)">{{graphService.groups_indexed[item.requested_rid].relationship.username}}</span> </strong><span style="font-size: 10px; color: rgb(88, 88, 88);" ion-text>{{item.time}}</span>
+        <strong>
+          <span ion-text style="font-size: 20px;" (click)="viewProfile(item)">{{item.relationship.identity ? item.relationship.identity.username : 'Anonymous'}}</span>
+        </strong>
+        <span style="font-size: 10px; color: rgb(88, 88, 88);" ion-text>{{item.time}}</span>
         <h3 *ngIf="!item.relationship.isInvite">{{item.relationship.chatText}}</h3>
-        <h3 *ngIf="item.relationship.isInvite && item.relationship.chatText.group === true">Invite to join {{item.relationship.chatText.their_username}}</h3>
+        <h3 *ngIf="item.relationship.isInvite && item.relationship.chatText.group === true">Invite to join {{item.relationship.chatText.username}}</h3>
         <button *ngIf="item.relationship.isInvite && item.relationship.chatText.group === true" ion-button (click)="joinGroup(item)">Join group</button>
         <button *ngIf="item.relationship.isInvite && item.relationship.chatText.group !== true" ion-button (click)="requestFriend(item)">Join group</button>
         <hr />

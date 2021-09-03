@@ -18,8 +18,7 @@ export class TransactionService {
     rid = null;
     callbackurl = null;
     blockchainurl = null;
-    username_signature = null;
-    their_username_signature = null;
+    group_username_signature = null;
     shared_secret = null;
     to = null;
     txnattempts = null;
@@ -31,6 +30,7 @@ export class TransactionService {
     value = null;
     username = null;
     signatures = null;
+    recipient_identity = null;
     constructor(
         private walletService: WalletService,
         private bulletinSecretService: BulletinSecretService,
@@ -41,37 +41,20 @@ export class TransactionService {
     generateTransaction(info) {
         return new Promise((resolve, reject) => {
             this.key = this.bulletinSecretService.key;
-            this.username_signature = this.bulletinSecretService.generate_username_signature();
             this.username = this.bulletinSecretService.username;
-
+            this.recipient_identity = info.recipient_identity;
             this.txnattempts = [12, 5, 4];
             this.cbattempts = [12, 5, 4];
             this.info = info;
-            this.their_username_signature = this.info.their_username_signature;
+            this.group_username_signature = this.info.group_username_signature;
             this.unspent_transaction_override = this.info.unspent_transaction;
             this.blockchainurl = this.info.blockchainurl;
             this.callbackurl = this.info.callbackurl;
             this.to = this.info.to;
             this.value = this.info.value;
-            if (this.info.rid) {
-                this.rid = this.info.rid;
-            }
-            else if (this.info.relationship && this.info.relationship.their_username_signature) {
-                var username_signatures = [this.username_signature, this.info.relationship.their_username_signature].sort(function (a, b) {
-                    return a.toLowerCase().localeCompare(b.toLowerCase());
-                });
-                this.rid = forge.sha256.create().update(username_signatures[0] + username_signatures[1]).digest().toHex();
-            } else if (this.info.their_username_signature) {
-              username_signatures = [this.username_signature, this.info.their_username_signature].sort(function (a, b) {
-                    return a.toLowerCase().localeCompare(b.toLowerCase());
-                });
-                this.rid = forge.sha256.create().update(username_signatures[0] + username_signatures[1]).digest().toHex();
-            } else {
-                this.rid = '';
-            }
 
             this.transaction = {
-                rid:  this.rid,
+                rid:  this.info.rid,
                 fee: 0.00,
                 requester_rid: typeof this.info.requester_rid == 'undefined' ? '' : this.info.requester_rid,
                 requested_rid: typeof this.info.requested_rid == 'undefined' ? '' : this.info.requested_rid,
@@ -186,18 +169,11 @@ export class TransactionService {
             var outputs_hashes_concat = outputs_hashes_arr.join('');
             if (typeof this.info.relationship === 'string') {
               this.transaction.relationship = this.info.relationship;
-            } else if (this.info.relationship) {
-                username_signatures = [this.username_signature, this.info.relationship.their_username_signature].sort(function (a, b) {
-                    return a.toLowerCase().localeCompare(b.toLowerCase());
-                });
-                this.rid = foobar.bitcoin.crypto.sha256(username_signatures[0] + username_signatures[1]).toString('hex');
-            } else {
-                this.info.relationship = {};
             }
 
             if (this.info.dh_public_key && this.info.relationship.dh_private_key) {
                 // creating new relationship
-                this.transaction.relationship = this.publicEncrypt(JSON.stringify(this.info.relationship), this.info.relationship.their_public_key)
+                this.transaction.relationship = this.publicEncrypt(JSON.stringify(this.info.relationship), this.recipient_identity.public_key)
                 var hash = foobar.bitcoin.crypto.sha256(
                     this.transaction.public_key +
                     this.transaction.time +
@@ -213,7 +189,7 @@ export class TransactionService {
             } else if (this.info.group) {
                 // group chat
 
-                this.transaction.relationship = this.shared_encrypt(this.their_username_signature, JSON.stringify(this.info.relationship));
+                this.transaction.relationship = this.shared_encrypt(this.group_username_signature, JSON.stringify(this.info.relationship));
 
                 hash = foobar.bitcoin.crypto.sha256(
                     this.transaction.public_key +
@@ -229,7 +205,7 @@ export class TransactionService {
             } else if (this.info.relationship.postText) {
                 // group post
 
-                this.transaction.relationship = this.shared_encrypt(this.their_username_signature, JSON.stringify(this.info.relationship));
+                this.transaction.relationship = this.shared_encrypt(this.group_username_signature, JSON.stringify(this.info.relationship));
 
                 hash = foobar.bitcoin.crypto.sha256(
                     this.transaction.public_key +
@@ -245,7 +221,7 @@ export class TransactionService {
             } else if (this.info.relationship.comment) {
                 // group comment
 
-                this.transaction.relationship = this.shared_encrypt(this.their_username_signature, JSON.stringify(this.info.relationship));
+                this.transaction.relationship = this.shared_encrypt(this.group_username_signature, JSON.stringify(this.info.relationship));
 
                 hash = foobar.bitcoin.crypto.sha256(
                     this.transaction.public_key +
@@ -261,7 +237,7 @@ export class TransactionService {
             } else if (this.info.relationship.react) {
                 // group react
 
-                this.transaction.relationship = this.shared_encrypt(this.their_username_signature, JSON.stringify(this.info.relationship));
+                this.transaction.relationship = this.shared_encrypt(this.group_username_signature, JSON.stringify(this.info.relationship));
 
                 hash = foobar.bitcoin.crypto.sha256(
                     this.transaction.public_key +
@@ -333,7 +309,7 @@ export class TransactionService {
                   outputs_hashes_concat
               ).toString('hex')
           } else if (this.info.relationship.username) {
-              // group or contact
+              // join group or contact
               this.transaction.relationship = this.encrypt();
 
               hash = foobar.bitcoin.crypto.sha256(
@@ -400,7 +376,7 @@ export class TransactionService {
     sendTransaction(transactionUrlOverride = undefined) {
         return new Promise((resolve, reject) => {
             var url = '';
-            url = (transactionUrlOverride || this.settingsService.remoteSettings['transactionUrl']) + '?username_signature=' + this.username_signature + '&to=' + this.key.getAddress() + '&username=' + this.username
+            url = (transactionUrlOverride || this.settingsService.remoteSettings['transactionUrl']) + '?username_signature=' + this.bulletinSecretService.username_signature + '&to=' + this.key.getAddress() + '&username=' + this.username
 
             this.ahttp.post(
                 url,
@@ -504,7 +480,7 @@ export class TransactionService {
 
     publicDecrypt(message) {
       const decrypted = decrypt(this.key.d.toHex(), Buffer.from(this.hexToByteArray(message))).toString();
-      return message
+      return decrypted
     }
 
     shared_decrypt(shared_secret, message) {

@@ -560,24 +560,6 @@ export class HomePage {
         });
     }
 
-    getTransaction(info, resolve) {
-        return this.transactionService.generateTransaction({
-            relationship: {
-                dh_private_key: info.dh_private_key,
-                their_username_signature: info.username_signature,
-                their_username: info.username,
-                my_username_signature: this.bulletinSecretService.username_signature,
-                my_username: this.bulletinSecretService.username
-            },
-            dh_public_key: info.dh_public_key,
-            requested_rid: info.requested_rid,
-            requester_rid: info.requester_rid,
-            callbackurl: info.callbackurl,
-            to: info.to,
-            resolve: resolve
-        });
-    }
-
     sharePhrase() {
         this.socialSharing.share(this.bulletinSecretService.username, "Add me on Yada Coin!");
     }
@@ -695,49 +677,9 @@ export class HomePage {
             alert.present();
         })
         .then((groupinvite) => {
-            return new Promise((resolve, reject) => {
-                if (!groupinvite) return reject('failed to join group');
-                let invite = JSON.parse(Base64.decode(groupinvite));
-                var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
-                var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
-                var dh_private_key = this.toHex(raw_dh_private_key);
-                var dh_public_key = this.toHex(raw_dh_public_key);
-                resolve({
-                    their_address: invite.their_address,
-                    their_public_key: invite.their_public_key,
-                    their_username_signature: invite.their_username_signature,
-                    their_username: invite.their_username,
-                    dh_public_key: dh_public_key,
-                    dh_private_key: dh_private_key,
-                    requested_rid: invite.requested_rid
-                })
-            });
-        })
-        .then((info: any) => {
-            return this.transactionService.generateTransaction({
-                relationship: {
-                    dh_private_key: info.dh_private_key,
-                    my_username_signature: this.bulletinSecretService.generate_username_signature(),
-                    my_username: this.bulletinSecretService.username,
-                    their_address: info.their_address,
-                    their_public_key: info.their_public_key,
-                    their_username_signature: info.their_username_signature,
-                    their_username: info.their_username,
-                    group: true
-                },
-                requester_rid: info.requester_rid,
-                requested_rid: info.requested_rid,
-                dh_public_key: info.dh_public_key,
-                to: info.their_address
-            })
-        
-        }).then((txn) => {
-            return this.transactionService.sendTransaction();
-        })
-        .then((hash) => {
-            if (this.settingsService.remoteSettings['walletUrl']) {
-                return this.graphService.getInfo();
-            }
+            if (!groupinvite) throw 'failed to join group';
+            let invite = JSON.parse(Base64.decode(groupinvite));
+            return this.graphService.addGroup(invite)
         })
         .then(() => {
             return this.refresh(null)
