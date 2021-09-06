@@ -124,9 +124,9 @@ export class ListPage {
           .then(() => {
             graphArray = this.graphService.graph.groups;
             graphArray.sort(function (a, b) {
-                if (a.relationship.identity.username.toLowerCase() < b.relationship.identity.username.toLowerCase())
+                if (a.relationship.username.toLowerCase() < b.relationship.username.toLowerCase())
                   return -1
-                if ( a.relationship.identity.username.toLowerCase() > b.relationship.identity.username.toLowerCase())
+                if ( a.relationship.username.toLowerCase() > b.relationship.username.toLowerCase())
                   return 1
                 return 0
             });

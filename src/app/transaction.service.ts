@@ -328,8 +328,8 @@ export class TransactionService {
                 hash = foobar.bitcoin.crypto.sha256(
                     this.transaction.public_key +
                     this.transaction.time +
-                    this.transaction.rid +
-                    this.transaction.relationship +
+                    (this.transaction.rid || '') +
+                    (this.transaction.relationship || '') +
                     this.transaction.fee.toFixed(8) +
                     inputs_hashes_concat +
                     outputs_hashes_concat

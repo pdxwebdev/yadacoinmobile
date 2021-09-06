@@ -31,7 +31,7 @@ export class PeerService {
 
     go() {
         return new Promise((resolve, reject) => {
-            var domain = 'http://localhost:8000';
+            var domain = window.location.origin;
             this.settingsService.remoteSettingsUrl = domain;
             this.settingsService.remoteSettings = {
                 "baseUrl": domain,

@@ -56,7 +56,6 @@ export class GraphService {
     usernames = {};
     username_signature = '';
     groups_indexed = {};
-    group_mails_indexed = {};
     constructor(
         private storage: Storage,
         private bulletinSecretService: BulletinSecretService,
@@ -724,10 +723,15 @@ export class GraphService {
                         group['relationship'] = relationship;
                     }
                     this.groups_indexed[group.requested_rid] = group;
-                    this.group_mails_indexed[this.generateRid(
+                    this.groups_indexed[this.generateRid(
                       relationship.username_signature,
                       relationship.username_signature,
                       'group_mail'
+                    )] = group;
+                    this.groups_indexed[this.generateRid(
+                      relationship.username_signature,
+                      relationship.username_signature,
+                      'event_meeting'
                     )] = group;
                 } catch(err) {
                 }
@@ -771,10 +775,10 @@ export class GraphService {
                     if (message.dh_public_key) continue;
                     //hopefully we've prepared the stored_secrets option before getting here
                     //by calling getSentFriendRequests and getFriendRequests
-                    if (this.group_mails_indexed[message.requested_rid]) {
+                    if (this.groups_indexed[message.requested_rid]) {
 
                       try {
-                          var decrypted = this.shared_decrypt(this.group_mails_indexed[message.requested_rid].relationship.username_signature, message.relationship);
+                          var decrypted = this.shared_decrypt(this.groups_indexed[message.requested_rid].relationship.username_signature, message.relationship);
                       }
                       catch(error) {
                           continue
@@ -1064,8 +1068,13 @@ export class GraphService {
             //hopefully we've prepared the stored_secrets option before getting here
             //by calling getSentFriendRequests and getFriendRequests
             const event = events[i];
+            let decrypted;
             try {
-                var decrypted = this.decrypt(event.relationship);
+                if(this.groups_indexed[event.requested_rid]) {
+                  decrypted = this.shared_decrypt(this.groups_indexed[event.requested_rid].relationship.username_signature, event.relationship);
+                } else {
+                  decrypted = this.decrypt(event.relationship);
+                }
             }
             catch(error) {
                 continue
@@ -1075,10 +1084,10 @@ export class GraphService {
             } catch(err) {
                 continue;
             }
-            if(messageJson.event) {
-                event.relationship = messageJson.event;
+            if(messageJson.envelope) {
+                event.relationship = messageJson;
             }
-            event.relationship.event_datetime = new Date(event.relationship.event_datetime)
+            event.relationship.envelope.event_datetime = new Date(event.relationship.envelope.event_datetime)
             eventsOut.push(event)
         }
         return eventsOut

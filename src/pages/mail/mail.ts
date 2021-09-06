@@ -42,7 +42,7 @@ export class MailPage {
         this.bulletinSecretService.identity.username_signature,
         'event_meeting'
       )];
-      const group_rids = [];
+      let group_rids = [];
       for (let i=0; i < this.graphService.graph.groups.length; i++) {
         const group = this.graphService.graph.groups[i];
         group_rids.push(this.graphService.generateRid(
@@ -62,11 +62,12 @@ export class MailPage {
         if (this.navParams.data.pageTitle.label === 'Inbox' && item.public_key !== this.bulletinSecretService.identity.public_key) return true;
       }).map((item) => {
         const indexedItem = this.graphService.groups_indexed[item.requested_rid] || this.graphService.friends_indexed[item.rid];
+        const identity = indexedItem.relationship.identity || indexedItem.relationship;
         return {
           sender: item.public_key === this.bulletinSecretService.identity.public_key ? this.bulletinSecretService.identity : {
-            username: indexedItem.relationship.identity.username,
-            username_signature: indexedItem.relationship.identity.username_signature,
-            public_key: indexedItem.relationship.identity.public_key,
+            username: identity.username,
+            username_signature: identity.username_signature,
+            public_key: identity.public_key,
           },
           subject: item.relationship.envelope.subject,
           body: item.relationship.envelope.body,

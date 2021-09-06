@@ -24,29 +24,49 @@ export class CalendarPage {
   }
 
   ionViewDidEnter() {
-    const rid = this.graphService.generateRid(
-      this.bulletinSecretService.identity.username_signature,
-      this.bulletinSecretService.identity.username_signature,
-      this.bulletinSecretService.key.toWIF() + 'calendar'
-    )
-    this.graphService.getCalendar(rid)
+    this.graphService.getGroups()
+    .then(() => {
+      return new Promise((resolve, reject) => {
+        let rids = [this.graphService.generateRid(
+          this.bulletinSecretService.identity.username_signature,
+          this.bulletinSecretService.identity.username_signature,
+          this.bulletinSecretService.key.toWIF() + 'event_meeting'
+        )]
+        let group_rids = [];
+        for (let i=0; i < this.graphService.graph.groups.length; i++) {
+          const group = this.graphService.graph.groups[i];
+          group_rids.push(this.graphService.generateRid(
+            group.relationship.username_signature,
+            group.relationship.username_signature,
+            'event_meeting'
+          ))
+        }
+        if (group_rids.length > 0) {
+          rids = rids.concat(group_rids);
+        }
+        resolve(rids);
+      })
+    })
+    .then((rids) => {
+      this.graphService.getCalendar(rids)
+    })
     .then((data) => {
 
       let events = {};
       this.graphService.graph.calendar.map((event) => {
-        const eventDate = event.relationship.event_datetime;
+        const eventDate = event.relationship.envelope.event_datetime;
         const index = eventDate.getFullYear() + this.addZeros(eventDate.getMonth()) + this.addZeros(eventDate.getDate());
         if (!events[index]) {
           events[index] = []
         }
         events[index].push({
-          sender: event.relationship.sender,
-          subject: event.relationship.subject,
-          body: event.relationship.body,
+          sender: event.relationship.envelope.sender,
+          subject: event.relationship.envelope.subject,
+          body: event.relationship.envelope.body,
           datetime: new Date(parseInt(event.time)*1000).toISOString().slice(0, 19).replace('T', ' '),
           id: event.id,
-          message_type: event.relationship.message_type,
-          event_datetime: event.relationship.event_datetime,
+          message_type: event.relationship.envelope.message_type,
+          event_datetime: event.relationship.envelope.event_datetime,
         });
       });
       this.getCalendar(events);
