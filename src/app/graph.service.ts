@@ -699,7 +699,7 @@ export class GraphService {
         // should be key: shared-secret_rid|pub_key[:26]priv_key[:26], value: {shared_secret: <shared_secret>, friend: [transaction.dh_public_key, transaction.dh_private_key]}
         return new Promise((resolve, reject) => {
             //start "just do dedup yada server because yada server adds itself to the friends array automatically straight from the api"
-            if (!this.groups_indexed) this.groups_indexed = {};
+            if (!this.groups_indexed || root) this.groups_indexed = {};
             if (!this.graph.groups || root) this.graph.groups = [];
             let promises = [];
             for(var i=0; i < groups.length; i++) {
@@ -712,13 +712,13 @@ export class GraphService {
                 }
                 var decrypted;
                 var bypassDecrypt = false;
-                if (typeof group.relationship == 'object') {
-                    bypassDecrypt = true;
-                } else {
-                    decrypted = this.decrypt(group.relationship);
-                }
-
+                let failed = false;
                 try {
+                    if (typeof group.relationship == 'object') {
+                        bypassDecrypt = true;
+                    } else {
+                        decrypted = this.decrypt(group.relationship);
+                    }
                     var relationship;
                     if (!bypassDecrypt) {
                         relationship = JSON.parse(decrypted);
@@ -726,10 +726,48 @@ export class GraphService {
                     }
                 } catch(err) {
                     console.log(err);
+                    failed = true
+                }
+                if (failed && this.groups_indexed[group.requester_rid]) {
+                    try {
+                        if (typeof group.relationship == 'object') {
+                            bypassDecrypt = true;
+                        } else {
+                            decrypted = this.shared_decrypt(
+                              this.groups_indexed[group.requester_rid].relationship.username_signature,
+                              group.relationship
+                            );
+                        }
+                        var relationship;
+                        if (!bypassDecrypt) {
+                            relationship = JSON.parse(decrypted);
+                            group['relationship'] = relationship;
+                        }
+                    } catch(err) {
+                        console.log(err);
+                        continue
+                    }
+                } else if (failed && !this.groups_indexed[group.requester_rid]) {
                     continue
+                }
+                
+                if(!this.groups_indexed[group.requested_rid]) {
+                    this.graph.groups.push(group);
                 }
 
                 this.groups_indexed[group.requested_rid] = group;
+
+                if (group.relationship.wif) {
+                    let key = foobar.bitcoin.ECPair.fromWIF(group.relationship.wif);
+                    group.relationship.public_key = key.getPublicKeyBuffer().toString('hex');
+                    group.relationship.username_signature = foobar.base64.fromByteArray(
+                      key.sign(
+                        foobar.bitcoin.crypto.sha256(
+                          group.relationship.username
+                        )
+                      ).toDER()
+                    );
+                }
 
                 this.groups_indexed[this.generateRid(
                     relationship.username_signature,
@@ -743,24 +781,17 @@ export class GraphService {
                     'event_meeting'
                 )] = group;
 
-                this.graph.groups.push(group);
+                this.groups_indexed[this.generateRid(
+                    relationship.username_signature,
+                    relationship.username_signature,
+                    relationship.username_signature,
+                )] = group;
 
-                if (group.relationship.wif) {
-                    let key = foobar.bitcoin.ECPair.fromWIF(group.relationship.wif);
-                    group.relationship.public_key = key.getPublicKeyBuffer().toString('hex');
-                    group.relationship.username_signature = foobar.base64.fromByteArray(
-                      key.sign(
-                        foobar.bitcoin.crypto.sha256(
-                          group.relationship.username
-                        )
-                      ).toDER()
-                    );
-                }
                 try {
                     promises.push(this.getGroups(
                       this.generateRid(
-                          this.bulletinSecretService.identity.username_signature,
-                          this.bulletinSecretService.identity.username_signature,
+                          relationship.username_signature,
+                          relationship.username_signature,
                           relationship.username_signature
                       )
                     ))
@@ -1247,8 +1278,8 @@ export class GraphService {
             },
             to: this.bulletinSecretService.publicKeyToAddress(info.public_key),
             requester_rid: this.generateRid(
-                this.bulletinSecretService.identity.username_signature,
-                this.bulletinSecretService.identity.username_signature,
+                parent_group ? parent_group.relationship.username_signature : username_signature,
+                parent_group ? parent_group.relationship.username_signature : username_signature,
                 parent_group ? parent_group.relationship.username_signature : 'group'
             ),
             requested_rid: this.generateRid(
@@ -1422,9 +1453,9 @@ export class GraphService {
       return decrypted
     }
 
-    isGroup(identity) {
+    isGroup(identity, parent = null) {
       if (!identity) return false;
-      return this.groups_indexed[this.generateRid(identity.username_signature, identity.username_signature, 'group')] ? true : false;
+      return this.groups_indexed[this.generateRid(identity.username_signature, identity.username_signature, parent ? parent.username_signature : 'group')] ? true : false;
     }
 
     decrypt(message) {

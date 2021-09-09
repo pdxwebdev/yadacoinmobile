@@ -154,13 +154,17 @@ export class ListPage {
             this.populateRemainingFriends(friendsWithMessagesList.friend_list, friendsWithMessagesList.used_rids);
             this.loading = false;
             friendsWithMessagesList.friend_list.sort(function (a, b) {
-                const ausername = a.relationship.identity ? a.relationship.identity.username : a.relationship.username
-                const busername = b.relationship.identity ? b.relationship.identity.username : b.relationship.username
-                if (ausername.toLowerCase() < busername.toLowerCase())
-                  return -1
-                if ( ausername.toLowerCase() > busername.toLowerCase())
-                  return 1
-                return 0
+                try {
+                  const ausername = a.relationship.identity ? a.relationship.identity.username : a.relationship.username
+                  const busername = b.relationship.identity ? b.relationship.identity.username : b.relationship.username
+                  if (ausername.toLowerCase() < busername.toLowerCase())
+                    return -1
+                  if ( ausername.toLowerCase() > busername.toLowerCase())
+                    return 1
+                  return 0
+                } catch(err) {
+                  return 0
+                }
             });
             return this.makeList(friendsWithMessagesList.friend_list);
           }).catch((err) => {

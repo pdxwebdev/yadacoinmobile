@@ -32,7 +32,8 @@ export class MailItemPage {
     this.navCtrl.push(ComposePage, {
       item: item,
       mode: 'reply',
-      thread: item.thread || item.id
+      thread: item.thread || item.id,
+      message_type: item.message_type
     });
   }
 

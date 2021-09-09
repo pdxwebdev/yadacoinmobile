@@ -310,7 +310,11 @@ export class TransactionService {
               ).toString('hex')
           } else if (this.info.relationship.username || this.info.relationship.wif) {
               // join or create group or contact
-              this.transaction.relationship = this.encrypt();
+              if (this.info.relationship.parent) {
+                this.transaction.relationship = this.shared_encrypt(this.info.relationship.parent.username_signature, JSON.stringify(this.info.relationship));
+              } else {
+                this.transaction.relationship = this.encrypt();
+              }
 
               hash = foobar.bitcoin.crypto.sha256(
                   this.transaction.public_key +

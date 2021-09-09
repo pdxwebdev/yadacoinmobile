@@ -41,10 +41,8 @@
   <ion-row>
     <ion-list>
       <ng-container *ngFor="let group of graphService.graph.groups">
-        <ion-item *ngIf="group.relationship.parent">
-          <ion-note style="font-size: 20px">
+        <ion-item *ngIf="group.relationship.parent && group.relationship.parent.username_signature === item.relationship.username_signature" (click)="openSubGroup(group)">
             {{group.relationship.username}}
-          </ion-note>
         </ion-item>
       </ng-container>
     </ion-list>

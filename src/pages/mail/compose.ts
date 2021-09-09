@@ -68,7 +68,7 @@ export class ComposePage {
       this.recipient = this.item.recipient
     }
 
-    if (this.item && this.item.message_type === 'group') {
+    if (this.item && this.item.message_type === 'group_mail') {
       this.group = true;
     }
 

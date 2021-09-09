@@ -60,31 +60,36 @@ export class ProfilePage {
         let indexed;
 
         if(this.group) {
-            return this.graphService.getGroups()
-            .then(() => {
-              const collection = this.graphService.graph.groups;
-              const indexed = this.graphService.groups_indexed;
-              for (var i=0; i < collection.length; i++) {
-                  var group = collection[i];
-                  if (group.rid === this.item.rid || group.rid === this.item.requested_rid) {
-                      this.isFriend = true;
-                  }
-              }
-              this.isFriend = this.isFriend || false;
-            });
+            let rid;
+            let promise;
+            if (this.item.relationship.parent) {
+              rid = this.graphService.generateRid(
+                this.item.relationship.username_signature,
+                this.item.relationship.username_signature,
+                this.item.relationship.parent.username_signature
+              )
+            } else {
+              rid = null
+            }
+            const collection = this.graphService.graph.groups;
+            const indexed = this.graphService.groups_indexed;
+            for (var i=0; i < collection.length; i++) {
+                var group = collection[i];
+                if (group.rid === this.item.rid || group.rid === this.item.requested_rid) {
+                    this.isFriend = true;
+                }
+            }
+            this.isFriend = this.isFriend || false;
         } else {
-            return this.graphService.getFriends()
-            .then(() => {
-              const collection = this.graphService.graph.friends;
-              const indexed = this.graphService.groups_indexed;
-              for (var i=0; i < collection.length; i++) {
-                  var friend = collection[i];
-                  if (friend.rid === this.item.rid || friend.rid === this.item.requested_rid) {
-                      this.isFriend = true;
-                  }
-              }
-              this.isFriend = this.isFriend || false;
-            });
+            const collection = this.graphService.graph.friends;
+            const indexed = this.graphService.groups_indexed;
+            for (var i=0; i < collection.length; i++) {
+                var friend = collection[i];
+                if (friend.rid === this.item.rid || friend.rid === this.item.requested_rid) {
+                    this.isFriend = true;
+                }
+            }
+            this.isFriend = this.isFriend || false;
         }
     }
 
@@ -199,13 +204,6 @@ export class ProfilePage {
         })
         .then(() => {
             return this.refresh(null)
-        })
-        .then(() => {
-            this.events.publish('pages-settings');
-        })
-        .catch((err) => {
-            console.log(err);
-            this.events.publish('pages');
         });
     }
 
@@ -216,6 +214,13 @@ export class ProfilePage {
               transaction: this.item,
               group: this.graphService.isGroup(this.identity)
             }
+        });
+    }
+
+    openSubGroup(subGroup) {
+        this.navCtrl.push(ProfilePage, {
+          item: subGroup,
+          group: true
         });
     }
 
@@ -230,7 +235,7 @@ export class ProfilePage {
               requested_rid: this.item.requested_rid,
             }
           },
-          group: this.graphService.isGroup(this.identity)
+          group: this.graphService.isGroup(this.identity, this.item.relationship.parent)
         });
     }
 
