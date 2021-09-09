@@ -8,7 +8,10 @@
 <ion-content padding>
   What type of message is this?
   <ion-segment [(ngModel)]="message_type">
-    <ion-segment-button value="mail">
+    <ion-segment-button value="mail" *ngIf="!group">
+      Mail
+    </ion-segment-button>
+    <ion-segment-button value="group_mail" *ngIf="group">
       Mail
     </ion-segment-button>
     <ion-segment-button value="contract">

@@ -18,11 +18,17 @@
       <button ion-button large secondary (click)="joinGroup()" *ngIf="isFriend === false && group === true">
         Join group&nbsp;<ion-icon name="create"></ion-icon>
       </button>
+      <button ion-button large secondary (click)="createSubGroup()" *ngIf="isFriend === true && group === true">
+        Create sub-group&nbsp;<ion-icon name="create"></ion-icon>
+      </button>
       <button ion-button large secondary (click)="compose()" *ngIf="isFriend === true">
         Compose message&nbsp;<ion-icon name="create"></ion-icon>
       </button>
-      <button ion-button large secondary (click)="message()" *ngIf="isFriend === true">
-        {{group === true ? "Group chat" : "Chat"}}&nbsp;<ion-icon name="create"></ion-icon>
+      <button ion-button large secondary (click)="message()" *ngIf="isFriend === true && !group">
+        Chat&nbsp;<ion-icon name="create"></ion-icon>
+      </button>
+      <button ion-button large secondary (click)="message()" *ngIf="isFriend === true && group === true">
+        Group chat&nbsp;<ion-icon name="create"></ion-icon>
       </button>
       <button ion-button large secondary (click)="invite()" *ngIf="isFriend === true">
         Invite&nbsp;<ion-icon name="create"></ion-icon>
@@ -31,5 +37,16 @@
         Refer&nbsp;<ion-icon name="create"></ion-icon>
       </button>
     </ion-col>
+  </ion-row>
+  <ion-row>
+    <ion-list>
+      <ng-container *ngFor="let group of graphService.graph.groups">
+        <ion-item *ngIf="group.relationship.parent">
+          <ion-note style="font-size: 20px">
+            {{group.relationship.username}}
+          </ion-note>
+        </ion-item>
+      </ng-container>
+    </ion-list>
   </ion-row>
 </ion-content>

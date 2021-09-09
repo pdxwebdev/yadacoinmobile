@@ -122,7 +122,11 @@ export class ListPage {
         } else if (this.pageTitle == 'Groups') {
           return this.graphService.getGroups()
           .then(() => {
-            graphArray = this.graphService.graph.groups;
+            for (let i = 0; i < this.graphService.graph.groups.length; i++) {
+              if (!this.graphService.graph.groups[i].relationship.parent) {
+                graphArray.push(this.graphService.graph.groups[i])
+              }
+            }
             graphArray.sort(function (a, b) {
                 if (a.relationship.username.toLowerCase() < b.relationship.username.toLowerCase())
                   return -1

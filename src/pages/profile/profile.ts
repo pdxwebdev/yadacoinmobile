@@ -31,6 +31,7 @@ export class ProfilePage {
     isFriend: any;
     group: any;
     identity: any;
+    subgroups = [];
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -56,23 +57,35 @@ export class ProfilePage {
         this.isFriend = null;
         let promise;
         let collection;
+        let indexed;
+
         if(this.group) {
-          promise = this.graphService.getGroups();
-          collection = this.graphService.graph.groups;
+            return this.graphService.getGroups()
+            .then(() => {
+              const collection = this.graphService.graph.groups;
+              const indexed = this.graphService.groups_indexed;
+              for (var i=0; i < collection.length; i++) {
+                  var group = collection[i];
+                  if (group.rid === this.item.rid || group.rid === this.item.requested_rid) {
+                      this.isFriend = true;
+                  }
+              }
+              this.isFriend = this.isFriend || false;
+            });
         } else {
-          promise = this.graphService.getFriends();
-          collection = this.graphService.graph.friends;
+            return this.graphService.getFriends()
+            .then(() => {
+              const collection = this.graphService.graph.friends;
+              const indexed = this.graphService.groups_indexed;
+              for (var i=0; i < collection.length; i++) {
+                  var friend = collection[i];
+                  if (friend.rid === this.item.rid || friend.rid === this.item.requested_rid) {
+                      this.isFriend = true;
+                  }
+              }
+              this.isFriend = this.isFriend || false;
+            });
         }
-        promise
-        .then(() => {
-            for (var i=0; i < collection.length; i++) {
-                var friend = collection[i];
-                if (friend.rid === this.item.rid || friend.rid === this.item.requested_rid) {
-                    this.isFriend = true;
-                }
-            }
-            this.isFriend = this.isFriend || false;
-        })
     }
 
     invite() {
@@ -144,6 +157,55 @@ export class ProfilePage {
             .catch((err) => {
                 this.events.publish('pages');
             });
+        });
+    }
+
+    createSubGroup() {
+        this.graphService.getInfo()
+        .then(() => {
+            return new Promise((resolve, reject) => {
+                let alert = this.alertCtrl.create({
+                    title: 'Sub-group name',
+                    inputs: [
+                    {
+                        name: 'groupname',
+                        placeholder: 'Sub-group name'
+                    }
+                    ],
+                    buttons: [
+                        {
+                            text: 'Save',
+                            handler: data => {
+                                const toast = this.toastCtrl.create({
+                                    message: 'Sub-group created',
+                                    duration: 2000
+                                });
+                                toast.present();
+                                resolve(data.groupname);
+                            }
+                        }
+                    ]
+                });
+                alert.present();
+            });
+        })
+        .then((groupName) => {
+            return this.graphService.createGroup(groupName, this.item);
+        })
+        .then((hash) => {
+            if (this.settingsService.remoteSettings['walletUrl']) {
+                return this.graphService.getInfo();
+            }
+        })
+        .then(() => {
+            return this.refresh(null)
+        })
+        .then(() => {
+            this.events.publish('pages-settings');
+        })
+        .catch((err) => {
+            console.log(err);
+            this.events.publish('pages');
         });
     }
 

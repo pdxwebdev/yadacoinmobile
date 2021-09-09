@@ -208,18 +208,18 @@ export class GraphService {
         });
     }
 
-    getGroups() {
-        const rid = this.generateRid(
+    getGroups(rid = null) {
+        const root = !rid;
+        rid = rid || this.generateRid(
           this.bulletinSecretService.identity.username_signature,
           this.bulletinSecretService.identity.username_signature,
           'group'
         );
         return this.endpointRequest('get-graph-collection', null, rid)
         .then((data: any) => {
-            return this.parseGroups(data.collection);
+            return this.parseGroups(data.collection, root);
         }).then((groups) => {
             this.getGroupsRequestsError = false;
-            this.graph.groups = groups;
         });
     }
 
@@ -692,16 +692,17 @@ export class GraphService {
         });
     }
 
-    parseGroups(groups) {
+    parseGroups(groups, root=true) {
         // we must call getSentFriendRequests and getFriendRequests before getting here
         // because we need this.keys to be populated with the dh_public_keys and dh_private_keys from the requests
         // though friends really should be cached
         // should be key: shared-secret_rid|pub_key[:26]priv_key[:26], value: {shared_secret: <shared_secret>, friend: [transaction.dh_public_key, transaction.dh_private_key]}
         return new Promise((resolve, reject) => {
             //start "just do dedup yada server because yada server adds itself to the friends array automatically straight from the api"
-            this.groups_indexed = {};
-            if (!this.graph.groups) this.graph.groups = [];
-            for(var i=0; i<groups.length; i++) {
+            if (!this.groups_indexed) this.groups_indexed = {};
+            if (!this.graph.groups || root) this.graph.groups = [];
+            let promises = [];
+            for(var i=0; i < groups.length; i++) {
                 var group = groups[i];
                 if (!this.keys[group.rid]) {
                     this.keys[group.rid] = {
@@ -716,46 +717,82 @@ export class GraphService {
                 } else {
                     decrypted = this.decrypt(group.relationship);
                 }
+
                 try {
                     var relationship;
                     if (!bypassDecrypt) {
                         relationship = JSON.parse(decrypted);
                         group['relationship'] = relationship;
                     }
-                    this.groups_indexed[group.requested_rid] = group;
-                    this.groups_indexed[this.generateRid(
-                      relationship.username_signature,
-                      relationship.username_signature,
-                      'group_mail'
-                    )] = group;
-                    this.groups_indexed[this.generateRid(
-                      relationship.username_signature,
-                      relationship.username_signature,
-                      'event_meeting'
-                    )] = group;
                 } catch(err) {
+                    console.log(err);
+                    continue
                 }
+
+                this.groups_indexed[group.requested_rid] = group;
+
+                this.groups_indexed[this.generateRid(
+                    relationship.username_signature,
+                    relationship.username_signature,
+                    'group_mail'
+                )] = group;
+
+                this.groups_indexed[this.generateRid(
+                    relationship.username_signature,
+                    relationship.username_signature,
+                    'event_meeting'
+                )] = group;
+
+                this.graph.groups.push(group);
+
+                if (group.relationship.wif) {
+                    let key = foobar.bitcoin.ECPair.fromWIF(group.relationship.wif);
+                    group.relationship.public_key = key.getPublicKeyBuffer().toString('hex');
+                    group.relationship.username_signature = foobar.base64.fromByteArray(
+                      key.sign(
+                        foobar.bitcoin.crypto.sha256(
+                          group.relationship.username
+                        )
+                      ).toDER()
+                    );
+                }
+                try {
+                    promises.push(this.getGroups(
+                      this.generateRid(
+                          this.bulletinSecretService.identity.username_signature,
+                          this.bulletinSecretService.identity.username_signature,
+                          relationship.username_signature
+                      )
+                    ))
+                } catch(err) {
+                    console.log(err);
+                }
+
             }
 
             var arr_friends = Object.keys(this.groups_indexed);
-
             groups = []
             let friends_diff = new Set(arr_friends);
             if(arr_friends.length > 0) {
+              let used_username_signatures = [];
                 let arr_friends_keys = Array.from(friends_diff.keys())
                 for(i=0; i<arr_friends_keys.length; i++) {
-                    groups.push(this.groups_indexed[arr_friends_keys[i]])
+                    if(used_username_signatures.indexOf(this.groups_indexed[arr_friends_keys[i]].relationship.username_signature) > -1) {
+                      continue;
+                    } else {
+                      groups.push(this.groups_indexed[arr_friends_keys[i]]);
+                      used_username_signatures.push(this.groups_indexed[arr_friends_keys[i]].relationship.username_signature);
+                    }
                     if (this.groups_indexed[arr_friends_keys[i]].relationship && this.groups_indexed[arr_friends_keys[i]].relationship.username) {
                         this.usernames[this.groups_indexed[arr_friends_keys[i]].rid] = this.groups_indexed[arr_friends_keys[i]].relationship.username;
-                    }
-                    if (this.groups_indexed[arr_friends_keys[i]].username) {
-                        this.usernames[this.groups_indexed[arr_friends_keys[i]].rid] = this.groups_indexed[arr_friends_keys[i]].username;
                     }
                 }
             }
 
-            resolve(groups);
-            return groups;
+            Promise.all(promises)
+            .then(() => {
+              return resolve(groups);
+            });
         });
     }
 
@@ -1178,49 +1215,55 @@ export class GraphService {
         });
     }
 
-    createGroup(groupname) {
-        return new Promise((resolve, reject) => {
-            if (!groupname) return reject('username missing');
+    createGroup(groupname, parent_group = null) {
+        if (!groupname) return new Promise((resolve, reject) => {reject('username missing')});
 
-            let key = foobar.bitcoin.ECPair.makeRandom();
-            let wif = key.toWIF();
-            let pubKey = key.getPublicKeyBuffer().toString('hex');
-            let address = key.getAddress();
-            let username_signature = foobar.base64.fromByteArray(key.sign(foobar.bitcoin.crypto.sha256(groupname)).toDER());
-            var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
-            var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
-            var dh_private_key = this.toHex(raw_dh_private_key);
-            var dh_public_key = this.toHex(raw_dh_public_key);
-            const info = {
-                public_key: pubKey,
-                username_signature: username_signature,
-                username: groupname,
-                wif: wif,
-                dh_public_key: dh_public_key,
-                dh_private_key: dh_private_key
-            }
-            var username_signatures = [this.graph.username_signature, info.username_signature].sort(function (a, b) {
-                return a.toLowerCase().localeCompare(b.toLowerCase());
-            });
-            var requested_rid = forge.sha256.create().update(username_signatures[0] + username_signatures[1]).digest().toHex();
-            return this.transactionService.generateTransaction({
-                relationship: {
-                    group: {
-                      username_signature: info.username_signature,
-                      public_key: info.public_key,
-                      username: info.username,
-                      wif: info.wif
-                    },
-                    identity: this.bulletinSecretService.identity
+        let key = foobar.bitcoin.ECPair.makeRandom();
+        let wif = key.toWIF();
+        let pubKey = key.getPublicKeyBuffer().toString('hex');
+        let address = key.getAddress();
+        let username_signature = foobar.base64.fromByteArray(key.sign(foobar.bitcoin.crypto.sha256(groupname)).toDER());
+        var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
+        var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
+        var dh_private_key = this.toHex(raw_dh_private_key);
+        var dh_public_key = this.toHex(raw_dh_public_key);
+        const info = {
+            public_key: pubKey,
+            username_signature: username_signature,
+            username: groupname,
+            wif: wif,
+            dh_public_key: dh_public_key,
+            dh_private_key: dh_private_key
+        }
+        return this.transactionService.generateTransaction({
+            relationship: {
+                parent: {
+                  username: parent_group.relationship.username,
+                  username_signature: parent_group.relationship.username_signature,
+                  public_key: parent_group.relationship.public_key
                 },
-                to: this.bulletinSecretService.publicKeyToAddress(info.public_key),
-                requester_rid: this.graph.rid,
-                requested_rid: requested_rid
-            })
-
+                username: info.username,
+                wif: info.wif
+            },
+            to: this.bulletinSecretService.publicKeyToAddress(info.public_key),
+            requester_rid: this.generateRid(
+                this.bulletinSecretService.identity.username_signature,
+                this.bulletinSecretService.identity.username_signature,
+                parent_group ? parent_group.relationship.username_signature : 'group'
+            ),
+            requested_rid: this.generateRid(
+                username_signature,
+                username_signature,
+                parent_group ? parent_group.relationship.username_signature : 'group'
+            ),
+            rid: this.generateRid(
+                this.bulletinSecretService.identity.username_signature,
+                username_signature
+            ),
+            group: true
         }).then((txn) => {
             return this.transactionService.sendTransaction();
-        })
+        });
     }
 
     generateRecovery(username) {
@@ -1280,8 +1323,7 @@ export class GraphService {
                     public_key: info.public_key,
                     username: info.username,
                     identity: this.bulletinSecretService.identity,
-                    wif: info.wif,
-                    group: true
+                    wif: info.wif
                 },
                 to: this.bulletinSecretService.publicKeyToAddress(info.public_key),
                 rid: info.rid,

@@ -186,7 +186,7 @@ export class TransactionService {
                     inputs_hashes_concat +
                     outputs_hashes_concat
                 ).toString('hex')
-            } else if (this.info.group) {
+            } else if (this.info.group && !this.info.relationship.wif) {
                 // group chat
 
                 this.transaction.relationship = this.shared_encrypt(this.group_username_signature, JSON.stringify(this.info.relationship));
@@ -278,7 +278,7 @@ export class TransactionService {
                     inputs_hashes_concat +
                     outputs_hashes_concat
                 ).toString('hex')
-            } else if (this.info.relationship.wif) {
+            } else if (this.info.relationship.wif && !this.info.group) {
                 // recovery
                 this.transaction.relationship = this.shared_encrypt(this.info.shared_secret, JSON.stringify(this.info.relationship));
 
@@ -308,8 +308,8 @@ export class TransactionService {
                   inputs_hashes_concat +
                   outputs_hashes_concat
               ).toString('hex')
-          } else if (this.info.relationship.username) {
-              // join group or contact
+          } else if (this.info.relationship.username || this.info.relationship.wif) {
+              // join or create group or contact
               this.transaction.relationship = this.encrypt();
 
               hash = foobar.bitcoin.crypto.sha256(

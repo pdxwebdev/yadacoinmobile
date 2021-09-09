@@ -13,20 +13,10 @@
   <button ion-button secondary (click)="createWallet()">Create identity</button>
   <h3>Identities</h3>
   <ion-list>
-    <ion-row>
-      <ion-col col-lg-3 col-md-4 col-sm-4 *ngFor="let key of keys">
-        <button ion-item (click)="selectIdentity(key.username)" [color]="key.active ? 'secondary' : 'dark'">
-          <ion-card padding>
-            <img src="assets/img/yadacoinlogotextsmall.png">
-            <ion-card-content>
-              <ion-card-title style="text-overflow:ellipsis;" text-wrap>
-                  {{key.username}}
-              </ion-card-title>
-            </ion-card-content>
-          </ion-card>
-        </button>
-      </ion-col>
-    </ion-row>
+    <button *ngFor="let key of keys" ion-item (click)="selectIdentity(key.username)" [color]="key.active ? 'primary' : 'light'">
+      <ion-icon name="person" item-start [color]="'dark'"></ion-icon>
+      {{key.username}}
+    </button>
   </ion-list>
   <ion-list *ngIf="bulletinSecretService.keyname && !centerIdentityExportEnabled">
     <ion-item>
@@ -73,7 +63,7 @@
   </ion-list>
   <ion-list *ngIf="!centerIdentityImportEnabled">
     <ion-item>
-      <button ion-button secondary (click)="enableCenterIdentityImport()">Import Identity using Center Identity</button>
+      <button ion-button secondary (click)="enableCenterIdentityImport()">Import Identity using location</button>
     </ion-item>
   </ion-list>
   <ion-list *ngIf="centerIdentityImportEnabled">

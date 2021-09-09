@@ -142,9 +142,9 @@ export class Settings {
         })
         .then(() => {
             newKeys.sort(function (a, b) {
-                if (a.username < b.username)
+                if (a.username.toLowerCase() < b.username.toLowerCase())
                   return -1
-                if ( a.username > b.username)
+                if ( a.username.toLowerCase() > b.username.toLowerCase())
                   return 1
                 return 0
             });
