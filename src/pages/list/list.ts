@@ -166,7 +166,10 @@ export class ListPage {
                   return 0
                 }
             });
-            return this.makeList(friendsWithMessagesList.friend_list);
+            return this.makeList(friendsWithMessagesList.friend_list)
+            .then((pages) => {
+              this.events.publish('menu', pages);
+            });
           }).catch((err) => {
               console.log(err);
           });
@@ -360,14 +363,11 @@ export class ListPage {
 
   makeList(graphArray) {
     return new Promise((resolve, reject) => {
-      this.items = [];
+      const items = [];
       for (let i = 0; i < graphArray.length; i++) {
-        this.items.push({
-          pageTitle: this.pageTitle,
-          transaction: graphArray[i]
-        });
+        items.push({ title: 'Messages', label: graphArray[i].relationship.username, component: ChatPage, count: false, color: '', kwargs: {item: {transaction: graphArray[i] }}});
       }
-      resolve();
+      resolve(items);
     })
   }
 

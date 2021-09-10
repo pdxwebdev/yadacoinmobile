@@ -57,7 +57,7 @@
             menuClose 
             ion-item 
             (click)="openPage(p)"
-            [color]="graphService.new_messages_count > 0 ? 'primary' : 'grey'"
+            [color]="'grey'"
             *ngIf="p.title == 'Messages'"
           >
             {{p.label}}

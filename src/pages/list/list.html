@@ -22,18 +22,20 @@
     </ion-card-content>
   </ion-card>
   <ion-list>
-    <button ion-item *ngFor="let item of items" (click)="itemTapped($event, item)">
+    <!-- <button ion-item *ngFor="let item of items" (click)="itemTapped($event, item)">
       <span *ngIf="pageTitle =='Groups'">{{item.transaction.relationship.username}}</span>
       <span *ngIf="pageTitle =='Sent Requests'">{{item.transaction.relationship.identity.username}}</span>
       <span *ngIf="pageTitle =='Contact Requests'">{{item.transaction.relationship.identity.username}}</span>
-      <span *ngIf="pageTitle =='Messages' && !item.transaction.new">{{item.transaction.relationship.identity ? item.transaction.relationship.identity.username : item.transaction.relationship.username}}</span>
+      <span *ngIf="pageTitle =='Messages' && !item.transaction.new && !item.transaction.relationship.parent && item.transaction.relationship.identity">{{ item.transaction.relationship.identity.username }}</span>
+      <span *ngIf="pageTitle =='Messages' && !item.transaction.new && !item.transaction.relationship.parent && item.transaction.relationship.username">{{ item.transaction.relationship.username}}</span>
+      <span *ngIf="pageTitle =='Messages' && !item.transaction.new && item.transaction.relationship.parent"><ion-note>&nbsp;&nbsp;&nbsp;&nbsp;{{item.transaction.relationship.username}}</ion-note></span>
       <span *ngIf="pageTitle =='Chat' && item.transaction.new"><strong>{{item.transaction.relationship.identity.username}}</strong></span>
       <span *ngIf="pageTitle =='Sign Ins' && !item.transaction.new">{{item.transaction.relationship.identity.username}}</span>
       <span *ngIf="pageTitle =='Sign Ins' && item.transaction.new"><strong>{{item.transaction.relationship.identity.username}}</strong></span>
       <span *ngIf="pageTitle =='Contacts'">{{item.transaction.relationship.identity.username}}</span>
       <span *ngIf="pageTitle =='Reacts Detail'">{{item.transaction.relationship.react}} {{item.transaction.relationship.identity.username}}</span>
       <span *ngIf="pageTitle =='Comment Reacts Detail'">{{item.transaction.relationship.react}} {{item.transaction.relationship.identity.username}}</span>
-    </button>
+    </button> -->
   </ion-list>
   <div *ngIf="selectedItem && pageTitle =='Sent Requests'" padding>
   </div>

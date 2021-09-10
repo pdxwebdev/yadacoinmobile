@@ -54,6 +54,9 @@ export class MyApp {
       this.settingsService.menu = 'wallet';
       this.setMenu();
     });
+    events.subscribe('menu', (options) => {
+      this.setMenu(options);
+    });
     this.graphService.graph = {
       comments: "",
       reacts: "",
@@ -70,7 +73,12 @@ export class MyApp {
     this.initializeApp();
   }
 
-  setMenu() {
+  setMenu(pages = null) {
+    if (pages) {
+      this.pages = pages;
+      this.openPage(this.pages[0])
+      return
+    }
     if (this.settingsService.menu == 'mail') {
       this.pages = [
         { title: 'Inbox', label: 'Inbox', component: MailPage, count: false, color: '' },
@@ -78,7 +86,11 @@ export class MyApp {
       ];
     } else if (this.settingsService.menu == 'chat') {
       this.pages = [
-        { title: 'Messages', label: 'Chat', component: ListPage, count: false, color: '' },
+        { title: 'Messages', label: 'loading...', component: ListPage, count: false, color: '' },
+      ];
+    } else if (this.settingsService.menu == 'community') {
+      this.pages = [
+        { title: 'Messages', label: 'loading...', component: ListPage, count: false, color: '' },
       ];
     } else if (this.settingsService.menu == 'calendar') {
       this.pages = [
@@ -136,7 +148,7 @@ export class MyApp {
   openPage(page) {
     // Reset the content nav to have just this page
     // we wouldn't want the back button to show in this scenario
-    this.nav.setRoot(page.component, {pageTitle: page});
+    this.nav.setRoot(page.component, {pageTitle: page, ...page.kwargs});
   }
 
   segmentChanged(e) {
