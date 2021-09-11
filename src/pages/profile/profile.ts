@@ -32,6 +32,9 @@ export class ProfilePage {
     group: any;
     identity: any;
     subgroups = [];
+    collectionName: any;
+    identityJson: any;
+    tempIdentity: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -48,7 +51,17 @@ export class ProfilePage {
         public events: Events
     ) {
         this.item = this.navParams.get('item');
+        this.collectionName = this.navParams.get('collectionName')
         this.identity = this.item.relationship.identity || this.item.relationship;
+        this.tempIdentity = {
+          username: this.identity.username,
+          username_signature: this.identity.username_signature,
+          public_key: this.identity.public_key
+        }
+        if (this.identity.skylink) {
+          this.tempIdentity.skylink = this.identity.skylink;
+        }
+        this.identityJson = JSON.stringify(this.tempIdentity, null, 4);
         this.group = this.navParams.get('group') || this.graphService.isGroup(this.identity);
         this.refresh(null);
     }
@@ -71,7 +84,7 @@ export class ProfilePage {
             } else {
               rid = null
             }
-            const collection = this.graphService.graph.groups;
+            const collection = this.graphService.graph[this.collectionName];
             const indexed = this.graphService.groups_indexed;
             for (var i=0; i < collection.length; i++) {
                 var group = collection[i];
@@ -235,7 +248,7 @@ export class ProfilePage {
               requested_rid: this.item.requested_rid,
             }
           },
-          group: this.graphService.isGroup(this.identity, this.item.relationship.parent)
+          group: this.group || this.graphService.isGroup(this.identity, this.item.relationship.parent)
         });
     }
 

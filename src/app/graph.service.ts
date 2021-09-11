@@ -184,7 +184,10 @@ export class GraphService {
         });
     }
 
-    getFriends() {
+    getFriends(ignoreCache = false): Promise<null | void> {
+        if (this.graph.friends && this.graph.friends.length > 0 && !ignoreCache) {
+          return new Promise((resolve, reject) => {return resolve(null)});
+        }
         return this.getSentFriendRequests()
         .then(() => {
             return this.getFriendRequests()
@@ -208,16 +211,19 @@ export class GraphService {
         });
     }
 
-    getGroups(rid = null) {
+    getGroups(rid = null, collectionName = 'group', ignoreCache = false): Promise<null | void> {
         const root = !rid;
         rid = rid || this.generateRid(
           this.bulletinSecretService.identity.username_signature,
           this.bulletinSecretService.identity.username_signature,
-          'group'
+          collectionName
         );
+        if (this.graph[collectionName + 's'] && this.graph[collectionName + 's'].length > 0 && !ignoreCache) {
+          return new Promise((resolve, reject) => {return resolve(null)});
+        }
         return this.endpointRequest('get-graph-collection', null, rid)
         .then((data: any) => {
-            return this.parseGroups(data.collection, root);
+            return this.parseGroups(data.collection, root, collectionName + 's');
         }).then((groups) => {
             this.getGroupsRequestsError = false;
         });
@@ -692,7 +698,7 @@ export class GraphService {
         });
     }
 
-    parseGroups(groups, root=true) {
+    parseGroups(groups, root=true, collectionName = 'groups') {
         // we must call getSentFriendRequests and getFriendRequests before getting here
         // because we need this.keys to be populated with the dh_public_keys and dh_private_keys from the requests
         // though friends really should be cached
@@ -700,7 +706,7 @@ export class GraphService {
         return new Promise((resolve, reject) => {
             //start "just do dedup yada server because yada server adds itself to the friends array automatically straight from the api"
             if (!this.groups_indexed || root) this.groups_indexed = {};
-            if (!this.graph.groups || root) this.graph.groups = [];
+            if (!this.graph[collectionName] || root) this.graph[collectionName] = [];
             let promises = [];
             for(var i=0; i < groups.length; i++) {
                 var group = groups[i];
@@ -752,7 +758,7 @@ export class GraphService {
                 }
                 
                 if(!this.groups_indexed[group.requested_rid]) {
-                    this.graph.groups.push(group);
+                    this.graph[collectionName].push(group);
                 }
 
                 this.groups_indexed[group.requested_rid] = group;
@@ -1246,7 +1252,7 @@ export class GraphService {
         });
     }
 
-    createGroup(groupname, parent_group = null) {
+    createGroup(groupname, parentGroup = null, extraData = {}, collectionName = 'group') {
         if (!groupname) return new Promise((resolve, reject) => {reject('username missing')});
 
         let key = foobar.bitcoin.ECPair.makeRandom();
@@ -1254,38 +1260,30 @@ export class GraphService {
         let pubKey = key.getPublicKeyBuffer().toString('hex');
         let address = key.getAddress();
         let username_signature = foobar.base64.fromByteArray(key.sign(foobar.bitcoin.crypto.sha256(groupname)).toDER());
-        var raw_dh_private_key = window.crypto.getRandomValues(new Uint8Array(32));
-        var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
-        var dh_private_key = this.toHex(raw_dh_private_key);
-        var dh_public_key = this.toHex(raw_dh_public_key);
-        const info = {
-            public_key: pubKey,
-            username_signature: username_signature,
+        let relationship: any = {
             username: groupname,
             wif: wif,
-            dh_public_key: dh_public_key,
-            dh_private_key: dh_private_key
+            ...extraData
+        }
+        if (parentGroup) {
+            relationship.parent = {
+                username: parentGroup.relationship.username,
+                username_signature: parentGroup.relationship.username_signature,
+                public_key: parentGroup.relationship.public_key
+            }
         }
         return this.transactionService.generateTransaction({
-            relationship: {
-                parent: {
-                  username: parent_group.relationship.username,
-                  username_signature: parent_group.relationship.username_signature,
-                  public_key: parent_group.relationship.public_key
-                },
-                username: info.username,
-                wif: info.wif
-            },
-            to: this.bulletinSecretService.publicKeyToAddress(info.public_key),
+            relationship: relationship,
+            to: this.bulletinSecretService.publicKeyToAddress(pubKey),
             requester_rid: this.generateRid(
-                parent_group ? parent_group.relationship.username_signature : username_signature,
-                parent_group ? parent_group.relationship.username_signature : username_signature,
-                parent_group ? parent_group.relationship.username_signature : 'group'
+                parentGroup ? parentGroup.relationship.username_signature : this.bulletinSecretService.identity.username_signature,
+                parentGroup ? parentGroup.relationship.username_signature : this.bulletinSecretService.identity.username_signature,
+                parentGroup ? parentGroup.relationship.username_signature : collectionName
             ),
             requested_rid: this.generateRid(
                 username_signature,
                 username_signature,
-                parent_group ? parent_group.relationship.username_signature : 'group'
+                parentGroup ? parentGroup.relationship.username_signature : collectionName
             ),
             rid: this.generateRid(
                 this.bulletinSecretService.identity.username_signature,
@@ -1408,10 +1406,12 @@ export class GraphService {
           });
       }).then((hash) => {
           return this.transactionService.sendTransaction();
-      })
+      }).then(() => {
+          return this.getFriends(true)
+      });
     }
 
-    addGroup(identity, rid='', requester_rid='', requested_rid='') {
+    addGroup(identity, rid='', requester_rid='', requested_rid='', collectionName = 'group') {
       rid = rid || this.generateRid(
         this.bulletinSecretService.identity.username_signature,
         identity.username_signature
@@ -1419,12 +1419,12 @@ export class GraphService {
       requester_rid = requester_rid || this.generateRid(
         this.bulletinSecretService.identity.username_signature,
         this.bulletinSecretService.identity.username_signature,
-        'group'
+        collectionName
       );
       requested_rid = requested_rid || this.generateRid(
         identity.username_signature,
         identity.username_signature,
-        'group'
+        collectionName
       );
       if (requester_rid && requested_rid) {
           // get rid from bulletin secrets
@@ -1445,7 +1445,9 @@ export class GraphService {
           });
       }).then((hash) => {
           return this.transactionService.sendTransaction();
-      })
+      }).then(() => {
+        return this.getGroups(null, collectionName, true)
+    });
     }
 
     publicDecrypt(message) {
@@ -1453,9 +1455,9 @@ export class GraphService {
       return decrypted
     }
 
-    isGroup(identity, parent = null) {
+    isGroup(identity, parent = null, collectionName = 'group') {
       if (!identity) return false;
-      return this.groups_indexed[this.generateRid(identity.username_signature, identity.username_signature, parent ? parent.username_signature : 'group')] ? true : false;
+      return this.groups_indexed[this.generateRid(identity.username_signature, identity.username_signature, parent ? parent.username_signature : collectionName)] ? true : false;
     }
 
     decrypt(message) {

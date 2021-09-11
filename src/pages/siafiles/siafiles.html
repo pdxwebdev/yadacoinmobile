@@ -18,10 +18,16 @@
       <ion-option *ngFor="let file of files" value="{{file.siapath}}">{{file.siapath}}</ion-option>
     </ion-select>
   </ion-item>
-  <ion-item *ngIf="!error">
-    <ion-textarea placeholder="Shortened url (35 chars max)" [(ngModel)]="filepath"></ion-textarea>
+  <ion-list *ngIf="!error">
+    <ion-item *ngFor="let file of graphService.graph.files" (click)="openProfile(file)">{{file.relationship.username}}</ion-item>
+  </ion-list>
+  <ion-item>
+    <ion-label id="profile_image" color="primary"></ion-label>
+    <ion-input type="file" (change)="changeListener($event)"></ion-input>
   </ion-item>
-  <button ion-button secondary (click)="upload()" *ngIf="mode == 'page' && !error" [disabled]="filepath">Upload</button>
+  <ion-item *ngIf="!error">
+    <button ion-button secondary (click)="upload()" *ngIf="mode == 'page' && !error" [disabled]="!filepath">Upload</button>
+  </ion-item>
   <ion-item *ngIf="mode == 'page' && !error">
     <ion-list>
       <ion-item *ngFor="let file of files">

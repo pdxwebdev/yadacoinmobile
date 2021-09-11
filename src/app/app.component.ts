@@ -90,7 +90,7 @@ export class MyApp {
       ];
     } else if (this.settingsService.menu == 'community') {
       this.pages = [
-        { title: 'Messages', label: 'loading...', component: ListPage, count: false, color: '' },
+        { title: 'Community', label: 'loading...', component: ListPage, count: false, color: '' },
       ];
     } else if (this.settingsService.menu == 'calendar') {
       this.pages = [

@@ -122,9 +122,17 @@ export class ListPage {
         } else if (this.pageTitle == 'Groups') {
           return this.graphService.getGroups()
           .then(() => {
+            return this.graphService.getGroups(null, 'file')
+          })
+          .then(() => {
             for (let i = 0; i < this.graphService.graph.groups.length; i++) {
               if (!this.graphService.graph.groups[i].relationship.parent) {
                 graphArray.push(this.graphService.graph.groups[i])
+              }
+            }
+            for (let i = 0; i < this.graphService.graph.files.length; i++) {
+              if (!this.graphService.graph.files[i].relationship.parent) {
+                graphArray.push(this.graphService.graph.files[i])
               }
             }
             graphArray.sort(function (a, b) {
@@ -145,6 +153,37 @@ export class ListPage {
           .then(() => {
             return this.graphService.getGroups();
           })
+          .then(() => {
+            return this.graphService.getNewMessages();
+          })
+          .then((graphArray) => {
+            var messages = this.markNew(public_key, graphArray, this.graphService.new_messages_counts);
+            var friendsWithMessagesList = this.getDistinctFriends(messages);
+            this.populateRemainingFriends(friendsWithMessagesList.friend_list, friendsWithMessagesList.used_rids);
+            this.loading = false;
+            friendsWithMessagesList.friend_list.sort(function (a, b) {
+                try {
+                  const ausername = a.relationship.identity ? a.relationship.identity.username : a.relationship.username
+                  const busername = b.relationship.identity ? b.relationship.identity.username : b.relationship.username
+                  if (ausername.toLowerCase() < busername.toLowerCase())
+                    return -1
+                  if ( ausername.toLowerCase() > busername.toLowerCase())
+                    return 1
+                  return 0
+                } catch(err) {
+                  return 0
+                }
+            });
+            return this.makeList(friendsWithMessagesList.friend_list)
+            .then((pages) => {
+              this.events.publish('menu', pages);
+            });
+          }).catch((err) => {
+              console.log(err);
+          });
+        } else if (this.pageTitle == 'Messages') {
+          public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
+          return this.graphService.getGroups()
           .then(() => {
             return this.graphService.getNewMessages();
           })
@@ -336,7 +375,8 @@ export class ListPage {
 
   populateRemainingFriends(friend_list, used_rids) {
     // now add everyone else
-    const friendsAndGroupsList = this.graphService.graph.friends.concat(this.graphService.graph.groups)
+    let friendsAndGroupsList = this.graphService.graph.friends.concat(this.graphService.graph.groups)
+    friendsAndGroupsList = friendsAndGroupsList.concat(this.graphService.graph.files)
     for (var i=0; i < friendsAndGroupsList.length; i++) {
       let rid;
       if(this.graphService.groups_indexed[friendsAndGroupsList[i].requested_rid]) {
@@ -451,7 +491,8 @@ export class ListPage {
       buttons.push({
           text: 'Add',
           handler: (data) => {
-              this.graphService.addGroup(JSON.parse(data.identity))
+              const identity = JSON.parse(data.identity);
+              this.graphService.addGroup(identity, null, null, null, identity.skylink ? 'file' : 'group')
           }
       });
       let alert = this.alertCtrl.create({

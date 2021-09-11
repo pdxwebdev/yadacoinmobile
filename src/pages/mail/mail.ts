@@ -22,6 +22,9 @@ export class MailPage {
     this.loading = true;
     this.graphService.getGroups()
     .then(() => {
+      return this.graphService.getGroups(null, 'file')
+    })
+    .then(() => {
       let rids = [this.graphService.generateRid(
         this.bulletinSecretService.identity.username_signature,
         this.bulletinSecretService.identity.username_signature,
@@ -51,8 +54,20 @@ export class MailPage {
           'group_mail'
         ))
       }
+      let file_rids = [];
+      for (let i=0; i < this.graphService.graph.files.length; i++) {
+        const group = this.graphService.graph.files[i];
+        file_rids.push(this.graphService.generateRid(
+          group.relationship.username_signature,
+          group.relationship.username_signature,
+          'group_mail'
+        ))
+      }
       if (group_rids.length > 0) {
         rids = rids.concat(group_rids);
+      }
+      if (file_rids.length > 0) {
+        rids = rids.concat(file_rids);
       }
       return this.graphService.getMail(rids)
     })
@@ -64,7 +79,7 @@ export class MailPage {
         const indexedItem = this.graphService.groups_indexed[item.requested_rid] || this.graphService.friends_indexed[item.rid];
         const identity = indexedItem.relationship.identity || indexedItem.relationship;
         return {
-          sender: item.public_key === this.bulletinSecretService.identity.public_key ? this.bulletinSecretService.identity : {
+          sender: item.public_key === this.bulletinSecretService.identity.public_key && this.navParams.data.pageTitle.label === 'Inbox' ? this.bulletinSecretService.identity : {
             username: identity.username,
             username_signature: identity.username_signature,
             public_key: identity.public_key,

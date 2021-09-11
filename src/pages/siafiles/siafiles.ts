@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { NavParams, ViewController } from 'ionic-angular';
+import { NavController, NavParams, ViewController } from 'ionic-angular';
 import { WalletService } from '../../app/wallet.service';
 import { AlertController } from 'ionic-angular';
 import { TransactionService } from '../../app/transaction.service';
@@ -7,6 +7,8 @@ import { OpenGraphParserService } from '../../app/opengraphparser.service'
 import { SettingsService } from '../../app/settings.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { Http, Headers, RequestOptions } from '@angular/http';
+import { GraphService } from '../../app/graph.service';
+import { ProfilePage } from '../profile/profile';
 
 declare var Base64
 
@@ -15,13 +17,14 @@ declare var Base64
     templateUrl: 'siafiles.html'
 })
 export class SiaFiles {
-	logicalParent = null;
+	  logicalParent = null;
     mode = '';
-	postText = null;
+	  postText = null;
     post = {};
     files = null;
     selectedFile = null;
-    filepath = '';
+    filepath: any;
+    filedata: any;
     group = null;
     error = '';
     constructor(
@@ -33,31 +36,32 @@ export class SiaFiles {
         private openGraphParserService: OpenGraphParserService,
         private settingsService: SettingsService,
         private bulletinSecretService: BulletinSecretService,
-        private ahttp: Http
+        private ahttp: Http,
+        private graphService: GraphService,
+        private navCtrl: NavController
     ) {
         this.group = navParams.data.group;
         this.mode = navParams.data.mode || 'page';
         this.logicalParent = navParams.data.logicalParent;
-        let headers = new Headers();
-        headers.append('Authorization', 'Bearer ' + this.settingsService.tokens[this.bulletinSecretService.keyname]);
-        let options = new RequestOptions({ headers: headers});
-        this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/sia-files', options)
-        .subscribe((res) => {
-            this.files = res.json()['files'];
-        },
-        (err) => {
-            this.error = err.json().message
-        })
+        this.graphService.getGroups(null, 'file')
     }
 
     changeListener($event) {
-        this.filepath = $event.target.files[0];
+        this.filepath = $event.target.files[0].name;
+        const reader = new FileReader();
+        reader.readAsDataURL($event.target.files[0]);
+        reader.onload = () => {
+          this.filedata = reader.result.toString().substr(22)
+        };
+        reader.onerror = () => {};
     }
 
     upload() {
-        this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/sia-upload?filepath=' + encodeURIComponent(this.filepath))
+        this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/sia-upload?filename=' + encodeURIComponent(this.filepath), {file: this.filedata})
         .subscribe((res) => {
-            this.files = res.json()['files'];
+            const data = res.json();
+            if (!data.skylink) return;
+            this.graphService.createGroup(this.filepath, null, {skylink: data.skylink}, 'file') ;
         })
     }
 
@@ -104,8 +108,8 @@ export class SiaFiles {
                                 groupChatText: this.postText,
                                 groupChatFile: sharefiledata,
                                 groupChatFileName: this.selectedFile,
-                                username_signature: this.bulletinSecretService.generate_username_signature(),
-                                username: this.bulletinSecretService.username
+                                my_username_signature: this.bulletinSecretService.generate_username_signature(),
+                                my_username: this.bulletinSecretService.username
                             },
                             username_signature: this.group.username_signature,
                             rid: this.group.rid,
@@ -144,6 +148,14 @@ export class SiaFiles {
             }
         });
         alert.present();
+    }
+
+    openProfile(item) {
+      this.navCtrl.push(ProfilePage, {
+        item: item,
+        group: this.graphService.isGroup(item.relationship, null, 'file'),
+        collectionName: 'files'
+      });
     }
 
     dismiss() {
