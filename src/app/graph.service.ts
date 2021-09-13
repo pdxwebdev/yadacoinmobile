@@ -1263,13 +1263,15 @@ export class GraphService {
         let relationship: any = {
             username: groupname,
             wif: wif,
+            collection: collectionName,
             ...extraData
         }
         if (parentGroup) {
             relationship.parent = {
                 username: parentGroup.relationship.username,
                 username_signature: parentGroup.relationship.username_signature,
-                public_key: parentGroup.relationship.public_key
+                public_key: parentGroup.relationship.public_key,
+                collection: collectionName
             }
         }
         return this.transactionService.generateTransaction({
@@ -1411,7 +1413,7 @@ export class GraphService {
       });
     }
 
-    addGroup(identity, rid='', requester_rid='', requested_rid='', collectionName = 'group') {
+    addGroup(identity, rid='', requester_rid='', requested_rid='') {
       rid = rid || this.generateRid(
         this.bulletinSecretService.identity.username_signature,
         identity.username_signature
@@ -1419,12 +1421,12 @@ export class GraphService {
       requester_rid = requester_rid || this.generateRid(
         this.bulletinSecretService.identity.username_signature,
         this.bulletinSecretService.identity.username_signature,
-        collectionName
+        identity.collection
       );
       requested_rid = requested_rid || this.generateRid(
         identity.username_signature,
         identity.username_signature,
-        collectionName
+        identity.collection
       );
       if (requester_rid && requested_rid) {
           // get rid from bulletin secrets
@@ -1446,7 +1448,7 @@ export class GraphService {
       }).then((hash) => {
           return this.transactionService.sendTransaction();
       }).then(() => {
-        return this.getGroups(null, collectionName, true)
+        return this.getGroups(null, identity.collection, true)
     });
     }
 
@@ -1455,9 +1457,84 @@ export class GraphService {
       return decrypted
     }
 
-    isGroup(identity, parent = null, collectionName = 'group') {
+    generateRids(identity) {
+      const rid = this.generateRid(
+        identity.username_signature,
+        this.bulletinSecretService.identity.username_signature
+      )
+      
+      const requested_rid = this.isGroup(identity) ? this.generateRid(
+        identity.username_signature,
+        identity.username_signature,
+        identity.collection
+      ) : this.generateRid(
+        identity.username_signature,
+        identity.username_signature
+      )
+
+      const requester_rid = this.isGroup(identity) ? this.generateRid(
+        this.bulletinSecretService.identity.username_signature,
+        this.bulletinSecretService.identity.username_signature,
+        identity.collection
+      ) : this.generateRid(
+        this.bulletinSecretService.identity.username_signature,
+        this.bulletinSecretService.identity.username_signature
+      )
+
+      return {
+        rid: rid,
+        requested_rid: requested_rid,
+        requester_rid: requester_rid
+      }
+    }
+
+    isAdded(identity) {
       if (!identity) return false;
-      return this.groups_indexed[this.generateRid(identity.username_signature, identity.username_signature, parent ? parent.username_signature : collectionName)] ? true : false;
+      const rids = this.generateRids(identity);
+      const addedToGroups = this.isChild(identity) ?
+        !!(this.groups_indexed[rids.rid] || this.groups_indexed[rids.requested_rid] || this.groups_indexed[this.generateRid(
+          identity.username_signature,
+          identity.username_signature,
+          identity.parent.username_signature
+        )])
+      :
+        !!(this.groups_indexed[rids.rid] || this.groups_indexed[rids.requested_rid]);
+
+
+      const friend_requested_rid = this.generateRid(
+        identity.username_signature,
+        identity.username_signature
+      );
+      const friend_rid = this.generateRid(
+        identity.username_signature,
+        this.bulletinSecretService.identity.username_signature
+      );
+      const addedToFriends = !!(this.friends_indexed[friend_rid] || this.friends_indexed[friend_requested_rid]);
+
+      return !!(addedToFriends || addedToGroups)
+    }
+
+    isGroup(identity) {
+      return !!identity.collection
+    }
+
+    isChild(identity) {
+      return !!identity.parent
+    }
+
+    toIdentity(identity) {
+      let iden: any = {
+        username: identity.username,
+        username_signature: identity.username_signature,
+        public_key: identity.public_key
+      }
+      if (identity.collection) {
+        iden.collection = identity.collection
+      }
+      if (identity.skylink) {
+        iden.skylink = identity.skylink;
+      }
+      return iden;
     }
 
     decrypt(message) {

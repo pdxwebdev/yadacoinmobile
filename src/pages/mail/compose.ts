@@ -115,6 +115,7 @@ export class ComposePage {
                     return this.transactionService.generateTransaction({
                         relationship: {
                             envelope: {
+                                sender: this.bulletinSecretService.identity,
                                 subject: this.subject,
                                 body: this.body,
                                 thread: this.thread,

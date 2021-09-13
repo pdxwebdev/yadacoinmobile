@@ -5,6 +5,7 @@ import { GraphService } from '../../app/graph.service';
 import { TransactionService } from '../../app/transaction.service';
 import { WalletService } from '../../app/wallet.service';
 import { ComposePage } from './compose';
+import { ProfilePage } from '../profile/profile';
 
 
 declare var X25519;
@@ -100,6 +101,13 @@ export class MailItemPage {
            }
     });
     alert.present();
+  }
+
+  viewProfile(identity, group=false) {
+    this.navCtrl.push(ProfilePage, {
+      identity: identity,
+      group: group
+    });
   }
 
   toHex(byteArray) {

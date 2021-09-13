@@ -29,12 +29,13 @@ export class MyApp {
 
   rootPage: any;
 
-  pages: Array<{title: string, label: string, component: any, count: any, color: any}>;
+  pages: Array<{title: string, label: string, component: any, count: any, color: any, root: boolean}>;
   graph: any;
   friend_request_count: any;
   new_messages_count: any;
   version: any;
   menu: any;
+  root: boolean;
 
   constructor(
     public platform: Platform,
@@ -55,6 +56,12 @@ export class MyApp {
       this.setMenu();
     });
     events.subscribe('menu', (options) => {
+      this.root = this.pages[0].root;
+      this.setMenu(options);
+      this.openPage(this.pages[0])
+    });
+    events.subscribe('menuonly', (options) => {
+      this.root = this.pages[0].root;
       this.setMenu(options);
     });
     this.graphService.graph = {
@@ -65,7 +72,7 @@ export class MyApp {
     this.rootPage = Settings;
     this.settingsService.menu = 'wallet';
     this.pages = [
-      { title: 'Send / Receive', label: 'Send / Receive', component: SendReceive, count: false, color: '' }
+      { title: 'Send / Receive', label: 'Send / Receive', component: SendReceive, count: false, color: '', root: true }
     ];
   }
   
@@ -76,48 +83,47 @@ export class MyApp {
   setMenu(pages = null) {
     if (pages) {
       this.pages = pages;
-      this.openPage(this.pages[0])
       return
     }
     if (this.settingsService.menu == 'mail') {
       this.pages = [
-        { title: 'Inbox', label: 'Inbox', component: MailPage, count: false, color: '' },
-        { title: 'Sent', label: 'Sent', component: MailPage, count: false, color: '' },
+        { title: 'Inbox', label: 'Inbox', component: MailPage, count: false, color: '', root: true },
+        { title: 'Sent', label: 'Sent', component: MailPage, count: false, color: '', root: true },
       ];
     } else if (this.settingsService.menu == 'chat') {
       this.pages = [
-        { title: 'Messages', label: 'loading...', component: ListPage, count: false, color: '' },
+        { title: 'Messages', label: 'loading...', component: ListPage, count: false, color: '', root: true },
       ];
     } else if (this.settingsService.menu == 'community') {
       this.pages = [
-        { title: 'Community', label: 'loading...', component: ListPage, count: false, color: '' },
+        { title: 'Community', label: 'loading...', component: ListPage, count: false, color: '', root: true },
       ];
     } else if (this.settingsService.menu == 'calendar') {
       this.pages = [
-        { title: 'Calendar', label: 'Calendar', component: CalendarPage, count: false, color: '' },
+        { title: 'Calendar', label: 'Calendar', component: CalendarPage, count: false, color: '', root: true },
       ];
     } else if (this.settingsService.menu == 'contacts') {
       this.pages = [
-        { title: 'Contacts', label: 'Contacts', component: ListPage, count: false, color: '' },
-        { title: 'Contact Requests', label: 'Contact Requests', component: ListPage, count: false, color: '' },
-        { title: 'Groups', label: 'Groups', component: ListPage, count: false, color: '' },
+        { title: 'Contacts', label: 'Contacts', component: ListPage, count: false, color: '', root: true },
+        { title: 'Contact Requests', label: 'Contact Requests', component: ListPage, count: false, color: '', root: true },
+        { title: 'Groups', label: 'Groups', component: ListPage, count: false, color: '', root: true },
       ];
     } else if (this.settingsService.menu == 'files') {
       this.pages = [
-        { title: 'Files', label: 'Files', component: SiaFiles, count: false, color: '' },
+        { title: 'Files', label: 'Files', component: SiaFiles, count: false, color: '', root: true },
       ];
     } else if (this.settingsService.menu == 'wallet') {
       this.pages = [
-        { title: 'Send / Receive', label: 'Send / Receive', component: SendReceive, count: false, color: '' }
+        { title: 'Send / Receive', label: 'Send / Receive', component: SendReceive, count: false, color: '', root: true }
       ];
     } else if (this.settingsService.menu == 'stream') {
       this.pages = [ 
-        { title: 'Stream', label: 'Stream', component: StreamPage, count: false, color: '' }
+        { title: 'Stream', label: 'Stream', component: StreamPage, count: false, color: '', root: true }
       ]
     } else if (this.settingsService.menu == 'settings') {
       this.pages = [
-        { title: 'Settings', label: 'Identity', component: Settings, count: false, color: '' },
-        { title: 'Profile', label: 'Profile', component: ProfilePage, count: false, color: '' }
+        { title: 'Settings', label: 'Identity', component: Settings, count: false, color: '', root: true },
+        { title: 'Profile', label: 'Profile', component: ProfilePage, count: false, color: '', root: true }
       ];
     }
     this.openPage(this.pages[0])
@@ -125,8 +131,9 @@ export class MyApp {
 
   initializeApp() {
     this.platform.ready().then(() => {
+      if(this.platform.is('cordova')) {
         this.deeplinks.routeWithNavController(this.nav, {
-            '/friends': ListPage
+            '/app': ListPage
         }).subscribe(match => {
             // match.$route - the route we matched, which is the matched entry from the arguments to route()
             // match.$args - the args passed in the link
@@ -136,6 +143,7 @@ export class MyApp {
             // nomatch.$link - the full link data
             console.error('Got a deeplink that didn\'t match', nomatch);
         });
+      }
       // Okay, so the platform is ready and our plugins are available.
       // Here you can do any higher level native things you might need.
       if (this.platform.is('android') || this.platform.is('ios')) {
@@ -148,7 +156,11 @@ export class MyApp {
   openPage(page) {
     // Reset the content nav to have just this page
     // we wouldn't want the back button to show in this scenario
-    this.nav.setRoot(page.component, {pageTitle: page, ...page.kwargs});
+    if (page.root) {
+      this.nav.setRoot(page.component, {pageTitle: page, ...page.kwargs});
+    } else {
+      this.nav.push(page.component, {pageTitle: page, ...page.kwargs})
+    }
   }
 
   segmentChanged(e) {

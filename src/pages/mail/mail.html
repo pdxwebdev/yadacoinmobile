@@ -21,7 +21,10 @@
   <ion-list>
     <button ion-item *ngFor="let item of items" (click)="itemTapped($event, item)">
       <ion-item>
-        <div title="Verified" class="sender">{{item.sender.username}} <ion-icon name="checkmark-circle" class="success"></ion-icon></div>
+        <div title="Verified" class="sender">
+          <span>{{item.sender.username}}</span> <ion-icon name="checkmark-circle" class="success"></ion-icon>
+          <span *ngIf="item.group">{{item.group.username}}</span> <ion-icon name="checkmark-circle" class="success"></ion-icon>
+        </div>
         <div class="subject">{{item.subject}}</div>
         <div class="datetime">{{item.datetime}}</div>
         <div class="body">{{item.body}}</div>

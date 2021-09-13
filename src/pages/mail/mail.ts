@@ -20,9 +20,9 @@ export class MailPage {
     public bulletinSecretService: BulletinSecretService
   ) {
     this.loading = true;
-    this.graphService.getGroups()
+    this.graphService.getGroups(null, null, true)
     .then(() => {
-      return this.graphService.getGroups(null, 'file')
+      return this.graphService.getGroups(null, 'file', true)
     })
     .then(() => {
       let rids = [this.graphService.generateRid(
@@ -76,14 +76,24 @@ export class MailPage {
         if (this.navParams.data.pageTitle.label === 'Sent' && item.public_key === this.bulletinSecretService.identity.public_key) return true;
         if (this.navParams.data.pageTitle.label === 'Inbox' && item.public_key !== this.bulletinSecretService.identity.public_key) return true;
       }).map((item) => {
+        const group = this.graphService.groups_indexed[item.requested_rid]
         const indexedItem = this.graphService.groups_indexed[item.requested_rid] || this.graphService.friends_indexed[item.rid];
         const identity = indexedItem.relationship.identity || indexedItem.relationship;
-        return {
-          sender: item.public_key === this.bulletinSecretService.identity.public_key && this.navParams.data.pageTitle.label === 'Inbox' ? this.bulletinSecretService.identity : {
+        let sender;
+        if (item.relationship.envelope.sender) {
+          sender = item.relationship.envelope.sender;
+        } else if (item.public_key === this.bulletinSecretService.identity.public_key && this.navParams.data.pageTitle.label === 'Inbox') {
+          sender = this.bulletinSecretService.identity;
+        } else {
+          sender = {
             username: identity.username,
             username_signature: identity.username_signature,
-            public_key: identity.public_key,
-          },
+            public_key: identity.public_key
+          }
+        }
+        return {
+          sender: sender,
+          group: group ? group.relationship : null,
           subject: item.relationship.envelope.subject,
           body: item.relationship.envelope.body,
           datetime: new Date(parseInt(item.time)*1000).toISOString().slice(0, 19).replace('T', ' '),

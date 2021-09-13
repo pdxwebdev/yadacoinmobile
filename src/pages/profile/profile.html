@@ -12,28 +12,28 @@
         <h1>{{identity.username}}</h1></ion-item>
     </ion-col>
     <ion-col>
-      <button ion-button large secondary (click)="addFriend()" *ngIf="isFriend === false && group !== true">
+      <button ion-button large secondary (click)="addFriend()" *ngIf="isAdded === false && group !== true">
         Add contact&nbsp;<ion-icon name="create"></ion-icon>
       </button>
-      <button ion-button large secondary (click)="joinGroup()" *ngIf="isFriend === false && group === true">
+      <button ion-button large secondary (click)="joinGroup()" *ngIf="isAdded === false && group === true">
         Join group&nbsp;<ion-icon name="create"></ion-icon>
       </button>
-      <button ion-button large secondary (click)="createSubGroup()" *ngIf="isFriend === true && group === true">
+      <button ion-button large secondary (click)="createSubGroup()" *ngIf="isAdded === true && group === true">
         Create sub-group&nbsp;<ion-icon name="create"></ion-icon>
       </button>
-      <button ion-button large secondary (click)="compose()" *ngIf="isFriend === true">
+      <button ion-button large secondary (click)="compose()" *ngIf="isAdded === true">
         Compose message&nbsp;<ion-icon name="create"></ion-icon>
       </button>
-      <button ion-button large secondary (click)="message()" *ngIf="isFriend === true && !group">
+      <button ion-button large secondary (click)="message()" *ngIf="isAdded === true && !group">
         Chat&nbsp;<ion-icon name="create"></ion-icon>
       </button>
-      <button ion-button large secondary (click)="message()" *ngIf="isFriend === true && group === true">
+      <button ion-button large secondary (click)="message()" *ngIf="isAdded === true && group === true">
         Group chat&nbsp;<ion-icon name="create"></ion-icon>
       </button>
-      <button ion-button large secondary (click)="invite()" *ngIf="isFriend === true">
+      <button ion-button large secondary (click)="invite()" *ngIf="isAdded === true">
         Invite&nbsp;<ion-icon name="create"></ion-icon>
       </button>
-      <button ion-button large secondary (click)="refer()" *ngIf="isFriend === true">
+      <button ion-button large secondary (click)="refer()" *ngIf="isAdded === true">
         Refer&nbsp;<ion-icon name="create"></ion-icon>
       </button>
     </ion-col>
@@ -41,7 +41,7 @@
   <ion-row>
     <h4>Public identity</h4>
     <ion-item>
-      <ion-textarea type="text" [(ngModel)]="identityJson" autoGrow="true" rows="6"></ion-textarea>
+      <ion-textarea type="text" [(ngModel)]="identityJson" autoGrow="true" rows="7"></ion-textarea>
     </ion-item>
   </ion-row>
   <ion-row>

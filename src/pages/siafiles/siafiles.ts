@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { NavController, NavParams, ViewController } from 'ionic-angular';
+import { Events, NavController, NavParams, ViewController } from 'ionic-angular';
 import { WalletService } from '../../app/wallet.service';
 import { AlertController } from 'ionic-angular';
 import { TransactionService } from '../../app/transaction.service';
@@ -38,12 +38,29 @@ export class SiaFiles {
         private bulletinSecretService: BulletinSecretService,
         private ahttp: Http,
         private graphService: GraphService,
-        private navCtrl: NavController
+        private navCtrl: NavController,
+        private events: Events
     ) {
         this.group = navParams.data.group;
         this.mode = navParams.data.mode || 'page';
         this.logicalParent = navParams.data.logicalParent;
         this.graphService.getGroups(null, 'file')
+        .then(() => {
+          const files = [];
+          for (let i = 0; i < this.graphService.graph.files.length; i++) {
+            const file = this.graphService.graph.files[i];
+            files.push({
+              title: 'Messages',
+              label: file.relationship.username,
+              component: ProfilePage,
+              count: false,
+              color: '',
+              kwargs: {identity: file.relationship },
+              root: false
+            })
+          }
+          this.events.publish('menuonly', files);
+        })
     }
 
     changeListener($event) {
@@ -152,10 +169,31 @@ export class SiaFiles {
 
     openProfile(item) {
       this.navCtrl.push(ProfilePage, {
-        item: item,
-        group: this.graphService.isGroup(item.relationship, null, 'file'),
-        collectionName: 'files'
+        identity: item.relationship,
       });
+    }
+
+    import() {
+        var buttons = [];
+        buttons.push({
+            text: 'Import',
+            handler: (data) => {
+                const identity = JSON.parse(data.identity);
+                this.graphService.addGroup(identity, null, null, null)
+            }
+        });
+        let alert = this.alertCtrl.create({
+            inputs: [
+                {
+                    name: 'identity',
+                    placeholder: 'Paste file code...'
+                }
+            ],
+            buttons: buttons
+        });
+        alert.setTitle('Import file');
+        alert.setSubTitle('Paste the code of your file below');
+        alert.present();
     }
 
     dismiss() {

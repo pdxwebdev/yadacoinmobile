@@ -35,6 +35,7 @@ export class ChatPage {
     loadingModal: any;
     content: any;
     transaction: any;
+    identity: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -49,29 +50,20 @@ export class ChatPage {
         public ahttp: Http,
         public toastCtrl: ToastController
     ) {
-        this.transaction = navParams.data.item.transaction
-        this.rid = navParams.data.item.transaction.rid;
-        this.requester_rid = navParams.data.item.transaction.requester_rid || '';
-        this.requested_rid = navParams.data.item.transaction.requested_rid || '';
-        var key = 'last_message_height-' + navParams.data.item.transaction.rid;
-        if(navParams.data.item.transaction.height) this.storage.set(key, navParams.data.item.transaction.time);
+        this.identity = this.navParams.get('identity');
+        const rids = this.graphService.generateRids(this.identity);
+        this.rid = rids.rid;
+        this.requested_rid = rids.requested_rid;
+        this.requester_rid = rids.requester_rid;
         this.storage.get('blockchainAddress').then((blockchainAddress) => {
             this.blockchainAddress = blockchainAddress;
         });
-        this.public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
         this.refresh(null, true);
     }
 
     parseChats() {
-        let rid;
-        let group;
-        if (this.graphService.groups_indexed[this.requested_rid]) {
-          rid = this.requested_rid;
-          group = true;
-        } else {
-          rid = this.rid;
-          group = false;
-        }
+        const group = this.graphService.isGroup(this.identity)
+        const rid = group ? this.requested_rid : this.rid
         if(this.graphService.graph.messages[rid]) {
             this.chats = this.graphService.graph.messages[rid];
             for(var i=0; i < this.chats.length; i++) {
@@ -89,7 +81,13 @@ export class ChatPage {
         if (showLoading) {
             this.loading = true;
         }
-        this.graphService.getMessages([this.rid, this.requested_rid])
+        this.graphService.getGroups(null, null, true)
+        .then(() => {
+          return this.graphService.getGroups(null, 'file', true)
+        })
+        .then(() => {
+          return this.graphService.getMessages([this.rid, this.requested_rid])
+        })
         .then(() => {
             this.loading = false;
             if(refresher) refresher.complete();
@@ -104,12 +102,12 @@ export class ChatPage {
         return this.graphService.getFriends()
         .then(() => {
             const rid = this.graphService.generateRid(
-              item.relationship.sender.username_signature,
+              item.relationship.identity.username_signature,
               this.bulletinSecretService.identity.username_signature
             )
             const identity = this.graphService.friends_indexed[rid];
             this.navCtrl.push(ProfilePage, {
-                item: identity ? identity.relationship : item.relationship.sender
+                identity: identity ? identity.relationship : item.relationship.identity
             })
         })
     }
@@ -124,13 +122,7 @@ export class ChatPage {
             handler: (data: any) => {
                 this.walletService.get()
                 .then(() => {
-                    return this.graphService.getFriends();
-                })
-                .then(() => {
-                    return this.graphService.getGroups();
-                })
-                .then(() => {
-                    if (this.graphService.groups_indexed[this.requested_rid]) {
+                    if (this.graphService.isGroup(this.identity)) {
                       return this.transactionService.generateTransaction({
                           relationship: {
                               chatText: this.chatText,

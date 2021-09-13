@@ -18,9 +18,6 @@
       <ion-option *ngFor="let file of files" value="{{file.siapath}}">{{file.siapath}}</ion-option>
     </ion-select>
   </ion-item>
-  <ion-list *ngIf="!error">
-    <ion-item *ngFor="let file of graphService.graph.files" (click)="openProfile(file)">{{file.relationship.username}}</ion-item>
-  </ion-list>
   <ion-item>
     <ion-label id="profile_image" color="primary"></ion-label>
     <ion-input type="file" (change)="changeListener($event)"></ion-input>
@@ -28,15 +25,8 @@
   <ion-item *ngIf="!error">
     <button ion-button secondary (click)="upload()" *ngIf="mode == 'page' && !error" [disabled]="!filepath">Upload</button>
   </ion-item>
-  <ion-item *ngIf="mode == 'page' && !error">
-    <ion-list>
-      <ion-item *ngFor="let file of files">
-        <a *ngIf="file.available" href="{{file.stream_url}}" target="_blank">
-          <h3>{{file.siapath}}</h3>
-        </a>
-        <h3 *ngIf="!file.available">{{file.siapath}} (uploading...)</h3><button ion-button danger (click)="delete(file.siapath)">Delete</button>
-      </ion-item>
-    </ion-list>
+  <ion-item>
+    <button ion-button secondary (click)="import()">Import</button>
   </ion-item>
   <button ion-button secondary (click)="submit()" *ngIf="mode == 'modal'">Post</button>
   <ion-card *ngIf="post.title">

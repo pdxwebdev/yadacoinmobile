@@ -25,7 +25,7 @@ export class ListPage {
   selectedItem: any;
   pageTitle: any;
   icons: string[];
-  items: Array<{pageTitle: string, transaction: object}>;
+  items: Array<{pageTitle: string, identity: object}>;
   blockchainAddress: any;
   balance: any;
   baseUrl: any;
@@ -151,7 +151,10 @@ export class ListPage {
           public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
           return this.graphService.getFriends()
           .then(() => {
-            return this.graphService.getGroups();
+            return this.graphService.getGroups(null, null, true);
+          })
+          .then(() => {
+            return this.graphService.getGroups(null, 'file', true)
           })
           .then(() => {
             return this.graphService.getNewMessages();
@@ -174,38 +177,7 @@ export class ListPage {
                   return 0
                 }
             });
-            return this.makeList(friendsWithMessagesList.friend_list)
-            .then((pages) => {
-              this.events.publish('menu', pages);
-            });
-          }).catch((err) => {
-              console.log(err);
-          });
-        } else if (this.pageTitle == 'Messages') {
-          public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
-          return this.graphService.getGroups()
-          .then(() => {
-            return this.graphService.getNewMessages();
-          })
-          .then((graphArray) => {
-            var messages = this.markNew(public_key, graphArray, this.graphService.new_messages_counts);
-            var friendsWithMessagesList = this.getDistinctFriends(messages);
-            this.populateRemainingFriends(friendsWithMessagesList.friend_list, friendsWithMessagesList.used_rids);
-            this.loading = false;
-            friendsWithMessagesList.friend_list.sort(function (a, b) {
-                try {
-                  const ausername = a.relationship.identity ? a.relationship.identity.username : a.relationship.username
-                  const busername = b.relationship.identity ? b.relationship.identity.username : b.relationship.username
-                  if (ausername.toLowerCase() < busername.toLowerCase())
-                    return -1
-                  if ( ausername.toLowerCase() > busername.toLowerCase())
-                    return 1
-                  return 0
-                } catch(err) {
-                  return 0
-                }
-            });
-            return this.makeList(friendsWithMessagesList.friend_list)
+            return this.makeList(friendsWithMessagesList.friend_list, true)
             .then((pages) => {
               this.events.publish('menu', pages);
             });
@@ -376,7 +348,7 @@ export class ListPage {
   populateRemainingFriends(friend_list, used_rids) {
     // now add everyone else
     let friendsAndGroupsList = this.graphService.graph.friends.concat(this.graphService.graph.groups)
-    friendsAndGroupsList = friendsAndGroupsList.concat(this.graphService.graph.files)
+    friendsAndGroupsList = this.graphService.graph.files ? friendsAndGroupsList.concat(this.graphService.graph.files) : friendsAndGroupsList
     for (var i=0; i < friendsAndGroupsList.length; i++) {
       let rid;
       if(this.graphService.groups_indexed[friendsAndGroupsList[i].requested_rid]) {
@@ -401,11 +373,16 @@ export class ListPage {
     }
   }
 
-  makeList(graphArray) {
+  makeList(graphArray, page = false) {
     return new Promise((resolve, reject) => {
       const items = [];
+      this.items = [];
       for (let i = 0; i < graphArray.length; i++) {
-        items.push({ title: 'Messages', label: graphArray[i].relationship.username, component: ChatPage, count: false, color: '', kwargs: {item: {transaction: graphArray[i] }}});
+        if (page) {
+          items.push({ title: 'Messages', label: graphArray[i].relationship.identity ? graphArray[i].relationship.identity.username : graphArray[i].relationship.username, component: ChatPage, count: false, color: '', kwargs: { identity: graphArray[i].relationship.identity || graphArray[i].relationship }, root: true});
+        } else {
+          this.items.push({ pageTitle: 'Contact Requests', identity: graphArray[i].relationship });
+        }
       }
       resolve(items);
     })
@@ -419,7 +396,7 @@ export class ListPage {
   itemTapped(event, item) {
     if(this.pageTitle == 'Messages') {
       this.navCtrl.push(ChatPage, {
-        item: item
+        ...item
       });
     } else if(this.pageTitle == 'Groups') {
       this.navCtrl.push(ProfilePage, {
@@ -492,7 +469,7 @@ export class ListPage {
           text: 'Add',
           handler: (data) => {
               const identity = JSON.parse(data.identity);
-              this.graphService.addGroup(identity, null, null, null, identity.skylink ? 'file' : 'group')
+              this.graphService.addGroup(identity, null, null, null)
           }
       });
       let alert = this.alertCtrl.create({
