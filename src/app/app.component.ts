@@ -64,11 +64,6 @@ export class MyApp {
       this.root = this.pages[0].root;
       this.setMenu(options);
     });
-    this.graphService.graph = {
-      comments: "",
-      reacts: "",
-      commentReacts: ""
-    }
     this.rootPage = Settings;
     this.settingsService.menu = 'wallet';
     this.pages = [
@@ -92,11 +87,11 @@ export class MyApp {
       ];
     } else if (this.settingsService.menu == 'chat') {
       this.pages = [
-        { title: 'Messages', label: 'loading...', component: ListPage, count: false, color: '', root: true },
+        { title: 'Messages', label: 'Chat', component: ListPage, count: false, color: '', root: true },
       ];
     } else if (this.settingsService.menu == 'community') {
       this.pages = [
-        { title: 'Community', label: 'loading...', component: ListPage, count: false, color: '', root: true },
+        { title: 'Community', label: 'Community', component: ListPage, count: false, color: '', root: true },
       ];
     } else if (this.settingsService.menu == 'calendar') {
       this.pages = [

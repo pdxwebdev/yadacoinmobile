@@ -19,7 +19,13 @@ declare var foobar;
 
 @Injectable()
 export class GraphService {
-    graph: any;
+    graph: any = {
+      messages: [],
+      friends: [],
+      groups: [],
+      files: [],
+      mail: []
+    };
     graphproviderAddress: any;
     xhr: any;
     key: any;
@@ -82,6 +88,16 @@ export class GraphService {
         this.friends_indexed = {};
     }
 
+    resetGraph() {
+      this.graph = {
+        messages: [],
+        friends: [],
+        groups: [],
+        files: [],
+        mail: []
+      };
+    }
+
     endpointRequest(endpoint, ids=null, rids=null) {
         return new Promise((resolve, reject) => {
             let headers = new Headers();
@@ -111,13 +127,14 @@ export class GraphService {
             .pipe(timeout(30000))
             .subscribe((data) => {
                 try {
-                    var info = JSON.parse(data['_body']);
+                    var info = data.json();
                     this.graph.rid = info.rid;
                     this.graph.username_signature = info.username_signature;
                     this.graph.registered = info.registered;
                     this.graph.pending_registration = info.pending_registration;
                     resolve(info);
                 } catch(err) {
+                  console.log(err)
                 }
             },
             (err) => {
@@ -1515,14 +1532,17 @@ export class GraphService {
     }
 
     isGroup(identity) {
+      if (!identity) return false;
       return !!identity.collection
     }
 
     isChild(identity) {
+      if (!identity) return false;
       return !!identity.parent
     }
 
     toIdentity(identity) {
+      if (!identity) return {};
       let iden: any = {
         username: identity.username,
         username_signature: identity.username_signature,

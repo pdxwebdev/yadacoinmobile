@@ -38,6 +38,15 @@ export class MailItemPage {
     });
   }
 
+  replyToAllMail(item) {
+    this.navCtrl.push(ComposePage, {
+      item: item,
+      mode: 'replyToAll',
+      thread: item.thread || item.id,
+      message_type: item.message_type
+    });
+  }
+
   forwardMail(item) {
     this.navCtrl.push(ComposePage, {
       item: item,
@@ -103,10 +112,9 @@ export class MailItemPage {
     alert.present();
   }
 
-  viewProfile(identity, group=false) {
+  viewProfile(identity) {
     this.navCtrl.push(ProfilePage, {
-      identity: identity,
-      group: group
+      identity: identity
     });
   }
 

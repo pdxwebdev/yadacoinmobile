@@ -41,7 +41,6 @@ export class ComposePage {
     public bulletinSecretService: BulletinSecretService
   ) {
     this.item = navParams.data.item;
-    this.group = navParams.data.group;
     this.mode = navParams.data.mode || 'new';
     this.thread = navParams.data.thread;
     this.recipient = '';
@@ -53,6 +52,13 @@ export class ComposePage {
       this.recipient = this.item.sender
       this.subject = this.item.subject
       this.prevBody = this.item.body
+      this.message_type = 'mail'
+    }
+    else if (this.mode === 'replyToAll') {
+      this.recipient = this.item.group
+      this.subject = this.item.subject
+      this.prevBody = this.item.body
+      this.message_type = 'group_mail'
     }
     else if (this.mode === 'forward') {
       this.subject = this.item.subject
@@ -66,15 +72,8 @@ export class ComposePage {
       this.submit();
     } else if(this.item && this.item.recipient) {
       this.recipient = this.item.recipient
-    }
-
-    if (this.item && this.item.message_type === 'group_mail') {
-      this.group = true;
-    }
-
-    if (this.group) {
-      this.message_type = 'group_mail';
-    } else if (!this.message_type) {
+      this.message_type = this.graphService.isGroup(this.recipient) ? 'group_mail' : 'mail'
+    } else {
       this.message_type = 'mail'
     }
   }
@@ -111,7 +110,7 @@ export class ComposePage {
                   this.message_type
                 )
 
-                if (this.group) {
+                if (this.graphService.isGroup(this.recipient)) {
                     return this.transactionService.generateTransaction({
                         relationship: {
                             envelope: {

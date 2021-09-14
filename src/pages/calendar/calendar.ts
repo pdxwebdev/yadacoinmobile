@@ -24,7 +24,10 @@ export class CalendarPage {
   }
 
   ionViewDidEnter() {
-    this.graphService.getGroups()
+    this.graphService.getGroups(null, 'group', true)
+    .then(() => {
+      return this.graphService.getGroups(null, 'file', true)
+    })
     .then(() => {
       return new Promise((resolve, reject) => {
         let rids = [this.graphService.generateRid(
@@ -41,25 +44,39 @@ export class CalendarPage {
             'event_meeting'
           ))
         }
+        let file_rids = [];
+        for (let i=0; i < this.graphService.graph.files.length; i++) {
+          const file = this.graphService.graph.files[i];
+          file_rids.push(this.graphService.generateRid(
+            file.relationship.username_signature,
+            file.relationship.username_signature,
+            'event_meeting'
+          ))
+        }
         if (group_rids.length > 0) {
           rids = rids.concat(group_rids);
         }
-        resolve(rids);
+        if (file_rids.length > 0) {
+          rids = rids.concat(file_rids);
+        }
+        return resolve(rids);
       })
     })
     .then((rids) => {
-      this.graphService.getCalendar(rids)
+      return this.graphService.getCalendar(rids)
     })
     .then((data) => {
 
       let events = {};
       this.graphService.graph.calendar.map((event) => {
+        const group = this.graphService.groups_indexed[event.requested_rid]
         const eventDate = event.relationship.envelope.event_datetime;
         const index = eventDate.getFullYear() + this.addZeros(eventDate.getMonth()) + this.addZeros(eventDate.getDate());
         if (!events[index]) {
           events[index] = []
         }
         events[index].push({
+          group: group ? group.relationship : null,
           sender: event.relationship.envelope.sender,
           subject: event.relationship.envelope.subject,
           body: event.relationship.envelope.body,
@@ -102,7 +119,7 @@ export class CalendarPage {
         this.calendar.rows[0].days.push({})
         continue;
       }
-      let calDate = new Date(year, month, fistDay.getDate() + i)
+      let calDate = new Date(year, month, fistDay.getDate() + i - day)
       if(calDate.getMonth() > month) break;
       const index = calDate.getFullYear() + this.addZeros(calDate.getMonth()) + this.addZeros(calDate.getDate());
       if (this.calendar.rows[this.calendar.rows.length - 1].days.length >= 8) {

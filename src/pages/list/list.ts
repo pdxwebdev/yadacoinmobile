@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { List, NavController, NavParams } from 'ionic-angular';
+import { List, NavController, NavParams, ToastController } from 'ionic-angular';
 import { AlertController, LoadingController } from 'ionic-angular';
 import { Storage } from '@ionic/storage';
 import { GraphService } from '../../app/graph.service';
@@ -54,7 +54,8 @@ export class ListPage {
     public loadingCtrl: LoadingController,
     public events: Events,
     private ahttp: Http,
-    private settingsService: SettingsService
+    private settingsService: SettingsService,
+    private toastCtrl: ToastController
   ) {
     this.loadingModal = this.loadingCtrl.create({
         content: 'Please wait...'
@@ -93,6 +94,45 @@ export class ListPage {
     });
   }
 
+  createGroup() {
+      this.graphService.getInfo()
+      .then(() => {
+          return new Promise((resolve, reject) => {
+              let alert = this.alertCtrl.create({
+                  title: 'Group name',
+                  inputs: [
+                  {
+                      name: 'groupname',
+                      placeholder: 'Group name'
+                  }
+                  ],
+                  buttons: [
+                      {
+                          text: 'Save',
+                          handler: data => {
+                              const toast = this.toastCtrl.create({
+                                  message: 'Group created',
+                                  duration: 2000
+                              });
+                              toast.present();
+                              resolve(data.groupname);
+                          }
+                      }
+                  ]
+              });
+              alert.present();
+          });
+      })
+      .then((groupName) => {
+          return this.graphService.createGroup(groupName);
+      })
+      .then((hash) => {
+          if (this.settingsService.remoteSettings['walletUrl']) {
+              return this.graphService.getInfo();
+          }
+      });
+  }
+
   choosePage() {
     return new Promise((resolve, reject) => {
       if(!this.selectedItem) {
@@ -114,7 +154,7 @@ export class ListPage {
                   return 1
                 return 0
             });
-            this.makeList(graphArray);
+            this.makeList(graphArray, 'Contacts', null);
             this.loading = false;
           }).catch((err) => {
               console.log('listpage getFriends error: ' + err);
@@ -122,17 +162,9 @@ export class ListPage {
         } else if (this.pageTitle == 'Groups') {
           return this.graphService.getGroups()
           .then(() => {
-            return this.graphService.getGroups(null, 'file')
-          })
-          .then(() => {
             for (let i = 0; i < this.graphService.graph.groups.length; i++) {
               if (!this.graphService.graph.groups[i].relationship.parent) {
                 graphArray.push(this.graphService.graph.groups[i])
-              }
-            }
-            for (let i = 0; i < this.graphService.graph.files.length; i++) {
-              if (!this.graphService.graph.files[i].relationship.parent) {
-                graphArray.push(this.graphService.graph.files[i])
               }
             }
             graphArray.sort(function (a, b) {
@@ -142,7 +174,7 @@ export class ListPage {
                   return 1
                 return 0
             });
-            this.makeList(graphArray);
+            this.makeList(graphArray, 'Groups', null);
             this.loading = false;
           }).catch((err) => {
               console.log(err);
@@ -150,12 +182,6 @@ export class ListPage {
         } else if (this.pageTitle == 'Messages') {
           public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
           return this.graphService.getFriends()
-          .then(() => {
-            return this.graphService.getGroups(null, null, true);
-          })
-          .then(() => {
-            return this.graphService.getGroups(null, 'file', true)
-          })
           .then(() => {
             return this.graphService.getNewMessages();
           })
@@ -177,9 +203,41 @@ export class ListPage {
                   return 0
                 }
             });
-            return this.makeList(friendsWithMessagesList.friend_list, true)
+            return this.makeList(friendsWithMessagesList.friend_list, '', {title: 'Messages', component: ChatPage})
             .then((pages) => {
               this.events.publish('menu', pages);
+            });
+          }).catch((err) => {
+              console.log(err);
+          });
+        } else if (this.pageTitle == 'Community') {
+          public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
+          return this.graphService.getGroups(null, null, true)
+          .then(() => {
+            return this.graphService.getNewMessages();
+          })
+          .then((graphArray) => {
+            var messages = this.markNew(public_key, graphArray, this.graphService.new_messages_counts);
+            var friendsWithMessagesList = this.getDistinctFriends(messages);
+            this.populateRemainingGroups(friendsWithMessagesList.friend_list, friendsWithMessagesList.used_rids);
+            this.loading = false;
+            friendsWithMessagesList.friend_list.sort(function (a, b) {
+                try {
+                  const ausername = a.relationship.identity ? a.relationship.identity.username : a.relationship.username
+                  const busername = b.relationship.identity ? b.relationship.identity.username : b.relationship.username
+                  if (ausername.toLowerCase() < busername.toLowerCase())
+                    return -1
+                  if ( ausername.toLowerCase() > busername.toLowerCase())
+                    return 1
+                  return 0
+                } catch(err) {
+                  return 0
+                }
+            });
+            return this.makeList(friendsWithMessagesList.friend_list, '', {title: 'Community', component: ChatPage})
+            .then((pages) => {
+              this.events.publish('menu', pages);
+              this.loading = false;
             });
           }).catch((err) => {
               console.log(err);
@@ -202,7 +260,7 @@ export class ListPage {
                   return 1
                 return 0
             });
-            return this.makeList(friendsWithMessagesList.friend_list);
+            return this.makeList(friendsWithMessagesList.friend_list, 'Messages', null);
           }).catch((err) => {
               console.log(err);
           });
@@ -217,7 +275,7 @@ export class ListPage {
               var friendsWithSignInsList = this.getDistinctFriends(sign_ins);
               this.populateRemainingFriends(friendsWithSignInsList.friend_list, friendsWithSignInsList.used_rids);
               this.loading = false;
-              return this.makeList(friendsWithSignInsList.friend_list);
+              return this.makeList(friendsWithSignInsList.friend_list, 'Sing Ins', null);
           }).catch(() => {
               console.log('listpage getFriends or getNewSignIns error');
           });
@@ -233,7 +291,7 @@ export class ListPage {
                   return 0
               });
               this.loading = false;
-              return this.makeList(graphArray);
+              return this.makeList(graphArray, 'Contact Requests', null);
           }).catch(() => {
               console.log('listpage getFriendRequests error');
           });
@@ -249,18 +307,18 @@ export class ListPage {
                   return 0
               });
               this.loading = false;
-              return this.makeList(graphArray);
+              return this.makeList(graphArray, 'Sent Requests', null);
           }).catch(() => {
               console.log('listpage getSentFriendRequests error');
           });
         } else if (this.pageTitle == 'Reacts Detail') {
           graphArray = this.navParams.get('detail');
           this.loading = false;
-          return this.makeList(graphArray);
+          return this.makeList(graphArray, 'Reacts Detail', null);
         } else if (this.pageTitle == 'Comment Reacts Detail') {
           graphArray = this.navParams.get('detail');
           this.loading = false;
-          return this.makeList(graphArray);
+          return this.makeList(graphArray, 'Comment Reacts Detail', null);
         }
       } else {
         this.loading = false;
@@ -308,12 +366,12 @@ export class ListPage {
       // we could have multiple transactions per friendship
       // so make sure we're going using the rid once
       var item = collection[i];
-      if(!this.graphService.groups_indexed[item.requested_rid] && !this.graphService.friends_indexed[item.rid]) {
+      if(!this.graphService.friends_indexed[item.rid]) {
         continue
       }
-      if(used_rids.indexOf(this.graphService.groups_indexed[item.requested_rid] || this.graphService.friends_indexed[item.rid]) === -1) {
+      if(used_rids.indexOf(this.graphService.friends_indexed[item.rid]) === -1) {
         friend_list.push(item);
-        used_rids.push(this.graphService.groups_indexed[item.requested_rid] || this.graphService.friends_indexed[item.rid]);
+        used_rids.push(this.graphService.friends_indexed[item.rid]);
       }
     }
     return {
@@ -325,30 +383,29 @@ export class ListPage {
   getDistinctGroups(collection) {
     // using the rids from new items
     // make a list of friends sorted by block height descending (most recent)
-    var group_list = [];
+    var friend_list = [];
     var used_rids = [];
     for (var i=0; i < collection.length; i++) {
       // we could have multiple transactions per friendship
       // so make sure we're going using the rid once
       var item = collection[i];
-      if(!item.relationship || !item.relationship.identity) {
+      if(!this.graphService.groups_indexed[item.requested_rid]) {
         continue
       }
-      if(used_rids.indexOf(item.rid) === -1) {
-        group_list.push(item);
-        used_rids.push(item.rid);
+      if(used_rids.indexOf(this.graphService.groups_indexed[item.requested_rid]) === -1) {
+        friend_list.push(item);
+        used_rids.push(this.graphService.groups_indexed[item.requested_rid]);
       }
     }
     return {
-      group_list: group_list,
+      friend_list: friend_list,
       used_rids: used_rids
     };
   }
 
   populateRemainingFriends(friend_list, used_rids) {
     // now add everyone else
-    let friendsAndGroupsList = this.graphService.graph.friends.concat(this.graphService.graph.groups)
-    friendsAndGroupsList = this.graphService.graph.files ? friendsAndGroupsList.concat(this.graphService.graph.files) : friendsAndGroupsList
+    let friendsAndGroupsList = this.graphService.graph.friends
     for (var i=0; i < friendsAndGroupsList.length; i++) {
       let rid;
       if(this.graphService.groups_indexed[friendsAndGroupsList[i].requested_rid]) {
@@ -365,23 +422,30 @@ export class ListPage {
 
   populateRemainingGroups(friend_list, used_rids) {
     // now add everyone else
-    for (var i=0; i < this.graphService.graph.groups.length; i++) {
-      if (used_rids.indexOf(this.graphService.graph.groups[i].rid) === -1) {
-        friend_list.push(this.graphService.graph.groups[i]);
-        used_rids.push(this.graphService.graph.groups[i].rid);
+    const friendsAndGroupsList = this.graphService.graph.groups
+    for (var i=0; i < friendsAndGroupsList.length; i++) {
+      let rid;
+      if(this.graphService.groups_indexed[friendsAndGroupsList[i].requested_rid]) {
+        rid = friendsAndGroupsList[i].requested_rid;
+      } else {
+        rid = friendsAndGroupsList[i].rid;
+      }
+      if (used_rids.indexOf(rid) === -1) {
+        friend_list.push(friendsAndGroupsList[i]);
+        used_rids.push(rid);
       }
     }
   }
 
-  makeList(graphArray, page = false) {
+  makeList(graphArray, pageTitle:any, page:any) {
     return new Promise((resolve, reject) => {
       const items = [];
       this.items = [];
       for (let i = 0; i < graphArray.length; i++) {
         if (page) {
-          items.push({ title: 'Messages', label: graphArray[i].relationship.identity ? graphArray[i].relationship.identity.username : graphArray[i].relationship.username, component: ChatPage, count: false, color: '', kwargs: { identity: graphArray[i].relationship.identity || graphArray[i].relationship }, root: true});
+          items.push({ title: page.title, label: graphArray[i].relationship.identity ? graphArray[i].relationship.identity.username : graphArray[i].relationship.username, component: page.component, count: false, color: '', kwargs: { identity: graphArray[i].relationship.identity || graphArray[i].relationship }, root: true});
         } else {
-          this.items.push({ pageTitle: 'Contact Requests', identity: graphArray[i].relationship });
+          this.items.push({ pageTitle: pageTitle, identity: graphArray[i].relationship });
         }
       }
       resolve(items);
@@ -398,14 +462,17 @@ export class ListPage {
       this.navCtrl.push(ChatPage, {
         ...item
       });
+    } else if(this.pageTitle == 'Community') {
+      this.navCtrl.push(ChatPage, {
+        ...item
+      });
     } else if(this.pageTitle == 'Groups') {
       this.navCtrl.push(ProfilePage, {
-        item: item.transaction,
-        group: this.graphService.isGroup(item.transaction.relationship.group)
+        ...item
       });
     } else if(this.pageTitle == 'Contacts') {
       this.navCtrl.push(ProfilePage, {
-        item: item.transaction
+        ...item.identity
       });
     } else {
       this.navCtrl.push(ListPage, {

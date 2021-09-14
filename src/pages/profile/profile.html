@@ -30,12 +30,11 @@
       <button ion-button large secondary (click)="message()" *ngIf="isAdded === true && group === true">
         Group chat&nbsp;<ion-icon name="create"></ion-icon>
       </button>
-      <button ion-button large secondary (click)="invite()" *ngIf="isAdded === true">
-        Invite&nbsp;<ion-icon name="create"></ion-icon>
-      </button>
-      <button ion-button large secondary (click)="refer()" *ngIf="isAdded === true">
-        Refer&nbsp;<ion-icon name="create"></ion-icon>
-      </button>
+      <a href="https://siasky.net/{{identity.skylink}}" *ngIf="identity.skylink" target="_blank">
+        <button ion-button large secondary>
+          Download&nbsp;<ion-icon name="create"></ion-icon>
+        </button>
+      </a>
     </ion-col>
   </ion-row>
   <ion-row>

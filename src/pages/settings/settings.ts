@@ -288,7 +288,7 @@ export class Settings {
     }
 
     selectIdentity(key) {
-        this.graphService.graph = {};
+        this.graphService.resetGraph();
         this.loadingModal = this.loadingCtrl.create({
             content: 'initializing...'
         });
@@ -360,11 +360,7 @@ export class Settings {
     }
 
     save() {
-        this.graphService.graph = {
-            comments: "",
-            reacts: "",
-            commentReacts: ""
-        };
+        this.graphService.resetGraph()
         
         return this.set(this.bulletinSecretService.keyname.substr(this.prefix.length));
     }

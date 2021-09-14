@@ -187,16 +187,8 @@ export class ProfilePage {
     compose() {
         this.navCtrl.push(ComposePage, {
           item: {
-            recipient: {
-              username: this.identity.username,
-              username_signature: this.identity.username_signature,
-              public_key: this.identity.public_key,
-              requester_rid: this.requester_rid,
-              requested_rid: this.requested_rid,
-              rid: this.rid,
-            }
-          },
-          group: this.group || this.graphService.isGroup(this.identity)
+            recipient: this.identity
+          }
         });
     }
 

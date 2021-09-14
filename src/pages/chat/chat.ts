@@ -36,6 +36,8 @@ export class ChatPage {
     content: any;
     transaction: any;
     identity: any;
+    page: any;
+    label: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -51,6 +53,8 @@ export class ChatPage {
         public toastCtrl: ToastController
     ) {
         this.identity = this.navParams.get('identity');
+        this.page = this.navParams.get('pageTitle');
+        this.label = this.page.label;
         const rids = this.graphService.generateRids(this.identity);
         this.rid = rids.rid;
         this.requested_rid = rids.requested_rid;

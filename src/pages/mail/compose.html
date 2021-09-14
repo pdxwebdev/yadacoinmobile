@@ -8,10 +8,10 @@
 <ion-content padding>
   What type of message is this?
   <ion-segment [(ngModel)]="message_type">
-    <ion-segment-button value="mail" *ngIf="!group">
+    <ion-segment-button value="mail" *ngIf="!graphService.isGroup(recipient)">
       Mail
     </ion-segment-button>
-    <ion-segment-button value="group_mail" *ngIf="group">
+    <ion-segment-button value="group_mail" *ngIf="graphService.isGroup(recipient)">
       Mail
     </ion-segment-button>
     <ion-segment-button value="contract">
@@ -41,7 +41,10 @@
   <br>
   <ion-item *ngIf="item && item.sender">
     Previous message
-    <div title="Verified" class="sender">{{item.sender.username}} <ion-icon name="checkmark-circle" class="success"></ion-icon></div>
+    <div title="Verified" class="sender">
+      <span>{{item.sender.username}} <ion-icon name="checkmark-circle" class="success"></ion-icon></span>
+      <span *ngIf="item.group">{{item.group.username}} <ion-icon name="checkmark-circle" class="success"></ion-icon></span>
+    </div>
     <div class="subject">{{item.subject}}</div>
     <div class="datetime">{{item.datetime}}</div>
     <div class="body">{{item.body}}</div>

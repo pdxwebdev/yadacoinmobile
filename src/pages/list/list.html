@@ -3,7 +3,8 @@
     <button ion-button menuToggle color="{{color}}">
       <ion-icon name="menu"></ion-icon>
     </button>
-    <ion-title>{{label}}</ion-title>
+    <ion-title *ngIf="loading">Loading...</ion-title>
+    <ion-title *ngIf="!loading">{{label}}</ion-title>
   </ion-navbar>
 </ion-header>
 
@@ -14,6 +15,7 @@
   <ion-spinner *ngIf="loading"></ion-spinner>
   <button *ngIf="pageTitle =='Contacts'" ion-button secondary (click)="addFriend()">Add contact</button>
   <button *ngIf="pageTitle =='Groups'" ion-button secondary (click)="addGroup()">Add group</button>
+  <button *ngIf="pageTitle =='Groups'" ion-button secondary (click)="createGroup()">Create group</button>
   <ion-card *ngIf="items && items.length == 0">
       <ion-card-content>
         <ion-card-title style="text-overflow:ellipsis;" text-wrap>
@@ -23,18 +25,14 @@
   </ion-card>
   <ion-list>
     <button ion-item *ngFor="let item of items" (click)="itemTapped($event, item)">
-      <span *ngIf="pageTitle =='Groups'">{{item.transaction.relationship.username}}</span>
-      <span *ngIf="pageTitle =='Sent Requests'">{{item.transaction.relationship.identity.username}}</span>
-      <span *ngIf="pageTitle =='Contact Requests'">{{item.transaction.relationship.identity.username}}</span>
-      <span *ngIf="pageTitle =='Messages' && !identity.new && !identity.parent && identity">{{ identity.identity.username }}</span>
+      <span *ngIf="pageTitle =='Groups'">{{item.identity.username}}</span>
+      <span *ngIf="pageTitle =='Contact Requests'">{{item.identity.username}}</span>
       <span *ngIf="pageTitle =='Messages' && !identity.new && !identity.parent && identity.username">{{ identity.username}}</span>
       <span *ngIf="pageTitle =='Messages' && !identity.new && identity.parent"><ion-note>&nbsp;&nbsp;&nbsp;&nbsp;{{identity.username}}</ion-note></span>
+      <span *ngIf="pageTitle =='Community' && !identity.new && !identity.parent && identity.username">{{ identity.username}}</span>
+      <span *ngIf="pageTitle =='Community' && !identity.new && identity.parent"><ion-note>&nbsp;&nbsp;&nbsp;&nbsp;{{identity.username}}</ion-note></span>
       <span *ngIf="pageTitle =='Chat' && identity.new"><strong>{{identity.username}}</strong></span>
-      <span *ngIf="pageTitle =='Sign Ins' && !item.transaction.new">{{item.transaction.relationship.identity.username}}</span>
-      <span *ngIf="pageTitle =='Sign Ins' && item.transaction.new"><strong>{{item.transaction.relationship.identity.username}}</strong></span>
-      <span *ngIf="pageTitle =='Contacts'">{{item.transaction.relationship.identity.username}}</span>
-      <span *ngIf="pageTitle =='Reacts Detail'">{{item.transaction.relationship.react}} {{item.transaction.relationship.identity.username}}</span>
-      <span *ngIf="pageTitle =='Comment Reacts Detail'">{{item.transaction.relationship.react}} {{item.transaction.relationship.identity.username}}</span>
+      <span *ngIf="pageTitle =='Contacts'">{{item.identity.identity.username}}</span>
     </button>
   </ion-list>
   <div *ngIf="selectedItem && pageTitle =='Sent Requests'" padding>
