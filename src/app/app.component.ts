@@ -51,10 +51,6 @@ export class MyApp {
     events.subscribe('graph', () => {
       this.rootPage = HomePage;
     });
-    events.subscribe('pages-settings', () => {
-      this.settingsService.menu = 'wallet';
-      this.setMenu();
-    });
     events.subscribe('menu', (options) => {
       this.root = this.pages[0].root;
       this.setMenu(options);
@@ -65,10 +61,6 @@ export class MyApp {
       this.setMenu(options);
     });
     this.rootPage = Settings;
-    this.settingsService.menu = 'wallet';
-    this.pages = [
-      { title: 'Send / Receive', label: 'Send / Receive', component: SendReceive, count: false, color: '', root: true }
-    ];
   }
   
   ngAfterViewInit() {
@@ -80,7 +72,11 @@ export class MyApp {
       this.pages = pages;
       return
     }
-    if (this.settingsService.menu == 'mail') {
+    if (this.settingsService.menu == 'home') {
+      this.pages = [
+        { title: 'Home', label: 'Home', component: HomePage, count: false, color: '', root: true },
+      ];
+    } else if (this.settingsService.menu == 'mail') {
       this.pages = [
         { title: 'Inbox', label: 'Inbox', component: MailPage, count: false, color: '', root: true },
         { title: 'Sent', label: 'Sent', component: MailPage, count: false, color: '', root: true },
@@ -125,7 +121,8 @@ export class MyApp {
   }
 
   initializeApp() {
-    this.platform.ready().then(() => {
+    this.platform.ready()
+    .then(() => {
       if(this.platform.is('cordova')) {
         this.deeplinks.routeWithNavController(this.nav, {
             '/app': ListPage

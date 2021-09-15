@@ -96,6 +96,19 @@ export class GraphService {
         files: [],
         mail: []
       };
+      this.groups_indexed = {}
+      this.friends_indexed = {}
+    }
+
+    refreshFriendsAndGroups() {
+      this.resetGraph();
+      return this.getGroups()
+      .then(() => {
+        return this.getGroups(null, 'file');
+      })
+      .then(() => {
+        return this.getFriends();
+      });
     }
 
     endpointRequest(endpoint, ids=null, rids=null) {
@@ -181,7 +194,7 @@ export class GraphService {
     getFriendRequests() {
         return new Promise((resolve, reject) => {
             this.endpointRequest(
-              'get-graph-friend-requests',
+              'get-graph-collection',
               null,
               [this.generateRid(
                 this.bulletinSecretService.identity.username_signature,
@@ -189,7 +202,7 @@ export class GraphService {
               )]
             )
             .then((data: any) => {
-                this.graph.friend_requests = this.parseFriendRequests(data.friend_requests);
+                this.graph.friend_requests = this.parseFriendRequests(data.collection);
                 this.getFriendRequestsError = false;
                 resolve();
             }).catch((err) => {
@@ -722,8 +735,6 @@ export class GraphService {
         // should be key: shared-secret_rid|pub_key[:26]priv_key[:26], value: {shared_secret: <shared_secret>, friend: [transaction.dh_public_key, transaction.dh_private_key]}
         return new Promise((resolve, reject) => {
             //start "just do dedup yada server because yada server adds itself to the friends array automatically straight from the api"
-            if (!this.groups_indexed || root) this.groups_indexed = {};
-            if (!this.graph[collectionName] || root) this.graph[collectionName] = [];
             let promises = [];
             for(var i=0; i < groups.length; i++) {
                 var group = groups[i];
@@ -1186,43 +1197,40 @@ export class GraphService {
 
     getSharedSecrets() {
         return new Promise((resolve, reject) => {
-            this.getFriends()
-            .then(() => {
-                for(let i in this.keys) {
-                    if(!this.stored_secrets[i]) {
-                        this.stored_secrets[i] = [];
-                    }
-                    var stored_secrets_by_dh_public_key = {}
-                    for(var ss=0; ss < this.stored_secrets[i].length; ss++) {
-                        stored_secrets_by_dh_public_key[this.stored_secrets[i][ss].dh_public_key + this.stored_secrets[i][ss].dh_private_key] = this.stored_secrets[i][ss]
-                    }
-                    for(var j=0; j < this.keys[i].dh_private_keys.length; j++) {
-                        var dh_private_key = this.keys[i].dh_private_keys[j];
-                        if (!dh_private_key) continue;
-                        for(var k=0; k < this.keys[i].dh_public_keys.length; k++) {
-                            var dh_public_key = this.keys[i].dh_public_keys[k];
-                            if (!dh_public_key) continue;
-                            if (stored_secrets_by_dh_public_key[dh_public_key + dh_private_key]) {
-                                continue;
-                            }
-                            var privk = new Uint8Array(dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
-                                return parseInt(h, 16)
-                            }));
-                            var pubk = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
-                                return parseInt(h, 16)
-                            }));
-                            var shared_secret = this.toHex(X25519.getSharedKey(privk, pubk));
-                            this.stored_secrets[i].push({
-                                shared_secret: shared_secret,
-                                dh_public_key: dh_public_key,
-                                dh_private_key: dh_private_key,
-                                rid: i
-                            });
+            for(let i in this.keys) {
+                if(!this.stored_secrets[i]) {
+                    this.stored_secrets[i] = [];
+                }
+                var stored_secrets_by_dh_public_key = {}
+                for(var ss=0; ss < this.stored_secrets[i].length; ss++) {
+                    stored_secrets_by_dh_public_key[this.stored_secrets[i][ss].dh_public_key + this.stored_secrets[i][ss].dh_private_key] = this.stored_secrets[i][ss]
+                }
+                for(var j=0; j < this.keys[i].dh_private_keys.length; j++) {
+                    var dh_private_key = this.keys[i].dh_private_keys[j];
+                    if (!dh_private_key) continue;
+                    for(var k=0; k < this.keys[i].dh_public_keys.length; k++) {
+                        var dh_public_key = this.keys[i].dh_public_keys[k];
+                        if (!dh_public_key) continue;
+                        if (stored_secrets_by_dh_public_key[dh_public_key + dh_private_key]) {
+                            continue;
                         }
+                        var privk = new Uint8Array(dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
+                            return parseInt(h, 16)
+                        }));
+                        var pubk = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
+                            return parseInt(h, 16)
+                        }));
+                        var shared_secret = this.toHex(X25519.getSharedKey(privk, pubk));
+                        this.stored_secrets[i].push({
+                            shared_secret: shared_secret,
+                            dh_public_key: dh_public_key,
+                            dh_private_key: dh_private_key,
+                            rid: i
+                        });
                     }
                 }
-                resolve();
-            });
+            }
+            resolve();
         });
     }
 
@@ -1269,7 +1277,7 @@ export class GraphService {
         });
     }
 
-    createGroup(groupname, parentGroup = null, extraData = {}, collectionName = 'group') {
+    createGroup(groupname, parentGroup = null, extraData = {}, collectionName = 'group'): Promise<null | void> {
         if (!groupname) return new Promise((resolve, reject) => {reject('username missing')});
 
         let key = foobar.bitcoin.ECPair.makeRandom();
@@ -1311,6 +1319,8 @@ export class GraphService {
             group: true
         }).then((txn) => {
             return this.transactionService.sendTransaction();
+        }).then(() => {
+          return this.getGroups(null, relationship.collection, true)
         });
     }
 
@@ -1426,7 +1436,7 @@ export class GraphService {
       }).then((hash) => {
           return this.transactionService.sendTransaction();
       }).then(() => {
-          return this.getFriends(true)
+        return this.getFriends()
       });
     }
 
@@ -1466,7 +1476,7 @@ export class GraphService {
           return this.transactionService.sendTransaction();
       }).then(() => {
         return this.getGroups(null, identity.collection, true)
-    });
+      });
     }
 
     publicDecrypt(message) {

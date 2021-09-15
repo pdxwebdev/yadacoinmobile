@@ -279,9 +279,6 @@ export class Settings {
         .then(() => {
             return this.refresh(null)
         })
-        .then(() => {
-            this.events.publish('pages-settings');
-        })
         .catch(() => {
             this.events.publish('pages');
         });
@@ -300,10 +297,13 @@ export class Settings {
         .then(() => {
             return this.refresh(null);
         })
+        .then(() => {
+          return this.graphService.refreshFriendsAndGroups();
+        })    
         .then(() => { 
             this.loadingModal.dismiss();
-            this.settingsService.menu = 'wallet';
-            this.navCtrl.setRoot(SendReceive, {pageTitle: { title: 'Send / Receive', label: 'Send / Receive', component: SendReceive, count: false, color: '' }});
+            this.settingsService.menu = 'home';
+            this.navCtrl.setRoot(HomePage, {pageTitle: { title: 'Home', label: 'Home', component: HomePage, count: false, color: '' }});
         })
         .catch((err)  => {
             console.log(err);
@@ -334,9 +334,6 @@ export class Settings {
     set(key) {
         this.storage.set('last-keyname', this.prefix + key);
         return this.doSet(this.prefix + key)
-        .then(() => {
-            this.events.publish('pages-settings');
-        })
         .catch(() => {
             console.log('can not set identity')
         });

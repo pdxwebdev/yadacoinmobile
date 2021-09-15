@@ -26,7 +26,7 @@
   <ion-list>
     <button ion-item *ngFor="let item of items" (click)="itemTapped($event, item)">
       <span *ngIf="pageTitle =='Groups'">{{item.identity.username}}</span>
-      <span *ngIf="pageTitle =='Contact Requests'">{{item.identity.username}}</span>
+      <span *ngIf="pageTitle =='Contact Requests'">{{item.identity.identity.username}}</span>
       <span *ngIf="pageTitle =='Messages' && !identity.new && !identity.parent && identity.username">{{ identity.username}}</span>
       <span *ngIf="pageTitle =='Messages' && !identity.new && identity.parent"><ion-note>&nbsp;&nbsp;&nbsp;&nbsp;{{identity.username}}</ion-note></span>
       <span *ngIf="pageTitle =='Community' && !identity.new && !identity.parent && identity.username">{{ identity.username}}</span>
@@ -41,10 +41,10 @@
 
     <ion-card *ngIf="friend_request">
       <ion-card-header>
-        <p><strong>New contact request from {{friend_request.relationship.identity.username}}</strong> </p>
+        <p><strong>New contact request from {{friend_request.identity.username}}</strong> </p>
       </ion-card-header>
       <ion-card-content>
-        <p>{{friend_request.relationship.identity.username}} would like to be added as a contact</p>
+        <p>{{friend_request.identity.username}} would like to be added as a contact</p>
         <button ion-button secondary (click)="accept()">Accept</button>
       </ion-card-content>
     </ion-card>

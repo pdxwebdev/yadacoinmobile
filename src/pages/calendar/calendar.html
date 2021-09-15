@@ -6,6 +6,7 @@
   </ion-navbar>
 </ion-header>
 <ion-content padding>
+  <ion-spinner *ngIf="loading"></ion-spinner>
   <table width="100%" height="100%" *ngIf="calendar">
     <tr>
       <th width="12.5%"></th>

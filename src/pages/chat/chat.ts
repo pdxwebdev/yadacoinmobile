@@ -53,8 +53,7 @@ export class ChatPage {
         public toastCtrl: ToastController
     ) {
         this.identity = this.navParams.get('identity');
-        this.page = this.navParams.get('pageTitle');
-        this.label = this.page.label;
+        this.label = this.identity.username;
         const rids = this.graphService.generateRids(this.identity);
         this.rid = rids.rid;
         this.requested_rid = rids.requested_rid;
@@ -85,13 +84,7 @@ export class ChatPage {
         if (showLoading) {
             this.loading = true;
         }
-        this.graphService.getGroups(null, null, true)
-        .then(() => {
-          return this.graphService.getGroups(null, 'file', true)
-        })
-        .then(() => {
-          return this.graphService.getMessages([this.rid, this.requested_rid])
-        })
+        return this.graphService.getMessages([this.rid, this.requested_rid])
         .then(() => {
             this.loading = false;
             if(refresher) refresher.complete();
@@ -103,16 +96,13 @@ export class ChatPage {
     }
 
     viewProfile(item) {
-        return this.graphService.getFriends()
-        .then(() => {
-            const rid = this.graphService.generateRid(
-              item.relationship.identity.username_signature,
-              this.bulletinSecretService.identity.username_signature
-            )
-            const identity = this.graphService.friends_indexed[rid];
-            this.navCtrl.push(ProfilePage, {
-                identity: identity ? identity.relationship : item.relationship.identity
-            })
+        const rid = this.graphService.generateRid(
+          item.relationship.identity.username_signature,
+          this.bulletinSecretService.identity.username_signature
+        )
+        const identity = this.graphService.friends_indexed[rid];
+        this.navCtrl.push(ProfilePage, {
+            identity: identity ? identity.relationship : item.relationship.identity
         })
     }
 

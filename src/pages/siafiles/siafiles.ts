@@ -44,23 +44,20 @@ export class SiaFiles {
         this.group = navParams.data.group;
         this.mode = navParams.data.mode || 'page';
         this.logicalParent = navParams.data.logicalParent;
-        this.graphService.getGroups(null, 'file')
-        .then(() => {
-          const files = [];
-          for (let i = 0; i < this.graphService.graph.files.length; i++) {
-            const file = this.graphService.graph.files[i];
-            files.push({
-              title: 'Messages',
-              label: file.relationship.username,
-              component: ProfilePage,
-              count: false,
-              color: '',
-              kwargs: {identity: file.relationship },
-              root: false
-            })
-          }
-          this.events.publish('menuonly', files);
-        })
+        const files = [];
+        for (let i = 0; i < this.graphService.graph.files.length; i++) {
+          const file = this.graphService.graph.files[i];
+          files.push({
+            title: 'Messages',
+            label: file.relationship.username,
+            component: ProfilePage,
+            count: false,
+            color: '',
+            kwargs: {identity: file.relationship },
+            root: false
+          })
+        }
+        this.events.publish('menuonly', files);
     }
 
     changeListener($event) {

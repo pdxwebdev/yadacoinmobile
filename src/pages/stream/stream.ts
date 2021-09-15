@@ -70,9 +70,6 @@ export class StreamPage {
         // }
         this.getSiaFiles()
         .then(() => {
-            this.graphService.getGroups()
-        })
-        .then(() => {
             return new Promise((resolve, reject) => {
                 for(var i=0; i < this.graphService.graph.groups.length; i++) {
                     var group = this.graphService.graph.groups[i];

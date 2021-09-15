@@ -17,6 +17,9 @@
       <ion-list *ngIf="bulletinSecretService.key">
         <ng-container>
           <ion-segment (ionChange)="segmentChanged($event)" [(ngModel)]="settingsService.menu">
+            <ion-segment-button value="home" title="home">
+              <ion-icon name="home"></ion-icon>
+            </ion-segment-button>
             <ion-segment-button value="wallet" title="wallet">
               <ion-icon name="cash"></ion-icon>
             </ion-segment-button>

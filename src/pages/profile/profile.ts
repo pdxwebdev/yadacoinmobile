@@ -64,24 +64,21 @@ export class ProfilePage {
     }
 
     invite() {
-        this.graphService.getFriends()
-        .then(() => {
-            let alert = this.alertCtrl.create();
-            alert.setTitle('Invite');
-            alert.setSubTitle('Select a friend to invite.');
-            alert.addButton('Confirm');
-            alert.addInput({
-                name: 'radio1',
-                type: 'radio',
-                label: 'Radio 1',
-                value: 'value1',
-                checked: true
-            });
-            this.graphService.graph.friends.map((friend) => {
-                return friend;
-            });
-            alert.present();
+        let alert = this.alertCtrl.create();
+        alert.setTitle('Invite');
+        alert.setSubTitle('Select a friend to invite.');
+        alert.addButton('Confirm');
+        alert.addInput({
+            name: 'radio1',
+            type: 'radio',
+            label: 'Radio 1',
+            value: 'value1',
+            checked: true
         });
+        this.graphService.graph.friends.map((friend) => {
+            return friend;
+        });
+        alert.present();
     }
 
     addFriend() {
@@ -122,9 +119,6 @@ export class ProfilePage {
                 if (this.settingsService.remoteSettings['walletUrl']) {
                     return this.graphService.getInfo();
                 }
-            })
-            .then(() => {
-                this.events.publish('pages-settings');
             })
             .catch((err) => {
                 this.events.publish('pages');

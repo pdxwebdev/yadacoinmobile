@@ -17,7 +17,6 @@ export class CompleteTestService implements AutoCompleteService {
       private bulletinSecretService: BulletinSecretService,
       private graphService: GraphService
   ) {
-    this.graphService.getFriends();
   }
 
   getResults(searchTerm:string) {

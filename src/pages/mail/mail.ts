@@ -20,57 +20,51 @@ export class MailPage {
     public bulletinSecretService: BulletinSecretService
   ) {
     this.loading = true;
-    this.graphService.getGroups(null, null, true)
-    .then(() => {
-      return this.graphService.getGroups(null, 'file', true)
-    })
-    .then(() => {
-      let rids = [this.graphService.generateRid(
-        this.bulletinSecretService.identity.username_signature,
-        this.bulletinSecretService.identity.username_signature,
-        'mail'
-      ),
-      this.graphService.generateRid(
-        this.bulletinSecretService.identity.username_signature,
-        this.bulletinSecretService.identity.username_signature,
-        'contract'
-      ),
-      this.graphService.generateRid(
-        this.bulletinSecretService.identity.username_signature,
-        this.bulletinSecretService.identity.username_signature,
-        'contract_signed'
-      ),
-      this.graphService.generateRid(
-        this.bulletinSecretService.identity.username_signature,
-        this.bulletinSecretService.identity.username_signature,
-        'event_meeting'
-      )];
-      let group_rids = [];
-      for (let i=0; i < this.graphService.graph.groups.length; i++) {
-        const group = this.graphService.graph.groups[i];
-        group_rids.push(this.graphService.generateRid(
-          group.relationship.username_signature,
-          group.relationship.username_signature,
-          'group_mail'
-        ))
-      }
-      let file_rids = [];
-      for (let i=0; i < this.graphService.graph.files.length; i++) {
-        const group = this.graphService.graph.files[i];
-        file_rids.push(this.graphService.generateRid(
-          group.relationship.username_signature,
-          group.relationship.username_signature,
-          'group_mail'
-        ))
-      }
-      if (group_rids.length > 0) {
-        rids = rids.concat(group_rids);
-      }
-      if (file_rids.length > 0) {
-        rids = rids.concat(file_rids);
-      }
-      return this.graphService.getMail(rids)
-    })
+    let rids = [this.graphService.generateRid(
+      this.bulletinSecretService.identity.username_signature,
+      this.bulletinSecretService.identity.username_signature,
+      'mail'
+    ),
+    this.graphService.generateRid(
+      this.bulletinSecretService.identity.username_signature,
+      this.bulletinSecretService.identity.username_signature,
+      'contract'
+    ),
+    this.graphService.generateRid(
+      this.bulletinSecretService.identity.username_signature,
+      this.bulletinSecretService.identity.username_signature,
+      'contract_signed'
+    ),
+    this.graphService.generateRid(
+      this.bulletinSecretService.identity.username_signature,
+      this.bulletinSecretService.identity.username_signature,
+      'event_meeting'
+    )];
+    let group_rids = [];
+    for (let i=0; i < this.graphService.graph.groups.length; i++) {
+      const group = this.graphService.graph.groups[i];
+      group_rids.push(this.graphService.generateRid(
+        group.relationship.username_signature,
+        group.relationship.username_signature,
+        'group_mail'
+      ))
+    }
+    let file_rids = [];
+    for (let i=0; i < this.graphService.graph.files.length; i++) {
+      const group = this.graphService.graph.files[i];
+      file_rids.push(this.graphService.generateRid(
+        group.relationship.username_signature,
+        group.relationship.username_signature,
+        'group_mail'
+      ))
+    }
+    if (group_rids.length > 0) {
+      rids = rids.concat(group_rids);
+    }
+    if (file_rids.length > 0) {
+      rids = rids.concat(file_rids);
+    }
+    this.graphService.getMail(rids)
     .then(() => {
       this.items = this.graphService.graph.mail.filter((item) => {
         if (this.navParams.data.pageTitle.label === 'Sent' && item.public_key === this.bulletinSecretService.identity.public_key) return true;
@@ -101,6 +95,7 @@ export class MailPage {
           thread: item.relationship.thread,
           message_type: item.relationship.envelope.message_type,
           event_datetime: item.relationship.envelope.event_datetime,
+          skylink: item.relationship.envelope.skylink
         }
       })
       this.loading = false;

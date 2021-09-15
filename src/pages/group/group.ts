@@ -76,84 +76,81 @@ export class GroupPage {
     }
     
     showInvite() {
-        this.graphService.getFriends()
-        .then(() => {
-            let alert = this.alertCtrl.create();
-            alert.setTitle('Invite');
-            alert.setSubTitle('Select a friend to invite.');
-            alert.addButton({
-                text: 'Confirm',
-                handler: (data: any) => {
-                    this.walletService.get()
-                    .then(() => {
-                        var dh_public_key = this.graphService.keys[data.rid].dh_public_keys[0];
-                        var dh_private_key = this.graphService.keys[data.rid].dh_private_keys[0];
-    
-                        if(dh_public_key && dh_private_key) {
-                            var privk = new Uint8Array(dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
-                                return parseInt(h, 16)
-                            }));
-                            var pubk = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
-                                return parseInt(h, 16)
-                            }));
-                            var shared_secret = this.toHex(X25519.getSharedKey(privk, pubk));
+        let alert = this.alertCtrl.create();
+        alert.setTitle('Invite');
+        alert.setSubTitle('Select a friend to invite.');
+        alert.addButton({
+            text: 'Confirm',
+            handler: (data: any) => {
+                this.walletService.get()
+                .then(() => {
+                    var dh_public_key = this.graphService.keys[data.rid].dh_public_keys[0];
+                    var dh_private_key = this.graphService.keys[data.rid].dh_private_keys[0];
+
+                    if(dh_public_key && dh_private_key) {
+                        var privk = new Uint8Array(dh_private_key.match(/[\da-f]{2}/gi).map(function (h) {
+                            return parseInt(h, 16)
+                        }));
+                        var pubk = new Uint8Array(dh_public_key.match(/[\da-f]{2}/gi).map(function (h) {
+                            return parseInt(h, 16)
+                        }));
+                        var shared_secret = this.toHex(X25519.getSharedKey(privk, pubk));
+                    }
+                    var myAddress = this.bulletinSecretService.key.getAddress();
+                    var to = false;
+                    for (var h=0; h < data.outputs.length; h++) {
+                        if (data.outputs[h].to != myAddress) {
+                            to = data.outputs[h].to;
                         }
-                        var myAddress = this.bulletinSecretService.key.getAddress();
-                        var to = false;
-                        for (var h=0; h < data.outputs.length; h++) {
-                            if (data.outputs[h].to != myAddress) {
-                                to = data.outputs[h].to;
-                            }
-                        }
-                        return this.transactionService.generateTransaction({
-                            relationship: {
-                                chatText: Base64.encode(JSON.stringify({
-                                    public_key: this.item.public_key,
-                                    username_signature: this.item.relationship.identity.username_signature,
-                                    username: this.item.relationship.identity.username,
-                                    group: true,
-                                    requested_rid: this.requested_rid
-                                }))
-                            },
-                            rid: data.rid,
-                            requester_rid: data.requester_rid,
-                            requested_rid: data.requested_rid,
-                            shared_secret: shared_secret,
-                            to: to
-                        });
-                    }).then((txn) => {
-                        return this.transactionService.sendTransaction();
-                    }).then(() => {
-                        const toast = this.toastCtrl.create({
-                            message: "Group invite sent!",
-                            duration: 2000,
-                        });
-                        toast.present();
-                        this.groupChatText = '';
-                        this.refresh(null);
-                    })
-                    .catch((err) => {
-                       console.log(err); 
-                       let alert = this.alertCtrl.create();
-                       alert.setTitle('Message error');
-                       alert.setSubTitle(err);
-                       alert.addButton('Ok');
-                       alert.present();
+                    }
+                    return this.transactionService.generateTransaction({
+                        relationship: {
+                            chatText: Base64.encode(JSON.stringify({
+                                public_key: this.item.public_key,
+                                username_signature: this.item.relationship.identity.username_signature,
+                                username: this.item.relationship.identity.username,
+                                group: true,
+                                requested_rid: this.requested_rid
+                            }))
+                        },
+                        rid: data.rid,
+                        requester_rid: data.requester_rid,
+                        requested_rid: data.requested_rid,
+                        shared_secret: shared_secret,
+                        to: to
                     });
-                }
-            });
-            for (var i=0; i < this.graphService.graph.friends.length; i++) {
-                var friend = this.graphService.graph.friends[i];
-                alert.addInput({
-                    name: 'username',
-                    type: 'radio',
-                    label: friend.relationship.identity.username,
-                    value: friend,
-                    checked: false
+                }).then((txn) => {
+                    return this.transactionService.sendTransaction();
+                }).then(() => {
+                    const toast = this.toastCtrl.create({
+                        message: "Group invite sent!",
+                        duration: 2000,
+                    });
+                    toast.present();
+                    this.groupChatText = '';
+                    this.refresh(null);
+                })
+                .catch((err) => {
+                    console.log(err); 
+                    let alert = this.alertCtrl.create();
+                    alert.setTitle('Message error');
+                    alert.setSubTitle(err);
+                    alert.addButton('Ok');
+                    alert.present();
                 });
             }
-            alert.present();
         });
+        for (var i=0; i < this.graphService.graph.friends.length; i++) {
+            var friend = this.graphService.graph.friends[i];
+            alert.addInput({
+                name: 'username',
+                type: 'radio',
+                label: friend.relationship.identity.username,
+                value: friend,
+                checked: false
+            });
+        }
+        alert.present();
     }
 
     parseChats() {
@@ -233,18 +230,15 @@ export class GroupPage {
             return a.toLowerCase().localeCompare(b.toLowerCase());
         });
         if (username_signatures[0] === username_signatures[1]) return;
-        return this.graphService.getFriends()
-        .then(() => {
-            var rid = foobar.bitcoin.crypto.sha256(username_signatures[0] + username_signatures[1]).toString('hex');
-            for (var i=0; i < this.graphService.graph.friends.length; i++) {
-                var friend = this.graphService.graph.friends[i];
-                if (friend.rid === rid) {
-                    item = friend;
-                }
+        var rid = foobar.bitcoin.crypto.sha256(username_signatures[0] + username_signatures[1]).toString('hex');
+        for (var i=0; i < this.graphService.graph.friends.length; i++) {
+            var friend = this.graphService.graph.friends[i];
+            if (friend.rid === rid) {
+                item = friend;
             }
-            this.navCtrl.push(ProfilePage, {
-                item: item
-            })
+        }
+        this.navCtrl.push(ProfilePage, {
+            item: item
         })
     }
 
@@ -257,9 +251,6 @@ export class GroupPage {
             text: 'Confirm',
             handler: (data: any) => {
                 this.walletService.get()
-                .then(() => {
-                    return this.graphService.getFriends();
-                })
                 .then(() => {
                     return this.transactionService.generateTransaction({
                         relationship: {

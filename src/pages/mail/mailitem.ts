@@ -72,9 +72,6 @@ export class MailItemPage {
         handler: (data: any) => {
             this.walletService.get()
             .then(() => {
-                return this.graphService.getFriends();
-            })
-            .then(() => {
                 const rid = this.graphService.generateRid(
                   this.bulletinSecretService.identity.username_signature,
                   this.bulletinSecretService.identity.username_signature,
@@ -110,6 +107,33 @@ export class MailItemPage {
            }
     });
     alert.present();
+  }
+
+  addFriend() {
+      let info: any;
+      var buttons = [];
+      buttons.push({
+          text: 'Add',
+          handler: (data) => {
+              return this.graphService.addFriend(this.item.sender)
+              .then((txn) => {
+                  var alert = this.alertCtrl.create();
+                  alert.setTitle('Contact Request Sent');
+                  alert.setSubTitle('Your Friend Request has been sent successfully.');
+                  alert.addButton('Ok');
+                  alert.present();
+              }).catch((err) => {
+                  console.log(err);
+              });
+
+          }
+      });
+      let alert = this.alertCtrl.create({
+          buttons: buttons
+      });
+      alert.setTitle('Add contact');
+      alert.setSubTitle('Do you want to add ' + this.item.sender.username + '?');
+      alert.present();
   }
 
   viewProfile(identity) {

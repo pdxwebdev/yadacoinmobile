@@ -7,7 +7,8 @@
   </ion-navbar>
 </ion-header>
 <ion-content padding>
-  <button ion-button secondary (click)="replyMail(item)">Reply</button>
+  <button ion-button secondary (click)="replyMail(item)" *ngIf="graphService.isAdded(item.sender)">Reply</button>
+  <button ion-button secondary (click)="addFriend(item)" *ngIf="!graphService.isAdded(item.sender)">Add sender as contact</button>
   <button *ngIf="item.group" ion-button secondary (click)="replyToAllMail(item)">Reply to all</button>
   <button ion-button secondary (click)="forwardMail(item)">Forward</button>
   <button *ngIf="item.message_type == 'contract'" ion-button secondary (click)="signMail(item)">Sign</button>
@@ -18,6 +19,7 @@
   </div>
   <div *ngIf="item.message_type == 'contract_signed'"><strong>Contract signed</strong> <ion-icon name="checkmark-circle" class="success"></ion-icon></div>
   <ion-item>{{item.datetime}}</ion-item>
-  <ion-item>{{item.event_datetime}}</ion-item>
+  <ion-item *ngIf="item.event_datetime">{{item.event_datetime}}</ion-item>
   <ion-item>{{item.body}}</ion-item>
+  <ion-item *ngIf="item.skylink"><a href="https://siasky.net/{{item.skylink}}" target="_blank">Download attachment</a></ion-item>
 </ion-content>

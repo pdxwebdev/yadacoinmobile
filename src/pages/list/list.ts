@@ -143,48 +143,35 @@ export class ListPage {
         var public_key = '';
         var graphArray = [];
         if (this.pageTitle == 'Contacts') {
-          return this.graphService.getFriends()
-          .then(() => {
-            var graphArray = this.graphService.graph.friends;
-            graphArray = this.getDistinctFriends(graphArray).friend_list;
-            graphArray.sort(function (a, b) {
-                if (a.relationship.identity.username.toLowerCase() < b.relationship.identity.username.toLowerCase())
-                  return -1
-                if ( a.relationship.identity.username.toLowerCase() > b.relationship.identity.username.toLowerCase())
-                  return 1
-                return 0
-            });
-            this.makeList(graphArray, 'Contacts', null);
-            this.loading = false;
-          }).catch((err) => {
-              console.log('listpage getFriends error: ' + err);
+          graphArray = this.graphService.graph.friends;
+          graphArray = this.getDistinctFriends(graphArray).friend_list;
+          graphArray.sort(function (a, b) {
+              if (a.relationship.identity.username.toLowerCase() < b.relationship.identity.username.toLowerCase())
+                return -1
+              if ( a.relationship.identity.username.toLowerCase() > b.relationship.identity.username.toLowerCase())
+                return 1
+              return 0
           });
+          this.makeList(graphArray, 'Contacts', null);
+          this.loading = false;
         } else if (this.pageTitle == 'Groups') {
-          return this.graphService.getGroups()
-          .then(() => {
-            for (let i = 0; i < this.graphService.graph.groups.length; i++) {
-              if (!this.graphService.graph.groups[i].relationship.parent) {
-                graphArray.push(this.graphService.graph.groups[i])
-              }
+          for (let i = 0; i < this.graphService.graph.groups.length; i++) {
+            if (!this.graphService.graph.groups[i].relationship.parent) {
+              graphArray.push(this.graphService.graph.groups[i])
             }
-            graphArray.sort(function (a, b) {
-                if (a.relationship.username.toLowerCase() < b.relationship.username.toLowerCase())
-                  return -1
-                if ( a.relationship.username.toLowerCase() > b.relationship.username.toLowerCase())
-                  return 1
-                return 0
-            });
-            this.makeList(graphArray, 'Groups', null);
-            this.loading = false;
-          }).catch((err) => {
-              console.log(err);
+          }
+          graphArray.sort(function (a, b) {
+              if (a.relationship.username.toLowerCase() < b.relationship.username.toLowerCase())
+                return -1
+              if ( a.relationship.username.toLowerCase() > b.relationship.username.toLowerCase())
+                return 1
+              return 0
           });
+          this.makeList(graphArray, 'Groups', null);
+          this.loading = false;
         } else if (this.pageTitle == 'Messages') {
           public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
-          return this.graphService.getFriends()
-          .then(() => {
-            return this.graphService.getNewMessages();
-          })
+          return this.graphService.getNewMessages()
           .then((graphArray) => {
             var messages = this.markNew(public_key, graphArray, this.graphService.new_messages_counts);
             var friendsWithMessagesList = this.getDistinctFriends(messages);
@@ -212,10 +199,7 @@ export class ListPage {
           });
         } else if (this.pageTitle == 'Community') {
           public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
-          return this.graphService.getGroups(null, null, true)
-          .then(() => {
-            return this.graphService.getNewMessages();
-          })
+          return this.graphService.getNewMessages()
           .then((graphArray) => {
             var messages = this.markNew(public_key, graphArray, this.graphService.new_messages_counts);
             var friendsWithMessagesList = this.getDistinctFriends(messages);
@@ -244,10 +228,7 @@ export class ListPage {
           });
         } else if (this.pageTitle == 'Sent') {
           public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
-          return this.graphService.getFriends()
-          .then(() => {
-            return this.graphService.getSentMessages();
-          })
+          return this.graphService.getSentMessages()
           .then((graphArray) => {
             var messages = this.markNew(public_key, graphArray, this.graphService.new_messages_counts);
             var friendsWithMessagesList = this.getDistinctFriends(messages);
@@ -266,10 +247,7 @@ export class ListPage {
           });
         } else if (this.pageTitle == 'Sign Ins') {
           public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
-          return this.graphService.getFriends()
-          .then(() => {
-            return this.graphService.getNewSignIns();
-          })
+          return this.graphService.getNewSignIns()
           .then((graphArray) => {
               var sign_ins = this.markNew(public_key, graphArray, this.graphService.new_sign_ins_counts);
               var friendsWithSignInsList = this.getDistinctFriends(sign_ins);
@@ -327,7 +305,7 @@ export class ListPage {
           resolve();
         }
         else if (this.pageTitle == 'Contact Requests') {
-          this.friend_request = this.navParams.get('item').transaction;
+          this.friend_request = this.navParams.get('item').identity;
           resolve();
         }
         else if (this.pageTitle == 'Sign Ins') {
@@ -482,18 +460,13 @@ export class ListPage {
   }
 
   accept() {
+    const rids = this.graphService.generateRids(this.friend_request.identity);
     return this.graphService.addFriend(
-      {
-        username: this.friend_request.relationship.identity.username,
-        username_signature: this.friend_request.relationship.identity.username_signature,
-        public_key: this.friend_request.relationship.identity.public_key
-      },
-      this.friend_request.rid,
-      this.friend_request.requester_rid,
-      this.friend_request.requested_rid
+      this.friend_request.identity,
+      rids.rid,
+      rids.requester_rid,
+      rids.requested_rid
     ).then((txn) => {
-      return this.graphService.getFriends();
-    }).then((txn) => {
       return this.graphService.getFriendRequests();
     })
     .then(() => {

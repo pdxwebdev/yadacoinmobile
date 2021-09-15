@@ -8,6 +8,8 @@ import { TransactionService } from '../../app/transaction.service';
 import { WalletService } from '../../app/wallet.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { MailPage } from './mail';
+import { Http } from '@angular/http';
+import { SettingsService } from '../../app/settings.service';
 
 
 declare var X25519
@@ -30,6 +32,10 @@ export class ComposePage {
   @ViewChild('searchbar')
   searchbar: AutoCompleteComponent;
   group: any;
+  filepath: any;
+  filedata: any;
+  skylink: any;
+  busy: any;
   constructor(
     public navCtrl: NavController,
     navParams: NavParams,
@@ -38,7 +44,9 @@ export class ComposePage {
     public transactionService: TransactionService,
     public walletService: WalletService,
     public alertCtrl: AlertController,
-    public bulletinSecretService: BulletinSecretService
+    public bulletinSecretService: BulletinSecretService,
+    public ahttp: Http,
+    public settingsService: SettingsService
   ) {
     this.item = navParams.data.item;
     this.mode = navParams.data.mode || 'new';
@@ -82,6 +90,24 @@ export class ComposePage {
       searchTerm: new FormControl('', [Validators.required])
   })
 
+  changeListener($event) {
+      this.busy = true;
+      this.filepath = $event.target.files[0].name;
+      const reader = new FileReader();
+      reader.readAsDataURL($event.target.files[0]);
+      reader.onload = () => {
+        this.filedata = reader.result.toString().substr(22)
+        this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/sia-upload?filename=' + encodeURIComponent(this.filepath), {file: this.filedata})
+        .subscribe((res) => {
+            const data = res.json();
+            if (!data.skylink) return;
+            this.skylink = data.skylink;
+            this.busy = false
+        })
+      };
+      reader.onerror = () => {};
+  }
+
   submit() {
     let alert = this.alertCtrl.create();
     alert.setTitle('Send mail confirmation');
@@ -91,9 +117,6 @@ export class ComposePage {
         text: 'Confirm',
         handler: (data: any) => {
             this.walletService.get()
-            .then(() => {
-                return this.graphService.getFriends();
-            })
             .then(() => {
                 const rid = this.graphService.generateRid(
                   this.bulletinSecretService.identity.username_signature,
@@ -119,7 +142,8 @@ export class ComposePage {
                                 body: this.body,
                                 thread: this.thread,
                                 message_type: this.message_type,
-                                event_datetime: this.event_datetime
+                                event_datetime: this.event_datetime,
+                                skylink: this.skylink
                             }
                         },
                         rid: rid,
@@ -150,7 +174,8 @@ export class ComposePage {
                                   body: this.body,
                                   thread: this.thread,
                                   message_type: this.message_type,
-                                  event_datetime: this.event_datetime
+                                  event_datetime: this.event_datetime,
+                                  skylink: this.skylink
                               }
                           },
                           shared_secret: shared_secret,

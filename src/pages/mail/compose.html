@@ -21,7 +21,9 @@
       Event / Meeting
     </ion-segment-button>
   </ion-segment>
-  <button ion-button secondary (click)="submit()">Send</button>
+  <button ion-button secondary (click)="submit()" [disabled]="busy || !graphService.isAdded(recipient)">Send 
+    <ion-spinner *ngIf="busy"></ion-spinner>
+  </button>
   <form [formGroup]="myForm" (ngSubmit)="submit()" *ngIf="!recipient">
     <ion-auto-complete #searchbar [(ngModel)]="recipient" [options]="{ placeholder : 'Recipient' }" [dataProvider]="completeTestService" formControlName="searchTerm" required></ion-auto-complete>
   </form>
@@ -37,6 +39,10 @@
   <ion-item>
     <ion-label floating>Body</ion-label>
     <ion-textarea type="text" [(ngModel)]="body" rows="5" autoGrow="true"></ion-textarea>
+  </ion-item>
+  <ion-item>
+    <ion-label id="profile_image" color="primary"></ion-label>
+    <ion-input type="file" (change)="changeListener($event)"></ion-input>
   </ion-item>
   <br>
   <ion-item *ngIf="item && item.sender">

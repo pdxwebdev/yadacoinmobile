@@ -11,6 +11,7 @@ import { MailItemPage } from '../mail/mailitem';
 })
 export class CalendarPage {
   calendar: any;
+  loading: boolean;
   constructor(
     public navCtrl: NavController,
     private graphService: GraphService,
@@ -24,43 +25,38 @@ export class CalendarPage {
   }
 
   ionViewDidEnter() {
-    this.graphService.getGroups(null, 'group', true)
-    .then(() => {
-      return this.graphService.getGroups(null, 'file', true)
-    })
-    .then(() => {
-      return new Promise((resolve, reject) => {
-        let rids = [this.graphService.generateRid(
-          this.bulletinSecretService.identity.username_signature,
-          this.bulletinSecretService.identity.username_signature,
-          this.bulletinSecretService.key.toWIF() + 'event_meeting'
-        )]
-        let group_rids = [];
-        for (let i=0; i < this.graphService.graph.groups.length; i++) {
-          const group = this.graphService.graph.groups[i];
-          group_rids.push(this.graphService.generateRid(
-            group.relationship.username_signature,
-            group.relationship.username_signature,
-            'event_meeting'
-          ))
-        }
-        let file_rids = [];
-        for (let i=0; i < this.graphService.graph.files.length; i++) {
-          const file = this.graphService.graph.files[i];
-          file_rids.push(this.graphService.generateRid(
-            file.relationship.username_signature,
-            file.relationship.username_signature,
-            'event_meeting'
-          ))
-        }
-        if (group_rids.length > 0) {
-          rids = rids.concat(group_rids);
-        }
-        if (file_rids.length > 0) {
-          rids = rids.concat(file_rids);
-        }
-        return resolve(rids);
-      })
+    return new Promise((resolve, reject) => {
+      this.loading = true;
+      let rids = [this.graphService.generateRid(
+        this.bulletinSecretService.identity.username_signature,
+        this.bulletinSecretService.identity.username_signature,
+        this.bulletinSecretService.key.toWIF() + 'event_meeting'
+      )]
+      let group_rids = [];
+      for (let i=0; i < this.graphService.graph.groups.length; i++) {
+        const group = this.graphService.graph.groups[i];
+        group_rids.push(this.graphService.generateRid(
+          group.relationship.username_signature,
+          group.relationship.username_signature,
+          'event_meeting'
+        ))
+      }
+      let file_rids = [];
+      for (let i=0; i < this.graphService.graph.files.length; i++) {
+        const file = this.graphService.graph.files[i];
+        file_rids.push(this.graphService.generateRid(
+          file.relationship.username_signature,
+          file.relationship.username_signature,
+          'event_meeting'
+        ))
+      }
+      if (group_rids.length > 0) {
+        rids = rids.concat(group_rids);
+      }
+      if (file_rids.length > 0) {
+        rids = rids.concat(file_rids);
+      }
+      return resolve(rids);
     })
     .then((rids) => {
       return this.graphService.getCalendar(rids)
@@ -87,6 +83,7 @@ export class CalendarPage {
         });
       });
       this.getCalendar(events);
+      this.loading = false;
     })
   }
 
