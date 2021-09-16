@@ -58,7 +58,7 @@ export class PeerService {
 
     getConfig() {
         return new Promise((resolve, reject) => {
-            this.ahttp.get(this.settingsService.remoteSettingsUrl + '/yada_config.json',).pipe(timeout(1000)).subscribe(
+            this.ahttp.get(this.settingsService.remoteSettingsUrl + '/yada-config',).pipe(timeout(1000)).subscribe(
                 (res) => {
                     this.loading = false;
                     const remoteSettings = res.json();

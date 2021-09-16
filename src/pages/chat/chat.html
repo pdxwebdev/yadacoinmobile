@@ -21,6 +21,7 @@
         <h3 *ngIf="item.relationship.isInvite && item.relationship.chatText.group === true">Invite to join {{item.relationship.chatText.username}}</h3>
         <button *ngIf="item.relationship.isInvite && item.relationship.chatText.group === true" ion-button (click)="joinGroup(item)">Join group</button>
         <button *ngIf="item.relationship.isInvite && item.relationship.chatText.group !== true" ion-button (click)="requestFriend(item)">Join group</button>
+        <a href="https://siasky.net/{{item.relationship.skylink}}" target="_blank" *ngIf="item.relationship.skylink">Download {{item.relationship.filename}}</a>
         <hr />
 	  </ion-item>
 	</ion-list>
@@ -30,5 +31,6 @@
     <ion-label floating>Chat text</ion-label>
     <ion-input [(ngModel)]="chatText" (keyup.enter)="send()"></ion-input>
   </ion-item>
-  <button ion-button (click)="send()">Send</button>
+  <button ion-button (click)="send()" [disabled]="busy">Send <ion-spinner *ngIf="busy"></ion-spinner></button>
+  <ion-input type="file" (change)="changeListener($event)"></ion-input>
 </ion-footer>

@@ -85,7 +85,10 @@
   <ion-list>
     <h4>Import wif</h4>
     <ion-item>
+      <ion-label floating>WIF</ion-label>
       <ion-input type="text" placeholder="Paste WIF key from your wallet..." [(ngModel)]="importedKey"></ion-input>
+    </ion-item>
+    <ion-item>
       <button ion-button secondary (click)="importKey()">Import identity</button>
     </ion-item>
   </ion-list>

@@ -244,7 +244,7 @@ export class HomePage {
         new Promise((resolve, reject) => {
             let alert = this.alertCtrl.create();
             alert.setTitle('Join');
-            alert.setSubTitle('Copy and paste the entire string of characters from the invite');
+            alert.setSubTitle('You are about to join ' + this.settingsService.remoteSettings.identity.username);
             alert.addButton({
                 text: 'Join',
                 handler: data => {
@@ -253,20 +253,18 @@ export class HomePage {
                         duration: 2000
                     });
                     toast.present();
-                    resolve(data.groupinvite);
+                    resolve();
                 }
             });
-            alert.addInput({
-                type: 'text',
-                placeholder: 'Past invite characters',
-                name: 'groupinvite'
-            })
             alert.present();
         })
-        .then((groupinvite) => {
-            if (!groupinvite) throw 'failed to join group';
-            let invite = JSON.parse(Base64.decode(groupinvite));
-            return this.graphService.addGroup(invite)
+        .then(() => {
+            const identity = JSON.parse(JSON.stringify(this.settingsService.remoteSettings.identity));
+            identity.collection = 'group';
+            return this.graphService.addGroup(identity)
+        })
+        .then(() => {
+            return this.graphService.addFriend(this.settingsService.remoteSettings.identity)
         })
         .then(() => {
             return this.refresh(null)

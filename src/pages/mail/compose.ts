@@ -143,7 +143,8 @@ export class ComposePage {
                                 thread: this.thread,
                                 message_type: this.message_type,
                                 event_datetime: this.event_datetime,
-                                skylink: this.skylink
+                                skylink: this.skylink,
+                                filename: this.filepath
                             }
                         },
                         rid: rid,
@@ -175,7 +176,8 @@ export class ComposePage {
                                   thread: this.thread,
                                   message_type: this.message_type,
                                   event_datetime: this.event_datetime,
-                                  skylink: this.skylink
+                                  skylink: this.skylink,
+                                  filename: this.filepath
                               }
                           },
                           shared_secret: shared_secret,

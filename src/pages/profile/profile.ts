@@ -61,6 +61,7 @@ export class ProfilePage {
         this.tempIdentity = this.graphService.toIdentity(this.identity)
         this.identityJson = JSON.stringify(this.tempIdentity, null, 4);
         this.isAdded = this.graphService.isAdded(this.identity)
+        this.group = this.graphService.isGroup(this.identity)
     }
 
     invite() {

@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 
 @Injectable()
 export class SettingsService {
-    remoteSettings = {};
+    remoteSettings: any = {};
     remoteSettingsUrl = null;
     tokens = {};
     menu = '';

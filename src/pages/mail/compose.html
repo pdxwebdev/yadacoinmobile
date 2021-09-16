@@ -21,7 +21,7 @@
       Event / Meeting
     </ion-segment-button>
   </ion-segment>
-  <button ion-button secondary (click)="submit()" [disabled]="busy || !graphService.isAdded(recipient)">Send 
+  <button ion-button secondary (click)="submit()" [disabled]="busy">Send 
     <ion-spinner *ngIf="busy"></ion-spinner>
   </button>
   <form [formGroup]="myForm" (ngSubmit)="submit()" *ngIf="!recipient">

@@ -38,6 +38,10 @@ export class ChatPage {
     identity: any;
     page: any;
     label: any;
+    busy: any;
+    filepath: any;
+    filedata: any;
+    skylink: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -95,6 +99,25 @@ export class ChatPage {
         });
     }
 
+    changeListener($event) {
+        this.busy = true;
+        this.filepath = $event.target.files[0].name;
+        const reader = new FileReader();
+        reader.readAsDataURL($event.target.files[0]);
+        reader.onload = () => {
+          this.filedata = reader.result.toString().substr(22)
+          this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/sia-upload?filename=' + encodeURIComponent(this.filepath), {file: this.filedata})
+          .subscribe((res) => {
+              const data = res.json();
+              if (!data.skylink) return;
+              this.skylink = data.skylink;
+              this.busy = false
+              $event.target.value = null;
+          })
+        };
+        reader.onerror = () => {};
+    }
+
     viewProfile(item) {
         const rid = this.graphService.generateRid(
           item.relationship.identity.username_signature,
@@ -120,7 +143,9 @@ export class ChatPage {
                       return this.transactionService.generateTransaction({
                           relationship: {
                               chatText: this.chatText,
-                              identity: this.bulletinSecretService.identity
+                              identity: this.bulletinSecretService.identity,
+                              skylink: this.skylink,
+                              filename: this.filepath
                           },
                           rid: this.rid,
                           requester_rid: this.requester_rid,
@@ -145,7 +170,9 @@ export class ChatPage {
                               dh_public_key: dh_public_key,
                               dh_private_key: dh_private_key,
                               relationship: {
-                                  chatText: this.chatText
+                                  chatText: this.chatText,
+                                  skylink: this.skylink,
+                                  filename: this.filepath
                               },
                               shared_secret: shared_secret,
                               rid: this.rid,
@@ -167,6 +194,9 @@ export class ChatPage {
                     return this.transactionService.sendTransaction();
                 }).then(() => {
                     this.chatText = '';
+                    this.skylink = null;
+                    this.filedata = null;
+                    this.filepath = null;
                     this.refresh(null);
                 })
                 .catch((err) => {

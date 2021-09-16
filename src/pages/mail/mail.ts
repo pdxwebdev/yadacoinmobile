@@ -95,7 +95,8 @@ export class MailPage {
           thread: item.relationship.thread,
           message_type: item.relationship.envelope.message_type,
           event_datetime: item.relationship.envelope.event_datetime,
-          skylink: item.relationship.envelope.skylink
+          skylink: item.relationship.envelope.skylink,
+          filename: item.relationship.envelope.filename
         }
       })
       this.loading = false;

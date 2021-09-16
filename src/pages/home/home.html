@@ -16,9 +16,15 @@
         View profile
       </button>
     </form>
-    <ion-col col-lg-12 col-md-12 col-sm-12>
+    <ion-col col-lg-12 col-md-12 col-sm-12 *ngIf="!settingsService.remoteSettings.restricted || (settingsService.remoteSettings.restricted && settingsService.remoteSettings.identity.username_signature === bulletinSecretService.identity.username_signature)">
       <button ion-button large secondary (click)="createGroup()">
         Create Group&nbsp;<ion-icon name="create"></ion-icon>
+      </button>
+    </ion-col>
+    <ion-col col-lg-12 col-md-12 col-sm-12 *ngIf="settingsService.remoteSettings.restricted && settingsService.remoteSettings.identity.username_signature !== bulletinSecretService.identity.username_signature">
+      You are not yet registered for {{settingsService.remoteSettings.identity.username}}. Click the 'Join Organization' button to continue.
+      <button ion-button large secondary (click)="joinGroup()">
+        Join Organization&nbsp;<ion-icon name="create"></ion-icon>
       </button>
     </ion-col>
   </ion-row>

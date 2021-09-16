@@ -143,7 +143,7 @@ export class ListPage {
         var public_key = '';
         var graphArray = [];
         if (this.pageTitle == 'Contacts') {
-          graphArray = this.graphService.graph.friends;
+          graphArray = this.graphService.graph.friends.filter((item) => {return !!item.relationship.identity});
           graphArray = this.getDistinctFriends(graphArray).friend_list;
           graphArray.sort(function (a, b) {
               if (a.relationship.identity.username.toLowerCase() < b.relationship.identity.username.toLowerCase())
