@@ -43,6 +43,7 @@ export class GraphService {
     new_sign_ins_counts: any; //new sign ins by rid
     friend_request_count: any; //total friend requests
     friends_indexed: any;
+    sent_friend_requests_indexed: any;
     getGraphError = false;
     getSentFriendRequestsError = false;
     getGroupsRequestsError = false;
@@ -84,7 +85,6 @@ export class GraphService {
         this.new_sign_ins_count = this.new_sign_ins_count || 0;
         this.new_sign_ins_counts = {};
         this.friend_request_count = this.friend_request_count || 0;
-        this.usernames = {};
         this.friends_indexed = {};
     }
 
@@ -202,7 +202,7 @@ export class GraphService {
               )]
             )
             .then((data: any) => {
-                this.graph.friend_requests = this.parseFriendRequests(data.collection);
+                this.parseFriendRequests(data.collection);
                 this.getFriendRequestsError = false;
                 resolve();
             }).catch((err) => {
@@ -577,9 +577,6 @@ export class GraphService {
         var arr_sent_friend_requests = [];
         for(let i in sent_friend_requestsObj) {
             arr_sent_friend_requests.push(sent_friend_requestsObj[i].rid);
-            if (sent_friend_requestsObj[i].relationship && sent_friend_requestsObj[i].relationship.identity.username) {
-                this.usernames[sent_friend_requestsObj[i].rid] = sent_friend_requestsObj[i].relationship.identity.username;
-            }
         }
 
         let sent_friend_requests_diff = new Set(arr_sent_friend_requests);
@@ -595,6 +592,7 @@ export class GraphService {
 
     parseFriendRequests(friend_requests) {
         let friend_requestsObj = {};
+        var sent_friend_requestsObj = {};
         if (!this.graph.friends) this.graph.friends = [];
         for(var i=0; i<friend_requests.length; i++) {
             var friend_request = friend_requests[i];
@@ -610,24 +608,47 @@ export class GraphService {
                 this.graph.friends.push(friend_request);
                 friend_request.relationship = relationship;
                 this.friends_indexed[friend_request.rid] = friend_request;
-                friend_requestsObj[friend_request.rid] = friend_request;
+                if (sent_friend_requestsObj[friend_request.rid]) {
+                  delete friend_requestsObj[friend_request.rid]
+                  delete sent_friend_requestsObj[friend_request.rid]
+                } else {
+                  friend_requestsObj[friend_request.rid] = friend_request;
+                }
                 if (this.keys[friend_request.rid].dh_private_keys.indexOf(relationship.dh_private_key) === -1 && relationship.dh_private_key) {
                     this.keys[friend_request.rid].dh_private_keys.push(relationship.dh_private_key);
                 }
             } catch(err) {
-                delete friend_requestsObj[friend_request.rid]
+                if (friend_requestsObj[friend_request.rid]) {
+                  delete friend_requestsObj[friend_request.rid]
+                  delete sent_friend_requestsObj[friend_request.rid]
+                } else {
+                  sent_friend_requestsObj[friend_request.rid] = friend_request;
+                }
                 if (this.keys[friend_request.rid].dh_public_keys.indexOf(friend_request.dh_public_key) === -1 && friend_request.dh_public_key) {
                     this.keys[friend_request.rid].dh_public_keys.push(friend_request.dh_public_key);
                 }
             }
         }
 
+        var arr_sent_friend_requests = [];
+        for(let i in sent_friend_requestsObj) {
+            arr_sent_friend_requests.push(sent_friend_requestsObj[i].rid);
+        }
+
+        this.sent_friend_requests_indexed = {};
+        const sent_friend_requests = [];
+        let sent_friend_requests_diff = new Set(arr_sent_friend_requests);
+        if(arr_sent_friend_requests.length > 0) {
+            let arr_sent_friend_request_keys = Array.from(sent_friend_requests_diff.keys());
+            for(i=0; i<arr_sent_friend_request_keys.length; i++) {
+                sent_friend_requests.push(sent_friend_requestsObj[arr_sent_friend_request_keys[i]]);
+                this.sent_friend_requests_indexed[arr_sent_friend_request_keys[i]] = sent_friend_requestsObj[arr_sent_friend_request_keys[i]];
+            }
+        }
+
         var arr_friend_requests = [];
         for(let i in friend_requestsObj) {
             arr_friend_requests.push(friend_requestsObj[i].rid);
-            if (friend_requestsObj[i].relationship && friend_requestsObj[i].relationship.identity.username) {
-                this.usernames[friend_requestsObj[i].rid] = friend_requestsObj[i].relationship.identity.username;
-            }
         }
 
         friend_requests = []
@@ -638,12 +659,14 @@ export class GraphService {
                 friend_requests.push(this.friends_indexed[arr_friend_request_keys[i]])
             }
         }
+
         this.friend_request_count = friend_requests.length;
         if (this.platform.is('android') || this.platform.is('ios')) {
             this.badge.set(friend_requests.length);
         }
 
-        return friend_requests;
+        this.graph.friend_requests = friend_requests;
+        this.graph.sent_friend_requests = sent_friend_requests;
     }
 
     parseFriends(friends) {
@@ -728,7 +751,7 @@ export class GraphService {
         });
     }
 
-    parseGroups(groups, root=true, collectionName = 'groups') {
+    parseGroups(groups, root=true, collectionName = 'group') {
         // we must call getSentFriendRequests and getFriendRequests before getting here
         // because we need this.keys to be populated with the dh_public_keys and dh_private_keys from the requests
         // though friends really should be cached
@@ -848,9 +871,6 @@ export class GraphService {
                       groups.push(this.groups_indexed[arr_friends_keys[i]]);
                       used_username_signatures.push(this.groups_indexed[arr_friends_keys[i]].relationship.username_signature);
                     }
-                    if (this.groups_indexed[arr_friends_keys[i]].relationship && this.groups_indexed[arr_friends_keys[i]].relationship.username) {
-                        this.usernames[this.groups_indexed[arr_friends_keys[i]].rid] = this.groups_indexed[arr_friends_keys[i]].relationship.username;
-                    }
                 }
             }
 
@@ -935,7 +955,6 @@ export class GraphService {
                               message.shared_secret = shared_secret.shared_secret
                               message.dh_public_key = shared_secret.dh_public_key
                               message.dh_private_key = shared_secret.dh_private_key
-                              message.username = this.usernames[message.rid];
                               messages[message.rid] = message;
                               try {
                                   message.relationship[messageType] = JSON.parse(Base64.decode(messageJson[messageType]));
@@ -996,7 +1015,6 @@ export class GraphService {
                       }
                       if(messageJson[messageType]) {
                           message.relationship = messageJson;
-                          message.username = this.usernames[message.requested_rid];
                           messages[message.requested_rid] = message;
                           if (!chats[message.requested_rid]) {
                               chats[message.requested_rid] = [];
@@ -1048,7 +1066,6 @@ export class GraphService {
                               message.shared_secret = shared_secret.shared_secret
                               message.dh_public_key = shared_secret.dh_public_key
                               message.dh_private_key = shared_secret.dh_private_key
-                              message.username = this.usernames[message.rid];
                               messages[message.rid] = message;
                               if (!chats[message.rid]) {
                                   chats[message.rid] = [];
@@ -1094,7 +1111,6 @@ export class GraphService {
                 var new_messages = [];
                 for(var i=0; i<messages.length; i++) {
                     var message = messages[i];
-                    message.username = this.usernames[message.rid];
                     if (message.public_key != public_key) {
                         if(this[graphCounts][message.rid]) {
                             if(parseInt(message.time) > this[graphCounts][message.rid]) {
@@ -1139,7 +1155,6 @@ export class GraphService {
                     var group_message_rid = message.requested_rid || message.rid;
                     if(messageJson[messageType[0]] || messageJson[messageType[1]]) {
                         message.relationship = messageJson;
-                        message.username = this.usernames[group_message_rid];
                         messages[group_message_rid] = message;
                         if (!chats[group_message_rid]) {
                             chats[group_message_rid] = [];
@@ -1400,23 +1415,28 @@ export class GraphService {
       return forge.sha256.create().update(username_signatures[0] + username_signatures[1] + extra).digest().toHex();
     }
 
+    addFriendFromSkylink(skylink) {
+      return this.identityFromSkylink(skylink)
+      .then((identity: any) => {
+        return this.addFriend(identity);
+      })
+    }
+
     addFriend(identity, rid='', requester_rid='', requested_rid='') {
-      rid = rid || this.generateRid(
-        this.bulletinSecretService.identity.username_signature,
-        identity.username_signature
-      );
-      requester_rid = requester_rid || this.generateRid(this.bulletinSecretService.identity.username_signature, this.bulletinSecretService.identity.username_signature);
-      requested_rid = requested_rid || this.generateRid(identity.username_signature, identity.username_signature);
-      if (requester_rid && requested_rid) {
-          // get rid from bulletin secrets
-      } else {
-          requester_rid = '';
-          requested_rid = '';
-      }
-      //////////////////////////////////////////////////////////////////////////
-      // create and send transaction to create the relationship on the blockchain
-      //////////////////////////////////////////////////////////////////////////
-      return this.walletService.get().then(() => {
+      return this.walletService.get()
+      .then(() => {
+          rid = rid || this.generateRid(
+            this.bulletinSecretService.identity.username_signature,
+            identity.username_signature
+          );
+          requester_rid = requester_rid || this.generateRid(this.bulletinSecretService.identity.username_signature, this.bulletinSecretService.identity.username_signature);
+          requested_rid = requested_rid || this.generateRid(identity.username_signature, identity.username_signature);
+          if (requester_rid && requested_rid) {
+              // get rid from bulletin secrets
+          } else {
+              requester_rid = '';
+              requested_rid = '';
+          }
           var raw_dh_private_key = foobar.bitcoin.crypto.sha256(this.bulletinSecretService.key.toWIF() + identity.username_signature);
           var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
           var dh_private_key = this.toHex(raw_dh_private_key);
@@ -1440,40 +1460,46 @@ export class GraphService {
       });
     }
 
+    addGroupFromSkylink(skylink) {
+      return this.identityFromSkylink(skylink)
+      .then((identity: any) => {
+        return this.addGroup(identity);
+      })
+    }
+
     addGroup(identity, rid='', requester_rid='', requested_rid='') {
-      rid = rid || this.generateRid(
-        this.bulletinSecretService.identity.username_signature,
-        identity.username_signature
-      );
-      requester_rid = requester_rid || this.generateRid(
-        this.bulletinSecretService.identity.username_signature,
-        this.bulletinSecretService.identity.username_signature,
-        identity.collection
-      );
-      requested_rid = requested_rid || this.generateRid(
-        identity.username_signature,
-        identity.username_signature,
-        identity.collection
-      );
-      if (requester_rid && requested_rid) {
-          // get rid from bulletin secrets
-      } else {
-          requester_rid = '';
-          requested_rid = '';
-      }
-      //////////////////////////////////////////////////////////////////////////
-      // create and send transaction to create the relationship on the blockchain
-      //////////////////////////////////////////////////////////////////////////
-      return this.walletService.get().then(() => {
-          return this.transactionService.generateTransaction({
-              rid: rid,
-              relationship: identity,
-              requested_rid: requested_rid,
-              requester_rid: requester_rid,
-              to: this.bulletinSecretService.publicKeyToAddress(identity.public_key)
-          });
+      identity.collection = identity.collection || 'group'
+      return this.walletService.get()
+      .then(() => {
+        rid = rid || this.generateRid(
+          this.bulletinSecretService.identity.username_signature,
+          identity.username_signature
+        );
+        requester_rid = requester_rid || this.generateRid(
+          this.bulletinSecretService.identity.username_signature,
+          this.bulletinSecretService.identity.username_signature,
+          identity.collection
+        );
+        requested_rid = requested_rid || this.generateRid(
+          identity.username_signature,
+          identity.username_signature,
+          identity.collection
+        );
+        if (requester_rid && requested_rid) {
+            // get rid from bulletin secrets
+        } else {
+            requester_rid = '';
+            requested_rid = '';
+        }
+        return this.transactionService.generateTransaction({
+            rid: rid,
+            relationship: identity,
+            requested_rid: requested_rid,
+            requester_rid: requester_rid,
+            to: this.bulletinSecretService.publicKeyToAddress(identity.public_key)
+        });
       }).then((hash) => {
-          return this.transactionService.sendTransaction();
+        return this.transactionService.sendTransaction();
       }).then(() => {
         return this.getGroups(null, identity.collection, true)
       });
@@ -1541,6 +1567,14 @@ export class GraphService {
       return !!(addedToFriends || addedToGroups)
     }
 
+    isRequested(identity) {
+      const friend_rid = this.generateRid(
+        identity.username_signature,
+        this.bulletinSecretService.identity.username_signature
+      );
+      return !!this.sent_friend_requests_indexed[friend_rid]
+    }
+
     isGroup(identity) {
       if (!identity) return false;
       return !!identity.collection
@@ -1565,6 +1599,32 @@ export class GraphService {
         iden.skylink = identity.skylink;
       }
       return iden;
+    }
+
+    identityToSkylink(identity) {
+      return new Promise((resolve, reject) => {
+        const identityJson = JSON.stringify(this.toIdentity(identity), null, 4);
+        this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/sia-upload?filename=' + encodeURIComponent(identity.username_signature), {file: btoa(identityJson)})
+        .subscribe((res) => {
+            const data = res.json();
+            if (!data.skylink) return reject(data);
+            return resolve(data.skylink)
+        })
+      })
+    }
+
+    identityFromSkylink(skylink) {
+      return new Promise((resolve, reject) => {
+        this.ahttp.get('https://siasky.net/' + skylink)
+        .subscribe((res) => {
+            try {
+              return resolve(JSON.parse(res.text()))
+            }
+            catch(err) {
+              return reject(err)
+            }
+        })
+      });
     }
 
     decrypt(message) {

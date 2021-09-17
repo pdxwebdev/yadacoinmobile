@@ -9,23 +9,23 @@
 <ion-content padding>
   <ion-spinner *ngIf="loading"></ion-spinner>
   <ion-row>
-    <form [formGroup]="myForm" (ngSubmit)="submit()">
-      <ion-auto-complete [dataProvider]="completeTestService" formControlName="searchTerm" required></ion-auto-complete>
-      <button icon-left ion-button type="submit" block [disabled]="!myForm.valid">
-        <ion-icon name="eye"></ion-icon>
-        View profile
-      </button>
-    </form>
     <ion-col col-lg-12 col-md-12 col-sm-12 *ngIf="!settingsService.remoteSettings.restricted || (settingsService.remoteSettings.restricted && settingsService.remoteSettings.identity.username_signature === bulletinSecretService.identity.username_signature)">
       <button ion-button large secondary (click)="createGroup()">
         Create Group&nbsp;<ion-icon name="create"></ion-icon>
       </button>
     </ion-col>
-    <ion-col col-lg-12 col-md-12 col-sm-12 *ngIf="settingsService.remoteSettings.restricted && settingsService.remoteSettings.identity.username_signature !== bulletinSecretService.identity.username_signature">
+    <ion-col col-lg-12 col-md-12 col-sm-12 *ngIf="settingsService.remoteSettings.restricted && !graphService.isAdded(settingsService.remoteSettings.identity) && !graphService.isRequested(settingsService.remoteSettings.identity) && settingsService.remoteSettings.identity.username_signature !== bulletinSecretService.identity.username_signature">
       You are not yet registered for {{settingsService.remoteSettings.identity.username}}. Click the 'Join Organization' button to continue.
+      <ion-input type="text" placeholder="Paste identity code here" [(ngModel)]="identitySkylink"></ion-input>
       <button ion-button large secondary (click)="joinGroup()">
         Join Organization&nbsp;<ion-icon name="create"></ion-icon>
       </button>
+    </ion-col>
+    <ion-col col-lg-12 col-md-12 col-sm-12 *ngIf="settingsService.remoteSettings.restricted && graphService.isAdded(settingsService.remoteSettings.identity) && !graphService.isRequested(settingsService.remoteSettings.identity) && settingsService.remoteSettings.identity.username_signature !== bulletinSecretService.identity.username_signature">
+      Welcome back!
+    </ion-col>
+    <ion-col col-lg-12 col-md-12 col-sm-12 *ngIf="settingsService.remoteSettings.restricted && !graphService.isAdded(settingsService.remoteSettings.identity) && graphService.isRequested(settingsService.remoteSettings.identity) && settingsService.remoteSettings.identity.username_signature !== bulletinSecretService.identity.username_signature">
+      Registration is pending approval.
     </ion-col>
   </ion-row>
 </ion-content>

@@ -39,11 +39,16 @@
   </ion-row>
   <ion-row>
     <h4>Manage access</h4>
+    <ion-list>
+      <ion-item>
+
+      </ion-item>
+    </ion-list>
   </ion-row>
   <ion-row>
-    <h4>Public identity</h4>
+    <h4>Public identity <ion-spinner *ngIf="busy"></ion-spinner></h4>
     <ion-item>
-      <ion-textarea type="text" [(ngModel)]="identityJson" autoGrow="true" rows="7"></ion-textarea>
+      <ion-textarea type="text" [(ngModel)]="identitySkylink" autoGrow="true" rows="1"></ion-textarea>
     </ion-item>
   </ion-row>
   <ion-row>

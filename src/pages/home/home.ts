@@ -65,6 +65,7 @@ export class HomePage {
     searchResults: any;
     searchTerm: any;
     origin: any;
+    identitySkylink: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -167,7 +168,7 @@ export class HomePage {
         buttons.push({
             text: 'Add',
             handler: (data) => {
-                this.graphService.addFriend(data.identity);
+                this.graphService.addFriendFromSkylink(data.identity);
             }
         });
         let alert = this.alertCtrl.create({
@@ -241,25 +242,28 @@ export class HomePage {
     }
 
     joinGroup() {
-        new Promise((resolve, reject) => {
-            let alert = this.alertCtrl.create();
-            alert.setTitle('Join');
-            alert.setSubTitle('You are about to join ' + this.settingsService.remoteSettings.identity.username);
-            alert.addButton({
-                text: 'Join',
-                handler: data => {
-                    const toast = this.toastCtrl.create({
-                        message: 'Group joined!',
-                        duration: 2000
-                    });
-                    toast.present();
-                    resolve();
-                }
-            });
-            alert.present();
+        return this.graphService.identityFromSkylink(this.identitySkylink)
+        .then((identity: any) => {
+          return new Promise((resolve, reject) => {
+              let alert = this.alertCtrl.create();
+              alert.setTitle('Join');
+              alert.setSubTitle('You are about to join ' + identity.username);
+              alert.addButton({
+                  text: 'Join',
+                  handler: data => {
+                      const toast = this.toastCtrl.create({
+                          message: 'Group joined!',
+                          duration: 2000
+                      });
+                      toast.present();
+                      resolve();
+                  }
+              });
+              alert.present();
+          })
         })
         .then(() => {
-            const identity = JSON.parse(JSON.stringify(this.settingsService.remoteSettings.identity));
+            const identity = JSON.parse(JSON.stringify(this.settingsService.remoteSettings.identity)); //deep copy
             identity.collection = 'group';
             return this.graphService.addGroup(identity)
         })

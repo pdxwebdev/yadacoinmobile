@@ -486,7 +486,15 @@ export class ListPage {
       buttons.push({
           text: 'Add',
           handler: (data) => {
-              this.graphService.addFriend(JSON.parse(data.identity))
+              this.graphService.addFriendFromSkylink(data.identity)
+              .then(() => {
+                let alert = this.alertCtrl.create();
+                alert.setTitle('Contact added');
+                alert.setSubTitle('Your contact was added successfully');
+                alert.addButton('Ok');
+                alert.present();
+                return this.choosePage()
+              });
           }
       });
       let alert = this.alertCtrl.create({
@@ -508,8 +516,15 @@ export class ListPage {
       buttons.push({
           text: 'Add',
           handler: (data) => {
-              const identity = JSON.parse(data.identity);
-              this.graphService.addGroup(identity, null, null, null)
+              return this.graphService.addGroupFromSkylink(data.identity)
+              .then(() => {
+                let alert = this.alertCtrl.create();
+                alert.setTitle('Group added');
+                alert.setSubTitle('Your group was added successfully');
+                alert.addButton('Ok');
+                alert.present();
+                return this.choosePage()
+              });
           }
       });
       let alert = this.alertCtrl.create({

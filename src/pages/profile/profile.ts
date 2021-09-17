@@ -38,6 +38,8 @@ export class ProfilePage {
     rid: any;
     requested_rid: any;
     requester_rid: any;
+    identitySkylink: any;
+    busy: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -58,8 +60,12 @@ export class ProfilePage {
         this.rid = rids.rid;
         this.requested_rid = rids.requested_rid;
         this.requester_rid = rids.requester_rid;
-        this.tempIdentity = this.graphService.toIdentity(this.identity)
-        this.identityJson = JSON.stringify(this.tempIdentity, null, 4);
+        this.busy = true;
+        this.graphService.identityToSkylink(this.identity)
+        .then((skylink) => {
+          this.identitySkylink = skylink;
+          this.busy = false;
+        })
         this.isAdded = this.graphService.isAdded(this.identity)
         this.group = this.graphService.isGroup(this.identity)
     }

@@ -20,6 +20,6 @@
   <div *ngIf="item.message_type == 'contract_signed'"><strong>Contract signed</strong> <ion-icon name="checkmark-circle" class="success"></ion-icon></div>
   <ion-item>{{item.datetime}}</ion-item>
   <ion-item *ngIf="item.event_datetime">{{item.event_datetime}}</ion-item>
-  <ion-item>{{item.body}}</ion-item>
+  <ion-item><pre>{{item.body}}</pre></ion-item>
   <ion-item *ngIf="item.skylink"><a href="https://siasky.net/{{item.skylink}}" target="_blank">Download {{item.filename}}</a></ion-item>
 </ion-content>

@@ -46,7 +46,6 @@ export class Settings {
     key = null;
     geoWalletUsername: any;
     identity: any;
-    identityJson = '{}';
     centerIdentityImportEnabled = false;
     centerIdentityExportEnabled = false;
     exportKeyEnabled = false;
@@ -55,6 +54,8 @@ export class Settings {
     ci: any;
     centerIdentitySaveSuccess = false;
     centerIdentityImportSuccess = false;
+    identitySkylink: any;
+    busy: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -76,11 +77,11 @@ export class Settings {
         private platform: Platform
     ) {
         if (typeof this.peerService.mode == 'undefined') this.peerService.mode = true;
+        this.prefix = 'usernames-';
+        this.ci = new CenterIdentity(undefined, undefined, undefined, undefined, true)
         this.refresh(null).catch((err) => {
             console.log(err)
         });
-        this.prefix = 'usernames-';
-        this.ci = new CenterIdentity(undefined, undefined, undefined, undefined, true)
     }
 
     loadMap(mapType) {
@@ -134,8 +135,6 @@ export class Settings {
                     active: active
                 });
                 if (active) {
-                    this.identity = this.bulletinSecretService.identity
-                    this.identityJson = this.bulletinSecretService.identityJson()
                     this.activeKey = value;
                 }
             }
@@ -149,6 +148,15 @@ export class Settings {
                 return 0
             });
             this.keys = newKeys;
+        })
+        .then(() => {
+          if (!this.activeKey) return;
+          this.busy = true
+          this.graphService.identityToSkylink(this.bulletinSecretService.identity)
+          .then((skylink) => {
+            this.identitySkylink = skylink;
+            this.busy = false;
+          })
         });
     }
 
@@ -293,9 +301,6 @@ export class Settings {
         return this.set(key)
         .then(() => {
             return this.peerService.go();
-        })
-        .then(() => {
-            return this.refresh(null);
         })
         .then(() => {
           return this.graphService.refreshFriendsAndGroups();

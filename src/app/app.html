@@ -4,7 +4,7 @@
       <ion-toolbar>
         <ion-title>
           <ion-note style="font-size: 20px">
-            Center Identity
+            {{bulletinSecretService ? bulletinSecretService.identity ? bulletinSecretService.identity.username : 'Center Identity' : 'Center Identity'}}
           </ion-note>
           <ion-note style="font-size: 12px">
             {{version}}
