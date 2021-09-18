@@ -15,14 +15,10 @@
       </button>
     </ion-col>
     <ion-col col-lg-12 col-md-12 col-sm-12 *ngIf="settingsService.remoteSettings.restricted && !graphService.isAdded(settingsService.remoteSettings.identity) && !graphService.isRequested(settingsService.remoteSettings.identity) && settingsService.remoteSettings.identity.username_signature !== bulletinSecretService.identity.username_signature">
-      You are not yet registered for {{settingsService.remoteSettings.identity.username}}. Click the 'Join Organization' button to continue.
-      <ion-input type="text" placeholder="Paste identity code here" [(ngModel)]="identitySkylink"></ion-input>
-      <button ion-button large secondary (click)="joinGroup()">
-        Join Organization&nbsp;<ion-icon name="create"></ion-icon>
-      </button>
+      Something went wrong with your registration, contact info@centeridentity.com for assistance.
     </ion-col>
     <ion-col col-lg-12 col-md-12 col-sm-12 *ngIf="settingsService.remoteSettings.restricted && graphService.isAdded(settingsService.remoteSettings.identity) && !graphService.isRequested(settingsService.remoteSettings.identity) && settingsService.remoteSettings.identity.username_signature !== bulletinSecretService.identity.username_signature">
-      Welcome back!
+      <h1>Welcome!</h1>
     </ion-col>
     <ion-col col-lg-12 col-md-12 col-sm-12 *ngIf="settingsService.remoteSettings.restricted && !graphService.isAdded(settingsService.remoteSettings.identity) && graphService.isRequested(settingsService.remoteSettings.identity) && settingsService.remoteSettings.identity.username_signature !== bulletinSecretService.identity.username_signature">
       Registration is pending approval.

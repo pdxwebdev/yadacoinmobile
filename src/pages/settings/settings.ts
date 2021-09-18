@@ -79,7 +79,10 @@ export class Settings {
         if (typeof this.peerService.mode == 'undefined') this.peerService.mode = true;
         this.prefix = 'usernames-';
         this.ci = new CenterIdentity(undefined, undefined, undefined, undefined, true)
-        this.refresh(null).catch((err) => {
+        this.refresh(null)
+        .then(() => {
+            return this.peerService.go();
+        }).catch((err) => {
             console.log(err)
         });
     }
@@ -108,7 +111,8 @@ export class Settings {
 
     refresh(refresher) {
         this.noUsername = false;
-        return this.bulletinSecretService.all().then((keys) => {
+        return this.bulletinSecretService.all()
+        .then((keys) => {
             this.setKey(keys);
         }).then(() => {
             if(refresher) refresher.complete();
@@ -224,60 +228,80 @@ export class Settings {
         });
     }
 
-    createWallet() {
-        new Promise((resolve, reject) => {
-            let alert = this.alertCtrl.create({
-                title: 'Set username',
-                inputs: [
-                {
-                    name: 'username',
-                    placeholder: 'Username'
+    getUsername() {
+      return new Promise((resolve, reject) => {
+        let alert = this.alertCtrl.create({
+          title: 'Set username',
+          inputs: [
+            {
+              name: 'username',
+              placeholder: 'Username'
+            }
+          ],
+          buttons: [
+            {
+              text: 'Cancel',
+              role: 'cancel',
+              handler: data => {
+                console.log('Cancel clicked');
+                reject('Cancel clicked');
+              }
+            },
+            {
+                text: 'Save',
+                handler: data => {
+                    resolve(data.username);
                 }
-                ],
-                buttons: [
-                {
-                    text: 'Cancel',
-                    role: 'cancel',
-                    handler: data => {
-                        console.log('Cancel clicked');
-                        reject('Cancel clicked');
-                    }
-                },
-                {
-                    text: 'Save',
-                    handler: data => {
-                        const toast = this.toastCtrl.create({
-                            message: 'Identity created',
-                            duration: 2000
-                        });
-                        toast.present();
-                        resolve(data.username);
-                    }
-                }
-                ]
-            });
-            alert.present();
-        })
-        .then((username) => {
-            return this.createKey(username);
-        })
+            }
+          ]
+        });
+        alert.present();
+      })
     }
 
-    createKey(username) {
-        return new Promise((resolve, reject) => {
-            this.bulletinSecretService.create(username)
-            .then(() => {
-                resolve(username);
-            });
+    createWallet() {
+      let promise;
+      let username;
+      let userType;
+      let userParent;
+
+      this.loadingModal = this.loadingCtrl.create({
+          content: 'initializing...'
+      });
+      this.loadingModal.present();
+      if (this.settingsService.remoteSettings.restricted) {
+        
+        promise = this.getUsername()
+        .then((uname) => {
+          username = uname;
+          return this.graphService.checkInvite(username);
         })
-        .then((key) => {
-            this.set(key)
-            .then(() => {
-                this.save();
+        .then((result: any) => {
+          if (!result.status) {
+            const toast = this.toastCtrl.create({
+                message: result.message,
+                duration: 10000
             });
+            toast.present();
+            throw result.message
+          }
+          userType = result.type;
+          userParent = result.parent;
+        })
+        .then(() => {
+          return this.createKey(username)
+        })
+        .then((): Promise<null | void> => {
+          if (userType === 'customer_user') {
+            return this.joinGroup(userParent);
+          } else if (userType === 'customer') {
+            return this.joinGroup(this.settingsService.remoteSettings.identity);
+          } else if (userType === 'admin') {
+            return new Promise((resolve, reject) => {return resolve(null)});
+          }
         })
         .then(() => { 
-            this.selectIdentity(this.bulletinSecretService.keyname.substr(this.prefix.length));
+            return this.selectIdentity(this.bulletinSecretService.keyname.substr(this.prefix.length), false);
         })
         .then(() => {
             if (this.settingsService.remoteSettings['walletUrl']) {
@@ -287,32 +311,121 @@ export class Settings {
         .then(() => {
             return this.refresh(null)
         })
+        .then(() => {
+            this.loadingModal.dismiss();
+        })
         .catch(() => {
             this.events.publish('pages');
+            this.loadingModal.dismiss();
+        })
+      } else {
+        promise = this.getUsername()
+        .then((username) => {
+            return this.createKey(username)
+        })
+        .then(() => {
+            this.loadingModal.dismiss();
+        })
+        .catch(() => {
+            this.loadingModal.dismiss();
+        })
+      }
+      
+      promise
+      .then(() => {
+        const toast = this.toastCtrl.create({
+          message: 'Identity created',
+          duration: 2000
+        });
+        toast.present();
+      })
+    }
+
+    createKey(username) {
+        return new Promise((resolve, reject) => {
+            this.bulletinSecretService.create(username)
+            .then(() => {
+                return resolve(username);
+            });
+        })
+        .then((key) => {
+            return this.set(key)
+        })
+        .then(() => {
+            return this.save();
         });
     }
 
-    selectIdentity(key) {
+    selectIdentity(key, showModal = true) {
         this.graphService.resetGraph();
-        this.loadingModal = this.loadingCtrl.create({
-            content: 'initializing...'
-        });
-        this.loadingModal.present();
-        return this.set(key)
+        if (showModal) {
+          this.loadingModal = this.loadingCtrl.create({
+              content: 'initializing...'
+          });
+          this.loadingModal.present();
+        }
+        if (this.settingsService.remoteSettings.restricted) {
+          return this.set(key)
+          .then(() => {
+            return this.graphService.getUserType(this.bulletinSecretService.identity.username)
+          })
+          .then((result: any) => {
+            if (result.status) {
+              this.bulletinSecretService.identity.type = result.type
+              this.bulletinSecretService.identity.parent = result.parent
+              return new Promise((resolve, reject) => {return resolve(null)});
+            } else {
+              const toast = this.toastCtrl.create({
+                  message: result.message,
+                  duration: 10000
+              });
+              toast.present();
+              throw result.message
+            }
+          })
+          .then(() => {
+            return this.graphService.refreshFriendsAndGroups();
+          })    
+          .then(() => { 
+              if (showModal) {
+                this.loadingModal.dismiss();
+              }
+              this.settingsService.menu = 'home';
+              this.navCtrl.setRoot(HomePage, {pageTitle: { title: 'Home', label: 'Home', component: HomePage, count: false, color: '' }});
+          })
+          .catch((err)  => {
+              console.log(err);
+              if (showModal) {
+                this.loadingModal.dismiss();  
+              }
+          });        
+        } else {
+          return this.set(key)
+          .then(() => {
+            return this.graphService.refreshFriendsAndGroups();
+          })    
+          .then(() => { 
+              if (showModal) {
+                this.loadingModal.dismiss();
+              }
+              this.settingsService.menu = 'home';
+              this.navCtrl.setRoot(HomePage, {pageTitle: { title: 'Home', label: 'Home', component: HomePage, count: false, color: '' }});
+          })
+          .catch((err)  => {
+              console.log(err);
+              if (showModal) {
+                this.loadingModal.dismiss();
+              }
+          });
+        }
+    }
+
+    joinGroup(iden) {
+        const identity = JSON.parse(JSON.stringify(iden)); //deep copy
+        identity.collection = 'group';
+        return this.graphService.addGroup(identity)
         .then(() => {
-            return this.peerService.go();
-        })
-        .then(() => {
-          return this.graphService.refreshFriendsAndGroups();
-        })    
-        .then(() => { 
-            this.loadingModal.dismiss();
-            this.settingsService.menu = 'home';
-            this.navCtrl.setRoot(HomePage, {pageTitle: { title: 'Home', label: 'Home', component: HomePage, count: false, color: '' }});
-        })
-        .catch((err)  => {
-            console.log(err);
-            this.loadingModal.dismiss();  
+            return this.graphService.addFriend(iden)
         });
     }
 
@@ -346,9 +459,8 @@ export class Settings {
 
     doSet(keyname) {
         return new Promise((resolve, reject) => {
-            this.bulletinSecretService.set(keyname).then(() => {
-                return this.refresh(null);
-            }).then(() => {
+            this.bulletinSecretService.set(keyname)
+            .then(() => {
                 this.serverDown = false;
                 if (!document.URL.startsWith('http') || document.URL.startsWith('http://localhost:8080')) {
                     this.firebaseService.initFirebase();

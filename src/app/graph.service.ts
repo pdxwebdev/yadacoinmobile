@@ -111,7 +111,7 @@ export class GraphService {
       });
     }
 
-    endpointRequest(endpoint, ids=null, rids=null) {
+    endpointRequest(endpoint, ids=null, rids=null, post_data=null) {
         return new Promise((resolve, reject) => {
             let headers = new Headers();
             headers.append('Authorization', 'Bearer ' + this.settingsService.tokens[this.bulletinSecretService.keyname]);
@@ -129,6 +129,12 @@ export class GraphService {
                     {rids: rids},
                     options
                 );
+            } else if (post_data) {
+                promise = this.ahttp.post(
+                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.origin) + '&username_signature=' + this.bulletinSecretService.username_signature,
+                    post_data,
+                    options
+                )
             } else {
                 promise = this.ahttp.get(
                     this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.origin) + '&username_signature=' + this.bulletinSecretService.username_signature,
@@ -1337,6 +1343,14 @@ export class GraphService {
         }).then(() => {
           return this.getGroups(null, relationship.collection, true)
         });
+    }
+
+    checkInvite(identifier) {
+        return this.endpointRequest('check-invite', null, null, {'identifier': identifier})
+    }
+
+    getUserType(identifier) {
+        return this.endpointRequest('get-user-type', null, null, {'identifier': identifier})
     }
 
     generateRecovery(username) {

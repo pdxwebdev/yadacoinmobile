@@ -15,10 +15,10 @@ export class BulletinSecretService {
     keykeys = null;
     username = null;
     public_key = null;
-    identity = {
+    identity: any = {
       username: '',
       username_signature: '',
-      public_key: ''
+      public_key: '',
     };
     constructor(
         private storage: Storage,

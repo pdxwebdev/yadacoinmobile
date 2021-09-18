@@ -30,6 +30,7 @@ export class PeerService {
     }
 
     go() {
+        if(this.peerLocked) return new Promise((resolve, reject) => {return resolve(null)})
         return new Promise((resolve, reject) => {
             var domain = window.location.origin;
             this.settingsService.remoteSettingsUrl = domain;
