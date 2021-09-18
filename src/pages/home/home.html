@@ -14,10 +14,10 @@
         Create Group&nbsp;<ion-icon name="create"></ion-icon>
       </button>
     </ion-col>
-    <ion-col col-lg-12 col-md-12 col-sm-12 *ngIf="settingsService.remoteSettings.restricted && !graphService.isAdded(settingsService.remoteSettings.identity) && !graphService.isRequested(settingsService.remoteSettings.identity) && settingsService.remoteSettings.identity.username_signature !== bulletinSecretService.identity.username_signature">
+    <ion-col col-lg-12 col-md-12 col-sm-12 *ngIf="settingsService.remoteSettings.restricted && !graphService.isAdded(settingsService.remoteSettings.identity) && !graphService.isAdded(bulletinSecretService.identity.parent) && !graphService.isRequested(settingsService.remoteSettings.identity) && !graphService.isRequested(bulletinSecretService.identity.parent) && settingsService.remoteSettings.identity.username_signature !== bulletinSecretService.identity.username_signature">
       Something went wrong with your registration, contact info@centeridentity.com for assistance.
     </ion-col>
-    <ion-col col-lg-12 col-md-12 col-sm-12 *ngIf="settingsService.remoteSettings.restricted && graphService.isAdded(settingsService.remoteSettings.identity) && !graphService.isRequested(settingsService.remoteSettings.identity) && settingsService.remoteSettings.identity.username_signature !== bulletinSecretService.identity.username_signature">
+    <ion-col col-lg-12 col-md-12 col-sm-12 *ngIf="settingsService.remoteSettings.restricted && (graphService.isAdded(settingsService.remoteSettings.identity) || graphService.isAdded(bulletinSecretService.identity.parent)) && !graphService.isRequested(settingsService.remoteSettings.identity) && !graphService.isRequested(bulletinSecretService.identity.parent) && settingsService.remoteSettings.identity.username_signature !== bulletinSecretService.identity.username_signature">
       <h1>Welcome!</h1>
     </ion-col>
     <ion-col col-lg-12 col-md-12 col-sm-12 *ngIf="settingsService.remoteSettings.restricted && !graphService.isAdded(settingsService.remoteSettings.identity) && graphService.isRequested(settingsService.remoteSettings.identity) && settingsService.remoteSettings.identity.username_signature !== bulletinSecretService.identity.username_signature">
