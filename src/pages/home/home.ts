@@ -66,6 +66,9 @@ export class HomePage {
     searchTerm: any;
     origin: any;
     identitySkylink: any;
+    invites: any;
+    memberIdentifier: any;
+    busy: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -91,6 +94,12 @@ export class HomePage {
         this.origin = encodeURIComponent(this.location.origin);
         this.prefix = 'usernames-';
         this.refresh(null);
+        this.busy = true
+        this.graphService.identityToSkylink(this.bulletinSecretService.identity)
+        .then((skylink) => {
+          this.identitySkylink = skylink;
+          this.busy = false;
+        })
     }
 
     myForm = new FormGroup({
@@ -140,6 +149,67 @@ export class HomePage {
         });
     }
 
+    addOrganizationMember() {
+      console.log('submitted');
+      const username_signature = foobar.base64.fromByteArray(
+        this.bulletinSecretService.key.sign(
+          foobar.bitcoin.crypto.sha256(
+            this.memberIdentifier
+          )
+        ).toDER()
+      );
+      let invite: any = {
+          identifier: this.memberIdentifier,
+          invite_signature: username_signature,
+          parent: this.graphService.toIdentity(this.bulletinSecretService.identity)
+      }
+      this.graphService.inviteToSkylink(invite)
+      .then((skylink) => {
+        invite.skylink = skylink
+        return fetch(
+            '/invite-organization-user', 
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(invite),
+            }
+        )
+      })
+      .then(async (res) => {
+        console.log(await res.json())
+        this.getOrganizationMembers();
+      })
+      return false;
+    }
+
+    getOrganizationMembers() {
+      return fetch('/invite-organization-user')
+      .then(async (res) => {
+          const result = await res.json()
+          this.invites = [];
+          const users = result.users;
+          users.sort(function (a, b) {
+              try {
+                const ausername = a.user.username;
+                const busername = b.user.username;
+                if (ausername.toLowerCase() < busername.toLowerCase())
+                  return -1
+                if ( ausername.toLowerCase() > busername.toLowerCase())
+                  return 1
+                return 0
+              } catch(err) {
+                return 0
+              }
+          });
+          for (let i=0; i < users.length; i++) {
+              let user = users[i];
+              this.invites.push(user)
+          }
+      })
+    }
+
     showChat() {
       var item = {pageTitle: {title:"Chat"}};
       this.navCtrl.push(ListPage, item);
@@ -152,6 +222,7 @@ export class HomePage {
 
     refresh(refresher) {
         this.loading = false;
+        this.getOrganizationMembers();
     }
 
     search() {
@@ -237,43 +308,6 @@ export class HomePage {
         })
         .catch((err) => {
             console.log(err);
-            this.events.publish('pages');
-        });
-    }
-
-    joinGroup() {
-        return this.graphService.identityFromSkylink(this.identitySkylink)
-        .then((identity: any) => {
-          return new Promise((resolve, reject) => {
-              let alert = this.alertCtrl.create();
-              alert.setTitle('Join');
-              alert.setSubTitle('You are about to join ' + identity.username);
-              alert.addButton({
-                  text: 'Join',
-                  handler: data => {
-                      const toast = this.toastCtrl.create({
-                          message: 'Group joined!',
-                          duration: 2000
-                      });
-                      toast.present();
-                      resolve();
-                  }
-              });
-              alert.present();
-          })
-        })
-        .then(() => {
-            const identity = JSON.parse(JSON.stringify(this.settingsService.remoteSettings.identity)); //deep copy
-            identity.collection = 'group';
-            return this.graphService.addGroup(identity)
-        })
-        .then(() => {
-            return this.graphService.addFriend(this.settingsService.remoteSettings.identity)
-        })
-        .then(() => {
-            return this.refresh(null)
-        })
-        .catch((err) => {
             this.events.publish('pages');
         });
     }

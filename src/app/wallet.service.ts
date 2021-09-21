@@ -26,10 +26,7 @@ export class WalletService {
     get(amount_needed=0) {
         return new Promise((resolve, reject) => {
             if (!this.settingsService.remoteSettings || !this.settingsService.remoteSettings['walletUrl']) return resolve();
-            this.bulletinSecretService.get()
-            .then(() => {
-                return this.walletPromise(amount_needed);
-            })
+            return this.walletPromise(amount_needed)
             .then(() => {
                 return resolve();  
             })

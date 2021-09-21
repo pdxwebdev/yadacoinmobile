@@ -259,6 +259,112 @@ export class Settings {
       })
     }
 
+    getInvite() {
+      return new Promise((resolve, reject) => {
+        let alert = this.alertCtrl.create({
+          title: 'Set invite code',
+          inputs: [
+            {
+              name: 'invite',
+              placeholder: 'Invite'
+            }
+          ],
+          buttons: [
+            {
+              text: 'Cancel',
+              role: 'cancel',
+              handler: data => {
+                console.log('Cancel clicked');
+                reject('Cancel clicked');
+              }
+            },
+            {
+                text: 'Save',
+                handler: data => {
+                    resolve(data.invite);
+                }
+            }
+          ]
+        });
+        alert.present();
+      })
+      .then((skylink) => {
+        return this.graphService.identityFromSkylink(skylink)
+      })
+    }
+
+    createWalletFromInvite() {
+      let promise;
+      let username;
+      let userType;
+      let userParent;
+      let invite;
+
+      this.loadingModal = this.loadingCtrl.create({
+          content: 'initializing...'
+      });
+      this.loadingModal.present();
+        
+      promise = this.getInvite()
+      .then((inv: any) => {
+        invite = inv
+        return this.graphService.checkInvite(invite);
+      })
+      .then((result: any) => {
+        if (!result.status) {
+          const toast = this.toastCtrl.create({
+              message: result.message,
+              duration: 10000
+          });
+          toast.present();
+          throw result.message
+        }
+        userType = result.type;
+        userParent = result.parent;
+      })
+      .then(() => {
+        return this.createKey(invite.identifier)
+      })
+      .then(() => {
+        invite = {...invite, ...this.graphService.toIdentity(this.bulletinSecretService.identity)}
+        return this.graphService.checkInvite(invite);
+      })
+      .then((): Promise<null | void> => {
+        if (userType === 'organization_member') {
+          return this.joinGroup(userParent);
+        } else if (userType === 'organization') {
+          return this.joinGroup(this.settingsService.remoteSettings.identity);
+        } else if (userType === 'admin') {
+          return new Promise((resolve, reject) => {return resolve(null)});
+        }
+      })
+      .then(() => { 
+          return this.selectIdentity(this.bulletinSecretService.keyname.substr(this.prefix.length), false);
+      })
+      .then(() => {
+          if (this.settingsService.remoteSettings['walletUrl']) {
+              return this.graphService.getInfo();
+          }
+      })
+      .then(() => {
+          return this.refresh(null)
+      })
+      .then(() => {
+          this.loadingModal.dismiss();
+      })
+      .then(() => {
+        const toast = this.toastCtrl.create({
+          message: 'Identity created',
+          duration: 2000
+        });
+        toast.present();
+      })
+      .catch(() => {
+          this.events.publish('pages');
+          this.loadingModal.dismiss();
+      })
+    }
+
     createWallet() {
       let promise;
       let username;
@@ -274,7 +380,7 @@ export class Settings {
         promise = this.getUsername()
         .then((uname) => {
           username = uname;
-          return this.graphService.checkInvite(username);
+          return this.graphService.checkInvite({username: username});
         })
         .then((result: any) => {
           if (!result.status) {
@@ -291,10 +397,13 @@ export class Settings {
         .then(() => {
           return this.createKey(username)
         })
+        .then(() => {
+          return this.graphService.checkInvite(this.graphService.toIdentity(this.bulletinSecretService.identity));
+        })
         .then((): Promise<null | void> => {
-          if (userType === 'customer_user') {
+          if (userType === 'organization_member') {
             return this.joinGroup(userParent);
-          } else if (userType === 'customer') {
+          } else if (userType === 'organization') {
             return this.joinGroup(this.settingsService.remoteSettings.identity);
           } else if (userType === 'admin') {
             return new Promise((resolve, reject) => {return resolve(null)});
@@ -367,12 +476,21 @@ export class Settings {
         if (this.settingsService.remoteSettings.restricted) {
           return this.set(key)
           .then(() => {
+            return this.graphService.refreshFriendsAndGroups();
+          })
+          .then(() => {
             return this.graphService.getUserType(this.bulletinSecretService.identity.username)
           })
-          .then((result: any) => {
+          .then((result: any): Promise<null | void> => {
             if (result.status) {
+              const userType = result.type;
               this.bulletinSecretService.identity.type = result.type
               this.bulletinSecretService.identity.parent = result.parent
+              if (userType === 'organization_member') {
+                if (!this.graphService.isAdded(this.bulletinSecretService.identity.parent)) return this.joinGroup(this.bulletinSecretService.identity.parent);
+              } else if (userType === 'organization') {
+                if (!this.graphService.isAdded(this.bulletinSecretService.identity.parent)) return this.joinGroup(this.bulletinSecretService.identity.parent);
+              }
               return new Promise((resolve, reject) => {return resolve(null)});
             } else {
               const toast = this.toastCtrl.create({
@@ -383,9 +501,6 @@ export class Settings {
               throw result.message
             }
           })
-          .then(() => {
-            return this.graphService.refreshFriendsAndGroups();
-          })    
           .then(() => { 
               if (showModal) {
                 this.loadingModal.dismiss();

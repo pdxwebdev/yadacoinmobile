@@ -55,10 +55,8 @@ export class SendReceive {
             content: 'Please wait...'
         });
         this.value = 0;
-        this.bulletinSecretService.get().then(() => {
-            this.createdCode = bulletinSecretService.key.getAddress();
-            this.refresh();
-        });
+        this.createdCode = bulletinSecretService.key.getAddress();
+        this.refresh();
         this.sentPage = 1;
         this.receivedPage = 1;
         this.sentPendingPage = 1;

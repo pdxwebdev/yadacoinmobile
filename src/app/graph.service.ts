@@ -1345,8 +1345,8 @@ export class GraphService {
         });
     }
 
-    checkInvite(identifier) {
-        return this.endpointRequest('check-invite', null, null, {'identifier': identifier})
+    checkInvite(identity) {
+        return this.endpointRequest('check-invite', null, null, {'identity': identity})
     }
 
     getUserType(identifier) {
@@ -1437,36 +1437,33 @@ export class GraphService {
     }
 
     addFriend(identity, rid='', requester_rid='', requested_rid='') {
-      return this.walletService.get()
-      .then(() => {
-          rid = rid || this.generateRid(
-            this.bulletinSecretService.identity.username_signature,
-            identity.username_signature
-          );
-          requester_rid = requester_rid || this.generateRid(this.bulletinSecretService.identity.username_signature, this.bulletinSecretService.identity.username_signature);
-          requested_rid = requested_rid || this.generateRid(identity.username_signature, identity.username_signature);
-          if (requester_rid && requested_rid) {
-              // get rid from bulletin secrets
-          } else {
-              requester_rid = '';
-              requested_rid = '';
-          }
-          var raw_dh_private_key = foobar.bitcoin.crypto.sha256(this.bulletinSecretService.key.toWIF() + identity.username_signature);
-          var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
-          var dh_private_key = this.toHex(raw_dh_private_key);
-          var dh_public_key = this.toHex(raw_dh_public_key);
-          return this.transactionService.generateTransaction({
-              relationship: {
-                  dh_private_key: dh_private_key,
-                  identity: this.bulletinSecretService.identity
-              },
-              dh_public_key: dh_public_key,
-              requested_rid: requested_rid,
-              requester_rid: requester_rid,
-              rid: rid,
-              to: this.bulletinSecretService.publicKeyToAddress(identity.public_key),
-              recipient_identity: identity
-          });
+      rid = rid || this.generateRid(
+        this.bulletinSecretService.identity.username_signature,
+        identity.username_signature
+      );
+      requester_rid = requester_rid || this.generateRid(this.bulletinSecretService.identity.username_signature, this.bulletinSecretService.identity.username_signature);
+      requested_rid = requested_rid || this.generateRid(identity.username_signature, identity.username_signature);
+      if (requester_rid && requested_rid) {
+          // get rid from bulletin secrets
+      } else {
+          requester_rid = '';
+          requested_rid = '';
+      }
+      var raw_dh_private_key = foobar.bitcoin.crypto.sha256(this.bulletinSecretService.key.toWIF() + identity.username_signature);
+      var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
+      var dh_private_key = this.toHex(raw_dh_private_key);
+      var dh_public_key = this.toHex(raw_dh_public_key);
+      return this.transactionService.generateTransaction({
+          relationship: {
+              dh_private_key: dh_private_key,
+              identity: this.bulletinSecretService.identity
+          },
+          dh_public_key: dh_public_key,
+          requested_rid: requested_rid,
+          requester_rid: requester_rid,
+          rid: rid,
+          to: this.bulletinSecretService.publicKeyToAddress(identity.public_key),
+          recipient_identity: identity
       }).then((hash) => {
           return this.transactionService.sendTransaction();
       }).then(() => {
@@ -1483,35 +1480,32 @@ export class GraphService {
 
     addGroup(identity, rid='', requester_rid='', requested_rid='') {
       identity.collection = identity.collection || 'group'
-      return this.walletService.get()
-      .then(() => {
-        rid = rid || this.generateRid(
-          this.bulletinSecretService.identity.username_signature,
-          identity.username_signature
-        );
-        requester_rid = requester_rid || this.generateRid(
-          this.bulletinSecretService.identity.username_signature,
-          this.bulletinSecretService.identity.username_signature,
-          identity.collection
-        );
-        requested_rid = requested_rid || this.generateRid(
-          identity.username_signature,
-          identity.username_signature,
-          identity.collection
-        );
-        if (requester_rid && requested_rid) {
-            // get rid from bulletin secrets
-        } else {
-            requester_rid = '';
-            requested_rid = '';
-        }
-        return this.transactionService.generateTransaction({
-            rid: rid,
-            relationship: identity,
-            requested_rid: requested_rid,
-            requester_rid: requester_rid,
-            to: this.bulletinSecretService.publicKeyToAddress(identity.public_key)
-        });
+      rid = rid || this.generateRid(
+        this.bulletinSecretService.identity.username_signature,
+        identity.username_signature
+      );
+      requester_rid = requester_rid || this.generateRid(
+        this.bulletinSecretService.identity.username_signature,
+        this.bulletinSecretService.identity.username_signature,
+        identity.collection
+      );
+      requested_rid = requested_rid || this.generateRid(
+        identity.username_signature,
+        identity.username_signature,
+        identity.collection
+      );
+      if (requester_rid && requested_rid) {
+        // get rid from bulletin secrets
+      } else {
+        requester_rid = '';
+        requested_rid = '';
+      }
+      return this.transactionService.generateTransaction({
+        rid: rid,
+        relationship: identity,
+        requested_rid: requested_rid,
+        requester_rid: requester_rid,
+        to: this.bulletinSecretService.publicKeyToAddress(identity.public_key)
       }).then((hash) => {
         return this.transactionService.sendTransaction();
       }).then(() => {
@@ -1582,6 +1576,7 @@ export class GraphService {
     }
 
     isRequested(identity) {
+      if (!identity) return false;
       const friend_rid = this.generateRid(
         identity.username_signature,
         this.bulletinSecretService.identity.username_signature
@@ -1627,6 +1622,18 @@ export class GraphService {
       })
     }
 
+    inviteToSkylink(invite) {
+      return new Promise((resolve, reject) => {
+        const identityJson = JSON.stringify(invite, null, 4);
+        this.ahttp.post(this.settingsService.remoteSettings['baseUrl'] + '/sia-upload?filename=' + encodeURIComponent(invite.invite_signature), {file: btoa(identityJson)})
+        .subscribe((res) => {
+            const data = res.json();
+            if (!data.skylink) return reject(data);
+            return resolve(data.skylink)
+        })
+      })
+    }
+
     identityFromSkylink(skylink) {
       return new Promise((resolve, reject) => {
         this.ahttp.get('https://siasky.net/' + skylink)
@@ -1639,6 +1646,45 @@ export class GraphService {
             }
         })
       });
+    }
+
+    registrationStatus() {
+      if (
+        this.settingsService.remoteSettings.restricted && 
+        !this.isAdded(this.settingsService.remoteSettings.identity) && 
+        !this.isAdded(this.bulletinSecretService.identity.parent) && 
+        !this.isRequested(this.settingsService.remoteSettings.identity) && 
+        !this.isRequested(this.bulletinSecretService.identity.parent) && 
+        this.settingsService.remoteSettings.identity.username_signature !== this.bulletinSecretService.identity.username_signature
+      ) {
+        return 'error';
+      }
+
+      if (
+        this.settingsService.remoteSettings.restricted && 
+        !this.isAdded(this.settingsService.remoteSettings.identity) && 
+        !this.isAdded(this.bulletinSecretService.identity.parent) && 
+        (
+          this.isRequested(this.settingsService.remoteSettings.identity) ||
+          this.isRequested(this.bulletinSecretService.identity.parent)
+        ) && 
+        this.settingsService.remoteSettings.identity.username_signature !== this.bulletinSecretService.identity.username_signature
+      ) {
+        return 'pending';
+      }
+
+      if (
+        this.settingsService.remoteSettings.restricted && 
+        (
+          this.isAdded(this.settingsService.remoteSettings.identity) || 
+          this.isAdded(this.bulletinSecretService.identity.parent)
+        ) && 
+        !this.isRequested(this.settingsService.remoteSettings.identity) && 
+        !this.isRequested(this.bulletinSecretService.identity.parent) && 
+        this.settingsService.remoteSettings.identity.username_signature !== this.bulletinSecretService.identity.username_signature
+      ) {
+        return 'complete';
+      }
     }
 
     decrypt(message) {

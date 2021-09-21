@@ -11,15 +11,9 @@
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
   <button ion-button secondary (click)="createWallet()">Create identity</button>
+  <button ion-button secondary (click)="createWalletFromInvite()" *ngIf="settingsService.remoteSettings.restricted">Create identity from Code</button>
   <h3>Identities</h3>
   <ion-list>
-    <button *ngFor="let key of keys" ion-item (click)="selectIdentity(key.username)" [color]="key.active ? 'primary' : 'light'">
-      <ion-icon name="person" item-start [color]="'dark'"></ion-icon>
-      {{key.username}}
-    </button>
-  </ion-list>
-  <h3 *ngIf="settingsService.remoteSettings.restricted">Invites</h3>
-  <ion-list *ngIf="settingsService.remoteSettings.restricted">
     <button *ngFor="let key of keys" ion-item (click)="selectIdentity(key.username)" [color]="key.active ? 'primary' : 'light'">
       <ion-icon name="person" item-start [color]="'dark'"></ion-icon>
       {{key.username}}
