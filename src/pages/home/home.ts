@@ -69,6 +69,8 @@ export class HomePage {
     invites: any;
     memberIdentifier: any;
     busy: any;
+    organizationIdentifier: any;
+    contactIdentifier: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -149,6 +151,67 @@ export class HomePage {
         });
     }
 
+    addOrganization() {
+      console.log('submitted');
+      const username_signature = foobar.base64.fromByteArray(
+        this.bulletinSecretService.key.sign(
+          foobar.bitcoin.crypto.sha256(
+            this.organizationIdentifier
+          )
+        ).toDER()
+      );
+      let invite: any = {
+          identifier: this.organizationIdentifier,
+          invite_signature: username_signature,
+          parent: this.graphService.toIdentity(this.bulletinSecretService.identity)
+      }
+      this.graphService.inviteToSkylink(invite)
+      .then((skylink) => {
+        invite.skylink = skylink
+        return fetch(
+            '/invite-organization', 
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(invite),
+            }
+        )
+      })
+      .then(async (res) => {
+        console.log(await res.json())
+        this.getOrganizations();
+      })
+      return false;
+    }
+
+    getOrganizations() {
+      return fetch('/invite-organization?username_signature=' + encodeURIComponent(this.bulletinSecretService.identity.username_signature))
+      .then(async (res) => {
+          const result = await res.json()
+          this.invites = [];
+          const users = result.users;
+          users.sort(function (a, b) {
+              try {
+                const ausername = a.user.username;
+                const busername = b.user.username;
+                if (ausername.toLowerCase() < busername.toLowerCase())
+                  return -1
+                if ( ausername.toLowerCase() > busername.toLowerCase())
+                  return 1
+                return 0
+              } catch(err) {
+                return 0
+              }
+          });
+          for (let i=0; i < users.length; i++) {
+              let user = users[i];
+              this.invites.push(user)
+          }
+      })
+    }
+
     addOrganizationMember() {
       console.log('submitted');
       const username_signature = foobar.base64.fromByteArray(
@@ -185,7 +248,68 @@ export class HomePage {
     }
 
     getOrganizationMembers() {
-      return fetch('/invite-organization-user')
+      return fetch('/invite-organization-user?username_signature=' + encodeURIComponent(this.bulletinSecretService.identity.username_signature))
+      .then(async (res) => {
+          const result = await res.json()
+          this.invites = [];
+          const users = result.users;
+          users.sort(function (a, b) {
+              try {
+                const ausername = a.user.username;
+                const busername = b.user.username;
+                if (ausername.toLowerCase() < busername.toLowerCase())
+                  return -1
+                if ( ausername.toLowerCase() > busername.toLowerCase())
+                  return 1
+                return 0
+              } catch(err) {
+                return 0
+              }
+          });
+          for (let i=0; i < users.length; i++) {
+              let user = users[i];
+              this.invites.push(user)
+          }
+      })
+    }
+
+    addMemberContact() {
+      console.log('submitted');
+      const username_signature = foobar.base64.fromByteArray(
+        this.bulletinSecretService.key.sign(
+          foobar.bitcoin.crypto.sha256(
+            this.contactIdentifier
+          )
+        ).toDER()
+      );
+      let invite: any = {
+          identifier: this.contactIdentifier,
+          invite_signature: username_signature,
+          parent: this.graphService.toIdentity(this.bulletinSecretService.identity)
+      }
+      this.graphService.inviteToSkylink(invite)
+      .then((skylink) => {
+        invite.skylink = skylink
+        return fetch(
+            '/invite-member-contact', 
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(invite),
+            }
+        )
+      })
+      .then(async (res) => {
+        console.log(await res.json())
+        this.getMemberContacts();
+      })
+      return false;
+    }
+
+    getMemberContacts() {
+      return fetch('/invite-member-contact?username_signature=' + encodeURIComponent(this.bulletinSecretService.identity.username_signature))
       .then(async (res) => {
           const result = await res.json()
           this.invites = [];
@@ -222,7 +346,13 @@ export class HomePage {
 
     refresh(refresher) {
         this.loading = false;
-        this.getOrganizationMembers();
+        if(this.bulletinSecretService.identity.type === 'admin') {
+          this.getOrganizations();
+        } else if (this.bulletinSecretService.identity.type === 'organization') {
+          this.getOrganizationMembers();
+        } else if (this.bulletinSecretService.identity.type === 'organization_member') {
+          this.getMemberContacts();
+        }
     }
 
     search() {

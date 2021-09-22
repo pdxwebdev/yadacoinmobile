@@ -330,7 +330,9 @@ export class Settings {
         return this.graphService.checkInvite(invite);
       })
       .then((): Promise<null | void> => {
-        if (userType === 'organization_member') {
+        if (userType === 'member_contact') {
+          return this.joinGroup(userParent);
+        } else if (userType === 'organization_member') {
           return this.joinGroup(userParent);
         } else if (userType === 'organization') {
           return this.joinGroup(this.settingsService.remoteSettings.identity);
@@ -375,70 +377,16 @@ export class Settings {
           content: 'initializing...'
       });
       this.loadingModal.present();
-      if (this.settingsService.remoteSettings.restricted) {
-        
-        promise = this.getUsername()
-        .then((uname) => {
-          username = uname;
-          return this.graphService.checkInvite({username: username});
-        })
-        .then((result: any) => {
-          if (!result.status) {
-            const toast = this.toastCtrl.create({
-                message: result.message,
-                duration: 10000
-            });
-            toast.present();
-            throw result.message
-          }
-          userType = result.type;
-          userParent = result.parent;
-        })
-        .then(() => {
+      promise = this.getUsername()
+      .then((username) => {
           return this.createKey(username)
-        })
-        .then(() => {
-          return this.graphService.checkInvite(this.graphService.toIdentity(this.bulletinSecretService.identity));
-        })
-        .then((): Promise<null | void> => {
-          if (userType === 'organization_member') {
-            return this.joinGroup(userParent);
-          } else if (userType === 'organization') {
-            return this.joinGroup(this.settingsService.remoteSettings.identity);
-          } else if (userType === 'admin') {
-            return new Promise((resolve, reject) => {return resolve(null)});
-          }
-        })
-        .then(() => { 
-            return this.selectIdentity(this.bulletinSecretService.keyname.substr(this.prefix.length), false);
-        })
-        .then(() => {
-            if (this.settingsService.remoteSettings['walletUrl']) {
-                return this.graphService.getInfo();
-            }
-        })
-        .then(() => {
-            return this.refresh(null)
-        })
-        .then(() => {
-            this.loadingModal.dismiss();
-        })
-        .catch(() => {
-            this.events.publish('pages');
-            this.loadingModal.dismiss();
-        })
-      } else {
-        promise = this.getUsername()
-        .then((username) => {
-            return this.createKey(username)
-        })
-        .then(() => {
-            this.loadingModal.dismiss();
-        })
-        .catch(() => {
-            this.loadingModal.dismiss();
-        })
-      }
+      })
+      .then(() => {
+          this.loadingModal.dismiss();
+      })
+      .catch(() => {
+          this.loadingModal.dismiss();
+      })
       
       promise
       .then(() => {
@@ -486,12 +434,15 @@ export class Settings {
               const userType = result.type;
               this.bulletinSecretService.identity.type = result.type
               this.bulletinSecretService.identity.parent = result.parent
-              if (userType === 'organization_member') {
+              if (userType === 'member_contact') {
+                if (!this.graphService.isAdded(this.bulletinSecretService.identity.parent)) return this.joinGroup(this.bulletinSecretService.identity.parent);
+              } else if (userType === 'organization_member') {
                 if (!this.graphService.isAdded(this.bulletinSecretService.identity.parent)) return this.joinGroup(this.bulletinSecretService.identity.parent);
               } else if (userType === 'organization') {
                 if (!this.graphService.isAdded(this.bulletinSecretService.identity.parent)) return this.joinGroup(this.bulletinSecretService.identity.parent);
+              } else if (userType === 'admin') {
+                return new Promise((resolve, reject) => {return resolve(null)});
               }
-              return new Promise((resolve, reject) => {return resolve(null)});
             } else {
               const toast = this.toastCtrl.create({
                   message: result.message,

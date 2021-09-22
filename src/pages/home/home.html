@@ -20,12 +20,42 @@
     <ion-col col-lg-12 col-md-12 col-sm-12 *ngIf="graphService.registrationStatus() === 'pending'">
       Registration is pending approval.
     </ion-col>
-    <ion-col col-lg-12 col-md-12 col-sm-12 *ngIf="graphService.registrationStatus() === 'complete' || !settingsService.remoteSettings.restricted">
+    <ion-col col-lg-12 col-md-12 col-sm-12 *ngIf="graphService.registrationStatus() === 'complete' && settingsService.remoteSettings.restricted">
+      <h1>Welcome!</h1>
+    </ion-col>
+    <ion-col col-lg-12 col-md-12 col-sm-12 *ngIf="!settingsService.remoteSettings.restricted">
       <h1>Welcome!</h1>
       <h4>Public identity (share this with everyone) <ion-spinner *ngIf="busy"></ion-spinner></h4>
       <ion-item>
         <ion-textarea type="text" [(ngModel)]="identitySkylink" autoGrow="true" rows=1></ion-textarea>
       </ion-item>
+    </ion-col>
+  </ion-row>
+  <ion-row *ngIf="settingsService.remoteSettings.restricted && bulletinSecretService.identity.type === 'admin'">
+    <ion-col col-lg-6 col-md-6 col-sm-12>
+      <h3>Invite organizations</h3>
+      <ion-item>
+        <ion-label floating>Identifier</ion-label>
+        <ion-input type="text" [(ngModel)]="organizationIdentifier"></ion-input>
+      </ion-item>
+      <ion-item>
+        <button ion-button large secondary (click)="addOrganization()">
+          Add organization&nbsp;<ion-icon name="create"></ion-icon>
+        </button>
+      </ion-item>
+    </ion-col>
+    <ion-col col-lg-6 col-md-6 col-sm-12 *ngIf="invites">
+      <h3>Invites</h3>
+      <ion-list *ngFor="let invite of invites">
+        <ion-item ion-item>
+          <ion-icon name="person" item-start [color]="'dark'"></ion-icon>
+          {{invite.username}}
+        </ion-item>
+        <ion-item>
+          <ion-label floating>Invite code</ion-label>
+          <ion-input type="text" [value]="invite.skylink"></ion-input>
+        </ion-item>
+      </ion-list>
     </ion-col>
   </ion-row>
   <ion-row *ngIf="settingsService.remoteSettings.restricted && bulletinSecretService.identity.type === 'organization'">
@@ -38,6 +68,33 @@
       <ion-item>
         <button ion-button large secondary (click)="addOrganizationMember()">
           Add organization member&nbsp;<ion-icon name="create"></ion-icon>
+        </button>
+      </ion-item>
+    </ion-col>
+    <ion-col col-lg-6 col-md-6 col-sm-12 *ngIf="invites">
+      <h3>Invites</h3>
+      <ion-list *ngFor="let invite of invites">
+        <ion-item ion-item>
+          <ion-icon name="person" item-start [color]="'dark'"></ion-icon>
+          {{invite.user.username}}
+        </ion-item>
+        <ion-item>
+          <ion-label floating>Invite code</ion-label>
+          <ion-input type="text" [value]="invite.skylink"></ion-input>
+        </ion-item>
+      </ion-list>
+    </ion-col>
+  </ion-row>
+  <ion-row *ngIf="settingsService.remoteSettings.restricted && bulletinSecretService.identity.type === 'organization_member'">
+    <ion-col col-lg-6 col-md-6 col-sm-12>
+      <h3>Invite contacts</h3>
+      <ion-item>
+        <ion-label floating>Identifier</ion-label>
+        <ion-input type="text" [(ngModel)]="contactIdentifier"></ion-input>
+      </ion-item>
+      <ion-item>
+        <button ion-button large secondary (click)="addMemberContact()">
+          Add contact&nbsp;<ion-icon name="create"></ion-icon>
         </button>
       </ion-item>
     </ion-col>
