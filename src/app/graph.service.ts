@@ -119,25 +119,25 @@ export class GraphService {
             var promise = null;
             if (ids) {
                 promise = this.ahttp.post(
-                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.origin) + '&username_signature=' + this.bulletinSecretService.username_signature,
+                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.origin) + '&username_signature=' + encodeURIComponent(this.bulletinSecretService.username_signature),
                     {ids: ids},
                     options
                 );
             } else if (rids) {
                 promise = this.ahttp.post(
-                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.origin) + '&username_signature=' + this.bulletinSecretService.username_signature,
+                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.origin) + '&username_signature=' + encodeURIComponent(this.bulletinSecretService.username_signature),
                     {rids: rids},
                     options
                 );
             } else if (post_data) {
                 promise = this.ahttp.post(
-                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.origin) + '&username_signature=' + this.bulletinSecretService.username_signature,
+                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.origin) + '&username_signature=' + encodeURIComponent(this.bulletinSecretService.username_signature),
                     post_data,
                     options
                 )
             } else {
                 promise = this.ahttp.get(
-                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.origin) + '&username_signature=' + this.bulletinSecretService.username_signature,
+                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.origin) + '&username_signature=' + encodeURIComponent(this.bulletinSecretService.username_signature),
                     options
                 )
             }
@@ -1209,8 +1209,11 @@ export class GraphService {
             }
             if(messageJson.envelope) {
                 event.relationship = messageJson;
+                event.relationship.envelope.event_datetime = new Date(event.relationship.envelope.event_datetime)
+            } else if(messageJson.event) {
+                event.relationship = messageJson;
+                event.relationship.event.event_datetime = new Date(event.relationship.event.event_datetime)
             }
-            event.relationship.envelope.event_datetime = new Date(event.relationship.envelope.event_datetime)
             eventsOut.push(event)
         }
         return eventsOut

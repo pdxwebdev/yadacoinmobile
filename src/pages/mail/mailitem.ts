@@ -75,7 +75,7 @@ export class MailItemPage {
                 const rid = this.graphService.generateRid(
                   this.bulletinSecretService.identity.username_signature,
                   this.bulletinSecretService.identity.username_signature,
-                  this.bulletinSecretService.key.toWIF() + 'calendar'
+                  'event_meeting'
                 )
 
                 return this.transactionService.generateTransaction({

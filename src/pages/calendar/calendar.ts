@@ -30,7 +30,7 @@ export class CalendarPage {
       let rids = [this.graphService.generateRid(
         this.bulletinSecretService.identity.username_signature,
         this.bulletinSecretService.identity.username_signature,
-        this.bulletinSecretService.key.toWIF() + 'event_meeting'
+        'event_meeting'
       )]
       let group_rids = [];
       for (let i=0; i < this.graphService.graph.groups.length; i++) {
@@ -64,22 +64,23 @@ export class CalendarPage {
     .then((data) => {
 
       let events = {};
-      this.graphService.graph.calendar.map((event) => {
-        const group = this.graphService.groups_indexed[event.requested_rid]
-        const eventDate = event.relationship.envelope.event_datetime;
+      this.graphService.graph.calendar.map((txn) => {
+        const group = this.graphService.groups_indexed[txn.requested_rid]
+        const event = txn.relationship.envelope || txn.relationship.event;
+        const eventDate = event.event_datetime;
         const index = eventDate.getFullYear() + this.addZeros(eventDate.getMonth()) + this.addZeros(eventDate.getDate());
         if (!events[index]) {
           events[index] = []
         }
         events[index].push({
           group: group ? group.relationship : null,
-          sender: event.relationship.envelope.sender,
-          subject: event.relationship.envelope.subject,
-          body: event.relationship.envelope.body,
-          datetime: new Date(parseInt(event.time)*1000).toISOString().slice(0, 19).replace('T', ' '),
-          id: event.id,
-          message_type: event.relationship.envelope.message_type,
-          event_datetime: event.relationship.envelope.event_datetime,
+          sender: event.sender,
+          subject: event.subject,
+          body: event.body,
+          datetime: new Date(parseInt(txn.time)*1000).toISOString().slice(0, 19).replace('T', ' '),
+          id: txn.id,
+          message_type: event.message_type,
+          event_datetime: event.event_datetime,
         });
       });
       this.getCalendar(events);
