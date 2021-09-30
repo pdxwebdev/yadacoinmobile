@@ -40,7 +40,7 @@
     <ion-label floating>Body</ion-label>
     <ion-textarea type="text" [(ngModel)]="body" rows="5" autoGrow="true"></ion-textarea>
   </ion-item>
-  <ion-item>
+  <ion-item *ngIf="settingsService.remoteSettings.restricted">
     <ion-label id="profile_image" color="primary"></ion-label>
     <ion-input type="file" (change)="changeListener($event)"></ion-input>
   </ion-item>

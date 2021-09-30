@@ -107,7 +107,7 @@ export class GraphService {
         return this.getGroups(null, 'file');
       })
       .then(() => {
-        return this.getFriends();
+        return this.getFriendRequests()
       });
     }
 
@@ -1639,7 +1639,7 @@ export class GraphService {
 
     identityFromSkylink(skylink) {
       return new Promise((resolve, reject) => {
-        this.ahttp.get('https://siasky.net/' + skylink)
+        this.ahttp.get('https://centeridentity.com/skynet/skylink/' + skylink)
         .subscribe((res) => {
             try {
               return resolve(JSON.parse(res.text()))

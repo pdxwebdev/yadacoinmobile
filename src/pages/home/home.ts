@@ -69,6 +69,7 @@ export class HomePage {
     invites: any;
     memberIdentifier: any;
     busy: any;
+    inviteBusy: any;
     organizationIdentifier: any;
     contactIdentifier: any;
     constructor(
@@ -96,12 +97,14 @@ export class HomePage {
         this.origin = encodeURIComponent(this.location.origin);
         this.prefix = 'usernames-';
         this.refresh(null);
-        this.busy = true
-        this.graphService.identityToSkylink(this.bulletinSecretService.identity)
-        .then((skylink) => {
-          this.identitySkylink = skylink;
-          this.busy = false;
-        })
+        if (this.settingsService.remoteSettings.restricted) {
+          this.busy = true
+          this.graphService.identityToSkylink(this.bulletinSecretService.identity)
+          .then((skylink) => {
+            this.identitySkylink = skylink;
+            this.busy = false;
+          })
+        }
     }
 
     myForm = new FormGroup({
@@ -153,6 +156,7 @@ export class HomePage {
 
     addOrganization() {
       console.log('submitted');
+      this.inviteBusy = true;
       const username_signature = foobar.base64.fromByteArray(
         this.bulletinSecretService.key.sign(
           foobar.bitcoin.crypto.sha256(
@@ -182,6 +186,8 @@ export class HomePage {
       .then(async (res) => {
         console.log(await res.json())
         this.getOrganizations();
+        this.organizationIdentifier = null;
+        this.inviteBusy = false;
       })
       return false;
     }
@@ -214,6 +220,7 @@ export class HomePage {
 
     addOrganizationMember() {
       console.log('submitted');
+      this.inviteBusy = true;
       const username_signature = foobar.base64.fromByteArray(
         this.bulletinSecretService.key.sign(
           foobar.bitcoin.crypto.sha256(
@@ -243,6 +250,8 @@ export class HomePage {
       .then(async (res) => {
         console.log(await res.json())
         this.getOrganizationMembers();
+        this.memberIdentifier = null;
+        this.inviteBusy = false;
       })
       return false;
     }
@@ -275,6 +284,7 @@ export class HomePage {
 
     addMemberContact() {
       console.log('submitted');
+      this.inviteBusy = true;
       const username_signature = foobar.base64.fromByteArray(
         this.bulletinSecretService.key.sign(
           foobar.bitcoin.crypto.sha256(
@@ -304,6 +314,8 @@ export class HomePage {
       .then(async (res) => {
         console.log(await res.json())
         this.getMemberContacts();
+        this.contactIdentifier = null;
+        this.inviteBusy = false;
       })
       return false;
     }
@@ -364,28 +376,6 @@ export class HomePage {
         }, () => {});
     }
 
-    addFriend() {
-        var buttons = [];
-        buttons.push({
-            text: 'Add',
-            handler: (data) => {
-                this.graphService.addFriendFromSkylink(data.identity);
-            }
-        });
-        let alert = this.alertCtrl.create({
-            inputs: [
-                {
-                    name: 'identity',
-                    placeholder: 'Type username here...'
-                }
-            ],
-            buttons: buttons
-        });
-        alert.setTitle('Request Friend');
-        alert.setSubTitle('How do you want to request this friend?');
-        alert.present();
-    }
-
     createGeoWallet() {
         return new Promise((resolve, reject) => {
             this.loadingModal = this.loadingCtrl.create({
@@ -440,6 +430,40 @@ export class HomePage {
             console.log(err);
             this.events.publish('pages');
         });
+    }
+
+    signInToDashboard() {
+      fetch('/generate-session-uuid')
+      .then((res) => {
+        return res.json();
+      })
+      .then((data: any) => {
+        const session_id_signature = foobar.base64.fromByteArray(
+          this.bulletinSecretService.key.sign(
+            foobar.bitcoin.crypto.sha256(
+              data.session_uuid
+            )
+          ).toDER()
+        );
+        return fetch(
+          '/organization-sign-in',
+          {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                user: {
+                  username_signature: this.bulletinSecretService.identity.username_signature
+                },
+                session_id_signature: session_id_signature
+              }),
+          }
+        )
+      })
+      .then((res) => {
+        open('/dashboard', '_blank')
+      })
     }
 
     itemTapped(event, item) {

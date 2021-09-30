@@ -15,9 +15,6 @@
       <button ion-button large secondary (click)="addFriend()" *ngIf="isAdded === false && group !== true">
         Add contact&nbsp;<ion-icon name="create"></ion-icon>
       </button>
-      <button ion-button large secondary (click)="joinGroup()" *ngIf="isAdded === false && group === true">
-        Join group&nbsp;<ion-icon name="create"></ion-icon>
-      </button>
       <button ion-button large secondary (click)="createSubGroup()" *ngIf="isAdded === true && group === true">
         Create sub-group&nbsp;<ion-icon name="create"></ion-icon>
       </button>
@@ -30,7 +27,7 @@
       <button ion-button large secondary (click)="message()" *ngIf="isAdded === true && group === true">
         Group chat&nbsp;<ion-icon name="create"></ion-icon>
       </button>
-      <a href="https://siasky.net/{{identity.skylink}}" *ngIf="identity.skylink" target="_blank">
+      <a href="https://centeridentity.com/skynet/skylink/{{identity.skylink}}" *ngIf="identity.skylink" target="_blank">
         <button ion-button large secondary>
           Download&nbsp;<ion-icon name="create"></ion-icon>
         </button>
@@ -45,10 +42,16 @@
       </ion-item>
     </ion-list>
   </ion-row>
-  <ion-row>
+  <ion-row *ngIf="settingsService.remoteSettings.restricted">
     <h4>Public identity <ion-spinner *ngIf="busy"></ion-spinner></h4>
     <ion-item>
       <ion-textarea type="text" [(ngModel)]="identitySkylink" autoGrow="true" rows="1"></ion-textarea>
+    </ion-item>
+  </ion-row>
+  <ion-row *ngIf="!settingsService.remoteSettings.restricted">
+    <h4>Public identity</h4>
+    <ion-item>
+      <ion-textarea type="text" [value]="identityJson" autoGrow="true" rows="5"></ion-textarea>
     </ion-item>
   </ion-row>
   <ion-row>

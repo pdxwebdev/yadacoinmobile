@@ -163,6 +163,20 @@ export class BulletinSecretService {
         });
     }
 
+    unset() {
+      this.key = null;
+      this.username_signature = null;
+      this.keyname = null;
+      this.keykeys = null;
+      this.username = null;
+      this.public_key = null;
+      this.identity = {
+        username: '',
+        username_signature: '',
+        public_key: '',
+      };
+    }
+
     publicKeyToAddress(public_key) {
       foobar.bitcoin.ECPair.fromPublicKeyBuffer(foobar.Buffer.Buffer.from(public_key, 'hex')).getAddress()
     }

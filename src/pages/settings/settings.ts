@@ -16,12 +16,13 @@ import { HomePage } from '../home/home';
 import { Http, Headers, RequestOptions } from '@angular/http';
 import { Geolocation } from '@ionic-native/geolocation';
 import { SendReceive } from '../sendreceive/sendreceive';
-import { GoogleMaps, GoogleMapsEvent, LatLng, MarkerOptions, Marker } from "@ionic-native/google-maps";
+import { GoogleMaps, GoogleMapsEvent, LatLng, MarkerOptions, Marker, Environment, GoogleMapsMapTypeId } from "@ionic-native/google-maps";
 
 
 declare var forge;
 declare var foobar;
 declare var CenterIdentity;
+declare var google;
 
 
 @Component({
@@ -56,6 +57,7 @@ export class Settings {
     centerIdentityImportSuccess = false;
     identitySkylink: any;
     busy: any;
+    CIBusy: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -90,7 +92,7 @@ export class Settings {
     loadMap(mapType) {
       /* The create() function will take the ID of your map element */
       const map = GoogleMaps.create('map-' + mapType, {
-        mapTypeId: 'satellite'
+        mapType: GoogleMapsMapTypeId.HYBRID
       });
   
       map.one( GoogleMapsEvent.MAP_READY ).then((data: any) => {
@@ -98,6 +100,12 @@ export class Settings {
   
         map.setCameraTarget(coordinates);
         map.setCameraZoom(8);
+
+        var service = new google.maps.places.PlacesService(map);
+        service.textSearch({
+        }, (results,status) => {
+          console.log(results);
+        });
       });
 
       map.on(GoogleMapsEvent.MAP_CLICK).subscribe((e) => {
@@ -155,12 +163,14 @@ export class Settings {
         })
         .then(() => {
           if (!this.activeKey) return;
-          this.busy = true
-          this.graphService.identityToSkylink(this.bulletinSecretService.identity)
-          .then((skylink) => {
-            this.identitySkylink = skylink;
-            this.busy = false;
-          })
+          if (this.settingsService.remoteSettings.restricted) {
+            this.busy = true
+            this.graphService.identityToSkylink(this.bulletinSecretService.identity)
+            .then((skylink) => {
+              this.identitySkylink = skylink;
+              this.busy = false;
+            })
+          }
         });
     }
 
@@ -312,6 +322,7 @@ export class Settings {
       })
       .then((result: any) => {
         if (!result.status) {
+          this.bulletinSecretService.unset();
           const toast = this.toastCtrl.create({
               message: result.message,
               duration: 10000
@@ -444,6 +455,7 @@ export class Settings {
                 return new Promise((resolve, reject) => {return resolve(null)});
               }
             } else {
+              this.bulletinSecretService.unset();
               const toast = this.toastCtrl.create({
                   message: result.message,
                   duration: 10000
@@ -566,8 +578,10 @@ export class Settings {
     }
 
     getKeyUsingCenterIdentity() {
-      return this.ci.get(this.centerIdentityPrivateUsername, this.centerIdentityLocation.lat, this.centerIdentityLocation.lng)
+      this.CIBusy = true;
+      return this.ci.get(this.centerIdentityPrivateUsername, this.centerIdentityLocation.lat.toFixed(3), this.centerIdentityLocation.lng.toFixed(3))
       .then((identity) => {
+        this.CIBusy = false;
         this.importedKey = identity.wif;
         return this.importKey();
       });

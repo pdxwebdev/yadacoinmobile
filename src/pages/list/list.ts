@@ -486,15 +486,21 @@ export class ListPage {
       buttons.push({
           text: 'Add',
           handler: (data) => {
-              this.graphService.addFriendFromSkylink(data.identity)
-              .then(() => {
-                let alert = this.alertCtrl.create();
-                alert.setTitle('Contact added');
-                alert.setSubTitle('Your contact was added successfully');
-                alert.addButton('Ok');
-                alert.present();
-                return this.choosePage()
-              });
+            let promise;
+            if (this.settingsService.remoteSettings.restricted) {
+              promise = this.graphService.addFriendFromSkylink(data.identity)
+            } else {
+              promise = this.graphService.addFriend(JSON.parse(data.identity))
+            }
+            promise
+            .then(() => {
+              let alert = this.alertCtrl.create();
+              alert.setTitle('Contact added');
+              alert.setSubTitle('Your contact was added successfully');
+              alert.addButton('Ok');
+              alert.present();
+              return this.choosePage()
+            });
           }
       });
       let alert = this.alertCtrl.create({
@@ -516,15 +522,21 @@ export class ListPage {
       buttons.push({
           text: 'Add',
           handler: (data) => {
-              return this.graphService.addGroupFromSkylink(data.identity)
-              .then(() => {
-                let alert = this.alertCtrl.create();
-                alert.setTitle('Group added');
-                alert.setSubTitle('Your group was added successfully');
-                alert.addButton('Ok');
-                alert.present();
-                return this.choosePage()
-              });
+            let promise;
+            if (this.settingsService.remoteSettings.restricted) {
+              promise = this.graphService.addGroupFromSkylink(data.identity)
+            } else {
+              promise = this.graphService.addGroup(JSON.parse(data.identity))
+            }
+            promise
+            .then(() => {
+              let alert = this.alertCtrl.create();
+              alert.setTitle('Group added');
+              alert.setSubTitle('Your group was added successfully');
+              alert.addButton('Ok');
+              alert.present();
+              return this.choosePage()
+            });
           }
       });
       let alert = this.alertCtrl.create({

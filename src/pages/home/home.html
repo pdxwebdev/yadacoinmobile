@@ -26,8 +26,11 @@
     <ion-col col-lg-12 col-md-12 col-sm-12 *ngIf="!settingsService.remoteSettings.restricted">
       <h1>Welcome!</h1>
       <h4>Public identity (share this with everyone) <ion-spinner *ngIf="busy"></ion-spinner></h4>
-      <ion-item>
+      <ion-item *ngIf="settingsService.remoteSettings.restricted">
         <ion-textarea type="text" [(ngModel)]="identitySkylink" autoGrow="true" rows=1></ion-textarea>
+      </ion-item>
+      <ion-item *ngIf="!settingsService.remoteSettings.restricted">
+        <ion-textarea type="text" [value]="bulletinSecretService.identityJson()" autoGrow="true" rows=5></ion-textarea>
       </ion-item>
     </ion-col>
   </ion-row>
@@ -35,11 +38,11 @@
     <ion-col col-lg-6 col-md-6 col-sm-12>
       <h3>Invite organizations</h3>
       <ion-item>
-        <ion-label floating>Identifier</ion-label>
+        <ion-label floating>Identifier <ion-spinner *ngIf="inviteBusy"></ion-spinner></ion-label>
         <ion-input type="text" [(ngModel)]="organizationIdentifier"></ion-input>
       </ion-item>
       <ion-item>
-        <button ion-button large secondary (click)="addOrganization()">
+        <button ion-button large secondary (click)="addOrganization()" [disabled]="!organizationIdentifier || inviteBusy">
           Add organization&nbsp;<ion-icon name="create"></ion-icon>
         </button>
       </ion-item>
@@ -62,11 +65,11 @@
     <ion-col col-lg-6 col-md-6 col-sm-12>
       <h3>Invite members</h3>
       <ion-item>
-        <ion-label floating>Identifier</ion-label>
+        <ion-label floating>Identifier <ion-spinner *ngIf="inviteBusy"></ion-spinner></ion-label>
         <ion-input type="text" [(ngModel)]="memberIdentifier"></ion-input>
       </ion-item>
       <ion-item>
-        <button ion-button large secondary (click)="addOrganizationMember()">
+        <button ion-button large secondary (click)="addOrganizationMember()" [disabled]="!memberIdentifier || inviteBusy">
           Add organization member&nbsp;<ion-icon name="create"></ion-icon>
         </button>
       </ion-item>
@@ -85,15 +88,25 @@
       </ion-list>
     </ion-col>
   </ion-row>
+  <ion-row *ngIf="settingsService.remoteSettings.restricted && bulletinSecretService.identity.type === 'organization'">
+    <ion-col col-lg-6 col-md-6 col-sm-12>
+      <h3>Admin</h3>
+      <ion-item>
+        <button ion-button large secondary (click)="signInToDashboard()">
+          Sign-in to Dashboard&nbsp;<ion-icon name="create"></ion-icon>
+        </button>
+      </ion-item>
+    </ion-col>
+  </ion-row>
   <ion-row *ngIf="settingsService.remoteSettings.restricted && bulletinSecretService.identity.type === 'organization_member'">
     <ion-col col-lg-6 col-md-6 col-sm-12>
       <h3>Invite contacts</h3>
       <ion-item>
-        <ion-label floating>Identifier</ion-label>
+        <ion-label floating>Identifier <ion-spinner *ngIf="inviteBusy"></ion-spinner></ion-label>
         <ion-input type="text" [(ngModel)]="contactIdentifier"></ion-input>
       </ion-item>
       <ion-item>
-        <button ion-button large secondary (click)="addMemberContact()">
+        <button ion-button large secondary (click)="addMemberContact()" [disabled]="!contactIdentifier || inviteBusy">
           Add contact&nbsp;<ion-icon name="create"></ion-icon>
         </button>
       </ion-item>

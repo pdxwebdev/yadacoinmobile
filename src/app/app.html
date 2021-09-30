@@ -3,8 +3,11 @@
     <ion-header>
       <ion-toolbar>
         <ion-title>
-          <ion-note style="font-size: 20px">
-            {{bulletinSecretService ? bulletinSecretService.identity ? bulletinSecretService.identity.username : 'Center Identity' : 'Center Identity'}}
+          <ion-note *ngIf="settingsService.remoteSettings.restricted" style="font-size: 20px">
+            {{bulletinSecretService.identity.username || 'Center Identity'}}
+          </ion-note>
+          <ion-note *ngIf="!settingsService.remoteSettings.restricted" style="font-size: 20px">
+            {{bulletinSecretService.identity.username || 'YadaCoin'}}
           </ion-note>
           <ion-note style="font-size: 12px">
             {{version}}
@@ -26,8 +29,11 @@
             <ion-segment-button value="mail" title="mail">
               <ion-icon name="mail"></ion-icon>
             </ion-segment-button>
-            <ion-segment-button value="chat" title="chat">
+            <ion-segment-button value="chat" title="private messages">
               <ion-icon name="chatboxes"></ion-icon>
+            </ion-segment-button>
+            <ion-segment-button value="community" title="community chat">
+              <ion-icon name="people"></ion-icon>
             </ion-segment-button>
             <ion-segment-button value="calendar" title="calendar">
               <ion-icon name="calendar"></ion-icon>
@@ -35,11 +41,8 @@
             <ion-segment-button value="contacts" title="contacts">
               <ion-icon name="contacts"></ion-icon>
             </ion-segment-button>
-            <ion-segment-button value="files" title="files">
+            <ion-segment-button value="files" title="files" *ngIf="settingsService.remoteSettings.restricted">
               <ion-icon name="folder"></ion-icon>
-            </ion-segment-button>
-            <ion-segment-button value="community" title="community">
-              <ion-icon name="people"></ion-icon>
             </ion-segment-button>
             <ion-segment-button value="settings" title="identity">
               <ion-icon name="contact"></ion-icon>
@@ -75,7 +78,8 @@
           </button>
         </ng-container>
       </ion-list>
-      <img src="assets/center-identity-logo-square.png" class="logo">
+      <img *ngIf="!settingsService.remoteSettings.restricted" src="assets/img/yadacoinlogosmall.png" class="logo">
+      <img *ngIf="settingsService.remoteSettings.restricted" src="assets/center-identity-logo-square.png" class="logo">
     </ion-content>
 
   </ion-menu>

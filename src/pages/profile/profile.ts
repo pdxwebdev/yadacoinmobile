@@ -60,12 +60,16 @@ export class ProfilePage {
         this.rid = rids.rid;
         this.requested_rid = rids.requested_rid;
         this.requester_rid = rids.requester_rid;
-        this.busy = true;
-        this.graphService.identityToSkylink(this.identity)
-        .then((skylink) => {
-          this.identitySkylink = skylink;
-          this.busy = false;
-        })
+        if (this.settingsService.remoteSettings.restricted) {
+          this.busy = true;
+          this.graphService.identityToSkylink(this.identity)
+          .then((skylink) => {
+            this.identitySkylink = skylink;
+            this.busy = false;
+          })
+        } else {
+          this.identityJson = JSON.stringify(this.graphService.toIdentity(this.identity), null, 4)
+        }
         this.isAdded = this.graphService.isAdded(this.identity)
         this.group = this.graphService.isGroup(this.identity)
     }
@@ -113,24 +117,6 @@ export class ProfilePage {
         alert.setTitle('Add contact');
         alert.setSubTitle('Do you want to add ' + this.identity.username + '?');
         alert.present();
-    }
-
-    joinGroup() {
-        return this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/ns?requested_rid=' + this.item.rid + '&username_signature=' + this.bulletinSecretService.username_signature)
-        .subscribe((res) => {
-            return new Promise((resolve, reject) => {
-                let invite = res.json();
-                this.graphService.addGroup(invite);
-            })
-            .then((hash) => {
-                if (this.settingsService.remoteSettings['walletUrl']) {
-                    return this.graphService.getInfo();
-                }
-            })
-            .catch((err) => {
-                this.events.publish('pages');
-            });
-        });
     }
 
     createSubGroup() {

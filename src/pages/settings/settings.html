@@ -10,9 +10,11 @@
   <ion-refresher (ionRefresh)="refresh($event)">
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
+  <h1>Sign-in</h1>
+  <h3>Create an identity</h3>
   <button ion-button secondary (click)="createWallet()" *ngIf="!settingsService.remoteSettings.restricted">Create identity</button>
   <button ion-button secondary (click)="createWalletFromInvite()" *ngIf="settingsService.remoteSettings.restricted">Create identity from Code</button>
-  <h3>Identities</h3>
+  <h3 *ngIf="keys && keys.length > 0">Select an identity</h3>
   <ion-list>
     <button *ngFor="let key of keys" ion-item (click)="selectIdentity(key.username)" [color]="key.active ? 'primary' : 'light'">
       <ion-icon name="person" item-start [color]="'dark'"></ion-icon>
@@ -58,15 +60,17 @@
       <ion-input type="text" [(ngModel)]="activeKey"></ion-input>
     </ion-item>
     <h4>Public identity (share this with your friends) <ion-spinner *ngIf="busy"></ion-spinner></h4>
-    <ion-item>
+    <ion-item *ngIf="settingsService.remoteSettings.restricted">
       <ion-textarea type="text" [(ngModel)]="identitySkylink" autoGrow="true" rows=1></ion-textarea>
     </ion-item>
-  </ion-list>
-  <ion-list *ngIf="!centerIdentityImportEnabled">
-    <ion-item>
-      <button ion-button secondary (click)="enableCenterIdentityImport()">Import Identity using location</button>
+    <ion-item *ngIf="!settingsService.remoteSettings.restricted">
+      <ion-textarea type="text" [value]="bulletinSecretService.identityJson()" autoGrow="true" rows="5"></ion-textarea>
     </ion-item>
   </ion-list>
+  <h4>Import using location</h4>
+  <ion-item *ngIf="!centerIdentityImportEnabled">
+    <button ion-button secondary (click)="enableCenterIdentityImport()">Choose location</button>
+  </ion-item>
   <ion-list *ngIf="centerIdentityImportEnabled">
     <ion-item>
       Enter your private username
@@ -77,20 +81,18 @@
       <div id="map-import" style="width:500px;height:500px;"></div>
     </ion-item>
     <ion-item *ngIf="!centerIdentityImportSuccess">
-      <button ion-button secondary (click)="getKeyUsingCenterIdentity()">Get from blockchain</button>
+      <button ion-button secondary (click)="getKeyUsingCenterIdentity()">Get from blockchain <ion-spinner *ngIf="CIBusy"></ion-spinner></button>
     </ion-item>
     <ion-item *ngIf="centerIdentityImportSuccess">
       <button ion-button primary (click)="getKeyUsingCenterIdentity()" disabled>Success!</button>
     </ion-item>
   </ion-list>
-  <ion-list>
-    <h4>Import wif</h4>
-    <ion-item>
-      <ion-label floating>WIF</ion-label>
-      <ion-input type="text" placeholder="Paste WIF key from your wallet..." [(ngModel)]="importedKey"></ion-input>
-    </ion-item>
-    <ion-item>
-      <button ion-button secondary (click)="importKey()">Import identity</button>
-    </ion-item>
-  </ion-list>
+  <h4>Import WIF</h4>
+  <ion-item>
+    <ion-label floating>WIF</ion-label>
+    <ion-input type="text" [(ngModel)]="importedKey"></ion-input>
+  </ion-item>
+  <ion-item>
+    <button ion-button secondary (click)="importKey()">Import identity</button>
+  </ion-item>
 </ion-content>

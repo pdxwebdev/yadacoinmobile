@@ -125,7 +125,7 @@ export class MyApp {
     .then(() => {
       if(this.platform.is('cordova')) {
         this.deeplinks.routeWithNavController(this.nav, {
-            '/app': ListPage
+            '/app': Settings
         }).subscribe(match => {
             // match.$route - the route we matched, which is the matched entry from the arguments to route()
             // match.$args - the args passed in the link
