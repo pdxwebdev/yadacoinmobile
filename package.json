@@ -73,7 +73,7 @@
     "eccrypto": "^1.1.6",
     "ecies-wasm": "^0.1.1",
     "eciesjs": "^0.3.11",
-    "electron": "^2.0.4",
+    "electron": "^11.5.0",
     "es6-promise-plugin": "^4.2.2",
     "ionic": "^3.20.1",
     "ionic-angular": "3.7.1",
