@@ -8,16 +8,16 @@
 <ion-content padding>
   What type of message is this?
   <ion-segment [(ngModel)]="message_type">
-    <ion-segment-button value="mail" *ngIf="!graphService.isGroup(recipient)">
+    <ion-segment-button [value]="settingsService.collections.MAIL" *ngIf="!graphService.isGroup(recipient)">
       Mail
     </ion-segment-button>
-    <ion-segment-button value="group_mail" *ngIf="graphService.isGroup(recipient)">
+    <ion-segment-button [value]="settingsService.collections.GROUP_MAIL" *ngIf="graphService.isGroup(recipient)">
       Mail
     </ion-segment-button>
-    <ion-segment-button value="contract">
+    <ion-segment-button [value]="settingsService.collections.CONTRACT">
       Contract
     </ion-segment-button>
-    <ion-segment-button value="event_meeting">
+    <ion-segment-button [value]="settingsService.collections.CALENDAR">
       Event / Meeting
     </ion-segment-button>
   </ion-segment>
@@ -27,7 +27,7 @@
   <form [formGroup]="myForm" (ngSubmit)="submit()" *ngIf="!recipient">
     <ion-auto-complete #searchbar [(ngModel)]="recipient" [options]="{ placeholder : 'Recipient' }" [dataProvider]="completeTestService" formControlName="searchTerm" required></ion-auto-complete>
   </form>
-  <ion-item *ngIf="message_type === 'event_meeting'">
+  <ion-item *ngIf="message_type === settingsService.collections.CALENDAR">
     <ion-label floating>Date &amp; time</ion-label>
     <ion-datetime displayFormat="D MMM YYYY H:mm" [(ngModel)]="event_datetime"></ion-datetime>
   </ion-item>

@@ -16,7 +16,7 @@
   <button ion-button secondary (click)="createWalletFromInvite()" *ngIf="settingsService.remoteSettings.restricted">Create identity from Code</button>
   <h3 *ngIf="keys && keys.length > 0">Select an identity</h3>
   <ion-list>
-    <button *ngFor="let key of keys" ion-item (click)="selectIdentity(key.username)" [color]="key.active ? 'primary' : 'light'">
+    <button *ngFor="let key of keys" ion-item (click)="selectIdentity(key.username)" [color]="key.active ? 'primary' : settingsService.remoteSettings.restricted ? 'light' : 'dark'">
       <ion-icon name="person" item-start [color]="'dark'"></ion-icon>
       {{key.username}}
     </button>
@@ -30,7 +30,7 @@
   <ion-list *ngIf="bulletinSecretService.keyname && centerIdentityExportEnabled">
     <ion-item style="background: linear-gradient(90deg, rgba(255,255,255,1) 0%, #191919 75%); color: black;"><img src="assets/center-identity-logo1024x500.png" height="65" style="vertical-align:middle"></ion-item>
     <ion-item>
-      <ion-input type="text" placeholder="Public username" [(ngModel)]="identity.username" disabled></ion-input>
+      <ion-input type="text" placeholder="Public username" [(ngModel)]="bulletinSecretService.identity.username" disabled></ion-input>
     </ion-item>
     <ion-item>
       Pick a private username that nobody knows except for you (must be very memorable)

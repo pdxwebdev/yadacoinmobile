@@ -11,15 +11,15 @@
   <button ion-button secondary (click)="addFriend(item)" *ngIf="!graphService.isAdded(item.sender)">Add sender as contact</button>
   <button *ngIf="item.group" ion-button secondary (click)="replyToAllMail(item)">Reply to all</button>
   <button ion-button secondary (click)="forwardMail(item)">Forward</button>
-  <button *ngIf="item.message_type == 'contract'" ion-button secondary (click)="signMail(item)">Sign</button>
-  <button *ngIf="item.message_type == 'event_meeting'" ion-button secondary (click)="addToCalendar(item)">Add to calendar</button>
+  <button *ngIf="item.message_type == settingsService.collections.CONTRACT" ion-button secondary (click)="signMail(item)">Sign</button>
+  <button *ngIf="item.message_type == settingsService.collections.CALENDAR" ion-button secondary (click)="addToCalendar(item)">Add to calendar</button>
   <div title="Verified" class="sender">
     <span (click)="viewProfile(item.sender)">{{item.sender.username}} <ion-icon name="checkmark-circle" class="success"></ion-icon></span>
     <span *ngIf="item.group" (click)="viewProfile(item.group)">{{item.group.username}} <ion-icon name="checkmark-circle" class="success"></ion-icon></span>
   </div>
-  <div *ngIf="item.message_type == 'contract_signed'"><strong>Contract signed</strong> <ion-icon name="checkmark-circle" class="success"></ion-icon></div>
+  <div *ngIf="item.message_type == settingsService.collections.CONTRACT_SIGNED"><strong>Contract signed</strong> <ion-icon name="checkmark-circle" class="success"></ion-icon></div>
   <ion-item>{{item.datetime}}</ion-item>
   <ion-item *ngIf="item.event_datetime">{{item.event_datetime}}</ion-item>
   <ion-item><pre>{{item.body}}</pre></ion-item>
-  <ion-item *ngIf="item.skylink"><a href="https://centeridentity.com/skynet/skylink/{{item.skylink}}" target="_blank">Download {{item.filename}}</a></ion-item>
+  <ion-item *ngIf="item.skylink"><a href="https://centeridentity.com/sia-download?skylink={{item.skylink}}" target="_blank">Download {{item.filename}}</a></ion-item>
 </ion-content>

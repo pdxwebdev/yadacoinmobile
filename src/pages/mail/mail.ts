@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
-import { NavController, NavParams } from 'ionic-angular';
+import { Events, NavController, NavParams } from 'ionic-angular';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { GraphService } from '../../app/graph.service';
+import { SettingsService } from '../../app/settings.service';
 import { ComposePage } from './compose';
 import { MailItemPage } from './mailitem';
 
@@ -13,32 +14,35 @@ import { MailItemPage } from './mailitem';
 export class MailPage {
   items = []
   loading = false;
+  rids: any;
   constructor(
     public navCtrl: NavController,
     public navParams: NavParams,
     public graphService: GraphService,
-    public bulletinSecretService: BulletinSecretService
+    public bulletinSecretService: BulletinSecretService,
+    private settingsService: SettingsService,
+    private events: Events
   ) {
     this.loading = true;
     let rids = [this.graphService.generateRid(
       this.bulletinSecretService.identity.username_signature,
       this.bulletinSecretService.identity.username_signature,
-      'mail'
+      this.settingsService.collections.MAIL
     ),
     this.graphService.generateRid(
       this.bulletinSecretService.identity.username_signature,
       this.bulletinSecretService.identity.username_signature,
-      'contract'
+      this.settingsService.collections.CONTRACT
     ),
     this.graphService.generateRid(
       this.bulletinSecretService.identity.username_signature,
       this.bulletinSecretService.identity.username_signature,
-      'contract_signed'
+      this.settingsService.collections.CONTRACT_SIGNED
     ),
     this.graphService.generateRid(
       this.bulletinSecretService.identity.username_signature,
       this.bulletinSecretService.identity.username_signature,
-      'event_meeting'
+      this.settingsService.collections.CALENDAR
     )];
     let group_rids = [];
     for (let i=0; i < this.graphService.graph.groups.length; i++) {
@@ -46,7 +50,7 @@ export class MailPage {
       group_rids.push(this.graphService.generateRid(
         group.relationship.username_signature,
         group.relationship.username_signature,
-        'group_mail'
+        this.settingsService.collections.GROUP_MAIL
       ))
     }
     let file_rids = [];
@@ -55,7 +59,7 @@ export class MailPage {
       file_rids.push(this.graphService.generateRid(
         group.relationship.username_signature,
         group.relationship.username_signature,
-        'group_mail'
+        this.settingsService.collections.GROUP_MAIL
       ))
     }
     if (group_rids.length > 0) {
@@ -64,41 +68,15 @@ export class MailPage {
     if (file_rids.length > 0) {
       rids = rids.concat(file_rids);
     }
-    this.graphService.getMail(rids)
+    this.rids = rids
+    this.events.subscribe('newmail', () => {this.refresh()})
+    this.refresh()
+  }
+
+  refresh() {
+    this.graphService.getMail(this.rids)
     .then(() => {
-      this.items = this.graphService.graph.mail.filter((item) => {
-        if (this.navParams.data.pageTitle.label === 'Sent' && item.public_key === this.bulletinSecretService.identity.public_key) return true;
-        if (this.navParams.data.pageTitle.label === 'Inbox' && item.public_key !== this.bulletinSecretService.identity.public_key) return true;
-      }).map((item) => {
-        const group = this.graphService.groups_indexed[item.requested_rid]
-        const indexedItem = this.graphService.groups_indexed[item.requested_rid] || this.graphService.friends_indexed[item.rid];
-        const identity = indexedItem.relationship.identity || indexedItem.relationship;
-        let sender;
-        if (item.relationship.envelope.sender) {
-          sender = item.relationship.envelope.sender;
-        } else if (item.public_key === this.bulletinSecretService.identity.public_key && this.navParams.data.pageTitle.label === 'Inbox') {
-          sender = this.bulletinSecretService.identity;
-        } else {
-          sender = {
-            username: identity.username,
-            username_signature: identity.username_signature,
-            public_key: identity.public_key
-          }
-        }
-        return {
-          sender: sender,
-          group: group ? group.relationship : null,
-          subject: item.relationship.envelope.subject,
-          body: item.relationship.envelope.body,
-          datetime: new Date(parseInt(item.time)*1000).toISOString().slice(0, 19).replace('T', ' '),
-          id: item.id,
-          thread: item.relationship.thread,
-          message_type: item.relationship.envelope.message_type,
-          event_datetime: item.relationship.envelope.event_datetime,
-          skylink: item.relationship.envelope.skylink,
-          filename: item.relationship.envelope.filename
-        }
-      })
+      this.items = this.graphService.prepareMailItems(this.navParams.data.pageTitle.label)
       this.loading = false;
     })
   }

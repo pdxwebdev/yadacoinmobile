@@ -6,6 +6,7 @@ import { TransactionService } from '../../app/transaction.service';
 import { WalletService } from '../../app/wallet.service';
 import { ComposePage } from './compose';
 import { ProfilePage } from '../profile/profile';
+import { SettingsService } from '../../app/settings.service';
 
 
 declare var X25519;
@@ -24,7 +25,8 @@ export class MailItemPage {
     private graphService: GraphService,
     private bulletinSecretService: BulletinSecretService,
     private alertCtrl: AlertController,
-    private transactionService: TransactionService
+    private transactionService: TransactionService,
+    private settingsService: SettingsService
   ) {
     this.item = navParams.data.item
   }
@@ -75,7 +77,7 @@ export class MailItemPage {
                 const rid = this.graphService.generateRid(
                   this.bulletinSecretService.identity.username_signature,
                   this.bulletinSecretService.identity.username_signature,
-                  'event_meeting'
+                  this.settingsService.collections.CALENDAR
                 )
 
                 return this.transactionService.generateTransaction({

@@ -40,6 +40,7 @@ export class PeerService {
                 "fastgraphUrl": domain + "/post-fastgraph-transaction",
                 "graphUrl": domain,
                 "walletUrl": domain + "/get-graph-wallet",
+                "websocketUrl": domain + "/websocket",
                 "loginUrl": domain + "/login",
                 "registerUrl": domain + "/create-relationship",
                 "authenticatedUrl": domain + "/authenticated",

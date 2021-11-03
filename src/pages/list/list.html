@@ -33,6 +33,7 @@
       <span *ngIf="pageTitle =='Community' && !identity.new && identity.parent"><ion-note>&nbsp;&nbsp;&nbsp;&nbsp;{{identity.username}}</ion-note></span>
       <span *ngIf="pageTitle =='Chat' && identity.new"><strong>{{identity.username}}</strong></span>
       <span *ngIf="pageTitle =='Contacts'">{{item.identity.identity.username}}</span>
+      <span *ngIf="pageTitle =='Contacts'">{{item.relationship.identity.username}}</span>
     </button>
   </ion-list>
   <div *ngIf="selectedItem && pageTitle =='Sent Requests'" padding>

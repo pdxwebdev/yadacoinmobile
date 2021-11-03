@@ -1,5 +1,5 @@
 import { Component, ViewChild } from '@angular/core';
-import { NavController, NavParams } from 'ionic-angular';
+import { Events, NavController, NavParams } from 'ionic-angular';
 import { Storage } from '@ionic/storage';
 import { GraphService } from '../../app/graph.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
@@ -54,11 +54,18 @@ export class ChatPage {
         public bulletinSecretService: BulletinSecretService,
         public settingsService: SettingsService,
         public ahttp: Http,
-        public toastCtrl: ToastController
+        public toastCtrl: ToastController,
+        public events: Events
     ) {
         this.identity = this.navParams.get('identity');
         this.label = this.identity.username;
-        const rids = this.graphService.generateRids(this.identity);
+        const identity = JSON.parse(JSON.stringify(this.graphService.toIdentity(this.identity))); //deep copy
+        if (this.graphService.isGroup(identity)) {
+          identity.collection = this.settingsService.collections.GROUP_CHAT;
+        } else {
+          identity.collection = this.settingsService.collections.CHAT;
+        }
+        const rids = this.graphService.generateRids(identity);
         this.rid = rids.rid;
         this.requested_rid = rids.requested_rid;
         this.requester_rid = rids.requester_rid;
@@ -66,6 +73,9 @@ export class ChatPage {
             this.blockchainAddress = blockchainAddress;
         });
         this.refresh(null, true);
+        this.events.subscribe('newchat', () => {
+          this.refresh(null)
+        })
     }
 
     parseChats() {
@@ -73,6 +83,13 @@ export class ChatPage {
         const rid = group ? this.requested_rid : this.rid
         if(this.graphService.graph.messages[rid]) {
             this.chats = this.graphService.graph.messages[rid];
+            this.chats.sort(function (a, b) {
+                if (parseInt(a.time) > parseInt(b.time))
+                return 1
+                if ( parseInt(a.time) < parseInt(b.time))
+                return -1
+                return 0
+            });
             for(var i=0; i < this.chats.length; i++) {
                 if (!group) {
                   this.chats[i].relationship.identity = this.chats[i].public_key === this.bulletinSecretService.identity.public_key ? this.bulletinSecretService.identity : this.graphService.friends_indexed[rid].relationship.identity
@@ -140,9 +157,8 @@ export class ChatPage {
                 this.walletService.get()
                 .then(() => {
                     if (this.graphService.isGroup(this.identity)) {
-                      return this.transactionService.generateTransaction({
+                      const info = {
                           relationship: {
-                              chatText: this.chatText,
                               identity: this.bulletinSecretService.identity,
                               skylink: this.skylink,
                               filename: this.filepath
@@ -152,7 +168,9 @@ export class ChatPage {
                           requested_rid: this.requested_rid,
                           group: true,
                           group_username_signature: this.graphService.groups_indexed[this.requested_rid].relationship.username_signature
-                      });
+                      }
+                      info.relationship[this.settingsService.collections.CHAT] = this.chatText
+                      return this.transactionService.generateTransaction(info);
                     } else {
                       var dh_public_key = this.graphService.keys[this.rid].dh_public_keys[0];
                       var dh_private_key = this.graphService.keys[this.rid].dh_private_keys[0];
@@ -166,19 +184,20 @@ export class ChatPage {
                           }));
                           var shared_secret = this.toHex(X25519.getSharedKey(privk, pubk));
                           // camera permission was granted
-                          return this.transactionService.generateTransaction({
+                          const info = {
                               dh_public_key: dh_public_key,
                               dh_private_key: dh_private_key,
                               relationship: {
-                                  chatText: this.chatText,
-                                  skylink: this.skylink,
-                                  filename: this.filepath
+                                skylink: this.skylink,
+                                filename: this.filepath
                               },
                               shared_secret: shared_secret,
                               rid: this.rid,
                               requester_rid: this.requester_rid,
                               requested_rid: this.requested_rid,
-                          });
+                          }
+                          info.relationship[this.settingsService.collections.CHAT] = this.chatText;
+                          return this.transactionService.generateTransaction(info);
                       } else {
                           return new Promise((resolve, reject) => {
                               let alert = this.alertCtrl.create();

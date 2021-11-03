@@ -11,8 +11,11 @@ import { SocialSharing } from '@ionic-native/social-sharing';
 import { ChatPage } from '../chat/chat';
 import { GroupPage } from '../group/group';
 import { ProfilePage } from '../profile/profile';
+import { SignatureRequestPage } from '../signaturerequest/signaturerequest';
 import { Events } from 'ionic-angular';
 import { Http } from '@angular/http';
+import { MailPage } from '../mail/mail';
+import { MailItemPage } from '../mail/mailitem';
 
 declare var X25519;
 declare var foobar;
@@ -64,7 +67,9 @@ export class ListPage {
     .catch(() => {
       console.log('error refreshing listpage')
     });
-
+    events.subscribe('notification', () => {
+      this.refresh(null);
+    })
   }
 
   refresh(refresher) {
@@ -89,8 +94,6 @@ export class ListPage {
     })
     .then(() => {
       if(refresher) refresher.complete();
-    }).catch(() => {
-        console.log('listpage walletService error');
     });
   }
 
@@ -197,6 +200,39 @@ export class ListPage {
           }).catch((err) => {
               console.log(err);
           });
+        } else if (this.pageTitle == 'Notifications') {
+          public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
+          const notifications = this.graphService.getNotifications()
+          this.loading = false;
+          notifications.sort(function (a, b) {
+              try {
+                if (parseInt(a.time) < parseInt(b.time))
+                  return 1
+                if (parseInt(a.time) > parseInt(b.time))
+                  return -1
+                return 0
+              } catch(err) {
+                return 0
+              }
+          });
+          notifications.map((item) => {
+            if (item.relationship[this.settingsService.collections.MAIL]) {
+              item.component = MailItemPage
+              item.item = this.graphService.prepareMailItem(item, 'Inbox')
+              item.label = item.relationship[this.settingsService.collections.MAIL].subject
+            } else if (item.relationship[this.settingsService.collections.CHAT]) {
+              item.component = ChatPage
+              const identity = this.graphService.getIdentityFromMessageTransaction(item);
+              item.identity = identity
+              item.label = 'New chat from ' + identity.username
+            } else if (item.relationship.signature_request) {
+              item.component = SignatureRequestPage
+            }
+          })
+          return this.makeList(notifications, '', {title: 'Notifications', component: ChatPage})
+          .then((pages: Array<Object>) => {
+            pages.length > 0 && this.events.publish('menu', pages);
+          });
         } else if (this.pageTitle == 'Community') {
           public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
           return this.graphService.getNewMessages()
@@ -254,8 +290,6 @@ export class ListPage {
               this.populateRemainingFriends(friendsWithSignInsList.friend_list, friendsWithSignInsList.used_rids);
               this.loading = false;
               return this.makeList(friendsWithSignInsList.friend_list, 'Sing Ins', null);
-          }).catch(() => {
-              console.log('listpage getFriends or getNewSignIns error');
           });
         } else if (this.pageTitle == 'Contact Requests') {
           return this.graphService.getFriendRequests()
@@ -270,8 +304,6 @@ export class ListPage {
               });
               this.loading = false;
               return this.makeList(graphArray, 'Contact Requests', null);
-          }).catch(() => {
-              console.log('listpage getFriendRequests error');
           });
         } else if (this.pageTitle == 'Sent Requests') {
           return this.graphService.getSentFriendRequests()
@@ -286,8 +318,6 @@ export class ListPage {
               });
               this.loading = false;
               return this.makeList(graphArray, 'Sent Requests', null);
-          }).catch(() => {
-              console.log('listpage getSentFriendRequests error');
           });
         } else if (this.pageTitle == 'Reacts Detail') {
           graphArray = this.navParams.get('detail');
@@ -315,9 +345,9 @@ export class ListPage {
             this.signIn = signIn[0];
             this.signInText = this.signIn.relationship.signIn;
             resolve();
-          }).catch(() => {
-            console.log('listpage getSignIns error');
-            reject('listpage getSignIns error');
+          }).catch((e) => {
+            console.log(e);
+            reject(e);
           });
         }
       }
@@ -420,10 +450,27 @@ export class ListPage {
       const items = [];
       this.items = [];
       for (let i = 0; i < graphArray.length; i++) {
+        const item  = graphArray[i];
         if (page) {
-          items.push({ title: page.title, label: graphArray[i].relationship.identity ? graphArray[i].relationship.identity.username : graphArray[i].relationship.username, component: page.component, count: false, color: '', kwargs: { identity: graphArray[i].relationship.identity || graphArray[i].relationship }, root: true});
+          const component = item.component || page.component
+          const label = item.relationship.identity ? item.relationship.identity.username : item.relationship.username;
+          items.push({
+            title: page.title,
+            label: label || item.label,
+            component: component,
+            count: false,
+            color: '',
+            kwargs: {
+              item: item.item || item,
+              identity: item.identity || item.relationship.identity || item.relationship
+            },
+            root: true
+          });
         } else {
-          this.items.push({ pageTitle: pageTitle, identity: graphArray[i].relationship });
+          this.items.push({
+            pageTitle: pageTitle,
+            identity: item.relationship
+          });
         }
       }
       resolve(items);
@@ -452,6 +499,12 @@ export class ListPage {
       this.navCtrl.push(ProfilePage, {
         ...item.identity
       });
+    } else if(this.pageTitle == 'Notifications') {
+      if (item.relationship[this.settingsService.collections.SIGNATURE_REQUEST]) {
+        this.navCtrl.push(SignatureRequestPage, item);
+      } else if (item.relationship[this.settingsService.collections.MAIL]) {
+        this.navCtrl.push(MailItemPage, item);
+      }
     } else {
       this.navCtrl.push(ListPage, {
         item: item

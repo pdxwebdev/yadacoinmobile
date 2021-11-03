@@ -47,6 +47,13 @@
             <ion-segment-button value="settings" title="identity">
               <ion-icon name="contact"></ion-icon>
             </ion-segment-button>
+            <ion-segment-button value="notifications" title="notifications">
+              <ion-icon name="notifications"></ion-icon>
+              <ion-badge *ngIf="graphService.notifications.length > 0" color="secondary" style="vertical-align:top;position:absolute;" item-right>{{graphService.notifications.length}}</ion-badge>
+            </ion-segment-button>
+            <ion-segment-button value="web" title="web">
+              <ion-icon name="globe"></ion-icon>
+            </ion-segment-button>
           </ion-segment>
         </ng-container>
         <ng-container *ngFor="let p of pages">

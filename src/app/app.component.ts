@@ -18,6 +18,10 @@ import { SendReceive } from '../pages/sendreceive/sendreceive';
 import { ProfilePage } from '../pages/profile/profile';
 import { MailPage } from '../pages/mail/mail';
 import { Deeplinks } from '@ionic-native/deeplinks';
+import { WebSocketService } from './websocket.service';
+import { WebPage } from '../pages/web/web';
+import { MyPagesPage } from '../pages/web/mypages';
+import { BuildPagePage } from '../pages/web/buildpage';
 
 declare var forge;
 
@@ -36,12 +40,13 @@ export class MyApp {
   version: any;
   menu: any;
   root: boolean;
-
+  notificationCount: any;
   constructor(
     public platform: Platform,
     public statusBar: StatusBar,
     public splashScreen: SplashScreen,
     private walletService: WalletService,
+    private websocketService: WebSocketService,
     private graphService: GraphService,
     public settingsService: SettingsService,
     private bulletinSecretService: BulletinSecretService,
@@ -59,6 +64,9 @@ export class MyApp {
     events.subscribe('menuonly', (options) => {
       this.root = this.pages[0].root;
       this.setMenu(options);
+    });
+    events.subscribe('notification', () => {
+      this.notificationCount = this.graphService.notifications.length;
     });
     this.rootPage = Settings;
   }
@@ -114,7 +122,17 @@ export class MyApp {
     } else if (this.settingsService.menu == 'settings') {
       this.pages = [
         { title: 'Settings', label: 'Identity', component: Settings, count: false, color: '', root: true },
-        { title: 'Profile', label: 'Profile', component: ProfilePage, count: false, color: '', root: true }
+        //{ title: 'Profile', label: 'Profile', component: ProfilePage, count: false, color: '', root: true }
+      ];
+    } else if (this.settingsService.menu == 'notifications') {
+      this.pages = [
+        { title: 'Notifications', label: 'Notifications', component: ListPage, count: false, color: '', root: true },
+      ];
+    } else if (this.settingsService.menu == 'web') {
+      this.pages = [
+        { title: 'Web', label: 'Web', component: WebPage, count: false, color: '', root: true },
+        { title: 'My pages', label: 'My pages', component: MyPagesPage, count: false, color: '', root: true },
+        { title: 'Create page', label: 'Create page', component: BuildPagePage, count: false, color: '', root: true },
       ];
     }
     this.openPage(this.pages[0])
@@ -125,7 +143,6 @@ export class MyApp {
     .then(() => {
       if(this.platform.is('cordova')) {
         this.deeplinks.routeWithNavController(this.nav, {
-            '/app': Settings
         }).subscribe(match => {
             // match.$route - the route we matched, which is the matched entry from the arguments to route()
             // match.$args - the args passed in the link

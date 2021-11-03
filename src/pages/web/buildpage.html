@@ -1,0 +1,24 @@
+<ion-header>
+  <ion-navbar>
+    <button ion-button menuToggle color="{{color}}">
+      <ion-icon name="menu"></ion-icon>
+    </button>
+  </ion-navbar>
+</ion-header>
+
+<ion-content padding>
+  <ion-refresher (ionRefresh)="refresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+  <h1>Page resource identifier</h1>
+  <ion-item>
+    <ion-input type="text" [(ngModel)]="resource"></ion-input>
+  </ion-item>
+  <h1>Page content</h1>
+  <ion-item>
+    <ion-textarea type="text" [(ngModel)]="pageText"></ion-textarea>
+  </ion-item>
+  <ion-item>
+    <button ion-button secondary (click)="save()">Save</button>
+  </ion-item>
+</ion-content>

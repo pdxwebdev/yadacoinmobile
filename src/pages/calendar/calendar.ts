@@ -2,6 +2,7 @@ import { Component, ViewChild, OnInit, Inject, LOCALE_ID } from '@angular/core';
 import { NavController } from 'ionic-angular';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { GraphService } from '../../app/graph.service';
+import { SettingsService } from '../../app/settings.service';
 import { MailItemPage } from '../mail/mailitem';
 
 
@@ -15,7 +16,8 @@ export class CalendarPage {
   constructor(
     public navCtrl: NavController,
     private graphService: GraphService,
-    private bulletinSecretService: BulletinSecretService
+    private bulletinSecretService: BulletinSecretService,
+    private settingsService: SettingsService
   ) {
     this.getCalendar({});
   }
@@ -30,7 +32,7 @@ export class CalendarPage {
       let rids = [this.graphService.generateRid(
         this.bulletinSecretService.identity.username_signature,
         this.bulletinSecretService.identity.username_signature,
-        'event_meeting'
+        this.settingsService.collections.CALENDAR
       )]
       let group_rids = [];
       for (let i=0; i < this.graphService.graph.groups.length; i++) {
@@ -38,7 +40,7 @@ export class CalendarPage {
         group_rids.push(this.graphService.generateRid(
           group.relationship.username_signature,
           group.relationship.username_signature,
-          'event_meeting'
+          this.settingsService.collections.CALENDAR
         ))
       }
       let file_rids = [];
@@ -47,7 +49,7 @@ export class CalendarPage {
         file_rids.push(this.graphService.generateRid(
           file.relationship.username_signature,
           file.relationship.username_signature,
-          'event_meeting'
+          this.settingsService.collections.CALENDAR
         ))
       }
       if (group_rids.length > 0) {
@@ -66,7 +68,7 @@ export class CalendarPage {
       let events = {};
       this.graphService.graph.calendar.map((txn) => {
         const group = this.graphService.groups_indexed[txn.requested_rid]
-        const event = txn.relationship.envelope || txn.relationship.event;
+        const event = txn.relationship[this.settingsService.collections.MAIL] || txn.relationship.event;
         const eventDate = event.event_datetime;
         const index = eventDate.getFullYear() + this.addZeros(eventDate.getMonth()) + this.addZeros(eventDate.getDate());
         if (!events[index]) {

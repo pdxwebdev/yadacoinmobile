@@ -103,22 +103,22 @@ export class GroupPage {
                             to = data.outputs[h].to;
                         }
                     }
-                    return this.transactionService.generateTransaction({
-                        relationship: {
-                            chatText: Base64.encode(JSON.stringify({
-                                public_key: this.item.public_key,
-                                username_signature: this.item.relationship.identity.username_signature,
-                                username: this.item.relationship.identity.username,
-                                group: true,
-                                requested_rid: this.requested_rid
-                            }))
-                        },
-                        rid: data.rid,
-                        requester_rid: data.requester_rid,
-                        requested_rid: data.requested_rid,
-                        shared_secret: shared_secret,
-                        to: to
-                    });
+                    const info = {
+                      relationship: {},
+                      rid: data.rid,
+                      requester_rid: data.requester_rid,
+                      requested_rid: data.requested_rid,
+                      shared_secret: shared_secret,
+                      to: to
+                    }
+                    info.relationship[this.settingsService.collections.CHAT] = Base64.encode(JSON.stringify({
+                        public_key: this.item.public_key,
+                        username_signature: this.item.relationship.identity.username_signature,
+                        username: this.item.relationship.identity.username,
+                        group: true,
+                        requested_rid: this.requested_rid
+                    }))
+                    return this.transactionService.generateTransaction(info);
                 }).then((txn) => {
                     return this.transactionService.sendTransaction();
                 }).then(() => {
@@ -250,19 +250,20 @@ export class GroupPage {
         alert.addButton({
             text: 'Confirm',
             handler: (data: any) => {
+                const info = {
+                    relationship: {
+                        username_signature: this.bulletinSecretService.generate_username_signature(),
+                        username: this.bulletinSecretService.username
+                    },
+                    username_signature: this.username_signature,
+                    rid: this.rid,
+                    requester_rid: this.requester_rid,
+                    requested_rid: this.requested_rid
+                }
+                info.relationship[this.settingsService.collections.GROUP_CHAT]
                 this.walletService.get()
                 .then(() => {
-                    return this.transactionService.generateTransaction({
-                        relationship: {
-                            groupChatText: this.groupChatText,
-                            username_signature: this.bulletinSecretService.generate_username_signature(),
-                            username: this.bulletinSecretService.username
-                        },
-                        username_signature: this.username_signature,
-                        rid: this.rid,
-                        requester_rid: this.requester_rid,
-                        requested_rid: this.requested_rid
-                    });
+                    return this.transactionService.generateTransaction(info);
                 }).then((hash) => {
                     return new Promise((resolve, reject) => {
                         if (this.wallet_mode) {

@@ -117,11 +117,8 @@ export class SiaFiles {
                 // camera permission was granted
                 new Promise((resolve, reject) => {
                     if (sharefiledata) {
-                        return this.transactionService.generateTransaction({
+                        const info = {
                             relationship: {
-                                groupChatText: this.postText,
-                                groupChatFile: sharefiledata,
-                                groupChatFileName: this.selectedFile,
                                 my_username_signature: this.bulletinSecretService.generate_username_signature(),
                                 my_username: this.bulletinSecretService.username
                             },
@@ -129,7 +126,12 @@ export class SiaFiles {
                             rid: this.group.rid,
                             requester_rid: this.group.requester_rid,
                             requested_rid: this.group.requested_rid
-                        })
+                        }
+                        info.relationship[this.settingsService.collections.GROUP_CHAT] = this.postText
+                        info.relationship[this.settingsService.collections.GROUP_CHAT_FILE] = sharefiledata
+                        info.relationship[this.settingsService.collections.GROUP_CHAT_FILE_NAME] = this.selectedFile
+
+                        return this.transactionService.generateTransaction(info)
                         .then(() => {
                             resolve()
                         })

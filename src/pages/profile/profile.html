@@ -27,7 +27,7 @@
       <button ion-button large secondary (click)="message()" *ngIf="isAdded === true && group === true">
         Group chat&nbsp;<ion-icon name="create"></ion-icon>
       </button>
-      <a href="https://centeridentity.com/skynet/skylink/{{identity.skylink}}" *ngIf="identity.skylink" target="_blank">
+      <a href="https://centeridentity.com/sia-download?skylink={{identity.skylink}}" *ngIf="identity.skylink" target="_blank">
         <button ion-button large secondary>
           Download&nbsp;<ion-icon name="create"></ion-icon>
         </button>

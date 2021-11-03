@@ -5,7 +5,7 @@ import { TransactionService } from './transaction.service';
 import { SettingsService } from './settings.service';
 import { Badge } from '@ionic-native/badge';
 import { Http, RequestOptions, Headers } from '@angular/http';
-import { Platform } from 'ionic-angular';
+import { Events, Platform } from 'ionic-angular';
 import { timeout } from 'rxjs/operators';
 import { Geolocation } from '@ionic-native/geolocation';
 import { WalletService } from './wallet.service';
@@ -24,8 +24,10 @@ export class GraphService {
       friends: [],
       groups: [],
       files: [],
-      mail: []
+      mail: [],
+      mypages: []
     };
+    notifications = [];
     graphproviderAddress: any;
     xhr: any;
     key: any;
@@ -60,6 +62,7 @@ export class GraphService {
     getcommentReactsError = false;
     getcommentRepliesError = false;
     getCalendarError = false;
+    getMyPagesError = false;
     usernames = {};
     username_signature = '';
     groups_indexed = {};
@@ -72,7 +75,8 @@ export class GraphService {
         private ahttp: Http,
         private transactionService: TransactionService,
         private geolocation: Geolocation,
-        private walletService: WalletService
+        private walletService: WalletService,
+        private events: Events
     ) {
         this.stored_secrets = {};
         this.stored_secrets_by_rid = {};
@@ -94,7 +98,8 @@ export class GraphService {
         friends: [],
         groups: [],
         files: [],
-        mail: []
+        mail: [],
+        mypages: []
       };
       this.groups_indexed = {}
       this.friends_indexed = {}
@@ -174,6 +179,19 @@ export class GraphService {
                 reject(null);
             });
         })
+    }
+
+    addNotification(item) {
+      if (Array.isArray(item)) {
+        this.notifications = this.notifications.concat(item)
+      } else {
+        this.notifications.push(item)
+      }
+      this.events.publish('notification');
+    }
+
+    getNotifications() {
+      return this.notifications;
     }
 
     getSentFriendRequests() {
@@ -270,7 +288,7 @@ export class GraphService {
         return new Promise((resolve, reject) => {
           this.endpointRequest('get-graph-collection', null, rid)
           .then((data: any) => {
-              return this.parseMail(data.collection, 'new_mail_counts', 'new_mail_count', undefined, 'envelope', 'last_mail_height')
+              return this.parseMail(data.collection, 'new_mail_counts', 'new_mail_count', undefined, this.settingsService.collections.MAIL, 'last_mail_height')
           })
           .then((mail: any) => {
               this.graph.mail = mail;
@@ -295,7 +313,7 @@ export class GraphService {
         return new Promise((resolve, reject) => {
           this.endpointRequest('get-graph-collection', null, [rid])
           .then((data: any) => {
-              return this.parseMail(data.collection, 'new_sent_mail_counts', 'new_sent_mail_count', undefined, 'envelope', 'last_sent_mail_height')
+              return this.parseMail(data.collection, 'new_sent_mail_counts', 'new_sent_mail_count', undefined, this.settingsService.collections.MAIL, 'last_sent_mail_height')
           })
           .then((mail: any) => {
               this.graph.mail = mail;
@@ -315,13 +333,53 @@ export class GraphService {
       });
     }
 
+    prepareMailItems(label) {
+      return this.graph.mail.filter((item) => {
+        if (label === 'Sent' && item.public_key === this.bulletinSecretService.identity.public_key) return true;
+        if (label === 'Inbox' && item.public_key !== this.bulletinSecretService.identity.public_key) return true;
+      }).map((item) => {
+        return this.prepareMailItem(item, label)
+      })
+    }
+
+    prepareMailItem(item, label) {
+      const group = this.groups_indexed[item.requested_rid]
+      const indexedItem = this.groups_indexed[item.requested_rid] || this.friends_indexed[item.rid];
+      const identity = indexedItem.relationship.identity || indexedItem.relationship;
+      let sender;
+      if (item.relationship[this.settingsService.collections.MAIL].sender) {
+        sender = item.relationship[this.settingsService.collections.MAIL].sender;
+      } else if (item.public_key === this.bulletinSecretService.identity.public_key && label === 'Inbox') {
+        sender = this.bulletinSecretService.identity;
+      } else {
+        sender = {
+          username: identity.username,
+          username_signature: identity.username_signature,
+          public_key: identity.public_key
+        }
+      }
+      return {
+        sender: sender,
+        group: group ? group.relationship : null,
+        subject: item.relationship[this.settingsService.collections.MAIL].subject,
+        body: item.relationship[this.settingsService.collections.MAIL].body,
+        datetime: new Date(parseInt(item.time)*1000).toISOString().slice(0, 19).replace('T', ' '),
+        id: item.id,
+        thread: item.relationship.thread,
+        message_type: item.relationship[this.settingsService.collections.MAIL].message_type,
+        event_datetime: item.relationship[this.settingsService.collections.MAIL].event_datetime,
+        skylink: item.relationship[this.settingsService.collections.MAIL].skylink,
+        filename: item.relationship[this.settingsService.collections.MAIL].filename
+      }
+    }
+
     getMessages(rid) {
         if(typeof rid === 'string') rid = [rid];
         //get messages for a specific friend
         return new Promise((resolve, reject) => {
             this.endpointRequest('get-graph-collection', null, rid)
             .then((data: any) => {
-                return this.parseMessages(data.collection, 'new_messages_counts', 'new_messages_count', rid, 'chatText', 'last_message_height')
+                return this.parseMessages(data.collection, 'new_messages_counts', 'new_messages_count', rid, this.settingsService.collections.CHAT, 'last_message_height')
             })
             .then((chats: any) => {
                 this.graph.messages = chats;
@@ -357,7 +415,7 @@ export class GraphService {
         return new Promise((resolve, reject) => {
             this.endpointRequest('get-graph-sent-messages', null, [])
             .then((data: any) => {
-                return this.parseMessages(data.messages, 'sent_messages_counts', 'sent_messages_count', null, 'chatText', 'last_message_height')
+                return this.parseMessages(data.messages, 'sent_messages_counts', 'sent_messages_count', null, this.settingsService.collections.CHAT, 'last_message_height')
             })
             .then((chats: any) => {
                 // if (!this.graph.messages) {
@@ -388,7 +446,7 @@ export class GraphService {
         return new Promise((resolve, reject) => {
             this.endpointRequest('get-graph-collection', null, [choice_rid])
             .then((data: any) => {
-                return this.parseGroupMessages(key, data.messages, 'new_group_messages_counts', 'new_group_messages_count', rid, ['groupChatText', 'groupChatFileName'], 'last_group_message_height')
+                return this.parseGroupMessages(key, data.messages, 'new_group_messages_counts', 'new_group_messages_count', rid, [this.settingsService.collections.GROUP_CHAT, this.settingsService.collections.GROUP_CHAT_FILE_NAME], 'last_group_message_height')
             })
             .then((chats: any) => {
                 if (!this.graph.messages) {
@@ -431,29 +489,19 @@ export class GraphService {
         });
     }
 
-    getSignIns(rid) {
-        //get sign ins for a specific friend
-        return new Promise((resolve, reject) => {
-            this.endpointRequest('get-graph-new-messages')
-            .then((data: any) => {
-                return this.parseMessages(data.new_messages, 'new_sign_ins_counts', 'new_sign_ins_count', rid, 'signIn', 'last_sign_in_height');
-            })
-            .then((signIns: any) => {
-                signIns[rid].sort(function (a, b) {
-                  if (a.height > b.height)
-                    return -1
-                  if ( a.height < b.height)
-                    return 1
-                  return 0
-                });
-                this.graph.signIns = signIns[rid];
-                this.getSignInsError = false;
-                resolve(signIns[rid]);
-            }).catch((err) => {
-                this.getSignInsError = true;
-                reject(err);
-            });
-        });
+    getSignIns(rids) {
+      return this.endpointRequest('get-graph-collection', undefined, rids)
+      .then((data: any) => {
+          this.graph.signins = this.parseMessages(
+            data.collection,
+            'new_sign_ins_counts',
+            'new_sign_ins_count',
+            rids,
+            this.settingsService.collections.WEB_CHALLENGE_RESPONSE,
+            'last_sign_in_height'
+          );
+          this.getSignInsError = false;
+      });
     }
 
     getNewSignIns() {
@@ -461,7 +509,12 @@ export class GraphService {
         return new Promise((resolve, reject) => {
             this.endpointRequest('get-graph-new-messages')
             .then((data: any) => {
-                return this.parseNewMessages(data.new_messages, 'new_sign_ins_counts', 'new_sign_ins_count', 'last_sign_in_height');
+                return this.parseNewMessages(
+                  data.new_messages,
+                  'new_sign_ins_counts',
+                  'new_sign_ins_count',
+                  'last_sign_in_height'
+                );
             })
             .then((newSignIns: any) => {
                 this.graph.newSignIns = newSignIns;
@@ -478,7 +531,14 @@ export class GraphService {
         return new Promise((resolve, reject) => {
             this.endpointRequest('get-graph-reacts', ids)
             .then((data: any) => {
-                this.graph.reacts = this.parseMessages(data.reacts, 'new_reacts_counts', 'new_reacts_count', rid, 'chatText', 'last_react_height');
+                this.graph.reacts = this.parseMessages(
+                  data.reacts,
+                  'new_reacts_counts',
+                  'new_reacts_count',
+                  rid,
+                  this.settingsService.collections.CHAT,
+                  'last_react_height'
+                );
                 this.getReactsError = false;
                 resolve(data.reacts);
             }).catch(() => {
@@ -492,7 +552,7 @@ export class GraphService {
         return new Promise((resolve, reject) => {
             this.endpointRequest('get-graph-comments', ids)
             .then((data: any) => {
-                this.graph.comments = this.parseMessages(data.reacts, 'new_comments_counts', 'new_comments_count', rid, 'chatText', 'last_comment_height');
+                this.graph.comments = this.parseMessages(data.reacts, 'new_comments_counts', 'new_comments_count', rid, this.settingsService.collections.CHAT, 'last_comment_height');
                 this.getCommentsError = false;
                 resolve(data.comments);
             }).catch(() => {
@@ -506,7 +566,7 @@ export class GraphService {
         return new Promise((resolve, reject) => {
             this.endpointRequest('get-graph-reacts', ids)
             .then((data: any) => {
-                this.graph.commentReacts = this.parseMessages(data.reacts, 'new_comment_reacts_counts', 'new_comment_reacts_count', rid, 'chatText', 'last_comment_react_height');
+                this.graph.commentReacts = this.parseMessages(data.reacts, 'new_comment_reacts_counts', 'new_comment_reacts_count', rid, this.settingsService.collections.CHAT, 'last_comment_react_height');
                 this.getcommentReactsError = false;
                 resolve(data.comment_reacts);
             }).catch(() => {
@@ -520,7 +580,7 @@ export class GraphService {
         return new Promise((resolve, reject) => {
             this.endpointRequest('get-graph-comments', ids)
             .then((data: any) => {
-                this.graph.commentReplies = this.parseMessages(data.reacts, 'new_comment_comments_counts', 'new_comment_comments_count', rid, 'chatText', 'last_comment_comment_height');
+                this.graph.commentReplies = this.parseMessages(data.reacts, 'new_comment_comments_counts', 'new_comment_comments_count', rid, this.settingsService.collections.CHAT, 'last_comment_comment_height');
                 this.getcommentRepliesError = false;
                 resolve(data.comments);
             }).catch(() => {
@@ -535,6 +595,14 @@ export class GraphService {
         .then((data: any) => {
             this.graph.calendar = this.parseCalendar(data.collection);
             this.getCalendarError = false;
+        });
+    }
+
+    getMyPages(rids) {
+        return this.endpointRequest('get-graph-collection', undefined, rids)
+        .then((data: any) => {
+            this.graph.mypages = this.parseMyPages(data.collection);
+            this.getMyPagesError = false;
         });
     }
 
@@ -835,13 +903,13 @@ export class GraphService {
                 this.groups_indexed[this.generateRid(
                     relationship.username_signature,
                     relationship.username_signature,
-                    'group_mail'
+                    this.settingsService.collections.GROUP_MAIL
                 )] = group;
 
                 this.groups_indexed[this.generateRid(
                     relationship.username_signature,
                     relationship.username_signature,
-                    'event_meeting'
+                    this.settingsService.collections.CALENDAR
                 )] = group;
 
                 this.groups_indexed[this.generateRid(
@@ -1207,9 +1275,9 @@ export class GraphService {
             } catch(err) {
                 continue;
             }
-            if(messageJson.envelope) {
+            if(messageJson[this.settingsService.collections.MAIL]) {
                 event.relationship = messageJson;
-                event.relationship.envelope.event_datetime = new Date(event.relationship.envelope.event_datetime)
+                event.relationship[this.settingsService.collections.MAIL].event_datetime = new Date(event.relationship[this.settingsService.collections.MAIL].event_datetime)
             } else if(messageJson.event) {
                 event.relationship = messageJson;
                 event.relationship.event.event_datetime = new Date(event.relationship.event.event_datetime)
@@ -1217,6 +1285,34 @@ export class GraphService {
             eventsOut.push(event)
         }
         return eventsOut
+    }
+
+    parseMyPages(mypages) {
+        let mypagesOut = []
+        const myRids = this.generateRids(this.bulletinSecretService.identity)
+        for(var i=0; i<mypages.length; i++) {
+            //hopefully we've prepared the stored_secrets option before getting here
+            //by calling getSentFriendRequests and getFriendRequests
+            const mypage = mypages[i];
+            let decrypted;
+
+            try {
+                decrypted = this.decrypt(mypage.relationship);
+            }
+            catch(error) {
+                continue
+            }
+            try {
+                var messageJson = JSON.parse(decrypted);
+            } catch(err) {
+                continue;
+            }
+            if(messageJson[this.settingsService.collections.WEB_PAGE]) {
+                mypage.relationship = messageJson;
+                mypagesOut.push(mypage)
+            }
+        }
+        return mypagesOut
     }
 
     getSharedSecrets() {
@@ -1613,6 +1709,12 @@ export class GraphService {
       return iden;
     }
 
+    getIdentityFromMessageTransaction(item) {
+      const group = this.groups_indexed[item.requested_rid]
+      const indexedItem = this.groups_indexed[item.requested_rid] || this.friends_indexed[item.rid];
+      return indexedItem.relationship.identity || indexedItem.relationship;
+    }
+
     identityToSkylink(identity) {
       return new Promise((resolve, reject) => {
         const identityJson = JSON.stringify(this.toIdentity(identity), null, 4);
@@ -1639,7 +1741,7 @@ export class GraphService {
 
     identityFromSkylink(skylink) {
       return new Promise((resolve, reject) => {
-        this.ahttp.get('https://centeridentity.com/skynet/skylink/' + skylink)
+        this.ahttp.get('https://centeridentity.com/sia-download?skylink=' + skylink)
         .subscribe((res) => {
             try {
               return resolve(JSON.parse(res.text()))

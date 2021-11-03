@@ -17,6 +17,7 @@ import { Http, Headers, RequestOptions } from '@angular/http';
 import { Geolocation } from '@ionic-native/geolocation';
 import { SendReceive } from '../sendreceive/sendreceive';
 import { GoogleMaps, GoogleMapsEvent, LatLng, MarkerOptions, Marker, Environment, GoogleMapsMapTypeId } from "@ionic-native/google-maps";
+import { WebSocketService } from '../../app/websocket.service';
 
 
 declare var forge;
@@ -70,6 +71,7 @@ export class Settings {
         private graphService: GraphService,
         private socialSharing: SocialSharing,
         private walletService: WalletService,
+        private websocketService: WebSocketService,
         private transactionService: TransactionService,
         public events: Events,
         public toastCtrl: ToastController,
@@ -84,6 +86,9 @@ export class Settings {
         this.refresh(null)
         .then(() => {
             return this.peerService.go();
+        })
+        .then(() => {
+            return this.websocketService.init();
         }).catch((err) => {
             console.log(err)
         });
@@ -94,18 +99,12 @@ export class Settings {
       const map = GoogleMaps.create('map-' + mapType, {
         mapType: GoogleMapsMapTypeId.HYBRID
       });
-  
+
       map.one( GoogleMapsEvent.MAP_READY ).then((data: any) => {
         const coordinates: LatLng = new LatLng(41, -87);
-  
+
         map.setCameraTarget(coordinates);
         map.setCameraZoom(8);
-
-        var service = new google.maps.places.PlacesService(map);
-        service.textSearch({
-        }, (results,status) => {
-          console.log(results);
-        });
       });
 
       map.on(GoogleMapsEvent.MAP_CLICK).subscribe((e) => {
@@ -314,7 +313,7 @@ export class Settings {
           content: 'initializing...'
       });
       this.loadingModal.present();
-        
+
       promise = this.getInvite()
       .then((inv: any) => {
         invite = inv
@@ -351,7 +350,7 @@ export class Settings {
           return new Promise((resolve, reject) => {return resolve(null)});
         }
       })
-      .then(() => { 
+      .then(() => {
           return this.selectIdentity(this.bulletinSecretService.keyname.substr(this.prefix.length), false);
       })
       .then(() => {
@@ -398,7 +397,7 @@ export class Settings {
       .catch(() => {
           this.loadingModal.dismiss();
       })
-      
+
       promise
       .then(() => {
         const toast = this.toastCtrl.create({
@@ -464,7 +463,10 @@ export class Settings {
               throw result.message
             }
           })
-          .then(() => { 
+          .then(() => {
+              return this.websocketService.connect();
+          })
+          .then(() => {
               if (showModal) {
                 this.loadingModal.dismiss();
               }
@@ -474,20 +476,23 @@ export class Settings {
           .catch((err)  => {
               console.log(err);
               if (showModal) {
-                this.loadingModal.dismiss();  
+                this.loadingModal.dismiss();
               }
-          });        
+          });
         } else {
           return this.set(key)
           .then(() => {
             return this.graphService.refreshFriendsAndGroups();
-          })    
-          .then(() => { 
+          })
+          .then(() => {
               if (showModal) {
                 this.loadingModal.dismiss();
               }
               this.settingsService.menu = 'home';
               this.navCtrl.setRoot(HomePage, {pageTitle: { title: 'Home', label: 'Home', component: HomePage, count: false, color: '' }});
+          })
+          .then(() => {
+              return this.websocketService.connect();
           })
           .catch((err)  => {
               console.log(err);
@@ -553,7 +558,7 @@ export class Settings {
 
     save() {
         this.graphService.resetGraph()
-        
+
         return this.set(this.bulletinSecretService.keyname.substr(this.prefix.length));
     }
 

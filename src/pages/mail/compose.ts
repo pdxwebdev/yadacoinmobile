@@ -60,13 +60,13 @@ export class ComposePage {
       this.recipient = this.item.sender
       this.subject = this.item.subject
       this.prevBody = this.item.body
-      this.message_type = 'mail'
+      this.message_type = this.settingsService.collections.MAIL
     }
     else if (this.mode === 'replyToAll') {
       this.recipient = this.item.group
       this.subject = this.item.subject
       this.prevBody = this.item.body
-      this.message_type = 'group_mail'
+      this.message_type = this.settingsService.collections.GROUP_MAIL
     }
     else if (this.mode === 'forward') {
       this.subject = this.item.subject
@@ -76,13 +76,13 @@ export class ComposePage {
       this.recipient = this.item.sender
       this.subject = this.item.subject
       this.body = this.item.body
-      this.message_type = 'contract_signed'
+      this.message_type = this.settingsService.collections.CONTRACT_SIGNED
       this.submit();
     } else if(this.item && this.item.recipient) {
       this.recipient = this.item.recipient
-      this.message_type = this.graphService.isGroup(this.recipient) ? 'group_mail' : 'mail'
+      this.message_type = this.graphService.isGroup(this.recipient) ? this.settingsService.collections.GROUP_MAIL : this.settingsService.collections.MAIL
     } else {
-      this.message_type = 'mail'
+      this.message_type = this.settingsService.collections.MAIL
     }
   }
 
@@ -134,25 +134,25 @@ export class ComposePage {
                 )
 
                 if (this.graphService.isGroup(this.recipient)) {
-                    return this.transactionService.generateTransaction({
-                        relationship: {
-                            envelope: {
-                                sender: this.bulletinSecretService.identity,
-                                subject: this.subject,
-                                body: this.body,
-                                thread: this.thread,
-                                message_type: this.message_type,
-                                event_datetime: this.event_datetime,
-                                skylink: this.skylink,
-                                filename: this.filepath
-                            }
-                        },
+                    const info = {
+                        relationship: {},
                         rid: rid,
                         requester_rid: requester_rid,
                         requested_rid: requested_rid,
                         group: true,
                         group_username_signature: this.recipient.username_signature
-                    });
+                    }
+                    info.relationship[this.settingsService.collections.GROUP_MAIL] = {
+                        sender: this.bulletinSecretService.identity,
+                        subject: this.subject,
+                        body: this.body,
+                        thread: this.thread,
+                        message_type: this.message_type,
+                        event_datetime: this.event_datetime,
+                        skylink: this.skylink,
+                        filename: this.filepath
+                    }
+                    return this.transactionService.generateTransaction(info);
                 } else {
                   var dh_public_key = this.graphService.keys[rid].dh_public_keys[0];
                   var dh_private_key = this.graphService.keys[rid].dh_private_keys[0];
@@ -166,25 +166,25 @@ export class ComposePage {
                       }));
                       var shared_secret = this.toHex(X25519.getSharedKey(privk, pubk));
                       // camera permission was granted
-                      return this.transactionService.generateTransaction({
+                      const info = {
                           dh_public_key: dh_public_key,
                           dh_private_key: dh_private_key,
-                          relationship: {
-                              envelope: {
-                                  subject: this.subject,
-                                  body: this.body,
-                                  thread: this.thread,
-                                  message_type: this.message_type,
-                                  event_datetime: this.event_datetime,
-                                  skylink: this.skylink,
-                                  filename: this.filepath
-                              }
-                          },
+                          relationship: {},
                           shared_secret: shared_secret,
                           rid: rid,
                           requester_rid: requester_rid,
                           requested_rid: requested_rid
-                      });
+                      }
+                      info.relationship[this.settingsService.collections.MAIL] = {
+                          subject: this.subject,
+                          body: this.body,
+                          thread: this.thread,
+                          message_type: this.message_type,
+                          event_datetime: this.event_datetime,
+                          skylink: this.skylink,
+                          filename: this.filepath
+                      }
+                      return this.transactionService.generateTransaction(info);
                   } else {
                       return new Promise((resolve, reject) => {
                           let alert = this.alertCtrl.create();

@@ -16,9 +16,9 @@
       <ion-list>
         <ion-item *ngFor="let item of chats" text-wrap (click)="toggleExtraInfo(item.pending)">
           <strong><span ion-text style="font-size: 20px;" (click)="viewProfile(item)">{{item.relationship.identity.username || 'Anonymous'}}</span> </strong><span style="font-size: 10px; color: rgb(88, 88, 88);" ion-text>{{item.time}}</span>
-          <h3 *ngIf="!item.relationship.groupChatFileName">{{item.relationship.groupChatText}}</h3>
-          <h3 *ngIf="item.relationship.groupChatFileName" (click)="receive(item.relationship)">{{item.relationship.groupChatFileName}}</h3>
-          <button *ngIf="item.relationship.groupChatFileName" ion-button (click)="import(item.relationship)">Import</button>
+          <h3 *ngIf="!item.relationship[settingsService.collections.GROUP_CHAT_FILE_NAME]">{{item.relationship[settingsService.collections.GROUP_CHAT]}}</h3>
+          <h3 *ngIf="item.relationship[settingsService.collections.GROUP_CHAT_FILE_NAME]" (click)="receive(item.relationship)">{{item.relationship[settingsService.collections.GROUP_CHAT_FILE_NAME]}}</h3>
+          <button *ngIf="item.relationship[settingsService.collections.GROUP_CHAT_FILE_NAME]" ion-button (click)="import(item.relationship)">Import</button>
           <ion-note color="primary">{{item.fee}} YADA</ion-note>
           <ion-note *ngIf="item.pending" color="danger">Pending</ion-note>
           <ion-note *ngIf="!item.pending" color="secondary">Saved</ion-note>

@@ -1,0 +1,30 @@
+<ion-header>
+  <ion-navbar>
+    <button ion-button menuToggle color="{{color}}">
+      <ion-icon name="menu"></ion-icon>
+    </button>
+  </ion-navbar>
+</ion-header>
+
+<ion-content padding>
+  <ion-refresher (ionRefresh)="refresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+  <h1>Url</h1>
+  <form [formGroup]="myForm" (ngSubmit)="submit()" *ngIf="!recipient">
+    <ion-auto-complete #searchbar [(ngModel)]="recipient" [options]="{ placeholder : 'Recipient' }" [dataProvider]="completeTestService" formControlName="searchTerm" required></ion-auto-complete>
+  </form>
+  <ion-item *ngIf="recipient" title="Verified" class="sender">{{recipient.username}} <ion-icon name="checkmark-circle" class="success"></ion-icon></ion-item>
+  <ion-item>
+    <ion-input type="text" [(ngModel)]="resource"></ion-input>
+  </ion-item>
+  <ion-item>
+    <button ion-button secondary (click)="go()">Go</button>
+  </ion-item>
+  <ion-item>
+    <button ion-button secondary (click)="signIn()">Sign in</button>
+  </ion-item>
+  <ion-item>
+    {{content}}
+  </ion-item>
+</ion-content>

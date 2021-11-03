@@ -30,6 +30,7 @@ import { BulletinSecretService } from './bulletinSecret.service';
 import { PeerService } from './peer.service';
 import { SettingsService } from './settings.service';
 import { WalletService } from './wallet.service';
+import { WebSocketService } from './websocket.service';
 import { TransactionService } from './transaction.service';
 import { OpenGraphParserService } from './opengraphparser.service'
 import { FirebaseService } from './firebase.service';
@@ -46,6 +47,10 @@ import { CompleteTestService } from './autocomplete.provider';
 import { Geolocation } from '@ionic-native/geolocation';
 import { GoogleMaps } from '@ionic-native/google-maps';
 import { MailItemPage } from '../pages/mail/mailitem';
+import { SignatureRequestPage } from '../pages/signaturerequest/signaturerequest';
+import { WebPage } from '../pages/web/web';
+import { MyPagesPage } from '../pages/web/mypages'
+import { BuildPagePage } from '../pages/web/buildpage';
 
 
 @NgModule({
@@ -64,7 +69,11 @@ import { MailItemPage } from '../pages/mail/mailitem';
     MailPage,
     ComposePage,
     CalendarPage,
-    MailItemPage
+    MailItemPage,
+    SignatureRequestPage,
+    WebPage,
+    MyPagesPage,
+    BuildPagePage
   ],
   imports: [
     BrowserModule,
@@ -95,7 +104,11 @@ import { MailItemPage } from '../pages/mail/mailitem';
     MailPage,
     ComposePage,
     CalendarPage,
-    MailItemPage
+    MailItemPage,
+    SignatureRequestPage,
+    WebPage,
+    MyPagesPage,
+    BuildPagePage
   ],
   providers: [
     StatusBar,
@@ -108,6 +121,7 @@ import { MailItemPage } from '../pages/mail/mailitem';
     PeerService,
     SettingsService,
     WalletService,
+    WebSocketService,
     TransactionService,
     OpenGraphParserService,
     Clipboard,

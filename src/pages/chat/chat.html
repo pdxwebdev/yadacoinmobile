@@ -17,11 +17,11 @@
           <span ion-text style="font-size: 20px;" (click)="viewProfile(item)">{{item.relationship.identity ? item.relationship.identity.username : 'Anonymous'}}</span>
         </strong>
         <span style="font-size: 10px; color: rgb(88, 88, 88);" ion-text>{{item.time}}</span>
-        <h3 *ngIf="!item.relationship.isInvite">{{item.relationship.chatText}}</h3>
-        <h3 *ngIf="item.relationship.isInvite && item.relationship.chatText.group === true">Invite to join {{item.relationship.chatText.username}}</h3>
-        <button *ngIf="item.relationship.isInvite && item.relationship.chatText.group === true" ion-button (click)="joinGroup(item)">Join group</button>
-        <button *ngIf="item.relationship.isInvite && item.relationship.chatText.group !== true" ion-button (click)="requestFriend(item)">Join group</button>
-        <a href="https://centeridentity.com/skynet/skylink/{{item.relationship.skylink}}" target="_blank" *ngIf="item.relationship.skylink">Download {{item.relationship.filename}}</a>
+        <h3 *ngIf="!item.relationship.isInvite">{{item.relationship[settingsService.collections.CHAT]}}</h3>
+        <h3 *ngIf="item.relationship.isInvite && item.relationship[settingsService.collections.CHAT].group === true">Invite to join {{item.relationship[settingsService.collections.CHAT].username}}</h3>
+        <button *ngIf="item.relationship.isInvite && item.relationship[settingsService.collections.CHAT].group === true" ion-button (click)="joinGroup(item)">Join group</button>
+        <button *ngIf="item.relationship.isInvite && item.relationship[settingsService.collections.CHAT].group !== true" ion-button (click)="requestFriend(item)">Join group</button>
+        <a href="https://centeridentity.com/sia-download?skylink={{item.relationship.skylink}}" target="_blank" *ngIf="item.relationship.skylink">Download {{item.relationship.filename}}</a>
         <hr />
 	  </ion-item>
 	</ion-list>
