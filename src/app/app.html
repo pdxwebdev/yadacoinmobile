@@ -19,38 +19,176 @@
     <ion-content *ngIf="bulletinSecretService.key">
       <ion-row>
         <ion-col col-lg-2 col-md-2 col-sm-2>
-          <button class="navbutton" ion-button value="home" tooltip="Home" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-67">
+          <button
+            class="navbutton"
+            [color]="settingsService.menu === 'home' ? 'secondary' : 'primary'"
+            ion-button
+            value="home"
+            tooltip="Home"
+            (click)="segmentChanged($event)"
+            icon-only
+            navTooltip
+            arrow="true"
+            positionH="right"
+            topOffset="-67"
+          >
             <ion-icon name="home"></ion-icon>
           </button>
-          <button class="navbutton" ion-button value="wallet" tooltip="Wallet" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-67">
+          <button
+            class="navbutton"
+            [color]="settingsService.menu === 'wallet' ? 'secondary' : 'primary'"
+            ion-button
+            value="wallet"
+            tooltip="Wallet"
+            (click)="segmentChanged($event)"
+            icon-only
+            navTooltip
+            arrow="true"
+            positionH="right"
+            topOffset="-67"
+          >
             <ion-icon name="cash"></ion-icon>
           </button>
-          <button class="navbutton" ion-button value="mail" tooltip="Mail" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-67">
+          <button
+            class="navbutton"
+            [color]="settingsService.menu === 'mail' ? 'secondary' : 'primary'"
+            ion-button
+            value="mail"
+            tooltip="Mail"
+            (click)="segmentChanged($event)"
+            icon-only
+            navTooltip
+            arrow="true"
+            positionH="right"
+            topOffset="-67"
+          >
             <ion-icon name="mail"></ion-icon>
           </button>
-          <button class="navbutton" ion-button value="chat" tooltip="Private messages" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-67">
+          <button
+            class="navbutton"
+            [color]="settingsService.menu === 'chat' ? 'secondary' : 'primary'"
+            ion-button
+            value="chat"
+            tooltip="Private messages"
+            (click)="segmentChanged($event)"
+            icon-only
+            navTooltip
+            arrow="true"
+            positionH="right"
+            topOffset="-67"
+          >
             <ion-icon name="chatboxes"></ion-icon>
           </button>
-          <button class="navbutton" ion-button value="community" tooltip="Community chat" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-67">
+          <button
+            class="navbutton"
+            [color]="settingsService.menu === 'community' ? 'secondary' : 'primary'"
+            ion-button
+            value="community"
+            tooltip="Community chat"
+            (click)="segmentChanged($event)"
+            icon-only
+            navTooltip
+            arrow="true"
+            positionH="right"
+            topOffset="-67"
+          >
             <ion-icon name="people"></ion-icon>
           </button>
-          <button class="navbutton" ion-button value="calendar" tooltip="Calendar" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-67">
+          <button
+            class="navbutton"
+            [color]="settingsService.menu === 'calendar' ? 'secondary' : 'primary'"
+            ion-button
+            value="calendar"
+            tooltip="Calendar"
+            (click)="segmentChanged($event)"
+            icon-only
+            navTooltip
+            arrow="true"
+            positionH="right"
+            topOffset="-67"
+          >
             <ion-icon name="calendar"></ion-icon>
           </button>
-          <button class="navbutton" ion-button value="contacts" tooltip="Contacts" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-67">
+          <button
+            class="navbutton"
+            [color]="settingsService.menu === 'contacts' ? 'secondary' : 'primary'"
+            ion-button
+            value="contacts"
+            tooltip="Contacts"
+            (click)="segmentChanged($event)"
+            icon-only
+            navTooltip
+            arrow="true"
+            positionH="right"
+            topOffset="-67"
+          >
             <ion-icon name="contacts"></ion-icon>
           </button>
-          <button class="navbutton" ion-button value="files" tooltip="Files" (click)="segmentChanged($event)" *ngIf="settingsService.remoteSettings.restricted" icon-only navTooltip arrow="true" positionH="right" topOffset="-67">
+          <button
+            class="navbutton"
+            [color]="settingsService.menu === 'files' ? 'secondary' : 'primary'"
+            ion-button
+            value="files"
+            tooltip="Files"
+            (click)="segmentChanged($event)"
+            *ngIf="settingsService.remoteSettings.restricted"
+            icon-only
+            navTooltip
+            arrow="true"
+            positionH="right"
+            topOffset="-67"
+          >
             <ion-icon name="folder"></ion-icon>
           </button>
-          <button class="navbutton" ion-button value="web" tooltip="Web" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-67">
+          <button
+            class="navbutton"
+            [color]="settingsService.menu === 'web' ? 'secondary' : 'primary'"
+            ion-button
+            value="web"
+            tooltip="Web"
+            (click)="segmentChanged($event)"
+            icon-only
+            navTooltip
+            arrow="true"
+            positionH="right"
+            topOffset="-67"
+          >
             <ion-icon name="globe"></ion-icon>
           </button>
-          <button class="navbutton" ion-button value="notifications" tooltip="Notifications" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-67">
+          <button
+            class="navbutton"
+            [color]="settingsService.menu === 'notifications' ? 'secondary' : 'primary'"
+            ion-button
+            value="notifications"
+            tooltip="Notifications"
+            (click)="segmentChanged($event)"
+            icon-only
+            navTooltip
+            arrow="true"
+            positionH="right"
+            topOffset="-67"
+          >
             <ion-icon name="notifications"></ion-icon>
-            <ion-badge *ngIf="graphService.notifications.length > 0" color="secondary" style="vertical-align:top;position:absolute;" item-right>{{graphService.notifications.length}}</ion-badge>
+            <ion-badge
+              *ngIf="graphService.notifications.length > 0"
+              color="secondary"
+              style="vertical-align:top;position:absolute;"
+              item-right
+            >{{graphService.notifications.length}}</ion-badge>
           </button>
-          <button class="navbutton" ion-button value="settings" tooltip="Identity" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-67">
+          <button
+            class="navbutton"
+            [color]="settingsService.menu === 'settings' ? 'secondary' : 'primary'"
+            ion-button
+            value="settings"
+            tooltip="Identity"
+            (click)="segmentChanged($event)"
+            icon-only
+            navTooltip
+            arrow="true"
+            positionH="right"
+            topOffset="-67"
+          >
             <ion-icon name="contact"></ion-icon>
           </button>
         </ion-col>

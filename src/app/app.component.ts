@@ -57,13 +57,13 @@ export class MyApp {
       this.rootPage = HomePage;
     });
     events.subscribe('menu', (options) => {
-      this.root = this.pages[0].root;
       this.setMenu(options);
+      this.root = this.pages[0].root;
       this.openPage(this.pages[0])
     });
     events.subscribe('menuonly', (options) => {
-      this.root = this.pages[0].root;
       this.setMenu(options);
+      this.root = this.pages[0].root;
     });
     events.subscribe('notification', () => {
       this.notificationCount = this.graphService.notifications.length;
@@ -135,7 +135,6 @@ export class MyApp {
         { title: 'Create page', label: 'Create page', component: BuildPagePage, count: false, color: '', root: true },
       ];
     }
-    this.openPage(this.pages[0])
   }
 
   initializeApp() {
@@ -175,6 +174,8 @@ export class MyApp {
   segmentChanged(e) {
     this.settingsService.menu = e.currentTarget.value;
     this.setMenu();
+    this.root = this.pages[0].root;
+    this.openPage(this.pages[0])
   }
 
   decrypt(message) {

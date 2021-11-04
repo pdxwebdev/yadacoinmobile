@@ -471,7 +471,7 @@ export class Settings {
                 this.loadingModal.dismiss();
               }
               this.settingsService.menu = 'home';
-              this.navCtrl.setRoot(HomePage, {pageTitle: { title: 'Home', label: 'Home', component: HomePage, count: false, color: '' }});
+              this.events.publish('menu', [{ title: 'Home', label: 'Home', component: HomePage, count: false, color: '' }])
           })
           .catch((err)  => {
               console.log(err);
@@ -489,7 +489,7 @@ export class Settings {
                 this.loadingModal.dismiss();
               }
               this.settingsService.menu = 'home';
-              this.navCtrl.setRoot(HomePage, {pageTitle: { title: 'Home', label: 'Home', component: HomePage, count: false, color: '' }});
+              this.events.publish('menu', [{ title: 'Home', label: 'Home', component: HomePage, count: false, color: '', root: true }])
           })
           .then(() => {
               return this.websocketService.connect();
