@@ -469,7 +469,7 @@ export class ListPage {
         } else {
           this.items.push({
             pageTitle: pageTitle,
-            identity: item.relationship
+            identity: item.relationship.identity ? item.relationship.identity : item.relationship
           });
         }
       }
@@ -497,7 +497,7 @@ export class ListPage {
       });
     } else if(this.pageTitle == 'Contacts') {
       this.navCtrl.push(ProfilePage, {
-        ...item.identity
+        ...item
       });
     } else if(this.pageTitle == 'Notifications') {
       if (item.relationship[this.settingsService.collections.SIGNATURE_REQUEST]) {

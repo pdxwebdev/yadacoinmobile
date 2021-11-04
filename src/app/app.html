@@ -16,75 +16,75 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content>
-      <ion-list *ngIf="bulletinSecretService.key">
-        <ng-container>
-          <ion-segment (ionChange)="segmentChanged($event)" [(ngModel)]="settingsService.menu">
-            <ion-segment-button value="home" title="home">
-              <ion-icon name="home"></ion-icon>
-            </ion-segment-button>
-            <ion-segment-button value="wallet" title="wallet">
-              <ion-icon name="cash"></ion-icon>
-            </ion-segment-button>
-            <ion-segment-button value="mail" title="mail">
-              <ion-icon name="mail"></ion-icon>
-            </ion-segment-button>
-            <ion-segment-button value="chat" title="private messages">
-              <ion-icon name="chatboxes"></ion-icon>
-            </ion-segment-button>
-            <ion-segment-button value="community" title="community chat">
-              <ion-icon name="people"></ion-icon>
-            </ion-segment-button>
-            <ion-segment-button value="calendar" title="calendar">
-              <ion-icon name="calendar"></ion-icon>
-            </ion-segment-button>
-            <ion-segment-button value="contacts" title="contacts">
-              <ion-icon name="contacts"></ion-icon>
-            </ion-segment-button>
-            <ion-segment-button value="files" title="files" *ngIf="settingsService.remoteSettings.restricted">
-              <ion-icon name="folder"></ion-icon>
-            </ion-segment-button>
-            <ion-segment-button value="settings" title="identity">
-              <ion-icon name="contact"></ion-icon>
-            </ion-segment-button>
-            <ion-segment-button value="notifications" title="notifications">
-              <ion-icon name="notifications"></ion-icon>
-              <ion-badge *ngIf="graphService.notifications.length > 0" color="secondary" style="vertical-align:top;position:absolute;" item-right>{{graphService.notifications.length}}</ion-badge>
-            </ion-segment-button>
-            <ion-segment-button value="web" title="web">
-              <ion-icon name="globe"></ion-icon>
-            </ion-segment-button>
-          </ion-segment>
-        </ng-container>
-        <ng-container *ngFor="let p of pages">
-          <button 
-            menuClose 
-            ion-item 
-            (click)="openPage(p)"
-            [color]="graphService.friend_request_count > 0 ? 'primary' : 'grey'"
-            *ngIf="p.title == 'Contact Requests'"
-          >
-            {{p.label}}
+    <ion-content *ngIf="bulletinSecretService.key">
+      <ion-row>
+        <ion-col col-lg-2 col-md-2 col-sm-2>
+          <button style="width:40px;" ion-button value="home" tooltip="Home" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-60">
+            <ion-icon name="home"></ion-icon>
           </button>
-          <button 
-            menuClose 
-            ion-item 
-            (click)="openPage(p)"
-            [color]="'grey'"
-            *ngIf="p.title == 'Messages'"
-          >
-            {{p.label}}
+          <button style="width:40px;" ion-button value="wallet" tooltip="Wallet" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-60">
+            <ion-icon name="cash"></ion-icon>
           </button>
-          <button 
-            menuClose 
-            ion-item 
-            (click)="openPage(p)"
-            *ngIf="['Messages', 'Contact Requests'].indexOf(p.title) < 0"
-          >
-            {{p.label}}
+          <button style="width:40px;" ion-button value="mail" tooltip="Mail" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-60">
+            <ion-icon name="mail"></ion-icon>
           </button>
-        </ng-container>
-      </ion-list>
+          <button style="width:40px;" ion-button value="chat" tooltip="Private messages" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-60">
+            <ion-icon name="chatboxes"></ion-icon>
+          </button>
+          <button style="width:40px;" ion-button value="community" tooltip="Community chat" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-60">
+            <ion-icon name="people"></ion-icon>
+          </button>
+          <button style="width:40px;" ion-button value="calendar" tooltip="Calendar" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-60">
+            <ion-icon name="calendar"></ion-icon>
+          </button>
+          <button style="width:40px;" ion-button value="contacts" tooltip="Contacts" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-60">
+            <ion-icon name="contacts"></ion-icon>
+          </button>
+          <button style="width:40px;" ion-button value="files" tooltip="Files" (click)="segmentChanged($event)" *ngIf="settingsService.remoteSettings.restricted" icon-only navTooltip arrow="true" positionH="right" topOffset="-60">
+            <ion-icon name="folder"></ion-icon>
+          </button>
+          <button style="width:40px;" ion-button value="web" tooltip="Web" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-60">
+            <ion-icon name="globe"></ion-icon>
+          </button>
+          <button style="width:40px;" ion-button value="notifications" tooltip="Notifications" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-60">
+            <ion-icon name="notifications"></ion-icon>
+            <ion-badge *ngIf="graphService.notifications.length > 0" color="secondary" style="vertical-align:top;position:absolute;" item-right>{{graphService.notifications.length}}</ion-badge>
+          </button>
+          <button style="width:40px;" ion-button value="settings" tooltip="Identity" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-60">
+            <ion-icon name="contact"></ion-icon>
+          </button>
+        </ion-col>
+        <ion-col col-lg-10 col-md-10 col-sm-10>
+          <ng-container *ngFor="let p of pages">
+            <button
+              menuClose
+              ion-item
+              (click)="openPage(p)"
+              [color]="graphService.friend_request_count > 0 ? 'primary' : 'grey'"
+              *ngIf="p.title == 'Contact Requests'"
+            >
+              {{p.label}}
+            </button>
+            <button
+              menuClose
+              ion-item
+              (click)="openPage(p)"
+              [color]="'grey'"
+              *ngIf="p.title == 'Messages'"
+            >
+              {{p.label}}
+            </button>
+            <button
+              menuClose
+              ion-item
+              (click)="openPage(p)"
+              *ngIf="['Messages', 'Contact Requests'].indexOf(p.title) < 0"
+            >
+              {{p.label}}
+            </button>
+          </ng-container>
+        </ion-col>
+      </ion-row>
       <img *ngIf="!settingsService.remoteSettings.restricted" src="assets/img/yadacoinlogosmall.png" class="logo">
       <img *ngIf="settingsService.remoteSettings.restricted" src="assets/center-identity-logo-square.png" class="logo">
     </ion-content>

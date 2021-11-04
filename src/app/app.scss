@@ -85,3 +85,6 @@ ion-auto-complete ul li:hover {
 ion-segment {
   margin-bottom: 10px
 }
+.split-pane-visible > ion-menu {
+  max-width: 304px!important;
+}

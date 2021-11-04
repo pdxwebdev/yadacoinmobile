@@ -14,6 +14,7 @@
     "start": "ts-node src/app/server.ts"
   },
   "dependencies": {
+    "@angular/animations": "5.2.11",
     "@angular/compiler": "4.4.3",
     "@angular/compiler-cli": "4.4.3",
     "@angular/core": "4.4.3",
@@ -79,6 +80,7 @@
     "ionic-angular": "3.7.1",
     "ionic-native": "^2.9.0",
     "ionic-plugin-deeplinks": "^1.0.20",
+    "ionic-tooltips": "^3.1.0",
     "ionic2-auto-complete": "^1.6.2-alpha",
     "ionic2-calendar": "^0.6.9",
     "ionic3-map-address-autocomplete": "git+https://github.com/reddimohan/ionic-3-google-maps-autocomplete.git",

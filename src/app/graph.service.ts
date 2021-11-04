@@ -1278,11 +1278,12 @@ export class GraphService {
             if(messageJson[this.settingsService.collections.MAIL]) {
                 event.relationship = messageJson;
                 event.relationship[this.settingsService.collections.MAIL].event_datetime = new Date(event.relationship[this.settingsService.collections.MAIL].event_datetime)
+                eventsOut.push(event)
             } else if(messageJson.event) {
                 event.relationship = messageJson;
                 event.relationship.event.event_datetime = new Date(event.relationship.event.event_datetime)
+                eventsOut.push(event)
             }
-            eventsOut.push(event)
         }
         return eventsOut
     }

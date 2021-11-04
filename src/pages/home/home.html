@@ -9,11 +9,6 @@
 <ion-content padding>
   <ion-spinner *ngIf="loading"></ion-spinner>
   <ion-row>
-    <ion-col col-lg-12 col-md-12 col-sm-12 *ngIf="!settingsService.remoteSettings.restricted || (settingsService.remoteSettings.restricted && settingsService.remoteSettings.identity.username_signature === bulletinSecretService.identity.username_signature)">
-      <button ion-button large secondary (click)="createGroup()">
-        Create Group&nbsp;<ion-icon name="create"></ion-icon>
-      </button>
-    </ion-col>
     <ion-col col-lg-12 col-md-12 col-sm-12 *ngIf="graphService.registrationStatus() === 'error'">
       Something went wrong with your registration, contact info@centeridentity.com for assistance.
     </ion-col>

@@ -173,7 +173,7 @@ export class MyApp {
   }
 
   segmentChanged(e) {
-    this.settingsService.menu = e.value;
+    this.settingsService.menu = e.currentTarget.value;
     this.setMenu();
   }
 

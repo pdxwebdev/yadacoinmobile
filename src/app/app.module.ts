@@ -51,6 +51,8 @@ import { SignatureRequestPage } from '../pages/signaturerequest/signaturerequest
 import { WebPage } from '../pages/web/web';
 import { MyPagesPage } from '../pages/web/mypages'
 import { BuildPagePage } from '../pages/web/buildpage';
+import { TooltipsModule } from 'ionic-tooltips';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 
 @NgModule({
@@ -86,7 +88,9 @@ import { BuildPagePage } from '../pages/web/buildpage';
     NgxQRCodeModule,
     HttpModule,
     EmojiPickerModule.forRoot(),
-    CommonModule
+    CommonModule,
+    TooltipsModule.forRoot(),
+    BrowserAnimationsModule
   ],
   bootstrap: [IonicApp],
   entryComponents: [

@@ -191,3 +191,8 @@ $colors: (
 html, body {
 	height: 1000px;
 }
+
+tooltip-box, [_nghost-c0] {
+  border-radius: 5px;
+  background-color: rgba(0, 0, 0, 1) !important;
+}

@@ -91,6 +91,8 @@ export class WebPage {
         document.body.appendChild(iframe);
         iframe.onload = () => {
           window.frames['myFrame'].contentWindow.postMessage(identity, urlObject.origin);
+          window.open(urlObject.href, '_blank')
+          iframe.parentNode.removeChild(iframe);
         }
       })
     }
