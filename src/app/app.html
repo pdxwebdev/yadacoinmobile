@@ -19,42 +19,42 @@
     <ion-content *ngIf="bulletinSecretService.key">
       <ion-row>
         <ion-col col-lg-2 col-md-2 col-sm-2>
-          <button style="width:40px;" ion-button value="home" tooltip="Home" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-60">
+          <button class="navbutton" ion-button value="home" tooltip="Home" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-67">
             <ion-icon name="home"></ion-icon>
           </button>
-          <button style="width:40px;" ion-button value="wallet" tooltip="Wallet" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-60">
+          <button class="navbutton" ion-button value="wallet" tooltip="Wallet" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-67">
             <ion-icon name="cash"></ion-icon>
           </button>
-          <button style="width:40px;" ion-button value="mail" tooltip="Mail" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-60">
+          <button class="navbutton" ion-button value="mail" tooltip="Mail" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-67">
             <ion-icon name="mail"></ion-icon>
           </button>
-          <button style="width:40px;" ion-button value="chat" tooltip="Private messages" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-60">
+          <button class="navbutton" ion-button value="chat" tooltip="Private messages" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-67">
             <ion-icon name="chatboxes"></ion-icon>
           </button>
-          <button style="width:40px;" ion-button value="community" tooltip="Community chat" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-60">
+          <button class="navbutton" ion-button value="community" tooltip="Community chat" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-67">
             <ion-icon name="people"></ion-icon>
           </button>
-          <button style="width:40px;" ion-button value="calendar" tooltip="Calendar" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-60">
+          <button class="navbutton" ion-button value="calendar" tooltip="Calendar" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-67">
             <ion-icon name="calendar"></ion-icon>
           </button>
-          <button style="width:40px;" ion-button value="contacts" tooltip="Contacts" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-60">
+          <button class="navbutton" ion-button value="contacts" tooltip="Contacts" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-67">
             <ion-icon name="contacts"></ion-icon>
           </button>
-          <button style="width:40px;" ion-button value="files" tooltip="Files" (click)="segmentChanged($event)" *ngIf="settingsService.remoteSettings.restricted" icon-only navTooltip arrow="true" positionH="right" topOffset="-60">
+          <button class="navbutton" ion-button value="files" tooltip="Files" (click)="segmentChanged($event)" *ngIf="settingsService.remoteSettings.restricted" icon-only navTooltip arrow="true" positionH="right" topOffset="-67">
             <ion-icon name="folder"></ion-icon>
           </button>
-          <button style="width:40px;" ion-button value="web" tooltip="Web" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-60">
+          <button class="navbutton" ion-button value="web" tooltip="Web" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-67">
             <ion-icon name="globe"></ion-icon>
           </button>
-          <button style="width:40px;" ion-button value="notifications" tooltip="Notifications" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-60">
+          <button class="navbutton" ion-button value="notifications" tooltip="Notifications" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-67">
             <ion-icon name="notifications"></ion-icon>
             <ion-badge *ngIf="graphService.notifications.length > 0" color="secondary" style="vertical-align:top;position:absolute;" item-right>{{graphService.notifications.length}}</ion-badge>
           </button>
-          <button style="width:40px;" ion-button value="settings" tooltip="Identity" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-60">
+          <button class="navbutton" ion-button value="settings" tooltip="Identity" (click)="segmentChanged($event)" icon-only navTooltip arrow="true" positionH="right" topOffset="-67">
             <ion-icon name="contact"></ion-icon>
           </button>
         </ion-col>
-        <ion-col col-lg-10 col-md-10 col-sm-10>
+        <ion-col col-lg-10 col-md-10 col-sm-10 style="padding-right: 7px; margin-top: 4px;">
           <ng-container *ngFor="let p of pages">
             <button
               menuClose
@@ -62,6 +62,7 @@
               (click)="openPage(p)"
               [color]="graphService.friend_request_count > 0 ? 'primary' : 'grey'"
               *ngIf="p.title == 'Contact Requests'"
+              class="subnavbutton"
             >
               {{p.label}}
             </button>
@@ -71,6 +72,7 @@
               (click)="openPage(p)"
               [color]="'grey'"
               *ngIf="p.title == 'Messages'"
+              class="subnavbutton"
             >
               {{p.label}}
             </button>
@@ -79,6 +81,7 @@
               ion-item
               (click)="openPage(p)"
               *ngIf="['Messages', 'Contact Requests'].indexOf(p.title) < 0"
+              class="subnavbutton"
             >
               {{p.label}}
             </button>
