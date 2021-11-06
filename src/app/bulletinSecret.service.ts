@@ -86,6 +86,10 @@ export class BulletinSecretService {
         });
     }
 
+    cloneIdentity() {
+      return JSON.parse(this.identityJson())
+    }
+
     identityJson() {
       return JSON.stringify(this.identity, null, 4)
     }

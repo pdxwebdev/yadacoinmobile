@@ -64,11 +64,11 @@ export class ListPage {
         content: 'Please wait...'
     });
     this.refresh(null)
-    .catch(() => {
-      console.log('error refreshing listpage')
+    .catch((e) => {
+      console.log(e)
     });
     events.subscribe('notification', () => {
-      this.refresh(null);
+      this.settingsService.menu === 'notifications' && this.choosePage();
     })
   }
 
@@ -204,7 +204,7 @@ export class ListPage {
           public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
           const notifications = this.graphService.getNotifications()
           this.loading = false;
-          notifications.sort(function (a, b) {
+          notifications['notifications'].sort(function (a, b) {
               try {
                 if (parseInt(a.time) < parseInt(b.time))
                   return 1
@@ -215,21 +215,36 @@ export class ListPage {
                 return 0
               }
           });
-          notifications.map((item) => {
+          notifications['notifications'].map((item) => {
             if (item.relationship[this.settingsService.collections.MAIL]) {
               item.component = MailItemPage
               item.item = this.graphService.prepareMailItem(item, 'Inbox')
-              item.label = item.relationship[this.settingsService.collections.MAIL].subject
+              const identity = this.graphService.getIdentityFromMessageTransaction(item)
+              item.label = 'Mail from ' + identity.username
             } else if (item.relationship[this.settingsService.collections.CHAT]) {
               item.component = ChatPage
               const identity = this.graphService.getIdentityFromMessageTransaction(item);
               item.identity = identity
-              item.label = 'New chat from ' + identity.username
+              item.label = 'Chat from ' + identity.username
+            } else if (this.graphService.graph.friend_requests.filter((fr) => {return fr.rid === item.rid}).length > 0) {
+              item.component = ListPage
+              const identity = item.relationship.identity;
+              item.identity = identity
+              item.label = 'Contact request from ' + identity.username
+              item.pageTitle = 'Contact Requests'
+              item.item = item
+            } else if (this.graphService.graph.friends.filter((f) => {return f.rid === item.rid}).length > 0) {
+              item.component = ProfilePage
+              const identity = this.graphService.getIdentityFromMessageTransaction(item);
+              item.identity = identity
+              item.label = 'Contact ' + identity.username + ' accepted your request '
+              item.pageTitle = 'Contacts'
+              item.item = item
             } else if (item.relationship.signature_request) {
               item.component = SignatureRequestPage
             }
           })
-          return this.makeList(notifications, '', {title: 'Notifications', component: ChatPage})
+          return this.makeList(notifications['notifications'], '', {title: 'Notifications', component: ChatPage})
           .then((pages: Array<Object>) => {
             pages.length > 0 && this.events.publish('menu', pages);
           });
@@ -513,14 +528,14 @@ export class ListPage {
   }
 
   accept() {
-    const rids = this.graphService.generateRids(this.friend_request.identity);
+    const rids = this.graphService.generateRids(this.friend_request);
     return this.graphService.addFriend(
-      this.friend_request.identity,
+      this.friend_request,
       rids.rid,
       rids.requester_rid,
       rids.requested_rid
     ).then((txn) => {
-      return this.graphService.getFriendRequests();
+      return this.graphService.refreshFriendsAndGroups();
     })
     .then(() => {
       var alert = this.alertCtrl.create();

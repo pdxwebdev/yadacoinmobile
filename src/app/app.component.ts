@@ -65,9 +65,6 @@ export class MyApp {
       this.setMenu(options);
       this.root = this.pages[0].root;
     });
-    events.subscribe('notification', () => {
-      this.notificationCount = this.graphService.notifications.length;
-    });
     this.rootPage = Settings;
   }
   

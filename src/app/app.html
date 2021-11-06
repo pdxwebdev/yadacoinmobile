@@ -63,6 +63,12 @@
             topOffset="-67"
           >
             <ion-icon name="mail"></ion-icon>
+            <ion-badge
+              *ngIf="graphService.notifications[settingsService.collections.MAIL].length > 0"
+              color="secondary"
+              style="vertical-align:top;position:absolute;"
+              item-right
+            >{{graphService.notifications[settingsService.collections.MAIL].length}}</ion-badge>
           </button>
           <button
             class="navbutton"
@@ -78,6 +84,12 @@
             topOffset="-67"
           >
             <ion-icon name="chatboxes"></ion-icon>
+            <ion-badge
+              *ngIf="graphService.notifications[settingsService.collections.CHAT].length > 0"
+              color="secondary"
+              style="vertical-align:top;position:absolute;"
+              item-right
+            >{{graphService.notifications[settingsService.collections.CHAT].length}}</ion-badge>
           </button>
           <button
             class="navbutton"
@@ -93,6 +105,12 @@
             topOffset="-67"
           >
             <ion-icon name="people"></ion-icon>
+            <ion-badge
+              *ngIf="graphService.notifications[settingsService.collections.GROUP_CHAT].length > 0"
+              color="secondary"
+              style="vertical-align:top;position:absolute;"
+              item-right
+            >{{graphService.notifications[settingsService.collections.GROUP_CHAT].length}}</ion-badge>
           </button>
           <button
             class="navbutton"
@@ -108,6 +126,12 @@
             topOffset="-67"
           >
             <ion-icon name="calendar"></ion-icon>
+            <ion-badge
+              *ngIf="graphService.notifications[settingsService.collections.CALENDAR].length > 0"
+              color="secondary"
+              style="vertical-align:top;position:absolute;"
+              item-right
+            >{{graphService.notifications[settingsService.collections.CALENDAR].length}}</ion-badge>
           </button>
           <button
             class="navbutton"
@@ -123,6 +147,12 @@
             topOffset="-67"
           >
             <ion-icon name="contacts"></ion-icon>
+            <ion-badge
+              *ngIf="graphService.notifications[settingsService.collections.CONTACT].length > 0"
+              color="secondary"
+              style="vertical-align:top;position:absolute;"
+              item-right
+            >{{graphService.notifications[settingsService.collections.CONTACT].length}}</ion-badge>
           </button>
           <button
             class="navbutton"
@@ -170,11 +200,11 @@
           >
             <ion-icon name="notifications"></ion-icon>
             <ion-badge
-              *ngIf="graphService.notifications.length > 0"
+              *ngIf="graphService.notifications['notifications'].length > 0"
               color="secondary"
               style="vertical-align:top;position:absolute;"
               item-right
-            >{{graphService.notifications.length}}</ion-badge>
+            >{{graphService.notifications['notifications'].length}}</ion-badge>
           </button>
           <button
             class="navbutton"

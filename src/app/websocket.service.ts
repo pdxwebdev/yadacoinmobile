@@ -46,9 +46,16 @@ export class WebSocketService {
         const collection = this.getNewTxnCollection(msg)
         if (collection) {
           switch (collection) {
+            case this.settingsService.collections.CONTACT:
+              this.graphService.parseFriendRequests([msg.params.transaction])
+              this.graphService.refreshFriendsAndGroups()
+              .then(() => {
+                return this.graphService.addNotification(msg.params.transaction, this.settingsService.collections.CONTACT);
+              })
+              break;
             case this.settingsService.collections.CALENDAR:
               const calendar = this.graphService.parseCalendar([msg.params.transaction])
-              return this.graphService.addNotification(calendar);
+              return this.graphService.addNotification(calendar, this.settingsService.collections.CALENDAR);
               break;
             case this.settingsService.collections.CHAT:
               this.graphService.parseMessages(
@@ -61,7 +68,7 @@ export class WebSocketService {
               )
               .then((item) => {
                 this.settingsService.menu === 'chat' && this.events.publish('newchat')
-                return this.graphService.addNotification(item[msg.params.transaction.rid][0]);
+                return this.graphService.addNotification(item[msg.params.transaction.rid][0], this.settingsService.collections.CHAT);
               })
               break;
             case this.settingsService.collections.CONTRACT:
@@ -79,7 +86,7 @@ export class WebSocketService {
               )
               .then((item) => {
                 this.events.publish('newmail')
-                return this.graphService.addNotification(item);
+                return this.graphService.addNotification(item, this.settingsService.collections.GROUP_MAIL);
               })
               break;
             case this.settingsService.collections.MAIL:
@@ -94,7 +101,7 @@ export class WebSocketService {
               )
               .then((item) => {
                 this.events.publish('newmail')
-                return this.graphService.addNotification(item);
+                return this.graphService.addNotification(item, this.settingsService.collections.MAIL);
               })
               break;
             case this.settingsService.collections.PERMISSION_REQUEST:
@@ -110,7 +117,7 @@ export class WebSocketService {
                 this.settingsService.collections.SIGNATURE_REQUEST
               )
               .then((item) => {
-                return this.graphService.addNotification(item[msg.params.transaction.rid][0]);
+                return this.graphService.addNotification(item[msg.params.transaction.rid][0], this.settingsService.collections.SIGNATURE_REQUEST);
               })
               break;
             case this.settingsService.collections.WEB_CHALLENGE_REQUEST:
@@ -176,7 +183,7 @@ export class WebSocketService {
               break;
             case this.settingsService.collections.WEB_PAGE:
               const webpage = this.graphService.parseMyPages([msg.params.transaction]);
-              this.graphService.addNotification(webpage);
+              this.graphService.addNotification(webpage, this.settingsService.collections.WEB_PAGE);
               break;
             case this.settingsService.collections.WEB_PAGE_REQUEST:
               let webRequestCount;

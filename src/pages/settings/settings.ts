@@ -387,9 +387,19 @@ export class Settings {
           content: 'initializing...'
       });
       this.loadingModal.present();
-      promise = this.getUsername()
-      .then((username) => {
+      return this.graphService.refreshFriendsAndGroups()
+      .then(() => {
+          return this.getUsername();
+      })
+      .then((uname) => {
+          username = uname
           return this.createKey(username)
+      })
+      .then(() => {
+          return this.refresh(null)
+      })
+      .then(() => {
+          return this.selectIdentity(username, false)
       })
       .then(() => {
           this.loadingModal.dismiss();
@@ -397,8 +407,6 @@ export class Settings {
       .catch(() => {
           this.loadingModal.dismiss();
       })
-
-      promise
       .then(() => {
         const toast = this.toastCtrl.create({
           message: 'Identity created',
@@ -471,7 +479,7 @@ export class Settings {
                 this.loadingModal.dismiss();
               }
               this.settingsService.menu = 'home';
-              this.events.publish('menu', [{ title: 'Home', label: 'Home', component: HomePage, count: false, color: '' }])
+              this.events.publish('menu', [{ title: 'Home', label: 'Home', component: HomePage, count: false, color: '', root: true }])
           })
           .catch((err)  => {
               console.log(err);

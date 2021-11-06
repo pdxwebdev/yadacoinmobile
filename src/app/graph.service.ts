@@ -27,7 +27,7 @@ export class GraphService {
       mail: [],
       mypages: []
     };
-    notifications = [];
+    notifications = {};
     graphproviderAddress: any;
     xhr: any;
     key: any;
@@ -103,6 +103,12 @@ export class GraphService {
       };
       this.groups_indexed = {}
       this.friends_indexed = {}
+      this.notifications = {}
+      for (let i=0; i < Object.keys(this.settingsService.collections).length; i++) {
+        let collectionKey = Object.keys(this.settingsService.collections)[i];
+        if (!this.notifications[this.settingsService.collections[collectionKey]]) this.notifications[this.settingsService.collections[collectionKey]] = [];
+      }
+      if (!this.notifications['notifications']) this.notifications['notifications'] = [];
     }
 
     refreshFriendsAndGroups() {
@@ -181,11 +187,18 @@ export class GraphService {
         })
     }
 
-    addNotification(item) {
+    addNotification(item, collection) {
+      if (!this.notifications[collection]) this.notifications[collection] = [];
       if (Array.isArray(item)) {
-        this.notifications = this.notifications.concat(item)
+        this.notifications[collection] = this.notifications[collection].concat(item)
       } else {
-        this.notifications.push(item)
+        this.notifications[collection].push(item)
+      }
+      if (!this.notifications['notifications']) this.notifications['notifications'] = [];
+      if (Array.isArray(item)) {
+        this.notifications['notifications'] = this.notifications['notifications'].concat(item)
+      } else {
+        this.notifications['notifications'].push(item)
       }
       this.events.publish('notification');
     }
@@ -222,7 +235,8 @@ export class GraphService {
               null,
               [this.generateRid(
                 this.bulletinSecretService.identity.username_signature,
-                this.bulletinSecretService.identity.username_signature
+                this.bulletinSecretService.identity.username_signature,
+                this.settingsService.collections.CONTACT
               )]
             )
             .then((data: any) => {
@@ -679,12 +693,12 @@ export class GraphService {
             try {
                 var decrypted = this.publicDecrypt(friend_request.relationship);
                 var relationship = JSON.parse(decrypted);
-                this.graph.friends.push(friend_request);
                 friend_request.relationship = relationship;
-                this.friends_indexed[friend_request.rid] = friend_request;
                 if (sent_friend_requestsObj[friend_request.rid]) {
                   delete friend_requestsObj[friend_request.rid]
                   delete sent_friend_requestsObj[friend_request.rid]
+                  this.graph.friends.push(friend_request);
+                  this.friends_indexed[friend_request.rid] = friend_request;
                 } else {
                   friend_requestsObj[friend_request.rid] = friend_request;
                 }
@@ -693,6 +707,8 @@ export class GraphService {
                 }
             } catch(err) {
                 if (friend_requestsObj[friend_request.rid]) {
+                  this.graph.friends.push(friend_requestsObj[friend_request.rid]);
+                  this.friends_indexed[friend_request.rid] = friend_requestsObj[friend_request.rid];
                   delete friend_requestsObj[friend_request.rid]
                   delete sent_friend_requestsObj[friend_request.rid]
                 } else {
@@ -730,7 +746,7 @@ export class GraphService {
         if(arr_friend_requests.length > 0) {
             let arr_friend_request_keys = Array.from(friend_requests_diff.keys())
             for(i=0; i<arr_friend_request_keys.length; i++) {
-                friend_requests.push(this.friends_indexed[arr_friend_request_keys[i]])
+                friend_requests.push(friend_requestsObj[arr_friend_request_keys[i]])
             }
         }
 
@@ -741,6 +757,7 @@ export class GraphService {
 
         this.graph.friend_requests = friend_requests;
         this.graph.sent_friend_requests = sent_friend_requests;
+        return friend_requests;
     }
 
     parseFriends(friends) {
@@ -1541,8 +1558,16 @@ export class GraphService {
         this.bulletinSecretService.identity.username_signature,
         identity.username_signature
       );
-      requester_rid = requester_rid || this.generateRid(this.bulletinSecretService.identity.username_signature, this.bulletinSecretService.identity.username_signature);
-      requested_rid = requested_rid || this.generateRid(identity.username_signature, identity.username_signature);
+      requester_rid = requester_rid || this.generateRid(
+        this.bulletinSecretService.identity.username_signature,
+        this.bulletinSecretService.identity.username_signature,
+        this.settingsService.collections.CONTACT
+      );
+      requested_rid = requested_rid || this.generateRid(
+        identity.username_signature,
+        identity.username_signature,
+        this.settingsService.collections.CONTACT
+      );
       if (requester_rid && requested_rid) {
           // get rid from bulletin secrets
       } else {
@@ -1553,10 +1578,12 @@ export class GraphService {
       var raw_dh_public_key = X25519.getPublic(raw_dh_private_key);
       var dh_private_key = this.toHex(raw_dh_private_key);
       var dh_public_key = this.toHex(raw_dh_public_key);
+      let myIdentity = this.bulletinSecretService.cloneIdentity();
+      myIdentity.collection = this.settingsService.collections.CONTACT;
       return this.transactionService.generateTransaction({
           relationship: {
               dh_private_key: dh_private_key,
-              identity: this.bulletinSecretService.identity
+              identity: myIdentity
           },
           dh_public_key: dh_public_key,
           requested_rid: requested_rid,
@@ -1579,7 +1606,7 @@ export class GraphService {
     }
 
     addGroup(identity, rid='', requester_rid='', requested_rid='') {
-      identity.collection = identity.collection || 'group'
+      identity.collection = identity.collection || this.settingsService.collections.GROUP
       rid = rid || this.generateRid(
         this.bulletinSecretService.identity.username_signature,
         identity.username_signature
@@ -1624,22 +1651,16 @@ export class GraphService {
         this.bulletinSecretService.identity.username_signature
       )
       
-      const requested_rid = this.isGroup(identity) ? this.generateRid(
+      const requested_rid = this.generateRid(
         identity.username_signature,
         identity.username_signature,
         identity.collection
-      ) : this.generateRid(
-        identity.username_signature,
-        identity.username_signature
       )
 
-      const requester_rid = this.isGroup(identity) ? this.generateRid(
+      const requester_rid = this.generateRid(
         this.bulletinSecretService.identity.username_signature,
         this.bulletinSecretService.identity.username_signature,
         identity.collection
-      ) : this.generateRid(
-        this.bulletinSecretService.identity.username_signature,
-        this.bulletinSecretService.identity.username_signature
       )
 
       return {
@@ -1686,7 +1707,7 @@ export class GraphService {
 
     isGroup(identity) {
       if (!identity) return false;
-      return !!identity.collection
+      return identity.collection && identity.collection !== this.settingsService.collections.CONTACT
     }
 
     isChild(identity) {
