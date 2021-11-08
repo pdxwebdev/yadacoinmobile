@@ -74,7 +74,10 @@ export class MailPage {
   }
 
   refresh() {
-    this.graphService.getMail(this.rids)
+    return this.graphService.getMail(this.rids, this.settingsService.collections.MAIL)
+    .then(() => {
+      return this.graphService.getMail(this.rids, this.settingsService.collections.GROUP_MAIL)
+    })
     .then(() => {
       this.items = this.graphService.prepareMailItems(this.navParams.data.pageTitle.label)
       this.loading = false;

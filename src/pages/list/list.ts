@@ -16,6 +16,7 @@ import { Events } from 'ionic-angular';
 import { Http } from '@angular/http';
 import { MailPage } from '../mail/mail';
 import { MailItemPage } from '../mail/mailitem';
+import { WebSocketService } from '../../app/websocket.service';
 
 declare var X25519;
 declare var foobar;
@@ -58,7 +59,8 @@ export class ListPage {
     public events: Events,
     private ahttp: Http,
     private settingsService: SettingsService,
-    private toastCtrl: ToastController
+    private toastCtrl: ToastController,
+    private websocketService: WebSocketService
   ) {
     this.loadingModal = this.loadingCtrl.create({
         content: 'Please wait...'
@@ -129,7 +131,8 @@ export class ListPage {
       .then((groupName) => {
           return this.graphService.createGroup(groupName);
       })
-      .then((hash) => {
+      .then((identity) => {
+          this.websocketService.joinGroup(identity);
           if (this.settingsService.remoteSettings['walletUrl']) {
               return this.graphService.getInfo();
           }
@@ -597,7 +600,8 @@ export class ListPage {
               promise = this.graphService.addGroup(JSON.parse(data.identity))
             }
             promise
-            .then(() => {
+            .then((identity) => {
+              this.websocketService.joinGroup(identity);
               let alert = this.alertCtrl.create();
               alert.setTitle('Group added');
               alert.setSubTitle('Your group was added successfully');

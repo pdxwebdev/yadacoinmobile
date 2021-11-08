@@ -130,25 +130,25 @@ export class GraphService {
             var promise = null;
             if (ids) {
                 promise = this.ahttp.post(
-                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.origin) + '&username_signature=' + encodeURIComponent(this.bulletinSecretService.username_signature),
+                    this.settingsService.remoteSettings['graphUrl'] + endpoint + '?origin=' + encodeURIComponent(window.location.origin) + '&username_signature=' + encodeURIComponent(this.bulletinSecretService.username_signature),
                     {ids: ids},
                     options
                 );
             } else if (rids) {
                 promise = this.ahttp.post(
-                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.origin) + '&username_signature=' + encodeURIComponent(this.bulletinSecretService.username_signature),
+                    this.settingsService.remoteSettings['graphUrl'] + endpoint + '?origin=' + encodeURIComponent(window.location.origin) + '&username_signature=' + encodeURIComponent(this.bulletinSecretService.username_signature),
                     {rids: rids},
                     options
                 );
             } else if (post_data) {
                 promise = this.ahttp.post(
-                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.origin) + '&username_signature=' + encodeURIComponent(this.bulletinSecretService.username_signature),
+                    this.settingsService.remoteSettings['graphUrl'] + endpoint + '?origin=' + encodeURIComponent(window.location.origin) + '&username_signature=' + encodeURIComponent(this.bulletinSecretService.username_signature),
                     post_data,
                     options
                 )
             } else {
                 promise = this.ahttp.get(
-                    this.settingsService.remoteSettings['graphUrl'] + '/' + endpoint + '?origin=' + encodeURIComponent(window.location.origin) + '&username_signature=' + encodeURIComponent(this.bulletinSecretService.username_signature),
+                    this.settingsService.remoteSettings['graphUrl'] + endpoint + '?origin=' + encodeURIComponent(window.location.origin) + '&username_signature=' + encodeURIComponent(this.bulletinSecretService.username_signature),
                     options
                 )
             }
@@ -268,13 +268,7 @@ export class GraphService {
         })
         .then((friends: any) => {
             //sort list alphabetically by username
-            friends.sort(function (a, b) {
-              if (a.username < b.username)
-                return -1
-              if ( a.username > b.username)
-                return 1
-              return 0
-            });
+            this.sortAlpha(friends, 'username')
             this.graph.friends = friends;
         });
     }
@@ -297,22 +291,17 @@ export class GraphService {
         });
     }
 
-    getMail(rid) {
+    getMail(rid, collection=this.settingsService.collections.MAIL) {
         //get messages for a specific friend
         return new Promise((resolve, reject) => {
           this.endpointRequest('get-graph-collection', null, rid)
           .then((data: any) => {
-              return this.parseMail(data.collection, 'new_mail_counts', 'new_mail_count', undefined, this.settingsService.collections.MAIL, 'last_mail_height')
+              return this.parseMail(data.collection, 'new_mail_counts', 'new_mail_count', undefined, collection, 'last_mail_height')
           })
           .then((mail: any) => {
-              this.graph.mail = mail;
-              this.graph.mail.sort(function (a, b) {
-                  if (parseInt(a.time) > parseInt(b.time))
-                  return -1
-                  if ( parseInt(a.time) < parseInt(b.time))
-                  return 1
-                  return 0
-              });
+              this.graph.mail = this.graph.mail.concat(mail);
+              this.graph.mail = this.toDistinct(this.graph.mail, 'id')
+              this.sortInt(this.graph.mail, 'time')
               this.getMailError = false;
               return resolve(mail);
           }).catch((err) => {
@@ -331,13 +320,7 @@ export class GraphService {
           })
           .then((mail: any) => {
               this.graph.mail = mail;
-              this.graph.mail.sort(function (a, b) {
-                  if (parseInt(a.time) > parseInt(b.time))
-                  return -1
-                  if ( parseInt(a.time) < parseInt(b.time))
-                  return 1
-                  return 0
-              });
+              this.sortInt(this.graph.mail, 'time')
               this.getMailError = false;
               return resolve(mail);
           }).catch((err) => {
@@ -360,9 +343,10 @@ export class GraphService {
       const group = this.groups_indexed[item.requested_rid]
       const indexedItem = this.groups_indexed[item.requested_rid] || this.friends_indexed[item.rid];
       const identity = indexedItem.relationship.identity || indexedItem.relationship;
+      const collection = group ? this.settingsService.collections.GROUP_MAIL : this.settingsService.collections.MAIL
       let sender;
-      if (item.relationship[this.settingsService.collections.MAIL].sender) {
-        sender = item.relationship[this.settingsService.collections.MAIL].sender;
+      if (item.relationship[collection].sender) {
+        sender = item.relationship[collection].sender;
       } else if (item.public_key === this.bulletinSecretService.identity.public_key && label === 'Inbox') {
         sender = this.bulletinSecretService.identity;
       } else {
@@ -372,28 +356,29 @@ export class GraphService {
           public_key: identity.public_key
         }
       }
+      const datetime = new Date(parseInt(item.time)*1000);
       return {
         sender: sender,
         group: group ? group.relationship : null,
-        subject: item.relationship[this.settingsService.collections.MAIL].subject,
-        body: item.relationship[this.settingsService.collections.MAIL].body,
-        datetime: new Date(parseInt(item.time)*1000).toISOString().slice(0, 19).replace('T', ' '),
+        subject: item.relationship[collection].subject,
+        body: item.relationship[collection].body,
+        datetime: datetime.toLocaleDateString() + ' ' + datetime.toLocaleTimeString(),
         id: item.id,
         thread: item.relationship.thread,
-        message_type: item.relationship[this.settingsService.collections.MAIL].message_type,
-        event_datetime: item.relationship[this.settingsService.collections.MAIL].event_datetime,
-        skylink: item.relationship[this.settingsService.collections.MAIL].skylink,
-        filename: item.relationship[this.settingsService.collections.MAIL].filename
+        message_type: item.relationship[collection].message_type,
+        event_datetime: item.relationship[collection].event_datetime,
+        skylink: item.relationship[collection].skylink,
+        filename: item.relationship[collection].filename
       }
     }
 
-    getMessages(rid) {
+    getMessages(rid, collection=this.settingsService.collections.CHAT) {
         if(typeof rid === 'string') rid = [rid];
         //get messages for a specific friend
         return new Promise((resolve, reject) => {
             this.endpointRequest('get-graph-collection', null, rid)
             .then((data: any) => {
-                return this.parseMessages(data.collection, 'new_messages_counts', 'new_messages_count', rid, this.settingsService.collections.CHAT, 'last_message_height')
+                return this.parseMessages(data.collection, 'new_messages_counts', 'new_messages_count', rid, collection, 'last_message_height')
             })
             .then((chats: any) => {
                 this.graph.messages = chats;
@@ -468,13 +453,7 @@ export class GraphService {
                 }
                 if (choice_rid && chats[choice_rid]){
                     this.graph.messages[choice_rid] = chats[choice_rid];
-                    this.graph.messages[choice_rid].sort(function (a, b) {
-                        if (parseInt(a.time) > parseInt(b.time))
-                        return 1
-                        if ( parseInt(a.time) < parseInt(b.time))
-                        return -1
-                        return 0
-                    });
+                    this.sortInt(this.graph.messages[choice_rid], 'time', true)
                 }
                 this.getMessagesError = false;
                 return resolve(chats[choice_rid]);
@@ -916,6 +895,12 @@ export class GraphService {
                       ).toDER()
                     );
                 }
+
+                this.groups_indexed[this.generateRid(
+                    relationship.username_signature,
+                    relationship.username_signature,
+                    this.settingsService.collections.GROUP_CHAT
+                )] = group;
 
                 this.groups_indexed[this.generateRid(
                     relationship.username_signature,
@@ -1459,6 +1444,14 @@ export class GraphService {
             return this.transactionService.sendTransaction();
         }).then(() => {
           return this.getGroups(null, relationship.collection, true)
+        }).then(() => {
+          return new Promise<any>((resolve, reject) => {
+            return resolve({
+              username: groupname,
+              username_signature: username_signature,
+              public_key: pubKey
+            })
+          })
         });
     }
 
@@ -1637,6 +1630,10 @@ export class GraphService {
         return this.transactionService.sendTransaction();
       }).then(() => {
         return this.getGroups(null, identity.collection, true)
+      }).then(() => {
+        return new Promise((resolve, reject) => {
+          return resolve(identity)
+        })
       });
     }
 
@@ -1713,6 +1710,34 @@ export class GraphService {
     isChild(identity) {
       if (!identity) return false;
       return !!identity.parent
+    }
+
+    sortInt(list, key, reverse=false) {
+      list.sort(function (a, b) {
+          if (parseInt(a[key]) > parseInt(b[key])) return reverse ? 1 : -1
+          if ( parseInt(a[key]) < parseInt(b[key])) return reverse ? -1 : 1
+          return 0
+      });
+    }
+
+    sortAlpha(list, key, reverse=false) {
+      list.sort(function (a, b) {
+        if (a[key] < b[key]) return reverse ? 1 : -1
+        if (a[key] > b[key]) return  reverse ? -1 : 1
+        return 0
+      });
+    }
+
+    toDistinct(list, key) {
+      const hashMap = {};
+      for(let i=0; i < list.length; i++) {
+        hashMap[list[i][key]] = list[i];
+      }
+      const newList = []
+      for(let i=0; i < Object.keys(hashMap).length; i++) {
+        newList.push(hashMap[Object.keys(hashMap)[i]])
+      }
+      return newList;
     }
 
     toIdentity(identity) {

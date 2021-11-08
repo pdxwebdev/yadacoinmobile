@@ -64,6 +64,14 @@ export class PeerService {
                 (res) => {
                     this.loading = false;
                     const remoteSettings = res.json();
+                    for (let i=0; i < Object.keys(remoteSettings).length; i++) {
+                        try {
+                          let url = new URL(remoteSettings[Object.keys(remoteSettings)[i]])
+                          remoteSettings[Object.keys(remoteSettings)[i]] = url.protocol + '//' + location.host + url.pathname
+                        } catch(e) {
+                          continue
+                        }
+                    }
                     this.settingsService.remoteSettings = remoteSettings;
                     resolve();
                 },

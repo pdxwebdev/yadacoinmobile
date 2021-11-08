@@ -10,6 +10,7 @@ import { SettingsService } from '../../app/settings.service';
 import { ListPage } from '../list/list';
 import { ProfilePage } from '../profile/profile';
 import { Http } from '@angular/http';
+import { WebSocketService } from '../../app/websocket.service';
 
 declare var X25519;
 declare var foobar;
@@ -55,7 +56,8 @@ export class ChatPage {
         public settingsService: SettingsService,
         public ahttp: Http,
         public toastCtrl: ToastController,
-        public events: Events
+        public events: Events,
+        public websocketService: WebSocketService
     ) {
         this.identity = this.navParams.get('identity');
         this.label = this.identity.username;
@@ -83,18 +85,13 @@ export class ChatPage {
         const rid = group ? this.requested_rid : this.rid
         if(this.graphService.graph.messages[rid]) {
             this.chats = this.graphService.graph.messages[rid];
-            this.chats.sort(function (a, b) {
-                if (parseInt(a.time) > parseInt(b.time))
-                return 1
-                if ( parseInt(a.time) < parseInt(b.time))
-                return -1
-                return 0
-            });
+            this.graphService.sortInt(this.chats, 'time', true)
             for(var i=0; i < this.chats.length; i++) {
                 if (!group) {
                   this.chats[i].relationship.identity = this.chats[i].public_key === this.bulletinSecretService.identity.public_key ? this.bulletinSecretService.identity : this.graphService.friends_indexed[rid].relationship.identity
                 }
-                this.chats[i].time = new Date(parseInt(this.chats[i].time) * 1000).toISOString().slice(0, 19).replace('T', ' ');
+                let datetime = new Date(parseInt(this.chats[i].time) * 1000);
+                this.chats[i].time = datetime.toLocaleDateString() + ' ' + datetime.toLocaleTimeString();
             }
         } else {
             this.chats = [];
@@ -105,7 +102,13 @@ export class ChatPage {
         if (showLoading) {
             this.loading = true;
         }
-        return this.graphService.getMessages([this.rid, this.requested_rid])
+        let collection;
+        if (this.graphService.isGroup(this.identity)) {
+          collection = this.settingsService.collections.GROUP_CHAT;
+        } else {
+          collection = this.settingsService.collections.CHAT;
+        }
+        return this.graphService.getMessages([this.rid, this.requested_rid], collection)
         .then(() => {
             this.loading = false;
             if(refresher) refresher.complete();
@@ -169,7 +172,7 @@ export class ChatPage {
                           group: true,
                           group_username_signature: this.graphService.groups_indexed[this.requested_rid].relationship.username_signature
                       }
-                      info.relationship[this.settingsService.collections.CHAT] = this.chatText
+                      info.relationship[this.settingsService.collections.GROUP_CHAT] = this.chatText
                       return this.transactionService.generateTransaction(info);
                     } else {
                       var dh_public_key = this.graphService.keys[this.rid].dh_public_keys[0];

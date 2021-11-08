@@ -42,6 +42,12 @@ export class WebSocketService {
     const msg = JSON.parse(event.data);
     console.log(msg);
     switch (msg.method) {
+      case 'connect_confirm':
+        for (let i=0; i < Object.keys(this.graphService.groups_indexed).length; i++) {
+          let group = this.graphService.groups_indexed[Object.keys(this.graphService.groups_indexed)[i]]
+          this.joinGroup(group.relationship)
+        }
+        break;
       case 'newtxn':
         const collection = this.getNewTxnCollection(msg)
         if (collection) {
@@ -74,6 +80,24 @@ export class WebSocketService {
             case this.settingsService.collections.CONTRACT:
               break;
             case this.settingsService.collections.CONTRACT_SIGNED:
+              break;
+            case this.settingsService.collections.GROUP_CHAT:
+              this.graphService.parseMessages(
+                [msg.params.transaction],
+                'new_group_messages_counts',
+                'new_group_messages_count',
+                msg.params.transaction.rid,
+                this.settingsService.collections.GROUP_CHAT,
+                'last_group_message_height'
+              )
+              .then((item) => {
+                if (!this.graphService.graph.messages[msg.params.transaction.requested_rid]) {
+                  this.graphService.graph.messages[msg.params.transaction.requested_rid] = []
+                }
+                this.graphService.graph.messages[msg.params.transaction.requested_rid].push(item[msg.params.transaction.requested_rid][0])
+                this.settingsService.menu === 'community' && this.events.publish('newchat')
+                return this.graphService.addNotification(item[msg.params.transaction.requested_rid][0], this.settingsService.collections.GROUP_CHAT);
+              })
               break;
             case this.settingsService.collections.GROUP_MAIL:
               this.graphService.parseMail(
@@ -264,6 +288,28 @@ export class WebSocketService {
         return collection;
       }
     }
+    const collections = [
+      this.settingsService.collections.GROUP_CHAT,
+      this.settingsService.collections.GROUP_MAIL
+    ]
+    for (let j=0; j < Object.keys(this.graphService.groups_indexed).length; j++) {
+      const group = this.graphService.groups_indexed[Object.keys(this.graphService.groups_indexed)[j]];
+      for (let i=0; i < collections.length; i++) {
+        const collection = collections[i];
+        const rid = this.graphService.generateRid(
+          group.relationship.username_signature,
+          group.relationship.username_signature,
+          collection
+        )
+        if(
+          msg.params.transaction.rid === rid ||
+          msg.params.transaction.requester_rid === rid ||
+          msg.params.transaction.requested_rid === rid
+        ) {
+          return collection;
+        }
+      }
+    }
     return false;
   }
 
@@ -275,6 +321,15 @@ export class WebSocketService {
       params: {
         identity: this.graphService.toIdentity(this.bulletinSecretService.identity)
       }
+    }))
+  }
+
+  joinGroup(identity) {
+    return this.websocket.send(JSON.stringify({
+      id: '',
+      jsonrpc: 2.0,
+      method: 'join_group',
+      params: identity
     }))
   }
 
