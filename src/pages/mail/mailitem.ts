@@ -64,53 +64,6 @@ export class MailItemPage {
     });
   }
 
-  addToCalendar(item) {
-    let alert = this.alertCtrl.create();
-    alert.setTitle('Send mail confirmation');
-    alert.setSubTitle('Are you sure?');
-    alert.addButton('Cancel');
-    alert.addButton({
-        text: 'Confirm',
-        handler: (data: any) => {
-            this.walletService.get()
-            .then(() => {
-                const rid = this.graphService.generateRid(
-                  this.bulletinSecretService.identity.username_signature,
-                  this.bulletinSecretService.identity.username_signature,
-                  this.settingsService.collections.CALENDAR
-                )
-
-                return this.transactionService.generateTransaction({
-                    relationship: {
-                        event: {
-                            sender: this.item.sender,
-                            subject: this.item.subject,
-                            body: this.item.body,
-                            thread: this.item.thread,
-                            message_type: this.item.message_type,
-                            event_datetime: this.item.event_datetime
-                        }
-                    },
-                    rid: rid
-                });
-            }).then((txn) => {
-                return this.transactionService.sendTransaction();
-            }).then(() => {
-                this.navCtrl.pop()
-            })
-            .catch((err) => {
-               console.log(err);
-               let alert = this.alertCtrl.create();
-               alert.setTitle('Message error');
-               alert.setSubTitle(err);
-               alert.addButton('Ok');
-               alert.present();
-            });
-           }
-    });
-    alert.present();
-  }
-
   addFriend() {
       let info: any;
       var buttons = [];

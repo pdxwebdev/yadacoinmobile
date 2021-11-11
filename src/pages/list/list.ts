@@ -17,6 +17,7 @@ import { Http } from '@angular/http';
 import { MailPage } from '../mail/mail';
 import { MailItemPage } from '../mail/mailitem';
 import { WebSocketService } from '../../app/websocket.service';
+import { CalendarPage } from '../calendar/calendar';
 
 declare var X25519;
 declare var foobar;
@@ -133,9 +134,7 @@ export class ListPage {
       })
       .then((identity) => {
           this.websocketService.joinGroup(identity);
-          if (this.settingsService.remoteSettings['walletUrl']) {
-              return this.graphService.getInfo();
-          }
+          return this.choosePage()
       });
   }
 
@@ -219,16 +218,30 @@ export class ListPage {
               }
           });
           notifications['notifications'].map((item) => {
-            if (item.relationship[this.settingsService.collections.MAIL]) {
+            if (
+              item.relationship[this.settingsService.collections.MAIL] ||
+              item.relationship[this.settingsService.collections.GROUP_MAIL]
+            ) {
               item.component = MailItemPage
               item.item = this.graphService.prepareMailItem(item, 'Inbox')
               const identity = this.graphService.getIdentityFromMessageTransaction(item)
               item.label = 'Mail from ' + identity.username
-            } else if (item.relationship[this.settingsService.collections.CHAT]) {
+            } else if (
+              item.relationship[this.settingsService.collections.CHAT] ||
+              item.relationship[this.settingsService.collections.GROUP_CHAT]
+            ) {
               item.component = ChatPage
               const identity = this.graphService.getIdentityFromMessageTransaction(item);
               item.identity = identity
               item.label = 'Chat from ' + identity.username
+            } else if (
+              item.relationship[this.settingsService.collections.CALENDAR] ||
+              item.relationship[this.settingsService.collections.GROUP_CALENDAR]
+            ) {
+              item.component = CalendarPage
+              const identity = this.graphService.getIdentityFromMessageTransaction(item);
+              item.identity = identity
+              item.label = 'Calendar entry from ' + identity.username
             } else if (this.graphService.graph.friend_requests.filter((fr) => {return fr.rid === item.rid}).length > 0) {
               item.component = ListPage
               const identity = item.relationship.identity;
@@ -474,7 +487,7 @@ export class ListPage {
           const label = item.relationship.identity ? item.relationship.identity.username : item.relationship.username;
           items.push({
             title: page.title,
-            label: label || item.label,
+            label: item.label || label,
             component: component,
             count: false,
             color: '',
@@ -532,6 +545,7 @@ export class ListPage {
 
   accept() {
     const rids = this.graphService.generateRids(this.friend_request);
+    this.loading = true;
     return this.graphService.addFriend(
       this.friend_request,
       rids.rid,
@@ -541,6 +555,7 @@ export class ListPage {
       return this.graphService.refreshFriendsAndGroups();
     })
     .then(() => {
+      this.loading = false;
       var alert = this.alertCtrl.create();
       alert.setTitle('Friend Accept Sent');
       alert.setSubTitle('Your Friend Request acceptance has been submitted successfully.');

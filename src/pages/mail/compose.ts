@@ -27,6 +27,7 @@ export class ComposePage {
   body: any;
   thread: any;
   prevBody: any;
+  collection: any;
   message_type: any;
   event_datetime: any;
   @ViewChild('searchbar')
@@ -60,35 +61,48 @@ export class ComposePage {
       this.recipient = this.item.sender
       this.subject = this.item.subject
       this.prevBody = this.item.body
-      this.message_type = this.settingsService.collections.MAIL
+      this.collection = this.item.collection
     }
     else if (this.mode === 'replyToAll') {
       this.recipient = this.item.group
       this.subject = this.item.subject
       this.prevBody = this.item.body
-      this.message_type = this.settingsService.collections.GROUP_MAIL
+      this.collection = this.item.collection
     }
     else if (this.mode === 'forward') {
       this.subject = this.item.subject
       this.body = this.item.body
-    }
-    else if (this.mode === 'sign') {
-      this.recipient = this.item.sender
-      this.subject = this.item.subject
-      this.body = this.item.body
-      this.message_type = this.settingsService.collections.CONTRACT_SIGNED
-      this.submit();
+      this.collection = this.item.collection
     } else if(this.item && this.item.recipient) {
       this.recipient = this.item.recipient
-      this.message_type = this.graphService.isGroup(this.recipient) ? this.settingsService.collections.GROUP_MAIL : this.settingsService.collections.MAIL
+    }
+    if (this.recipient) {
+      this.collection = this.graphService.isGroup(this.recipient) ? this.settingsService.collections.GROUP_MAIL : this.settingsService.collections.MAIL;
+    }
+    if (this.item && this.item.message_type) {
+      this.message_type = this.item.message_type;
     } else {
-      this.message_type = this.settingsService.collections.MAIL
+      if (this.collection === this.settingsService.collections.MAIL || this.collection === this.settingsService.collections.GROUP_MAIL) {
+        this.message_type = 'mail'
+      } else if (this.collection === this.settingsService.collections.CALENDAR || this.collection === this.settingsService.collections.GROUP_CALENDAR) {
+        this.message_type = 'calendar'
+      }
+      this.message_type = this.message_type || 'mail'
     }
   }
 
   myForm = new FormGroup({
       searchTerm: new FormControl('', [Validators.required])
   })
+
+  segmentChanged(e) {
+    this.message_type = e.value;
+    if (this.message_type === 'mail') {
+      this.collection = this.graphService.isGroup(this.recipient) ? this.settingsService.collections.GROUP_MAIL : this.settingsService.collections.MAIL;
+    } else if (this.message_type === 'calendar') {
+      this.collection = this.graphService.isGroup(this.recipient) ? this.settingsService.collections.GROUP_CALENDAR : this.settingsService.collections.CALENDAR;
+    }
+  }
 
   changeListener($event) {
       this.busy = true;
@@ -109,6 +123,11 @@ export class ComposePage {
   }
 
   submit() {
+    if (this.message_type === 'mail') {
+      this.collection = this.graphService.isGroup(this.recipient) ? this.settingsService.collections.GROUP_MAIL : this.settingsService.collections.MAIL;
+    } else if (this.message_type === 'calendar') {
+      this.collection = this.graphService.isGroup(this.recipient) ? this.settingsService.collections.GROUP_CALENDAR : this.settingsService.collections.CALENDAR;
+    }
     let alert = this.alertCtrl.create();
     alert.setTitle('Send mail confirmation');
     alert.setSubTitle('Are you sure?');
@@ -122,18 +141,18 @@ export class ComposePage {
                   this.bulletinSecretService.identity.username_signature,
                   this.recipient.username_signature
                 )
-                const requester_rid = this.graphService.generateRid(
-                  this.bulletinSecretService.identity.username_signature,
-                  this.bulletinSecretService.identity.username_signature,
-                  this.message_type
-                )
-                const requested_rid = this.graphService.generateRid(
-                  this.recipient.username_signature,
-                  this.recipient.username_signature,
-                  this.message_type
-                )
 
                 if (this.graphService.isGroup(this.recipient)) {
+                    const requester_rid = this.graphService.generateRid(
+                      this.bulletinSecretService.identity.username_signature,
+                      this.bulletinSecretService.identity.username_signature,
+                      this.collection
+                    )
+                    const requested_rid = this.graphService.generateRid(
+                      this.recipient.username_signature,
+                      this.recipient.username_signature,
+                      this.collection
+                    )
                     const info = {
                         relationship: {},
                         rid: rid,
@@ -142,18 +161,27 @@ export class ComposePage {
                         group: true,
                         group_username_signature: this.recipient.username_signature
                     }
-                    info.relationship[this.settingsService.collections.GROUP_MAIL] = {
+                    info.relationship[this.collection] = {
                         sender: this.bulletinSecretService.identity,
                         subject: this.subject,
                         body: this.body,
                         thread: this.thread,
-                        message_type: this.message_type,
                         event_datetime: this.event_datetime,
                         skylink: this.skylink,
                         filename: this.filepath
                     }
                     return this.transactionService.generateTransaction(info);
                 } else {
+                  const requester_rid = this.graphService.generateRid(
+                    this.bulletinSecretService.identity.username_signature,
+                    this.bulletinSecretService.identity.username_signature,
+                    this.collection
+                  )
+                  const requested_rid = this.graphService.generateRid(
+                    this.recipient.username_signature,
+                    this.recipient.username_signature,
+                    this.collection
+                  )
                   var dh_public_key = this.graphService.keys[rid].dh_public_keys[0];
                   var dh_private_key = this.graphService.keys[rid].dh_private_keys[0];
 
@@ -175,11 +203,10 @@ export class ComposePage {
                           requester_rid: requester_rid,
                           requested_rid: requested_rid
                       }
-                      info.relationship[this.settingsService.collections.MAIL] = {
+                      info.relationship[this.collection] = {
                           subject: this.subject,
                           body: this.body,
                           thread: this.thread,
-                          message_type: this.message_type,
                           event_datetime: this.event_datetime,
                           skylink: this.skylink,
                           filename: this.filepath

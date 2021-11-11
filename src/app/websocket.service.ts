@@ -63,6 +63,10 @@ export class WebSocketService {
               const calendar = this.graphService.parseCalendar([msg.params.transaction])
               return this.graphService.addNotification(calendar, this.settingsService.collections.CALENDAR);
               break;
+            case this.settingsService.collections.GROUP_CALENDAR:
+              const group_calendar = this.graphService.parseCalendar([msg.params.transaction])
+              return this.graphService.addNotification(group_calendar, this.settingsService.collections.GROUP_CALENDAR);
+              break;
             case this.settingsService.collections.CHAT:
               this.graphService.parseMessages(
                 [msg.params.transaction],
@@ -105,7 +109,7 @@ export class WebSocketService {
                 'new_sent_mail_counts',
                 'new_sent_mail_count',
                 undefined,
-                this.settingsService.collections.MAIL,
+                this.settingsService.collections.GROUP_MAIL,
                 'last_sent_mail_height'
               )
               .then((item) => {
@@ -290,7 +294,8 @@ export class WebSocketService {
     }
     const collections = [
       this.settingsService.collections.GROUP_CHAT,
-      this.settingsService.collections.GROUP_MAIL
+      this.settingsService.collections.GROUP_MAIL,
+      this.settingsService.collections.GROUP_CALENDAR
     ]
     for (let j=0; j < Object.keys(this.graphService.groups_indexed).length; j++) {
       const group = this.graphService.groups_indexed[Object.keys(this.graphService.groups_indexed)[j]];

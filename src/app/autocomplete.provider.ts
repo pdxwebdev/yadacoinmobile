@@ -20,13 +20,20 @@ export class CompleteTestService implements AutoCompleteService {
   }
 
   getResults(searchTerm:string) {
-    return this.graphService.graph.friends.map((item) => {
+    return this.graphService.graph.friends.concat(this.graphService.graph.groups)
+    .filter((item) => {
+      const username = item.relationship.username || item.relationship.identity.username;
+      return username.toLowerCase().indexOf(searchTerm.toLowerCase()) > -1
+    })
+    .map((item) => {
+        const identity = item.relationship.identity || item.relationship;
         const value = {
-          username: item.relationship.identity.username,
-          username_signature: item.relationship.identity.username_signature,
-          public_key: item.relationship.identity.public_key
+          username: identity.username,
+          username_signature: identity.username_signature,
+          public_key: identity.public_key,
+          collection: identity.collection
         }
-        return {name: item.relationship.identity.username, value: value}
+        return {name: identity.username, value: value}
     });
   }
 }

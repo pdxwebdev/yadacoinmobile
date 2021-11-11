@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { NavController, NavParams } from 'ionic-angular';
+import { AlertController, NavController, NavParams } from 'ionic-angular';
 import { GraphService } from '../../app/graph.service';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { SettingsService } from '../../app/settings.service';
@@ -24,11 +24,26 @@ export class BuildPagePage {
         private bulletinSecretService: BulletinSecretService,
         public settingsService: SettingsService,
         private websocketService: WebSocketService,
-        private transactionService: TransactionService
+        private transactionService: TransactionService,
+        private alertCtrl: AlertController
     ) {}
 
     save() {
-      this.websocketService.webpage({resource: this.resource, content: this.pageText})
+      let alert = this.alertCtrl.create();
+      alert.setTitle('Create web page');
+      alert.setSubTitle('Are you sure you want to save this page?');
+      alert.addButton({
+          text: 'Continue editing'
+      });
+      alert.addButton({
+          text: 'Save',
+          handler: (data: any) => {
+            this.resource = '';
+            this.pageText = '';
+            this.websocketService.webpage({resource: this.resource, content: this.pageText})
+          }
+      });
+      alert.present();
     }
 
 }

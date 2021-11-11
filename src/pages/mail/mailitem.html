@@ -8,11 +8,10 @@
 </ion-header>
 <ion-content padding>
   <button ion-button secondary (click)="replyMail(item)" *ngIf="graphService.isAdded(item.sender)">Reply</button>
-  <button ion-button secondary (click)="addFriend(item)" *ngIf="!graphService.isAdded(item.sender)">Add sender as contact</button>
+  <button ion-button secondary (click)="addFriend(item)" *ngIf="!graphService.isAdded(item.sender) && !graphService.isMe(item.sender)">Add sender as contact</button>
   <button *ngIf="item.group" ion-button secondary (click)="replyToAllMail(item)">Reply to all</button>
   <button ion-button secondary (click)="forwardMail(item)">Forward</button>
   <button *ngIf="item.message_type == settingsService.collections.CONTRACT" ion-button secondary (click)="signMail(item)">Sign</button>
-  <button *ngIf="item.message_type == settingsService.collections.CALENDAR" ion-button secondary (click)="addToCalendar(item)">Add to calendar</button>
   <div title="Verified" class="sender">
     <span (click)="viewProfile(item.sender)">{{item.sender.username}} <ion-icon name="checkmark-circle" class="success"></ion-icon></span>
     <span *ngIf="item.group" (click)="viewProfile(item.group)">{{item.group.username}} <ion-icon name="checkmark-circle" class="success"></ion-icon></span>

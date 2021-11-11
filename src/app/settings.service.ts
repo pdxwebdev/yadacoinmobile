@@ -15,6 +15,7 @@ export class SettingsService {
       CONTRACT: 'contract',
       CONTRACT_SIGNED: 'contract_signed',
       GROUP: 'group',
+      GROUP_CALENDAR: 'group_event_meeting',
       GROUP_CHAT: 'group_chat',
       GROUP_CHAT_FILE_NAME: 'group_chat_file_name',
       GROUP_CHAT_FILE: 'group_chat_file',

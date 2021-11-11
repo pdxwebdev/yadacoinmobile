@@ -30,8 +30,8 @@
 <ion-footer>
   <ion-item>
     <ion-label floating>Chat text</ion-label>
-    <ion-input [(ngModel)]="chatText" (keyup.enter)="send()"></ion-input>
+    <ion-input [(ngModel)]="chatText" (keyup.enter)="send()" #input></ion-input>
   </ion-item>
-  <button ion-button (click)="send()" [disabled]="busy">Send <ion-spinner *ngIf="busy"></ion-spinner></button>
+  <button ion-button (click)="send()" [disabled]="busy || !chatText">Send <ion-spinner *ngIf="busy"></ion-spinner></button>
   <ion-input type="file" (change)="changeListener($event)" *ngIf="settingsService.remoteSettings.restricted"></ion-input>
 </ion-footer>

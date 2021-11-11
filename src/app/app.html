@@ -64,11 +64,11 @@
           >
             <ion-icon name="mail"></ion-icon>
             <ion-badge
-              *ngIf="graphService.notifications[settingsService.collections.MAIL].length > 0"
+              *ngIf="graphService.notifications[settingsService.collections.MAIL].length > 0 || graphService.notifications[settingsService.collections.GROUP_MAIL].length > 0"
               color="secondary"
               style="vertical-align:top;position:absolute;"
               item-right
-            >{{graphService.notifications[settingsService.collections.MAIL].length}}</ion-badge>
+            >{{graphService.notifications[settingsService.collections.MAIL].length + graphService.notifications[settingsService.collections.GROUP_MAIL].length}}</ion-badge>
           </button>
           <button
             class="navbutton"
@@ -127,11 +127,11 @@
           >
             <ion-icon name="calendar"></ion-icon>
             <ion-badge
-              *ngIf="graphService.notifications[settingsService.collections.CALENDAR].length > 0"
+              *ngIf="graphService.notifications[settingsService.collections.CALENDAR].length > 0 || graphService.notifications[settingsService.collections.GROUP_CALENDAR].length > 0"
               color="secondary"
               style="vertical-align:top;position:absolute;"
               item-right
-            >{{graphService.notifications[settingsService.collections.CALENDAR].length}}</ion-badge>
+            >{{graphService.notifications[settingsService.collections.CALENDAR].length + graphService.notifications[settingsService.collections.GROUP_CALENDAR].length}}</ion-badge>
           </button>
           <button
             class="navbutton"
@@ -170,7 +170,7 @@
           >
             <ion-icon name="folder"></ion-icon>
           </button>
-          <button
+          <!-- <button
             class="navbutton"
             [color]="settingsService.menu === 'web' ? 'secondary' : 'primary'"
             ion-button
@@ -184,7 +184,7 @@
             topOffset="-67"
           >
             <ion-icon name="globe"></ion-icon>
-          </button>
+          </button> -->
           <button
             class="navbutton"
             [color]="settingsService.menu === 'notifications' ? 'secondary' : 'primary'"
@@ -228,11 +228,11 @@
               menuClose
               ion-item
               (click)="openPage(p)"
-              [color]="graphService.friend_request_count > 0 ? 'primary' : 'grey'"
+              [color]="'grey'"
               *ngIf="p.title == 'Contact Requests'"
               class="subnavbutton"
             >
-              {{p.label}}
+              {{p.label}} <ion-note *ngIf="graphService.graph.friend_requests">{{graphService.graph.friend_requests.length}}</ion-note>
             </button>
             <button
               menuClose

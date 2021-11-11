@@ -3,6 +3,7 @@ import { NavController } from 'ionic-angular';
 import { BulletinSecretService } from '../../app/bulletinSecret.service';
 import { GraphService } from '../../app/graph.service';
 import { SettingsService } from '../../app/settings.service';
+import { ComposePage } from '../mail/compose';
 import { MailItemPage } from '../mail/mailitem';
 
 
@@ -42,6 +43,11 @@ export class CalendarPage {
           group.relationship.username_signature,
           this.settingsService.collections.CALENDAR
         ))
+        group_rids.push(this.graphService.generateRid(
+          group.relationship.username_signature,
+          group.relationship.username_signature,
+          this.settingsService.collections.GROUP_CALENDAR
+        ))
       }
       let file_rids = [];
       for (let i=0; i < this.graphService.graph.files.length; i++) {
@@ -50,6 +56,11 @@ export class CalendarPage {
           file.relationship.username_signature,
           file.relationship.username_signature,
           this.settingsService.collections.CALENDAR
+        ))
+        file_rids.push(this.graphService.generateRid(
+          file.relationship.username_signature,
+          file.relationship.username_signature,
+          this.settingsService.collections.GROUP_CALENDAR
         ))
       }
       if (group_rids.length > 0) {
@@ -68,7 +79,8 @@ export class CalendarPage {
       let events = {};
       this.graphService.graph.calendar.map((txn) => {
         const group = this.graphService.groups_indexed[txn.requested_rid]
-        const event = txn.relationship[this.settingsService.collections.MAIL] || txn.relationship.event;
+        const event = txn.relationship[this.settingsService.collections.CALENDAR] ||
+                      txn.relationship[this.settingsService.collections.GROUP_CALENDAR];
         const eventDate = event.event_datetime;
         const index = eventDate.getFullYear() + this.addZeros(eventDate.getMonth()) + this.addZeros(eventDate.getDate());
         if (!events[index]) {
@@ -76,13 +88,13 @@ export class CalendarPage {
         }
         events[index].push({
           group: group ? group.relationship : null,
-          sender: event.sender,
+          sender: event.sender || this.graphService.friends_indexed[txn.rid].relationship.identity,
           subject: event.subject,
           body: event.body,
           datetime: new Date(parseInt(txn.time)*1000).toISOString().slice(0, 19).replace('T', ' '),
           id: txn.id,
           message_type: event.message_type,
-          event_datetime: event.event_datetime,
+          event_datetime: event.event_datetime
         });
       });
       this.getCalendar(events);
@@ -93,6 +105,14 @@ export class CalendarPage {
   itemTapped(event, item) {
     this.navCtrl.push(MailItemPage, {
       item: item
+    });
+  }
+
+  createEvent(event, item) {
+    this.navCtrl.push(ComposePage, {
+      item: {
+        message_type: 'calendar'
+      }
     });
   }
 

@@ -10,7 +10,8 @@
   <ion-refresher (ionRefresh)="refresh($event)">
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
-  <h1>Url</h1>
+  <h1>Web</h1>
+  <ion-item>Select a contact and enter a resource.</ion-item>
   <form [formGroup]="myForm" (ngSubmit)="submit()" *ngIf="!recipient">
     <ion-auto-complete #searchbar [(ngModel)]="recipient" [options]="{ placeholder : 'Recipient' }" [dataProvider]="completeTestService" formControlName="searchTerm" required></ion-auto-complete>
   </form>
@@ -19,10 +20,10 @@
     <ion-input type="text" [(ngModel)]="resource"></ion-input>
   </ion-item>
   <ion-item>
-    <button ion-button secondary (click)="go()">Go</button>
+    <button ion-button secondary (click)="go()" [disabled]="!recipient">Go</button>
   </ion-item>
   <ion-item>
-    <button ion-button secondary (click)="signIn()">Sign in</button>
+    <button ion-button secondary (click)="signIn()" [disabled]="!recipient">Sign in</button>
   </ion-item>
   <ion-item>
     {{content}}

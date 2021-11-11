@@ -176,7 +176,7 @@ export class GroupPage {
             return this.parseChats();
         })
         .then(() => {
-            setTimeout(() => this.content.scrollToBottom(1000), 500);
+            setTimeout(() => this.content && this.content.scrollToBottom(1000), 500);
         })
         .then(() => {
             return this.getSiaFiles();

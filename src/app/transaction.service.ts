@@ -250,7 +250,14 @@ export class TransactionService {
                     inputs_hashes_concat +
                     outputs_hashes_concat
                 ).toString('hex')
-            } else if (this.info.relationship[this.settingsService.collections.CHAT] || this.info.relationship[this.settingsService.collections.MAIL]) {
+            } else if (
+              this.info.relationship[this.settingsService.collections.CALENDAR] ||
+              this.info.relationship[this.settingsService.collections.CHAT] ||
+              this.info.relationship[this.settingsService.collections.GROUP_CALENDAR] ||
+              this.info.relationship[this.settingsService.collections.GROUP_CHAT] ||
+              this.info.relationship[this.settingsService.collections.GROUP_MAIL] ||
+              this.info.relationship[this.settingsService.collections.MAIL]
+            ) {
                 // chat
                 this.transaction.relationship = this.shared_encrypt(this.info.shared_secret, JSON.stringify(this.info.relationship));
 

@@ -58,6 +58,8 @@ export class MyApp {
     });
     events.subscribe('menu', (options) => {
       this.setMenu(options);
+      if (!this.pages) return;
+      if (this.pages.length === 0) return;
       this.root = this.pages[0].root;
       this.openPage(this.pages[0])
     });
@@ -67,7 +69,7 @@ export class MyApp {
     });
     this.rootPage = Settings;
   }
-  
+
   ngAfterViewInit() {
     this.initializeApp();
   }
@@ -113,7 +115,7 @@ export class MyApp {
         { title: 'Send / Receive', label: 'Send / Receive', component: SendReceive, count: false, color: '', root: true }
       ];
     } else if (this.settingsService.menu == 'stream') {
-      this.pages = [ 
+      this.pages = [
         { title: 'Stream', label: 'Stream', component: StreamPage, count: false, color: '', root: true }
       ]
     } else if (this.settingsService.menu == 'settings') {
@@ -128,8 +130,8 @@ export class MyApp {
     } else if (this.settingsService.menu == 'web') {
       this.pages = [
         { title: 'Web', label: 'Web', component: WebPage, count: false, color: '', root: true },
-        { title: 'My pages', label: 'My pages', component: MyPagesPage, count: false, color: '', root: true },
         { title: 'Create page', label: 'Create page', component: BuildPagePage, count: false, color: '', root: true },
+        { title: 'My pages', label: 'My pages', component: MyPagesPage, count: false, color: '', root: true },
       ];
     }
   }

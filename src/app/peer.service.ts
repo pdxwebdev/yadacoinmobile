@@ -67,7 +67,7 @@ export class PeerService {
                     for (let i=0; i < Object.keys(remoteSettings).length; i++) {
                         try {
                           let url = new URL(remoteSettings[Object.keys(remoteSettings)[i]])
-                          remoteSettings[Object.keys(remoteSettings)[i]] = url.protocol + '//' + location.host + url.pathname
+                          remoteSettings[Object.keys(remoteSettings)[i]] = url.protocol + '//' + location.host + (url.pathname === '/' ? '' : url.pathname)
                         } catch(e) {
                           continue
                         }
