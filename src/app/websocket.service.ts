@@ -43,8 +43,8 @@ export class WebSocketService {
     console.log(msg);
     switch (msg.method) {
       case 'connect_confirm':
-        for (let i=0; i < Object.keys(this.graphService.groups_indexed).length; i++) {
-          let group = this.graphService.groups_indexed[Object.keys(this.graphService.groups_indexed)[i]]
+        for (let i=0; i < this.graphService.graph.groups.length; i++) {
+          let group = this.graphService.graph.groups[i]
           this.joinGroup(group.relationship)
         }
         break;
