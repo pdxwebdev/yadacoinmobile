@@ -96,6 +96,7 @@ export class HomePage {
         this.location = window.location;
         this.origin = encodeURIComponent(this.location.origin);
         this.prefix = 'usernames-';
+        this.createdCode = this.bulletinSecretService.identityJson();
         this.refresh(null);
         if (this.settingsService.remoteSettings.restricted) {
           this.busy = true

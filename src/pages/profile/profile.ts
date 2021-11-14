@@ -149,7 +149,7 @@ export class ProfilePage {
             });
         })
         .then((groupName) => {
-            return this.graphService.createGroup(groupName, this.item);
+            return this.graphService.createGroup(groupName, this.identity);
         })
         .then((hash) => {
             if (this.settingsService.remoteSettings['walletUrl']) {
@@ -166,7 +166,7 @@ export class ProfilePage {
 
     openSubGroup(subGroup) {
         this.navCtrl.push(ProfilePage, {
-          item: subGroup,
+          identity: subGroup.relationship,
           group: true
         });
     }

@@ -46,6 +46,7 @@ export class ListPage {
   signInText: any;
   rid: any;
   label: any;
+  subitems:any;
   constructor(
     public navCtrl: NavController,
     public navParams: NavParams,
@@ -76,6 +77,7 @@ export class ListPage {
   }
 
   refresh(refresher) {
+    this.subitems = {}
     return this.walletService.get()
     .then(() => {
       this.loading = true;
@@ -161,8 +163,15 @@ export class ListPage {
           this.loading = false;
         } else if (this.pageTitle == 'Groups') {
           for (let i = 0; i < this.graphService.graph.groups.length; i++) {
-            if (!this.graphService.graph.groups[i].relationship.parent) {
-              graphArray.push(this.graphService.graph.groups[i])
+            let item = this.graphService.graph.groups[i];
+            if(item.relationship.parent) {
+              this.subitems[item.relationship.parent.username_signature] = this.subitems[item.relationship.parent.username_signature] || [];
+              this.subitems[item.relationship.parent.username_signature].push({
+                pageTitle: this.pageTitle,
+                identity: item.relationship.identity ? item.relationship.identity : item.relationship
+              })
+            } else {
+              graphArray.push(item)
             }
           }
           graphArray.sort(function (a, b) {
@@ -266,32 +275,31 @@ export class ListPage {
           });
         } else if (this.pageTitle == 'Community') {
           public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
-          return this.graphService.getNewMessages()
-          .then((graphArray) => {
-            var messages = this.markNew(public_key, graphArray, this.graphService.new_messages_counts);
-            var friendsWithMessagesList = this.getDistinctFriends(messages);
-            this.populateRemainingGroups(friendsWithMessagesList.friend_list, friendsWithMessagesList.used_rids);
+          this.loading = false;
+          this.graphService.sortTxnsByUsername(this.graphService.graph.groups)
+          let groupList = this.graphService.graph.groups.filter((item) => {
+            if(item.relationship.parent) {
+              this.subitems[item.relationship.parent.username_signature] = this.subitems[item.relationship.parent.username_signature] || [];
+              this.subitems[item.relationship.parent.username_signature].push({
+                title: 'Community',
+                label: item.relationship.username,
+                component: ChatPage,
+                count: false,
+                color: '',
+                kwargs: {
+                  item: item,
+                  identity: item.identity || item.relationship.identity || item.relationship,
+                  subitems: this.subitems
+                },
+                root: true
+              })
+            }
+            return !item.relationship.parent
+          })
+          return this.makeList(groupList, '', {title: 'Community', component: ChatPage})
+          .then((pages) => {
+            this.events.publish('menu', pages);
             this.loading = false;
-            friendsWithMessagesList.friend_list.sort(function (a, b) {
-                try {
-                  const ausername = a.relationship.identity ? a.relationship.identity.username : a.relationship.username
-                  const busername = b.relationship.identity ? b.relationship.identity.username : b.relationship.username
-                  if (ausername.toLowerCase() < busername.toLowerCase())
-                    return -1
-                  if ( ausername.toLowerCase() > busername.toLowerCase())
-                    return 1
-                  return 0
-                } catch(err) {
-                  return 0
-                }
-            });
-            return this.makeList(friendsWithMessagesList.friend_list, '', {title: 'Community', component: ChatPage})
-            .then((pages) => {
-              this.events.publish('menu', pages);
-              this.loading = false;
-            });
-          }).catch((err) => {
-              console.log(err);
           });
         } else if (this.pageTitle == 'Sent') {
           public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
@@ -419,29 +427,6 @@ export class ListPage {
     };
   }
 
-  getDistinctGroups(collection) {
-    // using the rids from new items
-    // make a list of friends sorted by block height descending (most recent)
-    var friend_list = [];
-    var used_rids = [];
-    for (var i=0; i < collection.length; i++) {
-      // we could have multiple transactions per friendship
-      // so make sure we're going using the rid once
-      var item = collection[i];
-      if(!this.graphService.groups_indexed[item.requested_rid]) {
-        continue
-      }
-      if(used_rids.indexOf(this.graphService.groups_indexed[item.requested_rid]) === -1) {
-        friend_list.push(item);
-        used_rids.push(this.graphService.groups_indexed[item.requested_rid]);
-      }
-    }
-    return {
-      friend_list: friend_list,
-      used_rids: used_rids
-    };
-  }
-
   populateRemainingFriends(friend_list, used_rids) {
     // now add everyone else
     let friendsAndGroupsList = this.graphService.graph.friends
@@ -493,7 +478,8 @@ export class ListPage {
             color: '',
             kwargs: {
               item: item.item || item,
-              identity: item.identity || item.relationship.identity || item.relationship
+              identity: item.identity || item.relationship.identity || item.relationship,
+              subitems: this.subitems
             },
             root: true
           });

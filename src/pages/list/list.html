@@ -24,16 +24,23 @@
     </ion-card-content>
   </ion-card>
   <ion-list>
-    <button ion-item *ngFor="let item of items" (click)="itemTapped($event, item)">
-      <span *ngIf="pageTitle =='Groups'">{{item.identity.username}}</span>
-      <span *ngIf="pageTitle =='Contact Requests'">{{item.identity.username}}</span>
-      <span *ngIf="pageTitle =='Messages' && !identity.new && !identity.parent && identity.username">{{ identity.username}}</span>
-      <span *ngIf="pageTitle =='Messages' && !identity.new && identity.parent"><ion-note>&nbsp;&nbsp;&nbsp;&nbsp;{{identity.username}}</ion-note></span>
-      <span *ngIf="pageTitle =='Community' && !identity.new && !identity.parent && identity.username">{{ identity.username}}</span>
-      <span *ngIf="pageTitle =='Community' && !identity.new && identity.parent"><ion-note>&nbsp;&nbsp;&nbsp;&nbsp;{{identity.username}}</ion-note></span>
-      <span *ngIf="pageTitle =='Chat' && identity.new"><strong>{{item.identity.username}}</strong></span>
-      <span *ngIf="pageTitle =='Contacts'">{{item.identity.username}}</span>
-    </button>
+    <ng-container *ngFor="let item of items">
+      <button ion-item (click)="itemTapped($event, item)">
+        <span *ngIf="pageTitle =='Groups'">{{item.identity.username}}</span>
+        <span *ngIf="pageTitle =='Contact Requests'">{{item.identity.username}}</span>
+        <span *ngIf="pageTitle =='Messages' && !identity.new && !identity.parent && identity.username">{{ identity.username}}</span>
+        <span *ngIf="pageTitle =='Messages' && !identity.new && identity.parent"><ion-note>&nbsp;&nbsp;&nbsp;&nbsp;{{identity.username}}</ion-note></span>
+        <span *ngIf="pageTitle =='Community' && !identity.new && !identity.parent && identity.username">{{ identity.username}}</span>
+        <span *ngIf="pageTitle =='Community' && !identity.new && identity.parent"><ion-note>&nbsp;&nbsp;&nbsp;&nbsp;{{identity.username}}</ion-note></span>
+        <span *ngIf="pageTitle =='Chat' && identity.new"><strong>{{item.identity.username}}</strong></span>
+        <span *ngIf="pageTitle =='Contacts'">{{item.identity.username}}</span>
+      </button>
+      <ng-container *ngIf="subitems[item.identity.username_signature]">
+        <button ion-item (click)="itemTapped($event, subitem)" *ngFor="let subitem of subitems[item.identity.username_signature]">
+          <span><ion-note>&nbsp;&nbsp;&nbsp;&nbsp;{{subitem.identity.username}}</ion-note></span>
+        </button>
+      </ng-container>
+    </ng-container>
   </ion-list>
   <div *ngIf="selectedItem && pageTitle =='Sent Requests'" padding>
   </div>

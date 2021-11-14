@@ -390,7 +390,7 @@ export class TransactionService {
             attempt = this.cbattempts.pop();
             this.transaction.id = this.get_transaction_id(this.transaction.hash, attempt);
             if(hash) {
-                resolve(hash);
+                resolve(this.transaction);
             } else {
                 reject(false);
             }
@@ -422,14 +422,14 @@ export class TransactionService {
         });
     }
 
-    sendTransaction(transactionUrlOverride = undefined) {
+    sendTransaction(txn=null, transactionUrlOverride = undefined) {
         return new Promise((resolve, reject) => {
             var url = '';
             url = (transactionUrlOverride || this.settingsService.remoteSettings['transactionUrl']) + '?username_signature=' + this.bulletinSecretService.username_signature + '&to=' + this.key.getAddress() + '&username=' + this.username
 
             this.ahttp.post(
                 url,
-                this.transaction)
+                txn || this.transaction)
             .subscribe((data) => {
                 try {
                     resolve(JSON.parse(data['_body']));

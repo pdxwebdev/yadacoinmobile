@@ -18,6 +18,7 @@ import { Geolocation } from '@ionic-native/geolocation';
 import { SendReceive } from '../sendreceive/sendreceive';
 import { GoogleMaps, GoogleMapsEvent, LatLng, MarkerOptions, Marker, Environment, GoogleMapsMapTypeId } from "@ionic-native/google-maps";
 import { WebSocketService } from '../../app/websocket.service';
+import DefaultGroups from '../../app/groups';
 
 
 declare var forge;
@@ -387,10 +388,8 @@ export class Settings {
           content: 'initializing...'
       });
       this.loadingModal.present();
-      return this.graphService.refreshFriendsAndGroups()
-      .then(() => {
-          return this.getUsername();
-      })
+
+      return this.getUsername()
       .then((uname) => {
           username = uname
           return this.createKey(username)
@@ -400,6 +399,9 @@ export class Settings {
       })
       .then(() => {
           return this.selectIdentity(username, false)
+      })
+      .then(() => {
+        return this.graphService.refreshFriendsAndGroups();
       })
       .then(() => {
           this.loadingModal.dismiss();
@@ -491,6 +493,13 @@ export class Settings {
           return this.set(key)
           .then(() => {
             return this.graphService.refreshFriendsAndGroups();
+          })
+          .then(() => {
+            const promises = [];
+            for (let i=0; i < DefaultGroups.length; i++) {
+              promises.push(this.graphService.addGroup(DefaultGroups[i], undefined, undefined, undefined, false))
+            }
+            return Promise.all(promises)
           })
           .then(() => {
               if (showModal) {

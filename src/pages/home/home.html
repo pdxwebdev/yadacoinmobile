@@ -27,6 +27,9 @@
       <ion-item *ngIf="!settingsService.remoteSettings.restricted">
         <ion-textarea type="text" [value]="bulletinSecretService.identityJson()" autoGrow="true" rows=5></ion-textarea>
       </ion-item>
+      <ion-item>
+        <ngx-qrcode [qrc-value]="createdCode"></ngx-qrcode>
+      </ion-item>
     </ion-col>
   </ion-row>
   <ion-row *ngIf="settingsService.remoteSettings.restricted && bulletinSecretService.identity.type === 'admin'">

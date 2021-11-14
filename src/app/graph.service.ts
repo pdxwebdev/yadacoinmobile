@@ -115,7 +115,7 @@ export class GraphService {
     refreshFriendsAndGroups() {
       this.resetGraph();
       return this.getGroups()
-      .then(() => {
+      .then((results) => {
         return this.getGroups(null, 'file');
       })
       .then(() => {
@@ -293,8 +293,9 @@ export class GraphService {
         return this.endpointRequest('get-graph-collection', null, rid)
         .then((data: any) => {
             return this.parseGroups(data.collection, root, collectionName + 's');
-        }).then((groups) => {
+        }).then((groups):any => {
             this.getGroupsRequestsError = false;
+            return groups;
         });
     }
 
@@ -938,7 +939,9 @@ export class GraphService {
                           relationship.username_signature,
                           relationship.username_signature,
                           relationship.username_signature
-                      )
+                      ),
+                      'group',
+                      true
                     ))
                 } catch(err) {
                     console.log(err);
@@ -962,8 +965,8 @@ export class GraphService {
                 }
             }
 
-            Promise.all(promises)
-            .then(() => {
+            return Promise.all(promises)
+            .then((results) => {
               return resolve(groups);
             });
         });
@@ -1320,9 +1323,9 @@ export class GraphService {
         }
         if (parentGroup) {
             relationship.parent = {
-                username: parentGroup.relationship.username,
-                username_signature: parentGroup.relationship.username_signature,
-                public_key: parentGroup.relationship.public_key,
+                username: parentGroup.username,
+                username_signature: parentGroup.username_signature,
+                public_key: parentGroup.public_key,
                 collection: collectionName
             }
         }
@@ -1330,14 +1333,14 @@ export class GraphService {
             relationship: relationship,
             to: this.bulletinSecretService.publicKeyToAddress(pubKey),
             requester_rid: this.generateRid(
-                parentGroup ? parentGroup.relationship.username_signature : this.bulletinSecretService.identity.username_signature,
-                parentGroup ? parentGroup.relationship.username_signature : this.bulletinSecretService.identity.username_signature,
-                parentGroup ? parentGroup.relationship.username_signature : collectionName
+                parentGroup ? parentGroup.username_signature : this.bulletinSecretService.identity.username_signature,
+                parentGroup ? parentGroup.username_signature : this.bulletinSecretService.identity.username_signature,
+                parentGroup ? parentGroup.username_signature : collectionName
             ),
             requested_rid: this.generateRid(
                 username_signature,
                 username_signature,
-                parentGroup ? parentGroup.relationship.username_signature : collectionName
+                parentGroup ? parentGroup.username_signature : collectionName
             ),
             rid: this.generateRid(
                 this.bulletinSecretService.identity.username_signature,
@@ -1502,8 +1505,8 @@ export class GraphService {
       })
     }
 
-    addGroup(identity, rid='', requester_rid='', requested_rid='') {
-      identity.collection = identity.collection || this.settingsService.collections.GROUP
+    addGroup(identity, rid='', requester_rid='', requested_rid='', refresh=true) {
+      identity.collection = identity.parent ? identity.parent.username_signature : identity.collection || this.settingsService.collections.GROUP
       rid = rid || this.generateRid(
         this.bulletinSecretService.identity.username_signature,
         identity.username_signature
@@ -1524,16 +1527,22 @@ export class GraphService {
         requester_rid = '';
         requested_rid = '';
       }
+      if (this.groups_indexed[requested_rid]) {
+        return new Promise((resolve, reject) => {
+          return resolve(identity)
+        });
+      }
       return this.transactionService.generateTransaction({
         rid: rid,
         relationship: identity,
         requested_rid: requested_rid,
         requester_rid: requester_rid,
         to: this.bulletinSecretService.publicKeyToAddress(identity.public_key)
-      }).then((hash) => {
-        return this.transactionService.sendTransaction();
+      })
+      .then((txn) => {
+        return this.transactionService.sendTransaction(txn);
       }).then(() => {
-        return this.getGroups(null, identity.collection, true)
+        return refresh ? this.getGroups(null, identity.collection, true) : null
       }).then(() => {
         return new Promise((resolve, reject) => {
           return resolve(identity)
@@ -1637,6 +1646,16 @@ export class GraphService {
       });
     }
 
+    sortTxnsByUsername(list, reverse=false) {
+      list.sort(function (a, b) {
+        const ausername = a.relationship.identity ? a.relationship.identity.username : a.relationship.username;
+        const busername = b.relationship.identity ? b.relationship.identity.username : b.relationship.username;
+        if (ausername < busername) return reverse ? 1 : -1
+        if (ausername > busername) return  reverse ? -1 : 1
+        return 0
+      });
+    }
+
     toDistinct(list, key) {
       const hashMap = {};
       for(let i=0; i < list.length; i++) {
@@ -1655,6 +1674,9 @@ export class GraphService {
         username: identity.username,
         username_signature: identity.username_signature,
         public_key: identity.public_key
+      }
+      if (identity.parent) {
+        iden.parent = identity.parent
       }
       if (identity.collection) {
         iden.collection = identity.collection

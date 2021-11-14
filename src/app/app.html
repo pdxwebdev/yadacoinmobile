@@ -64,7 +64,7 @@
           >
             <ion-icon name="mail"></ion-icon>
             <ion-badge
-              *ngIf="graphService.notifications[settingsService.collections.MAIL].length > 0 || graphService.notifications[settingsService.collections.GROUP_MAIL].length > 0"
+              *ngIf="graphService.notifications[settingsService.collections.MAIL]?.length > 0 || graphService.notifications[settingsService.collections.GROUP_MAIL]?.length > 0"
               color="secondary"
               style="vertical-align:top;position:absolute;"
               item-right
@@ -85,7 +85,7 @@
           >
             <ion-icon name="chatboxes"></ion-icon>
             <ion-badge
-              *ngIf="graphService.notifications[settingsService.collections.CHAT].length > 0"
+              *ngIf="graphService.notifications[settingsService.collections.CHAT]?.length > 0"
               color="secondary"
               style="vertical-align:top;position:absolute;"
               item-right
@@ -104,9 +104,9 @@
             positionH="right"
             topOffset="-67"
           >
-            <ion-icon name="people"></ion-icon>
+            <ion-icon name="chatbubbles"></ion-icon>
             <ion-badge
-              *ngIf="graphService.notifications[settingsService.collections.GROUP_CHAT].length > 0"
+              *ngIf="graphService.notifications[settingsService.collections.GROUP_CHAT]?.length > 0"
               color="secondary"
               style="vertical-align:top;position:absolute;"
               item-right
@@ -127,7 +127,7 @@
           >
             <ion-icon name="calendar"></ion-icon>
             <ion-badge
-              *ngIf="graphService.notifications[settingsService.collections.CALENDAR].length > 0 || graphService.notifications[settingsService.collections.GROUP_CALENDAR].length > 0"
+              *ngIf="graphService.notifications[settingsService.collections.CALENDAR]?.length > 0 || graphService.notifications[settingsService.collections.GROUP_CALENDAR]?.length > 0"
               color="secondary"
               style="vertical-align:top;position:absolute;"
               item-right
@@ -148,7 +148,7 @@
           >
             <ion-icon name="contacts"></ion-icon>
             <ion-badge
-              *ngIf="graphService.notifications[settingsService.collections.CONTACT].length > 0"
+              *ngIf="graphService.notifications[settingsService.collections.CONTACT]?.length > 0"
               color="secondary"
               style="vertical-align:top;position:absolute;"
               item-right
@@ -200,7 +200,7 @@
           >
             <ion-icon name="notifications"></ion-icon>
             <ion-badge
-              *ngIf="graphService.notifications['notifications'].length > 0"
+              *ngIf="graphService.notifications['notifications']?.length > 0"
               color="secondary"
               style="vertical-align:top;position:absolute;"
               item-right
@@ -253,6 +253,17 @@
             >
               {{p.label}}
             </button>
+            <ng-container *ngIf="p.kwargs && p.kwargs.identity && p.kwargs.subitems && p.kwargs.subitems[p.kwargs.identity.username_signature]">
+              <button
+                menuClose
+                ion-item
+                (click)="openPage(subitem)"
+                class="subnavbutton"
+                *ngFor="let subitem of p.kwargs.subitems[p.kwargs.identity.username_signature]"
+              >
+                &nbsp;&nbsp;&nbsp;&nbsp;{{subitem.kwargs.identity.username}}
+              </button>
+            </ng-container>
           </ng-container>
         </ion-col>
       </ion-row>

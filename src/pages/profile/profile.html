@@ -34,8 +34,8 @@
       </a>
     </ion-col>
   </ion-row>
+  <h4>Manage access</h4>
   <ion-row>
-    <h4>Manage access</h4>
     <ion-list>
       <ion-item>
 
@@ -54,10 +54,11 @@
       <ion-textarea type="text" [value]="identityJson" autoGrow="true" rows="5"></ion-textarea>
     </ion-item>
   </ion-row>
+  <h4>Sub groups</h4>
   <ion-row>
     <ion-list>
       <ng-container *ngFor="let group of graphService.graph.groups">
-        <ion-item *ngIf="group.relationship.parent && group.relationship.parent.username_signature === item.relationship.username_signature" (click)="openSubGroup(group)">
+        <ion-item *ngIf="group.relationship.parent && group.relationship.parent.username_signature === identity.username_signature" (click)="openSubGroup(group)">
             {{group.relationship.username}}
         </ion-item>
       </ng-container>
