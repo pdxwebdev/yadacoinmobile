@@ -78,14 +78,11 @@ export class ListPage {
 
   refresh(refresher) {
     this.subitems = {}
-    return this.walletService.get()
-    .then(() => {
       this.loading = true;
       this.loadingBalance = true;
 
       // If we navigated to this page, we will have an item available as a nav param
-      return this.storage.get('blockchainAddress');
-    })
+    return this.storage.get('blockchainAddress')
     .then((blockchainAddress) => {
         this.blockchainAddress = blockchainAddress;
         return this.storage.get('baseUrl')

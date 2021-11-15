@@ -490,6 +490,7 @@ export class Settings {
               }
           });
         } else {
+          let addedDefaults = false;
           return this.set(key)
           .then(() => {
             return this.graphService.refreshFriendsAndGroups();
@@ -497,9 +498,15 @@ export class Settings {
           .then(() => {
             const promises = [];
             for (let i=0; i < DefaultGroups.length; i++) {
-              promises.push(this.graphService.addGroup(DefaultGroups[i], undefined, undefined, undefined, false))
+              if(!this.graphService.isAdded(DefaultGroups[i])) {
+                promises.push(this.graphService.addGroup(DefaultGroups[i], undefined, undefined, undefined, false));
+                addedDefaults = true
+              }
             }
             return Promise.all(promises)
+          })
+          .then(() => {
+            return addedDefaults ? this.graphService.refreshFriendsAndGroups() : null;
           })
           .then(() => {
               if (showModal) {

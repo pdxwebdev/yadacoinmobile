@@ -935,13 +935,13 @@ export class GraphService {
 
                 try {
                     promises.push(this.getGroups(
-                      this.generateRid(
-                          relationship.username_signature,
-                          relationship.username_signature,
-                          relationship.username_signature
-                      ),
-                      'group',
-                      true
+                        this.generateRid(
+                            relationship.username_signature,
+                            relationship.username_signature,
+                            relationship.username_signature
+                        ),
+                        'group',
+                        true
                     ))
                 } catch(err) {
                     console.log(err);
@@ -1517,8 +1517,8 @@ export class GraphService {
         identity.collection
       );
       requested_rid = requested_rid || this.generateRid(
-        identity.username_signature,
-        identity.username_signature,
+        identity.parent ? identity.collection : identity.username_signature,
+        identity.parent ? identity.collection : identity.username_signature,
         identity.collection
       );
       if (requester_rid && requested_rid) {
@@ -1590,8 +1590,8 @@ export class GraphService {
       const rids = this.generateRids(identity);
       const addedToGroups = this.isChild(identity) ?
         !!(this.groups_indexed[rids.rid] || this.groups_indexed[rids.requested_rid] || this.groups_indexed[this.generateRid(
-          identity.username_signature,
-          identity.username_signature,
+          identity.parent ? identity.parent.username_signature : identity.username_signature,
+          identity.parent ? identity.parent.username_signature : identity.username_signature,
           identity.parent.username_signature
         )])
       :
