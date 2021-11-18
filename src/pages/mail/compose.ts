@@ -159,7 +159,7 @@ export class ComposePage {
                         requester_rid: requester_rid,
                         requested_rid: requested_rid,
                         group: true,
-                        group_username_signature: this.recipient.username_signature
+                        shared_secret: this.recipient.username_signature
                     }
                     info.relationship[this.collection] = {
                         sender: this.bulletinSecretService.identity,

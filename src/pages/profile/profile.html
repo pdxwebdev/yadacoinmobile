@@ -12,10 +12,10 @@
         <h1>{{identity.username}}</h1></ion-item>
     </ion-col>
     <ion-col>
-      <button ion-button large secondary (click)="addFriend()" *ngIf="isAdded === false && group !== true">
+      <button ion-button large secondary (click)="addFriend()" *ngIf="isAdded === false && group !== true && isMe === false">
         Add contact&nbsp;<ion-icon name="create"></ion-icon>
       </button>
-      <button ion-button large secondary (click)="createSubGroup()" *ngIf="isAdded === true && group === true">
+      <button ion-button large secondary (click)="createSubGroup()" *ngIf="isAdded === true && group === true && !identity.parent">
         Create sub-group&nbsp;<ion-icon name="create"></ion-icon>
       </button>
       <button ion-button large secondary (click)="compose()" *ngIf="isAdded === true">
@@ -54,12 +54,12 @@
       <ion-textarea type="text" [value]="identityJson" autoGrow="true" rows="5"></ion-textarea>
     </ion-item>
   </ion-row>
-  <h4>Sub groups</h4>
+  <h4 *ngIf="identity.collection === settingsService.collections.GROUP">Sub groups</h4>
   <ion-row>
     <ion-list>
       <ng-container *ngFor="let group of graphService.graph.groups">
-        <ion-item *ngIf="group.relationship.parent && group.relationship.parent.username_signature === identity.username_signature" (click)="openSubGroup(group)">
-            {{group.relationship.username}}
+        <ion-item *ngIf="group.relationship[settingsService.collections.GROUP].parent && group.relationship[settingsService.collections.GROUP].parent.username_signature === identity.username_signature" (click)="openSubGroup(group)">
+            {{group.relationship[settingsService.collections.GROUP].username}}
         </ion-item>
       </ng-container>
     </ion-list>

@@ -22,18 +22,15 @@ export class CompleteTestService implements AutoCompleteService {
   getResults(searchTerm:string) {
     return this.graphService.graph.friends.concat(this.graphService.graph.groups)
     .filter((item) => {
-      const username = item.relationship.username || item.relationship.identity.username;
-      return username.toLowerCase().indexOf(searchTerm.toLowerCase()) > -1
+      const friend = this.graphService.getIdentityFromTxn(item, this.settingsService.collections.CONTACT);
+      const group = this.graphService.getIdentityFromTxn(item, this.settingsService.collections.GROUP);
+      return (friend || group).username.toLowerCase().indexOf(searchTerm.toLowerCase()) > -1
     })
     .map((item) => {
-        const identity = item.relationship.identity || item.relationship;
-        const value = {
-          username: identity.username,
-          username_signature: identity.username_signature,
-          public_key: identity.public_key,
-          collection: identity.collection
-        }
-        return {name: identity.username, value: value}
+        const friend = this.graphService.getIdentityFromTxn(item, this.settingsService.collections.CONTACT);
+        const group = this.graphService.getIdentityFromTxn(item, this.settingsService.collections.GROUP);
+        const identity = friend || group;
+        return {name: identity.username, value: this.graphService.toIdentity(identity)}
     });
   }
 }

@@ -64,9 +64,10 @@ export class GroupPage {
         this.requester_rid = navParams.data.item.transaction.requester_rid;
         this.requested_rid = navParams.data.item.transaction.requested_rid;
         this.their_address = navParams.data.item.transaction.relationship.their_address;
-        this.public_key = navParams.data.item.transaction.relationship.identity.public_key;
-        this.username_signature = navParams.data.item.transaction.relationship.identity.username_signature;
-        this.username = navParams.data.item.transaction.relationship.identity.username;
+        let identity = this.graphService.getIdentityFromTxn(this.item)
+        this.public_key = identity.public_key;
+        this.username_signature = identity.username_signature;
+        this.username = identity.username;
         var key = 'last_message_height-' + navParams.data.item.transaction.rid;
         if(navParams.data.item.transaction.height) this.storage.set(key, navParams.data.item.transaction.time);
         this.storage.get('blockchainAddress').then((blockchainAddress) => {
@@ -111,10 +112,11 @@ export class GroupPage {
                       shared_secret: shared_secret,
                       to: to
                     }
+                    let identity = this.graphService.getIdentityFromTxn(this.item);
                     info.relationship[this.settingsService.collections.CHAT] = Base64.encode(JSON.stringify({
                         public_key: this.item.public_key,
-                        username_signature: this.item.relationship.identity.username_signature,
-                        username: this.item.relationship.identity.username,
+                        username_signature: identity.username_signature,
+                        username: identity.username,
                         group: true,
                         requested_rid: this.requested_rid
                     }))
@@ -142,10 +144,11 @@ export class GroupPage {
         });
         for (var i=0; i < this.graphService.graph.friends.length; i++) {
             var friend = this.graphService.graph.friends[i];
+            let identity = this.graphService.getIdentityFromTxn(friend);
             alert.addInput({
                 name: 'username',
                 type: 'radio',
-                label: friend.relationship.identity.username,
+                label: identity.username,
                 value: friend,
                 checked: false
             });
@@ -226,7 +229,8 @@ export class GroupPage {
     }
 
     viewProfile(item) {
-        var username_signatures = [this.bulletinSecretService.username_signature, item.relationship.identity.username_signature].sort(function (a, b) {
+        let identity = this.graphService.getIdentityFromTxn(item);
+        var username_signatures = [this.bulletinSecretService.username_signature, identity.username_signature].sort(function (a, b) {
             return a.toLowerCase().localeCompare(b.toLowerCase());
         });
         if (username_signatures[0] === username_signatures[1]) return;

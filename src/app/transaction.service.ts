@@ -18,7 +18,6 @@ export class TransactionService {
     rid = null;
     callbackurl = null;
     blockchainurl = null;
-    group_username_signature = null;
     shared_secret = null;
     to = null;
     txnattempts = null;
@@ -46,7 +45,6 @@ export class TransactionService {
             this.txnattempts = [12, 5, 4];
             this.cbattempts = [12, 5, 4];
             this.info = info;
-            this.group_username_signature = this.info.group_username_signature;
             this.unspent_transaction_override = this.info.unspent_transaction;
             this.blockchainurl = this.info.blockchainurl;
             this.callbackurl = this.info.callbackurl;
@@ -186,70 +184,6 @@ export class TransactionService {
                     inputs_hashes_concat +
                     outputs_hashes_concat
                 ).toString('hex')
-            } else if (this.info.group && !this.info.relationship.wif) {
-                // group chat
-
-                this.transaction.relationship = this.shared_encrypt(this.group_username_signature, JSON.stringify(this.info.relationship));
-
-                hash = foobar.bitcoin.crypto.sha256(
-                    this.transaction.public_key +
-                    this.transaction.time +
-                    this.transaction.rid +
-                    this.transaction.relationship +
-                    this.transaction.fee.toFixed(8) +
-                    this.transaction.requester_rid +
-                    this.transaction.requested_rid +
-                    inputs_hashes_concat +
-                    outputs_hashes_concat
-                ).toString('hex')
-            } else if (this.info.relationship.postText) {
-                // group post
-
-                this.transaction.relationship = this.shared_encrypt(this.group_username_signature, JSON.stringify(this.info.relationship));
-
-                hash = foobar.bitcoin.crypto.sha256(
-                    this.transaction.public_key +
-                    this.transaction.time +
-                    this.transaction.rid +
-                    this.transaction.relationship +
-                    this.transaction.fee.toFixed(8) +
-                    this.transaction.requester_rid +
-                    this.transaction.requested_rid +
-                    inputs_hashes_concat +
-                    outputs_hashes_concat
-                ).toString('hex')
-            } else if (this.info.relationship.comment) {
-                // group comment
-
-                this.transaction.relationship = this.shared_encrypt(this.group_username_signature, JSON.stringify(this.info.relationship));
-
-                hash = foobar.bitcoin.crypto.sha256(
-                    this.transaction.public_key +
-                    this.transaction.time +
-                    this.transaction.rid +
-                    this.transaction.relationship +
-                    this.transaction.fee.toFixed(8) +
-                    this.transaction.requester_rid +
-                    this.transaction.requested_rid +
-                    inputs_hashes_concat +
-                    outputs_hashes_concat
-                ).toString('hex')
-            } else if (this.info.relationship.react) {
-                // group react
-
-                this.transaction.relationship = this.shared_encrypt(this.group_username_signature, JSON.stringify(this.info.relationship));
-
-                hash = foobar.bitcoin.crypto.sha256(
-                    this.transaction.public_key +
-                    this.transaction.time +
-                    this.transaction.rid +
-                    this.transaction.relationship +
-                    this.transaction.fee.toFixed(8) +
-                    this.transaction.requester_rid +
-                    this.transaction.requested_rid +
-                    inputs_hashes_concat +
-                    outputs_hashes_concat
-                ).toString('hex')
             } else if (
               this.info.relationship[this.settingsService.collections.CALENDAR] ||
               this.info.relationship[this.settingsService.collections.CHAT] ||
@@ -287,7 +221,7 @@ export class TransactionService {
                     inputs_hashes_concat +
                     outputs_hashes_concat
                 ).toString('hex')
-            } else if (this.info.relationship.wif && !this.info.group) {
+            } else if (this.info.relationship.wif) {
                 // recovery
                 this.transaction.relationship = this.shared_encrypt(this.info.shared_secret, JSON.stringify(this.info.relationship));
 
@@ -302,25 +236,12 @@ export class TransactionService {
                     inputs_hashes_concat +
                     outputs_hashes_concat
                 ).toString('hex')
-            } else if (this.info.relationship.event) {
-                // calendar event
-                this.transaction.relationship = this.encrypt();
-
-                hash = foobar.bitcoin.crypto.sha256(
-                    this.transaction.public_key +
-                    this.transaction.time +
-                    this.transaction.rid +
-                    this.transaction.relationship +
-                    this.transaction.fee.toFixed(8) +
-                    this.transaction.requester_rid +
-                    this.transaction.requested_rid +
-                    inputs_hashes_concat +
-                    outputs_hashes_concat
-                ).toString('hex')
-            } else if (this.info.relationship.username || this.info.relationship.wif) {
-                // join or create group or contact
-                if (this.info.relationship.parent) {
-                  this.transaction.relationship = this.shared_encrypt(this.info.relationship.parent.username_signature, JSON.stringify(this.info.relationship));
+            } else if (
+              this.info.relationship[this.settingsService.collections.GROUP]
+            ) {
+                // join or create group
+                if (this.info.relationship[this.settingsService.collections.GROUP].parent) {
+                  this.transaction.relationship = this.shared_encrypt(this.info.relationship[this.settingsService.collections.GROUP].parent.username_signature, JSON.stringify(this.info.relationship));
                 } else {
                   this.transaction.relationship = this.encrypt();
                 }

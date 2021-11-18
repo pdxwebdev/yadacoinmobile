@@ -37,29 +37,32 @@ export class CalendarPage {
       )]
       let group_rids = [];
       for (let i=0; i < this.graphService.graph.groups.length; i++) {
-        const group = this.graphService.graph.groups[i];
+        const group = this.graphService.getIdentityFromTxn(
+          this.graphService.graph.groups[i],
+          this.settingsService.collections.GROUP
+        );
         group_rids.push(this.graphService.generateRid(
-          group.relationship.username_signature,
-          group.relationship.username_signature,
+          group.username_signature,
+          group.username_signature,
           this.settingsService.collections.CALENDAR
         ))
         group_rids.push(this.graphService.generateRid(
-          group.relationship.username_signature,
-          group.relationship.username_signature,
+          group.username_signature,
+          group.username_signature,
           this.settingsService.collections.GROUP_CALENDAR
         ))
       }
       let file_rids = [];
       for (let i=0; i < this.graphService.graph.files.length; i++) {
-        const file = this.graphService.graph.files[i];
+        const file = this.graphService.getIdentityFromTxn(this.graphService.graph.files[i]);
         file_rids.push(this.graphService.generateRid(
-          file.relationship.username_signature,
-          file.relationship.username_signature,
+          file.username_signature,
+          file.username_signature,
           this.settingsService.collections.CALENDAR
         ))
         file_rids.push(this.graphService.generateRid(
-          file.relationship.username_signature,
-          file.relationship.username_signature,
+          file.username_signature,
+          file.username_signature,
           this.settingsService.collections.GROUP_CALENDAR
         ))
       }
@@ -78,7 +81,10 @@ export class CalendarPage {
 
       let events = {};
       this.graphService.graph.calendar.map((txn) => {
-        const group = this.graphService.groups_indexed[txn.requested_rid]
+        const group = this.graphService.getIdentityFromTxn(
+          this.graphService.groups_indexed[txn.requested_rid],
+          this.settingsService.collections.GROUP
+        );
         const event = txn.relationship[this.settingsService.collections.CALENDAR] ||
                       txn.relationship[this.settingsService.collections.GROUP_CALENDAR];
         const eventDate = event.event_datetime;
@@ -86,9 +92,13 @@ export class CalendarPage {
         if (!events[index]) {
           events[index] = []
         }
+        let altSender = this.graphService.getIdentityFromTxn(
+          this.graphService.friends_indexed[txn.rid],
+          this.settingsService.collections.CONTACT
+        )
         events[index].push({
-          group: group ? group.relationship : null,
-          sender: event.sender || this.graphService.friends_indexed[txn.rid].relationship.identity,
+          group: group || null,
+          sender: event.sender || altSender,
           subject: event.subject,
           body: event.body,
           datetime: new Date(parseInt(txn.time)*1000).toISOString().slice(0, 19).replace('T', ' '),

@@ -30,7 +30,7 @@ export class ListPage {
   selectedItem: any;
   pageTitle: any;
   icons: string[];
-  items: Array<{pageTitle: string, identity: object}>;
+  items: Array<{pageTitle: string, identity: object, item: object}>;
   blockchainAddress: any;
   balance: any;
   baseUrl: any;
@@ -78,10 +78,10 @@ export class ListPage {
 
   refresh(refresher) {
     this.subitems = {}
-      this.loading = true;
-      this.loadingBalance = true;
+    this.loading = true;
+    this.loadingBalance = true;
 
-      // If we navigated to this page, we will have an item available as a nav param
+    // If we navigated to this page, we will have an item available as a nav param
     return this.storage.get('blockchainAddress')
     .then((blockchainAddress) => {
         this.blockchainAddress = blockchainAddress;
@@ -147,37 +147,28 @@ export class ListPage {
         var public_key = '';
         var graphArray = [];
         if (this.pageTitle == 'Contacts') {
-          graphArray = this.graphService.graph.friends.filter((item) => {return !!item.relationship.identity});
+          graphArray = this.graphService.graph.friends.filter((item) => {return !!item.relationship[this.settingsService.collections.CONTACT]});
           graphArray = this.getDistinctFriends(graphArray).friend_list;
-          graphArray.sort(function (a, b) {
-              if (a.relationship.identity.username.toLowerCase() < b.relationship.identity.username.toLowerCase())
-                return -1
-              if ( a.relationship.identity.username.toLowerCase() > b.relationship.identity.username.toLowerCase())
-                return 1
-              return 0
-          });
+          this.graphService.sortTxnsByUsername(graphArray, false, this.settingsService.collections.CONTACT);
           this.makeList(graphArray, 'Contacts', null);
           this.loading = false;
         } else if (this.pageTitle == 'Groups') {
           for (let i = 0; i < this.graphService.graph.groups.length; i++) {
             let item = this.graphService.graph.groups[i];
-            if(item.relationship.parent) {
-              this.subitems[item.relationship.parent.username_signature] = this.subitems[item.relationship.parent.username_signature] || [];
-              this.subitems[item.relationship.parent.username_signature].push({
+            let parentIdentity = this.graphService.getParentIdentityFromTxn(item, this.settingsService.collections.GROUP);
+            let itemIdentity = this.graphService.getIdentityFromTxn(item, this.settingsService.collections.GROUP);
+            if(parentIdentity) {
+              this.subitems[parentIdentity.username_signature] = this.subitems[parentIdentity.username_signature] || [];
+              this.subitems[parentIdentity.username_signature].push({
                 pageTitle: this.pageTitle,
-                identity: item.relationship.identity ? item.relationship.identity : item.relationship
+                identity: itemIdentity,
+                item: item
               })
             } else {
               graphArray.push(item)
             }
           }
-          graphArray.sort(function (a, b) {
-              if (a.relationship.username.toLowerCase() < b.relationship.username.toLowerCase())
-                return -1
-              if ( a.relationship.username.toLowerCase() > b.relationship.username.toLowerCase())
-                return 1
-              return 0
-          });
+          this.graphService.sortTxnsByUsername(graphArray, false, this.settingsService.collections.GROUP)
           this.makeList(graphArray, 'Groups', null);
           this.loading = false;
         } else if (this.pageTitle == 'Messages') {
@@ -188,19 +179,11 @@ export class ListPage {
             var friendsWithMessagesList = this.getDistinctFriends(messages);
             this.populateRemainingFriends(friendsWithMessagesList.friend_list, friendsWithMessagesList.used_rids);
             this.loading = false;
-            friendsWithMessagesList.friend_list.sort(function (a, b) {
-                try {
-                  const ausername = a.relationship.identity ? a.relationship.identity.username : a.relationship.username
-                  const busername = b.relationship.identity ? b.relationship.identity.username : b.relationship.username
-                  if (ausername.toLowerCase() < busername.toLowerCase())
-                    return -1
-                  if ( ausername.toLowerCase() > busername.toLowerCase())
-                    return 1
-                  return 0
-                } catch(err) {
-                  return 0
-                }
-            });
+            this.graphService.sortTxnsByUsername(
+              friendsWithMessagesList.friend_list,
+              false,
+              this.settingsService.collections.CONTACT
+            )
             return this.makeList(friendsWithMessagesList.friend_list, '', {title: 'Messages', component: ChatPage})
             .then((pages) => {
               this.events.publish('menu', pages);
@@ -250,7 +233,7 @@ export class ListPage {
               item.label = 'Calendar entry from ' + identity.username
             } else if (this.graphService.graph.friend_requests.filter((fr) => {return fr.rid === item.rid}).length > 0) {
               item.component = ListPage
-              const identity = item.relationship.identity;
+              const identity = this.graphService.getIdentityFromTxn(item);
               item.identity = identity
               item.label = 'Contact request from ' + identity.username
               item.pageTitle = 'Contact Requests'
@@ -275,23 +258,25 @@ export class ListPage {
           this.loading = false;
           this.graphService.sortTxnsByUsername(this.graphService.graph.groups)
           let groupList = this.graphService.graph.groups.filter((item) => {
-            if(item.relationship.parent) {
-              this.subitems[item.relationship.parent.username_signature] = this.subitems[item.relationship.parent.username_signature] || [];
-              this.subitems[item.relationship.parent.username_signature].push({
+            let parentIdentity = this.graphService.getParentIdentityFromTxn(item, this.settingsService.collections.GROUP)
+            if(parentIdentity) {
+              this.subitems[parentIdentity.username_signature] = this.subitems[parentIdentity.username_signature] || [];
+              let identity = this.graphService.getIdentityFromTxn(item, this.settingsService.collections.GROUP)
+              this.subitems[parentIdentity.username_signature].push({
                 title: 'Community',
-                label: item.relationship.username,
+                label: identity.username,
                 component: ChatPage,
                 count: false,
                 color: '',
                 kwargs: {
                   item: item,
-                  identity: item.identity || item.relationship.identity || item.relationship,
+                  identity: identity,
                   subitems: this.subitems
                 },
                 root: true
               })
             }
-            return !item.relationship.parent
+            return !parentIdentity
           })
           return this.makeList(groupList, '', {title: 'Community', component: ChatPage})
           .then((pages) => {
@@ -306,13 +291,7 @@ export class ListPage {
             var friendsWithMessagesList = this.getDistinctFriends(messages);
             this.populateRemainingFriends(friendsWithMessagesList.friend_list, friendsWithMessagesList.used_rids);
             this.loading = false;
-            friendsWithMessagesList.friend_list.sort(function (a, b) {
-                if (a.relationship.identity.username.toLowerCase() < b.relationship.identity.username.toLowerCase())
-                  return -1
-                if ( a.relationship.identity.username.toLowerCase() > b.relationship.identity.username.toLowerCase())
-                  return 1
-                return 0
-            });
+            this.graphService.sortTxnsByUsername(friendsWithMessagesList.friend_list, false, this.settingsService.collections.CONTACT)
             return this.makeList(friendsWithMessagesList.friend_list, 'Messages', null);
           }).catch((err) => {
               console.log(err);
@@ -331,13 +310,7 @@ export class ListPage {
           return this.graphService.getFriendRequests()
           .then(() => {
               var graphArray = this.graphService.graph.friend_requests;
-              graphArray.sort(function (a, b) {
-                  if (a.relationship.identity.username.toLowerCase() < b.relationship.identity.username.toLowerCase())
-                    return -1
-                  if ( a.relationship.identity.username.toLowerCase() > b.relationship.identity.username.toLowerCase())
-                    return 1
-                  return 0
-              });
+              this.graphService.sortTxnsByUsername(graphArray, false, this.settingsService.collections.CONTACT);
               this.loading = false;
               return this.makeList(graphArray, 'Contact Requests', null);
           });
@@ -345,13 +318,7 @@ export class ListPage {
           return this.graphService.getSentFriendRequests()
           .then(() => {
               var graphArray = this.graphService.graph.sent_friend_requests;
-              graphArray.sort(function (a, b) {
-                  if (a.relationship.identity.username.toLowerCase() < b.relationship.identity.username.toLowerCase())
-                    return -1
-                  if ( a.relationship.identity.username.toLowerCase() > b.relationship.identity.username.toLowerCase())
-                    return 1
-                  return 0
-              });
+              this.graphService.sortTxnsByUsername(graphArray, false, this.settingsService.collections.CONTACT);
               this.loading = false;
               return this.makeList(graphArray, 'Sent Requests', null);
           });
@@ -464,9 +431,10 @@ export class ListPage {
       this.items = [];
       for (let i = 0; i < graphArray.length; i++) {
         const item  = graphArray[i];
+        let identity = this.graphService.getIdentityFromTxn(item)
         if (page) {
           const component = item.component || page.component
-          const label = item.relationship.identity ? item.relationship.identity.username : item.relationship.username;
+          const label = identity && identity.username;
           items.push({
             title: page.title,
             label: item.label || label,
@@ -475,7 +443,7 @@ export class ListPage {
             color: '',
             kwargs: {
               item: item.item || item,
-              identity: item.identity || item.relationship.identity || item.relationship,
+              identity: identity,
               subitems: this.subitems
             },
             root: true
@@ -483,7 +451,8 @@ export class ListPage {
         } else {
           this.items.push({
             pageTitle: pageTitle,
-            identity: item.relationship.identity ? item.relationship.identity : item.relationship
+            identity: identity,
+            item: item
           });
         }
       }

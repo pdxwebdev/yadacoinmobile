@@ -21,26 +21,26 @@ $app-direction: ltr;
 // the Sass variables found in Ionic's source scss files.
 // To view all the possible Ionic variables, see:
 // http://ionicframework.com/docs/theming/overriding-ionic-variables/
-// $outer-content-wp-background-color: #202225;
-// $outer-content-md-background-color: #202225;
-// $tabs-md-background: #202225;
-// $toolbar-md-background: #202225;
-// $note-md-color: #afb8c7;
-// $note-wp-color: #afb8c7;
-// $list-md-border-color: #202225;
-// $list-wp-border-color: #202225;
-// $item-md-divider-border-bottom: 1px solid $list-md-border-color;
-// $item-wp-divider-border-bottom: 1px solid $list-wp-border-color;
-// $loading-md-background: #202225;
-// $loading-md-spinner-color: #afb8c7;
-// $loading-md-text-color: #afb8c7;
-// $card-md-text-color: #afb8c7;
-// $card-md-title-text-color: #afb8c7;
-// $text-input-highlight-color-valid: #488aff;
+$outer-content-wp-background-color: #202225;
+$outer-content-md-background-color: #202225;
+$tabs-md-background: #202225;
+$toolbar-md-background: #202225;
+$note-md-color: #afb8c7;
+$note-wp-color: #afb8c7;
+$list-md-border-color: #202225;
+$list-wp-border-color: #202225;
+$item-md-divider-border-bottom: 1px solid $list-md-border-color;
+$item-wp-divider-border-bottom: 1px solid $list-wp-border-color;
+$loading-md-background: #202225;
+$loading-md-spinner-color: #afb8c7;
+$loading-md-text-color: #afb8c7;
+$card-md-text-color: #afb8c7;
+$card-md-title-text-color: #afb8c7;
+$text-input-highlight-color-valid: #488aff;
 
-// button:hover {
-//   background-color: #494d53;
-// }
+button:hover {
+  background-color: #494d53;
+}
 .logotext {
   width: 25%
 }
@@ -51,22 +51,22 @@ $app-direction: ltr;
   opacity: .15;
 }
 
-// .scroll-content::-webkit-scrollbar-track
-// {
-// 	-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
-// 	background-color: #202225;
-// }
+.scroll-content::-webkit-scrollbar-track
+{
+	-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+	background-color: #202225;
+}
 
-// .scroll-content::-webkit-scrollbar
-// {
-// 	width: 6px;
-// 	background-color: #202225;
-// }
+.scroll-content::-webkit-scrollbar
+{
+	width: 6px;
+	background-color: #202225;
+}
 
-// .scroll-content::-webkit-scrollbar-thumb
-// {
-// 	background-color: #494d53;
-// }
+.scroll-content::-webkit-scrollbar-thumb
+{
+	background-color: #494d53;
+}
 
 // Named Color Variables
 // --------------------------------------------------
@@ -113,7 +113,7 @@ $colors: (
 // so that the above variables are used and Ionic's
 // default are overridden.
 
-@import "ionic.theme.default";
+@import "ionic.theme.dark";
 
 
 // Ionicons

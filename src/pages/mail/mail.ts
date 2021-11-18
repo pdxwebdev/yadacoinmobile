@@ -46,19 +46,19 @@ export class MailPage {
     )];
     let group_rids = [];
     for (let i=0; i < this.graphService.graph.groups.length; i++) {
-      const group = this.graphService.graph.groups[i];
+      const group = this.graphService.getIdentityFromTxn(this.graphService.graph.groups[i]);
       group_rids.push(this.graphService.generateRid(
-        group.relationship.username_signature,
-        group.relationship.username_signature,
+        group.username_signature,
+        group.username_signature,
         this.settingsService.collections.GROUP_MAIL
       ))
     }
     let file_rids = [];
     for (let i=0; i < this.graphService.graph.files.length; i++) {
-      const group = this.graphService.graph.files[i];
+      const group = this.graphService.getIdentityFromTxn(this.graphService.graph.files[i]);
       file_rids.push(this.graphService.generateRid(
-        group.relationship.username_signature,
-        group.relationship.username_signature,
+        group.username_signature,
+        group.username_signature,
         this.settingsService.collections.GROUP_MAIL
       ))
     }

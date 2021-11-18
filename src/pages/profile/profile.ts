@@ -29,6 +29,7 @@ export class ProfilePage {
     prev_name: any;
     item: any;
     isAdded: any;
+    isMe: any;
     group: any;
     identity: any;
     subgroups = [];
@@ -55,6 +56,7 @@ export class ProfilePage {
         public toastCtrl: ToastController,
         public events: Events
     ) {
+        this.item = this.navParams.get('item');
         this.identity = this.navParams.get('identity');
         const rids = this.graphService.generateRids(this.identity);
         this.rid = rids.rid;
@@ -72,6 +74,7 @@ export class ProfilePage {
         }
         this.isAdded = this.graphService.isAdded(this.identity)
         this.group = this.graphService.isGroup(this.identity)
+        this.isMe = this.graphService.isMe(this.identity)
     }
 
     invite() {
@@ -149,7 +152,7 @@ export class ProfilePage {
             });
         })
         .then((groupName) => {
-            return this.graphService.createGroup(groupName, this.identity);
+            return this.graphService.createGroup(groupName, this.item);
         })
         .then((hash) => {
             if (this.settingsService.remoteSettings['walletUrl']) {
@@ -166,7 +169,7 @@ export class ProfilePage {
 
     openSubGroup(subGroup) {
         this.navCtrl.push(ProfilePage, {
-          identity: subGroup.relationship,
+          identity: subGroup.relationship[this.settingsService.collections.GROUP],
           group: true
         });
     }

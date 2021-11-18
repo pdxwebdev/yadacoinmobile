@@ -90,7 +90,14 @@ export class ChatPage {
             this.graphService.sortInt(this.chats, 'time', true)
             for(var i=0; i < this.chats.length; i++) {
                 if (!group) {
-                  this.chats[i].relationship.identity = this.chats[i].public_key === this.bulletinSecretService.identity.public_key ? this.bulletinSecretService.identity : this.graphService.friends_indexed[rid].relationship.identity
+                  this.chats[i].relationship.identity = (
+                    this.chats[i].public_key === this.bulletinSecretService.identity.public_key ? 
+                    this.bulletinSecretService.identity : 
+                    this.graphService.getIdentityFromTxn(
+                      this.graphService.friends_indexed[rid],
+                      this.settingsService.collections.CONTACT
+                    )
+                  )
                 }
                 let datetime = new Date(parseInt(this.chats[i].time) * 1000);
                 this.chats[i].time = datetime.toLocaleDateString() + ' ' + datetime.toLocaleTimeString();
@@ -144,13 +151,14 @@ export class ChatPage {
     }
 
     viewProfile(item) {
+        let identity = item.relationship.identity;
         const rid = this.graphService.generateRid(
-          item.relationship.identity.username_signature,
+          identity.username_signature,
           this.bulletinSecretService.identity.username_signature
         )
-        const identity = this.graphService.friends_indexed[rid];
+        const cached_identity = this.graphService.friends_indexed[rid];
         this.navCtrl.push(ProfilePage, {
-            identity: identity ? identity.relationship : item.relationship.identity
+            identity: this.graphService.getIdentityFromTxn(cached_identity) || identity
         })
     }
 
@@ -164,6 +172,10 @@ export class ChatPage {
       return this.walletService.get()
       .then(() => {
           if (this.graphService.isGroup(this.identity)) {
+            const group = this.graphService.getIdentityFromTxn(
+              this.graphService.groups_indexed[this.requested_rid],
+              this.settingsService.collections.GROUP
+            );
             const info = {
                 relationship: {
                     identity: this.bulletinSecretService.identity,
@@ -174,7 +186,7 @@ export class ChatPage {
                 requester_rid: this.requester_rid,
                 requested_rid: this.requested_rid,
                 group: true,
-                group_username_signature: this.graphService.groups_indexed[this.requested_rid].relationship.username_signature
+                shared_secret: group.username_signature
             }
             info.relationship[this.settingsService.collections.GROUP_CHAT] = this.chatText
             return this.transactionService.generateTransaction(info);

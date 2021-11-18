@@ -49,7 +49,7 @@ export class WebSocketService {
         }
         break;
       case 'newtxn':
-        const collection = this.getNewTxnCollection(msg)
+        const collection = this.graphService.getNewTxnCollection(msg.params.transaction)
         if (collection) {
           switch (collection) {
             case this.settingsService.collections.CONTACT:
@@ -276,48 +276,6 @@ export class WebSocketService {
     }
   }
 
-  getNewTxnCollection(msg) {
-    for (let i=0; i < Object.keys(this.settingsService.collections).length; i++) {
-      const collection = this.settingsService.collections[Object.keys(this.settingsService.collections)[i]];
-      const rid = this.graphService.generateRid(
-        this.bulletinSecretService.identity.username_signature,
-        this.bulletinSecretService.identity.username_signature,
-        collection
-      )
-      if(
-        msg.params.transaction.rid === rid ||
-        msg.params.transaction.requester_rid === rid ||
-        msg.params.transaction.requested_rid === rid
-      ) {
-        return collection;
-      }
-    }
-    const collections = [
-      this.settingsService.collections.GROUP_CHAT,
-      this.settingsService.collections.GROUP_MAIL,
-      this.settingsService.collections.GROUP_CALENDAR
-    ]
-    for (let j=0; j < Object.keys(this.graphService.groups_indexed).length; j++) {
-      const group = this.graphService.groups_indexed[Object.keys(this.graphService.groups_indexed)[j]];
-      for (let i=0; i < collections.length; i++) {
-        const collection = collections[i];
-        const rid = this.graphService.generateRid(
-          group.relationship.username_signature,
-          group.relationship.username_signature,
-          collection
-        )
-        if(
-          msg.params.transaction.rid === rid ||
-          msg.params.transaction.requester_rid === rid ||
-          msg.params.transaction.requested_rid === rid
-        ) {
-          return collection;
-        }
-      }
-    }
-    return false;
-  }
-
   connect() {
     this.websocket.send(JSON.stringify({
       id: '',
@@ -400,7 +358,10 @@ export class WebSocketService {
     const myRids = this.graphService.generateRids(this.bulletinSecretService.identity)
     let recipient;
     if (this.graphService.friends_indexed[rid]) {
-      recipient = this.graphService.friends_indexed[rid].relationship.identity
+      recipient = this.graphService.getIdentityFromTxn(
+        this.graphService.friends_indexed[rid],
+        this.settingsService.collections.CONTACT
+      )
     }
 
     if (myRids.rid == rid){

@@ -189,13 +189,14 @@ export class Settings {
     }
 
     importKey() {
-        new Promise((resolve, reject) => {
+        let wif;
+        return new Promise((resolve, reject) => {
             let alert = this.alertCtrl.create({
-                title: 'Set username',
+                title: 'Set WIF',
                 inputs: [
                 {
-                    name: 'username',
-                    placeholder: 'Username'
+                    name: 'wif',
+                    placeholder: 'WIF'
                 }
                 ],
                 buttons: [
@@ -208,24 +209,55 @@ export class Settings {
                     }
                 },
                 {
-                    text: 'Save',
+                    text: 'Continue',
                     handler: data => {
-                        const toast = this.toastCtrl.create({
-                            message: 'Identity created',
-                            duration: 2000
-                        });
-                        toast.present();
-                        resolve(data.username);
+                        resolve(data.wif);
                     }
                 }
                 ]
             });
             alert.present();
         })
-        .then((username) => {
-            return this.bulletinSecretService.import(this.importedKey, username);
+        .then((wifkey) => {
+            return new Promise((resolve, reject) => {
+                wif = wifkey
+                let alert = this.alertCtrl.create({
+                    title: 'Set username',
+                    inputs: [
+                    {
+                        name: 'username',
+                        placeholder: 'Username'
+                    }
+                    ],
+                    buttons: [
+                    {
+                        text: 'Cancel',
+                        role: 'cancel',
+                        handler: data => {
+                            console.log('Cancel clicked');
+                            reject('Cancel clicked');
+                        }
+                    },
+                    {
+                        text: 'Save',
+                        handler: data => {
+                            resolve(data.username);
+                        }
+                    }
+                    ]
+                });
+                alert.present();
+            })
         })
-        .then(() => {
+        .then((username) => {
+            return this.bulletinSecretService.import(wif, username);
+        })
+        .then((wif) => {
+            const toast = this.toastCtrl.create({
+                message: 'Identity created',
+                duration: 2000
+            });
+            toast.present();
             this.importedKey = '';
             return this.refresh(null);
         })
@@ -495,19 +527,19 @@ export class Settings {
           .then(() => {
             return this.graphService.refreshFriendsAndGroups();
           })
-          .then(() => {
-            const promises = [];
-            for (let i=0; i < DefaultGroups.length; i++) {
-              if(!this.graphService.isAdded(DefaultGroups[i])) {
-                promises.push(this.graphService.addGroup(DefaultGroups[i], undefined, undefined, undefined, false));
-                addedDefaults = true
-              }
-            }
-            return Promise.all(promises)
-          })
-          .then(() => {
-            return addedDefaults ? this.graphService.refreshFriendsAndGroups() : null;
-          })
+          // .then(() => {
+          //   const promises = [];
+          //   for (let i=0; i < DefaultGroups.length; i++) {
+          //     if(!this.graphService.isAdded(DefaultGroups[i])) {
+          //       promises.push(this.graphService.addGroup(DefaultGroups[i], undefined, undefined, undefined, false));
+          //       addedDefaults = true
+          //     }
+          //   }
+          //   return Promise.all(promises)
+          // })
+          // .then(() => {
+          //   return addedDefaults ? this.graphService.refreshFriendsAndGroups() : null;
+          // })
           .then(() => {
               if (showModal) {
                 this.loadingModal.dismiss();
