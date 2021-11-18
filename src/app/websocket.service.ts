@@ -44,8 +44,11 @@ export class WebSocketService {
     switch (msg.method) {
       case 'connect_confirm':
         for (let i=0; i < this.graphService.graph.groups.length; i++) {
-          let group = this.graphService.graph.groups[i]
-          this.joinGroup(group.relationship)
+          let group = this.graphService.getIdentityFromTxn(
+            this.graphService.graph.groups[i],
+            this.settingsService.collections.GROUP
+          )
+          this.joinGroup(group)
         }
         break;
       case 'newtxn':
@@ -77,7 +80,7 @@ export class WebSocketService {
                 'last_message_height'
               )
               .then((item) => {
-                this.settingsService.menu === 'chat' && this.events.publish('newchat')
+                this.events.publish('newchat')
                 return this.graphService.addNotification(item[msg.params.transaction.rid][0], this.settingsService.collections.CHAT);
               })
               break;
@@ -99,7 +102,7 @@ export class WebSocketService {
                   this.graphService.graph.messages[msg.params.transaction.requested_rid] = []
                 }
                 this.graphService.graph.messages[msg.params.transaction.requested_rid].push(item[msg.params.transaction.requested_rid][0])
-                this.settingsService.menu === 'community' && this.events.publish('newchat')
+                this.events.publish('newchat')
                 return this.graphService.addNotification(item[msg.params.transaction.requested_rid][0], this.settingsService.collections.GROUP_CHAT);
               })
               break;

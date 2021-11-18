@@ -872,12 +872,16 @@ export class GraphService {
                 }
                 if (failed && this.groups_indexed[group.requester_rid]) {
                     try {
-                        if (this.groups_indexed[group.requester_rid].public_key !== group.public_key) continue;
+                        let parentGroup = this.getIdentityFromTxn(
+                          this.groups_indexed[group.requester_rid],
+                          this.settingsService.collections.GROUP
+                        )
+                        if (parentGroup.public_key !== group.public_key) continue;
                         if (typeof group.relationship == 'object') {
                             bypassDecrypt = true;
                         } else {
                             decrypted = this.shared_decrypt(
-                              this.groups_indexed[group.requester_rid].relationship[this.settingsService.collections.GROUP].username_signature,
+                              parentGroup.username_signature,
                               group.relationship
                             );
                         }
@@ -1544,9 +1548,11 @@ export class GraphService {
           return resolve(identity)
         });
       }
+      let info = {};
+      info[this.settingsService.collections.GROUP] = identity;
       return this.transactionService.generateTransaction({
         rid: rid,
-        relationship: identity,
+        relationship: info,
         requested_rid: requested_rid,
         requester_rid: requester_rid,
         to: this.bulletinSecretService.publicKeyToAddress(identity.public_key)
@@ -1746,12 +1752,15 @@ export class GraphService {
         this.settingsService.collections.GROUP_CALENDAR
       ]
       for (let j=0; j < Object.keys(this.groups_indexed).length; j++) {
-        const group = this.groups_indexed[Object.keys(this.groups_indexed)[j]];
+        const group = this.getIdentityFromTxn(
+          this.groups_indexed[Object.keys(this.groups_indexed)[j]],
+          this.settingsService.collections.GROUP
+        );
         for (let i=0; i < collections.length; i++) {
           const collection = collections[i];
           const rid = this.generateRid(
-            group.relationship.username_signature,
-            group.relationship.username_signature,
+            group.username_signature,
+            group.username_signature,
             collection
           )
           if(

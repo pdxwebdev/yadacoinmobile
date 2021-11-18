@@ -79,55 +79,55 @@ export class MyApp {
       this.pages = pages;
       return
     }
-    if (this.settingsService.menu == 'home') {
+    if (this.settingsService.menu === 'home') {
       this.pages = [
         { title: 'Home', label: 'Home', component: HomePage, count: false, color: '', root: true },
       ];
-    } else if (this.settingsService.menu == 'mail') {
+    } else if (this.settingsService.menu === 'mail') {
       this.pages = [
         { title: 'Inbox', label: 'Inbox', component: MailPage, count: false, color: '', root: true },
         { title: 'Sent', label: 'Sent', component: MailPage, count: false, color: '', root: true },
       ];
-    } else if (this.settingsService.menu == 'chat') {
+    } else if (this.settingsService.menu === 'chat') {
       this.pages = [
         { title: 'Messages', label: 'Chat', component: ListPage, count: false, color: '', root: true },
       ];
-    } else if (this.settingsService.menu == 'community') {
+    } else if (this.settingsService.menu === 'community') {
       this.pages = [
         { title: 'Community', label: 'Community', component: ListPage, count: false, color: '', root: true },
       ];
-    } else if (this.settingsService.menu == 'calendar') {
+    } else if (this.settingsService.menu === 'calendar') {
       this.pages = [
         { title: 'Calendar', label: 'Calendar', component: CalendarPage, count: false, color: '', root: true },
       ];
-    } else if (this.settingsService.menu == 'contacts') {
+    } else if (this.settingsService.menu === 'contacts') {
       this.pages = [
         { title: 'Contacts', label: 'Contacts', component: ListPage, count: false, color: '', root: true },
         { title: 'Contact Requests', label: 'Contact Requests', component: ListPage, count: false, color: '', root: true },
         { title: 'Groups', label: 'Groups', component: ListPage, count: false, color: '', root: true },
       ];
-    } else if (this.settingsService.menu == 'files') {
+    } else if (this.settingsService.menu === 'files') {
       this.pages = [
         { title: 'Files', label: 'Files', component: SiaFiles, count: false, color: '', root: true },
       ];
-    } else if (this.settingsService.menu == 'wallet') {
+    } else if (this.settingsService.menu === 'wallet') {
       this.pages = [
         { title: 'Send / Receive', label: 'Send / Receive', component: SendReceive, count: false, color: '', root: true }
       ];
-    } else if (this.settingsService.menu == 'stream') {
+    } else if (this.settingsService.menu === 'stream') {
       this.pages = [
         { title: 'Stream', label: 'Stream', component: StreamPage, count: false, color: '', root: true }
       ]
-    } else if (this.settingsService.menu == 'settings') {
+    } else if (this.settingsService.menu === 'settings') {
       this.pages = [
         { title: 'Settings', label: 'Identity', component: Settings, count: false, color: '', root: true },
         //{ title: 'Profile', label: 'Profile', component: ProfilePage, count: false, color: '', root: true }
       ];
-    } else if (this.settingsService.menu == 'notifications') {
+    } else if (this.settingsService.menu === 'notifications') {
       this.pages = [
         { title: 'Notifications', label: 'Notifications', component: ListPage, count: false, color: '', root: true },
       ];
-    } else if (this.settingsService.menu == 'web') {
+    } else if (this.settingsService.menu === 'web') {
       this.pages = [
         { title: 'Web', label: 'Web', component: WebPage, count: false, color: '', root: true },
         { title: 'Create page', label: 'Create page', component: BuildPagePage, count: false, color: '', root: true },

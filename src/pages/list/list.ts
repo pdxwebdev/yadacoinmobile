@@ -9,7 +9,6 @@ import { TransactionService } from '../../app/transaction.service';
 import { SettingsService } from '../../app/settings.service';
 import { SocialSharing } from '@ionic-native/social-sharing';
 import { ChatPage } from '../chat/chat';
-import { GroupPage } from '../group/group';
 import { ProfilePage } from '../profile/profile';
 import { SignatureRequestPage } from '../signaturerequest/signaturerequest';
 import { Events } from 'ionic-angular';
@@ -431,7 +430,7 @@ export class ListPage {
       this.items = [];
       for (let i = 0; i < graphArray.length; i++) {
         const item  = graphArray[i];
-        let identity = this.graphService.getIdentityFromTxn(item)
+        let identity = item.identity || this.graphService.getIdentityFromTxn(item)
         if (page) {
           const component = item.component || page.component
           const label = identity && identity.username;

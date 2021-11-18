@@ -11,7 +11,6 @@ import { ListPage } from '../pages/list/list';
 import { Settings } from '../pages/settings/settings';
 import { ChatPage } from '../pages/chat/chat';
 import { ProfilePage } from '../pages/profile/profile';
-import { GroupPage } from '../pages/group/group';
 import { SiaFiles } from '../pages/siafiles/siafiles';
 import { StreamPage } from '../pages/stream/stream';
 import { MailPage } from '../pages/mail/mail';
@@ -65,7 +64,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
     SendReceive,
     ChatPage,
     ProfilePage,
-    GroupPage,
     SiaFiles,
     StreamPage,
     MailPage,
@@ -102,7 +100,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
     SendReceive,
     ChatPage,
     ProfilePage,
-    GroupPage,
     SiaFiles,
     StreamPage,
     MailPage,

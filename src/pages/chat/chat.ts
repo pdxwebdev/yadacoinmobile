@@ -78,7 +78,7 @@ export class ChatPage {
         });
         this.refresh(null, true);
         this.events.subscribe('newchat', () => {
-          this.refresh(null)
+          this.navCtrl.getActive().component.name === 'ChatPage' && this.refresh(null)
         })
     }
 

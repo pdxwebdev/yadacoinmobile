@@ -7,7 +7,6 @@ import { WalletService } from '../../app/wallet.service';
 import { TransactionService } from '../../app/transaction.service';
 import { ListPage } from '../list/list';
 import { ChatPage } from '../chat/chat';
-import { GroupPage } from '../group/group';
 import { Http } from '@angular/http';
 import { AlertController, LoadingController, ToastController } from 'ionic-angular';
 import { SettingsService } from '../../app/settings.service';

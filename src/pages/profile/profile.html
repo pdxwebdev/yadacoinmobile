@@ -15,7 +15,7 @@
       <button ion-button large secondary (click)="addFriend()" *ngIf="isAdded === false && group !== true && isMe === false">
         Add contact&nbsp;<ion-icon name="create"></ion-icon>
       </button>
-      <button ion-button large secondary (click)="createSubGroup()" *ngIf="isAdded === true && group === true && !identity.parent">
+      <button ion-button large secondary (click)="createSubGroup()" *ngIf="isAdded === true && group === true && !identity.parent && identity.public_key === bulletinSecretService.identity.public_key">
         Create sub-group&nbsp;<ion-icon name="create"></ion-icon>
       </button>
       <button ion-button large secondary (click)="compose()" *ngIf="isAdded === true">
