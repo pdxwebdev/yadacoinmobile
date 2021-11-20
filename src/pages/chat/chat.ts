@@ -117,7 +117,7 @@ export class ChatPage {
         } else {
           collection = this.settingsService.collections.CHAT;
         }
-        return this.graphService.getMessages([this.rid, this.requested_rid], collection)
+        return this.graphService.getMessages([this.graphService.groups_indexed[this.requested_rid] ? this.requested_rid : this.rid], collection, true)
         .then(() => {
             this.loading = false;
             if(refresher) refresher.complete();

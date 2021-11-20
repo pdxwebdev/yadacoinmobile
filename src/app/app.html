@@ -251,7 +251,7 @@
               *ngIf="['Messages', 'Contact Requests'].indexOf(p.title) < 0"
               class="subnavbutton"
             >
-              {{p.label}}
+              {{p.label}} <ion-note *ngIf="p.kwargs && p.kwargs.identity && graphService.counts[p.kwargs.identity.username_signature] && graphService.counts[p.kwargs.identity.username_signature] > 0">{{graphService.counts[p.kwargs.identity.username_signature]}}</ion-note>
             </button>
             <ng-container *ngIf="p.kwargs && p.kwargs.identity && p.kwargs.subitems && p.kwargs.subitems[p.kwargs.identity.username_signature]">
               <button
@@ -261,7 +261,7 @@
                 class="subnavbutton"
                 *ngFor="let subitem of p.kwargs.subitems[p.kwargs.identity.username_signature]"
               >
-                &nbsp;&nbsp;&nbsp;&nbsp;{{subitem.kwargs.identity.username}}
+                &nbsp;&nbsp;&nbsp;&nbsp;{{subitem.kwargs.identity.username}} <ion-note *ngIf="graphService.counts[subitem.kwargs.identity.username_signature] && graphService.counts[subitem.kwargs.identity.username_signature] > 0">{{graphService.counts[subitem.kwargs.identity.username_signature]}}</ion-note>
               </button>
             </ng-container>
           </ng-container>

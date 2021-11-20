@@ -188,9 +188,9 @@ export class Settings {
         alert.present();
     }
 
-    importKey() {
-        let wif;
+    importKey(wif=null) {
         return new Promise((resolve, reject) => {
+            if (wif) return resolve(wif);
             let alert = this.alertCtrl.create({
                 title: 'Set WIF',
                 inputs: [
@@ -527,19 +527,19 @@ export class Settings {
           .then(() => {
             return this.graphService.refreshFriendsAndGroups();
           })
-          // .then(() => {
-          //   const promises = [];
-          //   for (let i=0; i < DefaultGroups.length; i++) {
-          //     if(!this.graphService.isAdded(DefaultGroups[i])) {
-          //       promises.push(this.graphService.addGroup(DefaultGroups[i], undefined, undefined, undefined, false));
-          //       addedDefaults = true
-          //     }
-          //   }
-          //   return Promise.all(promises)
-          // })
-          // .then(() => {
-          //   return addedDefaults ? this.graphService.refreshFriendsAndGroups() : null;
-          // })
+          .then(() => {
+            const promises = [];
+            for (let i=0; i < DefaultGroups.length; i++) {
+              if(!this.graphService.isAdded(DefaultGroups[i])) {
+                promises.push(this.graphService.addGroup(DefaultGroups[i], undefined, undefined, undefined, false));
+                addedDefaults = true
+              }
+            }
+            return Promise.all(promises)
+          })
+          .then(() => {
+            return addedDefaults ? this.graphService.refreshFriendsAndGroups() : null;
+          })
           .then(() => {
               if (showModal) {
                 this.loadingModal.dismiss();
@@ -644,7 +644,7 @@ export class Settings {
       .then((identity) => {
         this.CIBusy = false;
         this.importedKey = identity.wif;
-        return this.importKey();
+        return this.importKey(identity.wif);
       });
     }
 

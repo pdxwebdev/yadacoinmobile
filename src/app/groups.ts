@@ -1,26 +1,26 @@
 export default [
   {
     "username": "Text Channels",
-    "username_signature": "MEQCIBnBj2TTVH7nNCIOsJxbhyKTKl/tMYErBwHnDVGEHlPAAiA2scfrrughyVpwfbzHXrGy0mv2yMFibthFjgqGiFwBOw==",
-    "public_key": "035d0535af1c3f419340b7ca275a804b355f91aad8984544c3ee10d0d773154496",
+    "username_signature": "MEQCIE29etn0ZKakmbuI7uaSLwf7O+W3fyX9HDtGSZspagknAiBKfSM2H8/T/b9mIxvzDIjh05nw0V7nrN22/+pcArlj6w==",
+    "public_key": "025879ebd9760913bca9d2a95dd5d1dd2d258995f176985d285ed1c824b391e039",
     "collection": "group"
   },
   {
     "username": "Yada Protocol",
-    "username_signature": "MEQCIEaKMo8CUL2gib2xj/vlIWSHPGuI2wfSXB8WLCb2saStAiAvIvALHRsRJjRfzXbkmyXNUIHF/tjcXUXtrTU1fO4bNQ==",
-    "public_key": "02c757def602fa906e4d2b776cb0bceeb59683ffb1640ffd3c9ba6fd5378fa833f",
+    "username_signature": "MEQCIAZ0wJYLDxJei2Za7XMzbx+AOqeH2PpB6suzTF/bvqgkAiBJYnznzkNlfqjY+1bRUnn5bIuIxL0wz2Mi/TB81487rA==",
+    "public_key": "025879ebd9760913bca9d2a95dd5d1dd2d258995f176985d285ed1c824b391e039",
     "collection": "group"
   },
   {
     "username": "Yada App",
-    "username_signature": "MEQCIEsBxY9EhC9SsVnaqCpckOFDRGB5yMuj6A9Lq6EhvrHBAiAZZwFZw6XIk067OFUWMMSPhLmnUowRpshlazWOSES/3w==",
-    "public_key": "03e103f6d5c43cc1d14de00710d7369dbdf7f8885f4e909b384a64bfd272dab506",
+    "username_signature": "MEUCIQCa091+XlEyJ4w44Az4xFLySEvzf8WS7nv3qVmAj0L7bgIgaSkLRBCDHt/MIfmlNDN7UsnGYc+9HitPMgsCEZDG4xY=",
+    "public_key": "025879ebd9760913bca9d2a95dd5d1dd2d258995f176985d285ed1c824b391e039",
     "collection": "group"
   },
   {
     "username": "YadaCoin",
-    "username_signature": "MEQCID2Kio1OSNG2pIB/8id8G8yo+Vfuj2rAB2K3BurAyTeTAiAQ3Wmd4ayXtxrgQGRBaFfKuZGxb2DVIwy0UY0LARG4cQ==",
-    "public_key": "03cebd3b8b38d28a4d032b38e3aadc3f8a06e78c27f1fe06b73ac7bb682f03949e",
+    "username_signature": "MEQCIDMpt/iX+l60D3ZpANgib973gxwxMwMXoEZ2BF/6A5U6AiBHM1GyMQORffO/YM8dG386/2PBTHCYd0YZu+GaWt5Geg==",
+    "public_key": "025879ebd9760913bca9d2a95dd5d1dd2d258995f176985d285ed1c824b391e039",
     "collection": "group"
   },
 ]

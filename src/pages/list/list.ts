@@ -152,6 +152,7 @@ export class ListPage {
           this.makeList(graphArray, 'Contacts', null);
           this.loading = false;
         } else if (this.pageTitle == 'Groups') {
+          this.subitems = {}
           for (let i = 0; i < this.graphService.graph.groups.length; i++) {
             let item = this.graphService.graph.groups[i];
             let parentIdentity = this.graphService.getParentIdentityFromTxn(item, this.settingsService.collections.GROUP);
@@ -167,7 +168,7 @@ export class ListPage {
               graphArray.push(item)
             }
           }
-          this.graphService.sortTxnsByUsername(graphArray, false, this.settingsService.collections.GROUP)
+          this.graphService.sortTxnsByUsername(graphArray, false, this.settingsService.collections.GROUP);
           this.makeList(graphArray, 'Groups', null);
           this.loading = false;
         } else if (this.pageTitle == 'Messages') {

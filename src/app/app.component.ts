@@ -89,10 +89,12 @@ export class MyApp {
         { title: 'Sent', label: 'Sent', component: MailPage, count: false, color: '', root: true },
       ];
     } else if (this.settingsService.menu === 'chat') {
+      this.graphService.getMessagesForAllFriendsAndGroups()
       this.pages = [
         { title: 'Messages', label: 'Chat', component: ListPage, count: false, color: '', root: true },
       ];
     } else if (this.settingsService.menu === 'community') {
+      this.graphService.getMessagesForAllFriendsAndGroups()
       this.pages = [
         { title: 'Community', label: 'Community', component: ListPage, count: false, color: '', root: true },
       ];

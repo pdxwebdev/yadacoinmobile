@@ -52,6 +52,7 @@ export class WebSocketService {
         }
         break;
       case 'newtxn':
+        if (msg.params.transaction.public_key === this.bulletinSecretService.identity.public_key) return;
         const collection = this.graphService.getNewTxnCollection(msg.params.transaction)
         if (collection) {
           switch (collection) {

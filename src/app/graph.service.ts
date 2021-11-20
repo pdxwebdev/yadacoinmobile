@@ -66,7 +66,9 @@ export class GraphService {
     getMyPagesError = false;
     usernames = {};
     username_signature = '';
-    groups_indexed = {};
+    groups_indexed: any;
+    counts: any;
+    getMessagesForAllFriendsAndGroupsCalled: any;
     constructor(
         private storage: Storage,
         private bulletinSecretService: BulletinSecretService,
@@ -91,11 +93,14 @@ export class GraphService {
         this.new_sign_ins_counts = {};
         this.friend_request_count = this.friend_request_count || 0;
         this.friends_indexed = {};
+        this.groups_indexed = {};
+        this.counts = {};
+        this.getMessagesForAllFriendsAndGroupsCalled = false
     }
 
     resetGraph() {
       this.graph = {
-        messages: [],
+        messages: {},
         friends: [],
         groups: [],
         files: [],
@@ -105,6 +110,7 @@ export class GraphService {
       this.groups_indexed = {}
       this.friends_indexed = {}
       this.notifications = {}
+      this.getMessagesForAllFriendsAndGroupsCalled = false
       for (let i=0; i < Object.keys(this.settingsService.collections).length; i++) {
         let collectionKey = Object.keys(this.settingsService.collections)[i];
         if (!this.notifications[this.settingsService.collections[collectionKey]]) this.notifications[this.settingsService.collections[collectionKey]] = [];
@@ -126,7 +132,26 @@ export class GraphService {
       });
     }
 
-    endpointRequest(endpoint, ids=null, rids=null, post_data=null) {
+    getMessagesForAllFriendsAndGroups() {
+      if (this.getMessagesForAllFriendsAndGroupsCalled) return;
+      this.getMessagesForAllFriendsAndGroupsCalled = true;
+      const promises = [];
+      for (let i=0; i < this.graph.friends.length; i++) {
+        promises.push(this.getMessages([this.graph.friends[i].rid], this.settingsService.collections.CHAT, false))
+      }
+      for (let i=0; i < this.graph.groups.length; i++) {
+        let group = this.getIdentityFromTxn(this.graph.groups[i]);
+        let rid = this.generateRid(
+          group.username_signature,
+          group.username_signature,
+          this.settingsService.collections.GROUP_CHAT
+        )
+        promises.push(this.getMessages([rid], this.settingsService.collections.GROUP_CHAT, false))
+      }
+      return Promise.all(promises);
+    }
+
+    endpointRequest(endpoint, ids=null, rids=null, post_data=null, updateLastCollectionTime=false) {
         return new Promise((resolve, reject) => {
             if (endpoint.substr(0, 1) !== '/') {
                 endpoint = '/' + endpoint
@@ -138,13 +163,13 @@ export class GraphService {
             if (ids) {
                 promise = this.ahttp.post(
                     this.settingsService.remoteSettings['graphUrl'] + endpoint + '?origin=' + encodeURIComponent(window.location.origin) + '&username_signature=' + encodeURIComponent(this.bulletinSecretService.username_signature),
-                    {ids: ids},
+                    {ids: ids, update_last_collection_time: updateLastCollectionTime},
                     options
                 );
             } else if (rids) {
                 promise = this.ahttp.post(
                     this.settingsService.remoteSettings['graphUrl'] + endpoint + '?origin=' + encodeURIComponent(window.location.origin) + '&username_signature=' + encodeURIComponent(this.bulletinSecretService.username_signature),
-                    {rids: rids},
+                    {rids: rids, update_last_collection_time: updateLastCollectionTime},
                     options
                 );
             } else if (post_data) {
@@ -387,19 +412,19 @@ export class GraphService {
       }
     }
 
-    getMessages(rid, collection=this.settingsService.collections.CHAT) {
+    getMessages(rid, collection=this.settingsService.collections.CHAT, updateLastCollectionTime=false) {
         if(typeof rid === 'string') rid = [rid];
         //get messages for a specific friend
 
-        return this.endpointRequest('get-graph-collection', null, rid)
+        return this.endpointRequest('get-graph-collection', null, rid, null, updateLastCollectionTime)
         .then((data: any) => {
-            return this.parseMessages(data.collection, 'new_messages_counts', 'new_messages_count', rid, collection, 'last_message_height')
+            return this.parseMessages(data.collection, data.new_count, 'new_messages_count', rid, collection, 'last_message_height')
         })
         .then((chats: any) => {
             return new Promise((resolve, reject) => {
-                this.graph.messages = chats;
+                this.graph.messages[rid] = chats;
                 this.getMessagesError = false;
-                return resolve(chats[rid]);
+                return resolve(chats);
             });
         });
     }
@@ -1055,39 +1080,39 @@ export class GraphService {
         });
     }
 
-    parseMessages(messages, graphCounts, graphCount, rid=null, messageType=null, messageHeightType=null) {
+    parseMessages(messages, newCount, graphCount, rid=null, messageType=null, messageHeightType=null) {
         this[graphCount] = 0;
         return new Promise((resolve, reject) => {
-            var chats = {};
+            var chats = [];
             dance:
             for(var i=0; i<messages.length; i++) {
                 var message = messages[i];
-                if(!rid && chats[message.rid]) continue;
                 if(rid && message.rid !== rid && rid.indexOf(message.rid) === -1 && rid.indexOf(message.requested_rid) === -1) continue;
                 if (!message.rid && !message.requested_rid) continue;
                 if (message.dh_public_key) continue;
                 if (this.groups_indexed[message.requested_rid]) {
+                  let group = this.getIdentityFromTxn(
+                    this.groups_indexed[message.requested_rid],
+                    this.settingsService.collections.GROUP
+                  );
+                  if (i === 0) this.counts[group.username_signature] = newCount;
                   try {
-                      let group = this.getIdentityFromTxn(
-                        this.groups_indexed[message.requested_rid],
-                        this.settingsService.collections.GROUP
-                      );
+                      this.counts[group.username_signature] = typeof this.counts[group.username_signature] === 'number' && this.counts[group.username_signature] > 0 ? this.counts[group.username_signature] : newCount;
                       var decrypted = this.shared_decrypt(group.username_signature, message.relationship);
                   }
                   catch(error) {
+                      this.counts[group.username_signature]--;
                       continue
                   }
                   try {
                       var messageJson = JSON.parse(decrypted);
                   } catch(err) {
+                      this.counts[group.username_signature]--;
                       continue;
                   }
                   if(messageJson[messageType]) {
                       message.relationship = messageJson;
                       messages[message.requested_rid] = message;
-                      if (!chats[message.requested_rid]) {
-                          chats[message.requested_rid] = [];
-                      }
                       try {
                           message.relationship[messageType] = JSON.parse(Base64.decode(messageJson[messageType]));
                           message.relationship.isInvite = true;
@@ -1095,12 +1120,14 @@ export class GraphService {
                       catch(err) {
                           //not an invite, do nothing
                       }
-                      chats[message.requested_rid].push(message);
+                      chats.push(message);
                   }
                   continue dance;
 
                 } else {
 
+                  const friend = this.getIdentityFromMessageTransaction(message);
+                  if (i === 0) this.counts[friend.username_signature] = newCount;
                   if (!this.stored_secrets[message.rid]) continue;
                   var shared_secret = this.stored_secrets[message.rid][j];
                   //hopefully we've prepared the stored_secrets option before getting here
@@ -1108,14 +1135,17 @@ export class GraphService {
                   for(var j=0; j<this.stored_secrets[message.rid].length; j++) {
                       var shared_secret = this.stored_secrets[message.rid][j];
                       try {
+                          this.counts[friend.username_signature] = typeof this.counts[friend.username_signature] === 'number' && this.counts[friend.username_signature] > 0 ? this.counts[friend.username_signature] : newCount;
                           var decrypted = this.shared_decrypt(shared_secret.shared_secret, message.relationship);
                       }
                       catch(error) {
+                          friend && this.counts[friend.username_signature]--;
                           continue
                       }
                       try {
                           var messageJson = JSON.parse(decrypted);
                       } catch(err) {
+                          friend && this.counts[friend.username_signature]--;
                           continue;
                       }
                       if(messageJson[messageType]) {
@@ -1124,9 +1154,6 @@ export class GraphService {
                           message.dh_public_key = shared_secret.dh_public_key
                           message.dh_private_key = shared_secret.dh_private_key
                           messages[message.rid] = message;
-                          if (!chats[message.rid]) {
-                              chats[message.rid] = [];
-                          }
                           try {
                               message.relationship[messageType] = JSON.parse(Base64.decode(messageJson[messageType]));
                               message.relationship.isInvite = true;
@@ -1134,7 +1161,7 @@ export class GraphService {
                           catch(err) {
                               //not an invite, do nothing
                           }
-                          chats[message.rid].push(message);
+                          chats.push(message);
                       }
                       continue dance;
                   }
