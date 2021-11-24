@@ -128,10 +128,6 @@ export class Settings {
 
     }
 
-    getResults(keyword:string) {
-      return ['234234','234234']
-    }
-
     setKey(keys) {
         var keys_indexed = {};
         for (var i = 0; i < keys.length; i++) {

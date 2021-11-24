@@ -270,7 +270,6 @@
       <img *ngIf="!settingsService.remoteSettings.restricted" src="assets/img/yadacoinlogosmall.png" class="logo">
       <img *ngIf="settingsService.remoteSettings.restricted" src="assets/center-identity-logo-square.png" class="logo">
     </ion-content>
-
   </ion-menu>
   <!-- Disable swipe-to-go-back because it's poor UX to combine STGB with side menus -->
   <ion-nav [root]="rootPage" main #content swipeBackEnabled="false"></ion-nav>

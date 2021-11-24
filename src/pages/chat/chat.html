@@ -11,27 +11,36 @@
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
   <ion-spinner *ngIf="loading"></ion-spinner>
-	<ion-list>
-	  <ion-item *ngFor="let item of chats" text-wrap>
+  <ion-list>
+    <ion-item *ngFor="let item of chats" text-wrap>
         <strong>
           <span ion-text style="font-size: 20px;" (click)="viewProfile(item)">{{item.relationship.identity ? item.relationship.identity.username : 'Anonymous'}}</span>
         </strong>
         <span style="font-size: 10px; color: rgb(88, 88, 88);" ion-text>{{item.time}}</span>
         <h3 *ngIf="!item.relationship.isInvite && item.relationship[settingsService.collections.CHAT]">{{item.relationship[settingsService.collections.CHAT]}}</h3>
         <h3 *ngIf="!item.relationship.isInvite && item.relationship[settingsService.collections.GROUP_CHAT]">{{item.relationship[settingsService.collections.GROUP_CHAT]}}</h3>
+        <button *ngIf="!graphService.isMe(item.relationship.identity)"ion-button small secondary title="Send Yada Coins!" (click)="setRecipient(item.relationship.identity)" class="coin-button">
+          <ion-icon name="cash"></ion-icon>
+        </button>
         <h3 *ngIf="item.relationship.isInvite && item.relationship[settingsService.collections.CHAT].group === true">Invite to join {{item.relationship[settingsService.collections.CHAT].username}}</h3>
         <button *ngIf="item.relationship.isInvite && item.relationship[settingsService.collections.CHAT].group === true" ion-button (click)="joinGroup(item)">Join group</button>
         <button *ngIf="item.relationship.isInvite && item.relationship[settingsService.collections.CHAT].group !== true" ion-button (click)="requestFriend(item)">Join group</button>
         <a href="https://centeridentity.com/sia-download?skylink={{item.relationship.skylink}}" target="_blank" *ngIf="item.relationship.skylink">Download {{item.relationship.filename}}</a>
         <hr />
-	  </ion-item>
-	</ion-list>
+    </ion-item>
+  </ion-list>
 </ion-content>
 <ion-footer>
-  <ion-item>
+  <ion-item *ngIf="recipient" title="Verified" class="sender">{{recipient.username}} <ion-icon name="checkmark-circle" class="success"></ion-icon> <ion-icon name="close-circle" class="grey" (click)="removeRecipient()"></ion-icon></ion-item>
+  <ion-item *ngIf="recipient">
+    <ion-label color="primary" fixed>Amount</ion-label>
+    <ion-input type="number" placeholder="Enter an amount" [(ngModel)]="amount"></ion-input>
+  </ion-item>
+  <ion-item *ngIf="!recipient">
     <ion-label floating>Chat text</ion-label>
     <ion-input [(ngModel)]="chatText" (keyup.enter)="send()" #input></ion-input>
   </ion-item>
-  <button ion-button (click)="send()" [disabled]="busy || !chatText">Send <ion-spinner *ngIf="busy"></ion-spinner></button>
+  <button *ngIf="!recipient" ion-button (click)="send()" [disabled]="busy && !chatText">Send <ion-spinner *ngIf="busy"></ion-spinner></button>
+  <button *ngIf="recipient" ion-button (click)="send()" [disabled]="busy && !chatText">Send Coins<ion-spinner *ngIf="busy"></ion-spinner></button>
   <ion-input type="file" (change)="changeListener($event)" *ngIf="settingsService.remoteSettings.restricted"></ion-input>
 </ion-footer>

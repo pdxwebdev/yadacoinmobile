@@ -13,8 +13,13 @@
   <ion-item>
     {{walletService.wallet.balance}} YADA
   </ion-item>
+  <h4>Pending Balance</h4><ion-note>(including funds to be returned to you from your transactions)</ion-note>
+  <ion-item>
+    {{walletService.wallet.pending_balance}} YADA
+  </ion-item>
   <h4>Send YadaCoins</h4>
   <button *ngIf="isDevice" ion-button color="secondary" (click)="scan()" full>Scan Address</button>
+  <ion-item *ngIf="identity" title="Verified" class="sender">Recipient: {{identity.username}} <ion-icon name="checkmark-circle" class="success"></ion-icon></ion-item>
   <ion-item>
     <ion-label color="primary" stacked>Address</ion-label>
     <ion-input type="text" placeholder="Recipient address..." [(ngModel)]="address">
@@ -22,8 +27,7 @@
   </ion-item>
   <ion-item>
     <ion-label color="primary" fixed>Amount</ion-label>
-    <ion-input type="number" placeholder="Amount..." [(ngModel)]="value">
-    </ion-input>
+    <ion-input type="number" placeholder="Amount..." [(ngModel)]="value"></ion-input>
   </ion-item>
   <button ion-button secondary (click)="submit()">Send</button>
   <h4>Receive YadaCoins</h4>

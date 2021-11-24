@@ -49,7 +49,7 @@ export class TransactionService {
             this.blockchainurl = this.info.blockchainurl;
             this.callbackurl = this.info.callbackurl;
             this.to = this.info.to;
-            this.value = this.info.value;
+            this.value = parseFloat(this.info.value);
 
             this.transaction = {
                 rid:  this.info.rid,
@@ -133,7 +133,7 @@ export class TransactionService {
             }
 
             if (input_sum < transaction_total) {
-                return reject(false);
+                return reject('Insufficient funds');
             }
             this.transaction.inputs = inputs;
 

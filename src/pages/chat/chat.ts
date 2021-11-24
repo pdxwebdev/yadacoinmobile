@@ -45,6 +45,8 @@ export class ChatPage {
     filepath: any;
     filedata: any;
     skylink: any;
+    recipient: any;
+    amount: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -74,12 +76,20 @@ export class ChatPage {
         this.requested_rid = rids.requested_rid;
         this.requester_rid = rids.requester_rid;
         this.storage.get('blockchainAddress').then((blockchainAddress) => {
-            this.blockchainAddress = blockchainAddress;
+          this.blockchainAddress = blockchainAddress;
         });
         this.refresh(null, true);
         this.events.subscribe('newchat', () => {
           this.navCtrl.getActive().component.name === 'ChatPage' && this.refresh(null)
         })
+    }
+
+    setRecipient(identity) {
+        this.recipient = identity
+    }
+
+    removeRecipient() {
+        this.recipient = undefined;
     }
 
     parseChats() {
@@ -163,20 +173,20 @@ export class ChatPage {
     }
 
     send() {
-        if (this.busy || !this.chatText) return;
+        if (this.busy || (!this.chatText && !this.recipient && !this.amount)) return;
         this.busy = true
         return this.sendMessagePromise()
     }
 
     sendMessagePromise() {
-      return this.walletService.get()
+      return this.walletService.get(this.amount || 0)
       .then(() => {
           if (this.graphService.isGroup(this.identity)) {
             const group = this.graphService.getIdentityFromTxn(
               this.graphService.groups_indexed[this.requested_rid],
               this.settingsService.collections.GROUP
             );
-            const info = {
+            const info: any = {
                 relationship: {
                     identity: this.bulletinSecretService.identity,
                     skylink: this.skylink,
@@ -186,9 +196,15 @@ export class ChatPage {
                 requester_rid: this.requester_rid,
                 requested_rid: this.requested_rid,
                 group: true,
-                shared_secret: group.username_signature
+                shared_secret: group.username_signature,
+                outputs: []
             }
-            info.relationship[this.settingsService.collections.GROUP_CHAT] = this.chatText
+            if(this.recipient && this.amount) {
+                info.to = this.bulletinSecretService.publicKeyToAddress(this.recipient.public_key);
+                info.value = this.amount;
+                info.relationship.recipient = this.recipient;
+            }
+            info.relationship[this.settingsService.collections.GROUP_CHAT] = this.recipient && this.amount ? 'Sent ' + this.amount + ' YDA to ' + this.recipient.username : this.chatText;;
             return this.transactionService.generateTransaction(info);
           } else {
             var dh_public_key = this.graphService.keys[this.rid].dh_public_keys[0];
@@ -203,7 +219,7 @@ export class ChatPage {
                 }));
                 var shared_secret = this.toHex(X25519.getSharedKey(privk, pubk));
                 // camera permission was granted
-                const info = {
+                const info: any = {
                     dh_public_key: dh_public_key,
                     dh_private_key: dh_private_key,
                     relationship: {
@@ -214,8 +230,14 @@ export class ChatPage {
                     rid: this.rid,
                     requester_rid: this.requester_rid,
                     requested_rid: this.requested_rid,
+                    outputs: []
                 }
-                info.relationship[this.settingsService.collections.CHAT] = this.chatText;
+                if(this.recipient && this.amount) {
+                    info.to = this.bulletinSecretService.publicKeyToAddress(this.recipient.public_key);
+                    info.value = this.amount;
+                    info.relationship.recipient = this.recipient;
+                }
+                info.relationship[this.settingsService.collections.CHAT] = this.recipient && this.amount ? 'Sent ' + this.amount + ' YDA to ' + this.recipient.username : this.chatText;
                 return this.transactionService.generateTransaction(info);
             } else {
                 return new Promise((resolve, reject) => {
@@ -236,9 +258,12 @@ export class ChatPage {
           this.skylink = null;
           this.filedata = null;
           this.filepath = null;
+          this.recipient = null;
+          this.amount = 0;
           this.refresh(null);
       })
       .catch((err) => {
+          this.busy = false;
           console.log(err);
           let alert = this.alertCtrl.create();
           alert.setTitle('Message error');

@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { NavController } from 'ionic-angular';
+import { NavController, NavParams } from 'ionic-angular';
 import { AlertController, LoadingController } from 'ionic-angular';
 import { WalletService } from '../../app/wallet.service';
 import { TransactionService } from '../../app/transaction.service';
@@ -39,8 +39,10 @@ export class SendReceive {
     past_sent_pending_page_cache: any;
     past_received_page_cache: any;
     past_received_pending_page_cache: any;
+    identity: any;
     constructor(
         private navCtrl: NavController,
+        private navParams: NavParams,
         private qrScanner: QRScanner,
         private transactionService: TransactionService,
         private alertCtrl: AlertController,
@@ -54,6 +56,10 @@ export class SendReceive {
         this.loadingModal = this.loadingCtrl.create({
             content: 'Please wait...'
         });
+        if (this.navParams.get('identity')) {
+          this.identity = this.navParams.get('identity')
+          this.address = this.bulletinSecretService.publicKeyToAddress(this.identity.public_key)
+        }
         this.value = 0;
         this.createdCode = bulletinSecretService.key.getAddress();
         this.refresh();
@@ -126,19 +132,29 @@ export class SendReceive {
                 this.loadingModal.present();
                 this.walletService.get(this.value)
                 .then(() => {
+                    if (this.walletService.wallet.balance < value) {
+                          let title = 'Insufficient Funds'
+                          let message = "Not enough YadaCoins for transaction.";
+                          var alert = this.alertCtrl.create();
+                          alert.setTitle(title);
+                          alert.setSubTitle(message);
+                          alert.addButton('Ok');
+                          alert.present();
+                          this.value = '0';
+                          this.address = '';
+                          this.refresh();
+                          this.loadingModal.dismiss().catch(() => {});
+                          throw('insufficient funds')
+                    }
                     return this.transactionService.generateTransaction({
                         to: this.address,
                         value: value
                     });
-                }).then(() => {
-                    return this.transactionService.sendTransaction();
+                }).then((txn) => {
+                    return this.transactionService.sendTransaction(txn);
                 }).then((txn) => {
                     var title = 'Transaction Sent';
                     var message = 'Your transaction has been sent succefully.';
-                    if (!txn) {
-                        title = 'Insufficient Funds'
-                        message = "Not enough YadaCoins for transaction.";
-                    }
                     var alert = this.alertCtrl.create();
                     alert.setTitle(title);
                     alert.setSubTitle(message);

@@ -52,12 +52,15 @@ export class WalletService {
                         this.walletError = false;
                         this.wallet = JSON.parse(data['_body']);
                         this.wallet.balance = parseFloat(this.wallet.balance); //pasefloat
+                        this.wallet.pending_balance = parseFloat(this.wallet.pending_balance); //pasefloat
                         this.wallet.balancePretty = this.wallet.balance.toFixed(2);
+                        this.wallet.pendingBalancePretty = this.wallet.pending_balance.toFixed(2);
                         resolve(data['_body']);
                     } else {
                         this.walletError = true;
                         this.wallet = {};
                         this.wallet.balancePretty = 0;
+                        this.wallet.pendingBalancePretty = 0;
                         reject("no data returned");
                     }
                 },

@@ -51,6 +51,15 @@ export class WebSocketService {
           this.joinGroup(group)
         }
         break;
+      case 'join_confirmed':
+        // const members = msg.result.members;
+        // for (let i=0; i < Object.keys(members).length; i++) {
+        //   let requested_rid = Object.keys(members)[i];
+        //   let group_members = members[requested_rid];
+        //   if(!this.graphService.online[requested_rid]) this.graphService.online[requested_rid] = [];
+        //   this.graphService.online[requested_rid] = this.graphService.online[requested_rid].concat(group_members)
+        // }
+        break;
       case 'newtxn':
         if (msg.params.transaction.public_key === this.bulletinSecretService.identity.public_key) return;
         const collection = this.graphService.getNewTxnCollection(msg.params.transaction)
@@ -81,8 +90,12 @@ export class WebSocketService {
                 'last_message_height'
               )
               .then((item) => {
+                if (!this.graphService.graph.messages[msg.params.transaction.rid]) {
+                  this.graphService.graph.messages[msg.params.transaction.rid] = []
+                }
+                this.graphService.graph.messages[msg.params.transaction.rid].push(item[0])
                 this.events.publish('newchat')
-                return this.graphService.addNotification(item[msg.params.transaction.rid][0], this.settingsService.collections.CHAT);
+                return this.graphService.addNotification(item[0], this.settingsService.collections.CHAT);
               })
               break;
             case this.settingsService.collections.CONTRACT:
@@ -102,9 +115,9 @@ export class WebSocketService {
                 if (!this.graphService.graph.messages[msg.params.transaction.requested_rid]) {
                   this.graphService.graph.messages[msg.params.transaction.requested_rid] = []
                 }
-                this.graphService.graph.messages[msg.params.transaction.requested_rid].push(item[msg.params.transaction.requested_rid][0])
+                this.graphService.graph.messages[msg.params.transaction.requested_rid].push(item[0])
                 this.events.publish('newchat')
-                return this.graphService.addNotification(item[msg.params.transaction.requested_rid][0], this.settingsService.collections.GROUP_CHAT);
+                return this.graphService.addNotification(item[0], this.settingsService.collections.GROUP_CHAT);
               })
               break;
             case this.settingsService.collections.GROUP_MAIL:

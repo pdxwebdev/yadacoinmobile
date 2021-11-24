@@ -28,6 +28,8 @@ export class GraphService {
       mail: [],
       mypages: []
     };
+    // online = {};
+    // onlineNav = [];
     notifications = {};
     graphproviderAddress: any;
     xhr: any;
@@ -68,7 +70,6 @@ export class GraphService {
     username_signature = '';
     groups_indexed: any;
     counts: any;
-    getMessagesForAllFriendsAndGroupsCalled: any;
     constructor(
         private storage: Storage,
         private bulletinSecretService: BulletinSecretService,
@@ -95,7 +96,6 @@ export class GraphService {
         this.friends_indexed = {};
         this.groups_indexed = {};
         this.counts = {};
-        this.getMessagesForAllFriendsAndGroupsCalled = false
     }
 
     resetGraph() {
@@ -110,7 +110,6 @@ export class GraphService {
       this.groups_indexed = {}
       this.friends_indexed = {}
       this.notifications = {}
-      this.getMessagesForAllFriendsAndGroupsCalled = false
       for (let i=0; i < Object.keys(this.settingsService.collections).length; i++) {
         let collectionKey = Object.keys(this.settingsService.collections)[i];
         if (!this.notifications[this.settingsService.collections[collectionKey]]) this.notifications[this.settingsService.collections[collectionKey]] = [];
@@ -133,8 +132,6 @@ export class GraphService {
     }
 
     getMessagesForAllFriendsAndGroups() {
-      if (this.getMessagesForAllFriendsAndGroupsCalled) return;
-      this.getMessagesForAllFriendsAndGroupsCalled = true;
       const promises = [];
       for (let i=0; i < this.graph.friends.length; i++) {
         promises.push(this.getMessages([this.graph.friends[i].rid], this.settingsService.collections.CHAT, false))

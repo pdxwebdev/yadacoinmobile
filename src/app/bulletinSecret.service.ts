@@ -182,7 +182,7 @@ export class BulletinSecretService {
     }
 
     publicKeyToAddress(public_key) {
-      foobar.bitcoin.ECPair.fromPublicKeyBuffer(foobar.Buffer.Buffer.from(public_key, 'hex')).getAddress()
+        return foobar.bitcoin.ECPair.fromPublicKeyBuffer(foobar.Buffer.Buffer.from(public_key, 'hex')).getAddress()
     }
 
     decrypt(message) {

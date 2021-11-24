@@ -12,6 +12,7 @@ import { AlertController, LoadingController, ToastController } from 'ionic-angul
 import { SettingsService } from '../../app/settings.service';
 import { Events } from 'ionic-angular';
 import { ComposePage } from '../mail/compose';
+import { SendReceive } from '../sendreceive/sendreceive';
 
 declare var Base64;
 declare var forge;
@@ -178,6 +179,12 @@ export class ProfilePage {
           item: {
             recipient: this.identity
           }
+        });
+    }
+
+    sendCoins() {
+        this.navCtrl.push(SendReceive, {
+          identity: this.identity
         });
     }
 
