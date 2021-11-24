@@ -27,7 +27,7 @@
       <button ion-button large secondary (click)="message()" *ngIf="isAdded === true && group === true">
         Group chat&nbsp;<ion-icon name="create"></ion-icon>
       </button>
-      <button ion-button large secondary (click)="sendCoins()" *ngIf="!group && isMe === false">
+      <button ion-button large secondary (click)="sendCoins()" *ngIf="!group && isMe === false && !settingsService.remoteSettings.restricted">
         Send Coins&nbsp;<ion-icon name="cash"></ion-icon>
       </button>
       <a href="https://centeridentity.com/sia-download?skylink={{identity.skylink}}" *ngIf="identity.skylink" target="_blank">
