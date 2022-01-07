@@ -40,7 +40,10 @@ export class BuildPagePage {
           handler: (data: any) => {
             this.resource = '';
             this.pageText = '';
-            this.websocketService.webpage({resource: this.resource, content: this.pageText})
+            let identity = this.graphService.toIdentity(JSON.parse(this.bulletinSecretService.identityJson()))
+            identity.collection = this.settingsService.collections.WEB_PAGE;
+            const rids = this.graphService.generateRids(identity)
+            this.websocketService.newtxn({resource: this.resource, content: this.pageText}, rids, this.settingsService.collections.WEB_PAGE)
           }
       });
       alert.present();

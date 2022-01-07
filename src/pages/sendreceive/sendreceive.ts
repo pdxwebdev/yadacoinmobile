@@ -40,6 +40,7 @@ export class SendReceive {
     past_received_page_cache: any;
     past_received_pending_page_cache: any;
     identity: any;
+    recipients: any;
     constructor(
         private navCtrl: NavController,
         private navParams: NavParams,
@@ -60,6 +61,12 @@ export class SendReceive {
           this.identity = this.navParams.get('identity')
           this.address = this.bulletinSecretService.publicKeyToAddress(this.identity.public_key)
         }
+        this.recipients = [
+          {
+            address: '',
+            value: 0
+          }
+        ];
         this.value = 0;
         this.createdCode = bulletinSecretService.key.getAddress();
         this.refresh();
@@ -106,6 +113,17 @@ export class SendReceive {
         window.document.querySelector('ion-app').classList.add('transparentBody');
     }
 
+    addRecipient() {
+      this.recipients.push({
+        address: '',
+        value: 0
+      })
+    }
+
+    removeRecipient(index) {
+      this.recipients.splice(index, 1)
+    }
+
     submit() {
         var value = parseFloat(this.value)
         var total = value + 0.01;
@@ -133,22 +151,21 @@ export class SendReceive {
                 this.walletService.get(this.value)
                 .then(() => {
                     if (this.walletService.wallet.balance < value) {
-                          let title = 'Insufficient Funds'
-                          let message = "Not enough YadaCoins for transaction.";
-                          var alert = this.alertCtrl.create();
-                          alert.setTitle(title);
-                          alert.setSubTitle(message);
-                          alert.addButton('Ok');
-                          alert.present();
-                          this.value = '0';
-                          this.address = '';
-                          this.refresh();
-                          this.loadingModal.dismiss().catch(() => {});
-                          throw('insufficient funds')
+                        let title = 'Insufficient Funds'
+                        let message = "Not enough YadaCoins for transaction.";
+                        var alert = this.alertCtrl.create();
+                        alert.setTitle(title);
+                        alert.setSubTitle(message);
+                        alert.addButton('Ok');
+                        alert.present();
+                        this.value = '0';
+                        this.address = '';
+                        this.refresh();
+                        this.loadingModal.dismiss().catch(() => {});
+                        throw('insufficient funds')
                     }
                     return this.transactionService.generateTransaction({
-                        to: this.address,
-                        value: value
+                        outputs: this.recipients
                     });
                 }).then((txn) => {
                     return this.transactionService.sendTransaction(txn);

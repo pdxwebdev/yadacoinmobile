@@ -31,7 +31,7 @@
   </ion-list>
 </ion-content>
 <ion-footer>
-  <ion-item *ngIf="recipient" title="Verified" class="sender">{{recipient.username}} <ion-icon name="checkmark-circle" class="success"></ion-icon> <ion-icon name="close-circle" class="grey" (click)="removeRecipient()"></ion-icon></ion-item>
+  <ion-item *ngIf="recipient" title="Verified" class="sender">{{recipient.username}} <ion-icon *ngIf="graphService.isAdded(recipient)" name="checkmark-circle" class="success"></ion-icon> <ion-icon name="close-circle" class="grey" (click)="removeRecipient()"></ion-icon></ion-item>
   <ion-item *ngIf="recipient">
     <ion-label color="primary" fixed>Amount</ion-label>
     <ion-input type="number" placeholder="Enter an amount" [(ngModel)]="amount"></ion-input>

@@ -151,6 +151,7 @@ export class CalendarPage {
       }
       let calDate = new Date(year, month, fistDay.getDate() + i - day)
       if(calDate.getMonth() > month) break;
+      if(calDate.getFullYear() > year) break;
       const index = calDate.getFullYear() + this.addZeros(calDate.getMonth()) + this.addZeros(calDate.getDate());
       if (this.calendar.rows[this.calendar.rows.length - 1].days.length >= 8) {
         this.calendar.rows.push({
