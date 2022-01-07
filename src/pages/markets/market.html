@@ -1,0 +1,42 @@
+<ion-header>
+  <ion-navbar>
+    <button ion-button menuToggle color="{{color}}">
+      <ion-icon name="menu"></ion-icon>
+    </button>
+  </ion-navbar>
+</ion-header>
+
+<ion-content padding>
+  <ion-refresher (ionRefresh)="refresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+  <h1>{{market.username}}</h1>
+  <ion-row *ngIf="smartContracts">
+    <ion-col col-md-3 *ngIf="market.username === 'Marketplace'">
+      <button ion-button secondary (click)="sellAsset($event)">Sell asset</button>
+      <ion-card *ngFor="let smartContract of smartContracts" (click)="itemTapped($event, smartContract)" style="cursor: pointer">
+        <ion-card-content>
+          <ion-card-title style="text-overflow:ellipsis;" text-wrap>
+            <img [src]="smartContract.asset.data">
+          </ion-card-title>
+          <ion-card-content>
+            <div class="resource">{{smartContract.asset.identity.username}}</div>
+          </ion-card-content>
+          <ion-card-content>
+            {{smartContract.price}} YDA
+          </ion-card-content>
+        </ion-card-content>
+      </ion-card>
+    </ion-col>
+    <ion-col col-md-3 *ngIf="market.username === 'Promotions'">
+      <button ion-button secondary (click)="startPromotion($event)">Start promotion</button>
+      <ion-card *ngFor="let smartContract of smartContracts" (click)="itemTapped($event, smartContract)" style="cursor: pointer">
+        <ion-card-content>
+          <ion-card-content>
+            <div class="resource">{{smartContract.target.username}}</div>
+          </ion-card-content>
+        </ion-card-content>
+      </ion-card>
+    </ion-col>
+  </ion-row>
+</ion-content>

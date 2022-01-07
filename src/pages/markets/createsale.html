@@ -1,0 +1,48 @@
+<ion-header>
+  <ion-navbar>
+    <button ion-button menuToggle color="{{color}}">
+      <ion-icon name="menu"></ion-icon>
+    </button>
+  </ion-navbar>
+</ion-header>
+
+<ion-content padding>
+  <ion-refresher (ionRefresh)="refresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+  <h1>Create new sale</h1>
+  <ion-row>
+    <ion-col col-md-4>
+      <h3>Asset info</h3>
+      <ion-card ion-item style="">
+        <ion-card-title style="text-overflow:ellipsis;" text-wrap>
+          <img [src]="asset.data">
+        </ion-card-title>
+        <ion-card-content>
+          {{asset.identity.username}}
+        </ion-card-content>
+      </ion-card>
+    </ion-col>
+    <ion-col col-md-4>
+      <h3>Sale info</h3>
+      <ion-item>
+        <ion-label color="primary">Sale price</ion-label>
+        <ion-input type="number" [(ngModel)]="price" placeholder="What's the price of this asset?"></ion-input>
+      </ion-item>
+      <h3>Sale type</h3>
+      <ion-list radio-group [(ngModel)]="asset_proof_type">
+        <ion-item>
+          <ion-label>Buy now</ion-label>
+          <ion-radio value="first_come" checked></ion-radio>
+        </ion-item>
+        <ion-item>
+          <ion-label>Auction</ion-label>
+          <ion-radio value="auction"></ion-radio>
+        </ion-item>
+      </ion-list>
+      <ion-item>
+        <button ion-button secondary (click)="save()" [disabled]="!price">Confirm</button>
+      </ion-item>
+    </ion-col>
+  </ion-row>
+</ion-content>

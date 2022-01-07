@@ -1,0 +1,27 @@
+<ion-header>
+  <ion-navbar>
+    <button ion-button menuToggle color="{{color}}">
+      <ion-icon name="menu"></ion-icon>
+    </button>
+  </ion-navbar>
+</ion-header>
+
+<ion-content padding>
+  <ion-refresher (ionRefresh)="refresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+  <h1>Asset name</h1>
+  <ion-item>
+    <ion-input type="text" [(ngModel)]="username" placeholder="Enter the name of your asset"></ion-input>
+  </ion-item>
+  <h1>Asset data</h1>
+  <ion-item>
+    <ion-input type="file" (change)="changeListener($event)"></ion-input> (20KB maximum file size)
+  </ion-item>
+  <ion-item *ngIf="filedata">
+    <img [src]="filedata">
+  </ion-item>
+  <ion-item>
+    <button ion-button secondary (click)="save()" [disabled]="!username || !data">Save</button>
+  </ion-item>
+</ion-content>
