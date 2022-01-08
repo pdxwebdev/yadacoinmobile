@@ -17,13 +17,13 @@
       <ion-card *ngFor="let smartContract of smartContracts" (click)="itemTapped($event, smartContract)" style="cursor: pointer">
         <ion-card-content>
           <ion-card-title style="text-overflow:ellipsis;" text-wrap>
-            <img [src]="smartContract.asset.data">
+            <img [src]="smartContract.relationship[settingsService.collections.SMART_CONTRACT].asset.data">
           </ion-card-title>
           <ion-card-content>
-            <div class="resource">{{smartContract.asset.identity.username}}</div>
+            <div class="resource">{{smartContract.relationship[settingsService.collections.SMART_CONTRACT].asset.identity.username}}</div>
           </ion-card-content>
           <ion-card-content>
-            {{smartContract.price}} YDA
+            {{smartContract.relationship[settingsService.collections.SMART_CONTRACT].price}} YDA
           </ion-card-content>
         </ion-card-content>
       </ion-card>
@@ -33,7 +33,7 @@
       <ion-card *ngFor="let smartContract of smartContracts" (click)="itemTapped($event, smartContract)" style="cursor: pointer">
         <ion-card-content>
           <ion-card-content>
-            <div class="resource">{{smartContract.target.username}}</div>
+            <div class="resource">{{smartContract.relationship[settingsService.collections.SMART_CONTRACT].target.username}}</div>
           </ion-card-content>
         </ion-card-content>
       </ion-card>

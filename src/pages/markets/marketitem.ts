@@ -40,7 +40,8 @@ export class MarketItemPage {
     private smartContractService: SmartContractService,
     private websocketService: WebSocketService
   ) {
-    this.smartContract = navParams.get('smartContract');
+    this.item = navParams.get('item');
+    this.smartContract = this.item.relationship[this.settingsService.collections.SMART_CONTRACT];
     this.market = navParams.get('market').relationship[this.settingsService.collections.MARKET];
     this.bids = [];
     this.affiliates = [];

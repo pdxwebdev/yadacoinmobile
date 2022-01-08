@@ -1432,7 +1432,8 @@ export class GraphService {
           }
           let creator = this.shared_decrypt(market.username_signature, smartContract.creator)
           smartContract.creator = JSON.parse(creator)
-          smartContractsOut.push(smartContract);
+          smartContractTxn.relationship[this.settingsService.collections.SMART_CONTRACT] = smartContract
+          smartContractsOut.push(smartContractTxn);
         } catch(err) {
           console.log(err);
         }

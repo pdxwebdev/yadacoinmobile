@@ -93,7 +93,8 @@
       <h1>&nbsp;</h1>
       <h3>Affiliate code</h3>
       <ion-list>
-        <ion-item *ngIf="affiliates.length === 0">You have not joined the promotion yet</ion-item>
+        <ion-item *ngIf="item.public_key === bulletinSecretService.identity.public_key && affiliates.length === 0">No affiliates have joined your program yet</ion-item>
+        <ion-item *ngIf="item.public_key !== bulletinSecretService.identity.public_key && affiliates.length === 0">You have not joined the promotion yet</ion-item>
         <ion-item
           *ngFor="let affiliate of affiliates"
         >

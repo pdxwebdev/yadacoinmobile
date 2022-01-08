@@ -33,8 +33,9 @@ export class MarketPage {
     .then((smartContracts: any) => {
       this.smartContracts = smartContracts.filter((item) => {
         try {
-          if (item.contract_type === this.smartContractService.contractTypes.CHANGE_OWNERSHIP) {
-            return item.asset.data.substr(0, 5) === 'data:';
+          const sc = item.relationship[this.settingsService.collections.SMART_CONTRACT]
+          if (sc.contract_type === this.smartContractService.contractTypes.CHANGE_OWNERSHIP) {
+            return sc.asset.data.substr(0, 5) === 'data:';
           }
         } catch(err) {
           return false;
@@ -46,19 +47,19 @@ export class MarketPage {
   }
 
   sellAsset() {
-    this.navCtrl.push(AssetsPage);  
+    this.navCtrl.push(AssetsPage);
   }
 
   startPromotion() {
     this.navCtrl.push(CreatePromoPage, {
       market: this.item
-    });  
+    });
   }
 
   itemTapped(e, smartContract) {
     this.navCtrl.push(MarketItemPage, {
-      smartContract: smartContract,
+      item: smartContract,
       market: this.item
-    });  
+    });
   }
 }
