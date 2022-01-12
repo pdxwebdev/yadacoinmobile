@@ -17,9 +17,7 @@
   <ion-item>
     <img [src]="asset.data">
   </ion-item>
-  <ion-list>
-    <ion-item *ngFor="let market of graphService.graph.markets">
-      {{market.relationship[settingsService.collections.MARKET].username}} <button ion-button secondary (click)="sell($event, market)">Sell asset in this market</button>
-    </ion-item>
-  </ion-list>
+  <ion-item>
+    {{market.relationship[settingsService.collections.MARKET].username}} <button ion-button secondary (click)="sell($event, market)">Sell asset in this market</button>
+  </ion-item>
 </ion-content>

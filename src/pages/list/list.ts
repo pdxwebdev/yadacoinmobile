@@ -618,9 +618,10 @@ export class ListPage {
       if (promo_code) {
         return this.graphService.getPromotion(promo_code)
         .then((promotion: any) => {
-          group = promotion.relationship.target;
+          group = promotion.relationship[this.settingsService.collections.AFFILIATE].target;
+          group.parent = this.graphService.toIdentity(promotion.relationship[this.settingsService.collections.AFFILIATE].contract)
           return this.graphService.addGroup(
-            promotion.relationship.target,
+            group,
             promotion.rid,
             null,
             promotion.requested_rid

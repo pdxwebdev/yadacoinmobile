@@ -176,7 +176,10 @@ export class MarketItemPage {
               referrer: this.graphService.toIdentity(
                 this.bulletinSecretService.identity
               ),
-              target: this.smartContract.target
+              target: this.smartContract.target,
+              contract: this.graphService.toIdentity(
+                this.smartContract.identity
+              )
             },
             rids,
             this.settingsService.collections.AFFILIATE,

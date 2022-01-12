@@ -24,6 +24,7 @@ declare var foobar;
 export class AssetItemPage {
   item: any;
   asset: any;
+  market: any;
   constructor(
     public navCtrl: NavController,
     private navParams: NavParams,
@@ -38,12 +39,13 @@ export class AssetItemPage {
   ) {
     this.item = navParams.data.item
     this.asset = this.item.relationship[this.settingsService.collections.ASSET]
+    this.market = graphService.graph.markets.filter((market)=> {return market.relationship[settingsService.collections.MARKET].username === 'Marketplace'})[0]
   }
 
   sell(e, market) {
     this.navCtrl.push(CreateSalePage, {
       item: this.item,
-      market: market
+      market: this.market
     });
   }
 

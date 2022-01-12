@@ -46,7 +46,26 @@ export class CreateSalePage {
       this.asset_proof_type = this.smartContractService.assetProofTypes.FIRST_COME
     }
 
+    presentError(field) {
+
+      let alert = this.alertCtrl.create();
+      alert.setTitle('Missing field');
+      alert.setSubTitle('Please enter information for ' + field + '.');
+      alert.addButton({
+          text: 'Ok'
+      });
+      alert.present();
+    }
+
     save() {
+      if (!this.price) {
+        this.presentError('price')
+        return
+      }
+      if (!this.asset_proof_type) {
+        this.presentError('asset_proof_type')
+        return
+      }
       let alert = this.alertCtrl.create();
       alert.setTitle('Sell Asset');
       alert.setSubTitle('Are you sure you want to sell this asset?');
@@ -60,7 +79,8 @@ export class CreateSalePage {
               this.asset,
               this.graphService.toIdentity(this.bulletinSecretService.cloneIdentity()),
               parseFloat(this.price),
-              this.asset_proof_type
+              this.asset_proof_type,
+              this.market
             )
             const rids = this.graphService.generateRids(
               contract.identity,

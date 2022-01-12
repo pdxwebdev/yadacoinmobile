@@ -13,7 +13,7 @@
   <h1>{{market.username}}</h1>
   <ion-row *ngIf="smartContracts">
     <ion-col col-md-3 *ngIf="market.username === 'Marketplace'">
-      <button ion-button secondary (click)="sellAsset($event)">Sell asset</button>
+      <button ion-button secondary (click)="sellAsset($event)">My assets</button>
       <ion-card *ngFor="let smartContract of smartContracts" (click)="itemTapped($event, smartContract)" style="cursor: pointer">
         <ion-card-content>
           <ion-card-title style="text-overflow:ellipsis;" text-wrap>

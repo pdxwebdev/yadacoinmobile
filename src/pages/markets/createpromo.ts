@@ -77,7 +77,55 @@ export class CreatePromoPage {
       this.promotedIdentity = 'contact';
     }
 
+    presentError(field) {
+
+      let alert = this.alertCtrl.create();
+      alert.setTitle('Missing field');
+      alert.setSubTitle('Please enter information for ' + field + '.');
+      alert.addButton({
+          text: 'Ok'
+      });
+      alert.present();
+    }
+
     save() {
+      if (this.pay_referrer === true) {
+        if (!this.pay_referrer_operator) {
+          this.presentError('pay_referrer_operator')
+          return
+        }
+        if (!this.pay_referrer_payout_type) {
+          this.presentError('pay_referrer_payout_type')
+          return
+        }
+        if (!this.pay_referrer_amount) {
+          this.presentError('pay_referrer_amount')
+          return
+        }
+      }
+      if (this.pay_referee === true) {
+        if (!this.pay_referee_operator) {
+          this.presentError('pay_referee_operator')
+          return
+        }
+        if (!this.pay_referee_payout_type) {
+          this.presentError('pay_referee_payout_type')
+          return
+        }
+        if (!this.pay_referee_amount) {
+          this.presentError('pay_referee_amount')
+          return
+        }
+      }
+      if (!this.pay_referrer === true && !this.pay_referee === true) {
+        this.presentError('pay_referrer and pay_referee')
+        return
+      }
+      if (!this.fund_amount) {
+        this.presentError('fund_amount')
+        return
+      }
+
       let alert = this.alertCtrl.create();
       alert.setTitle('Start promotion');
       alert.setSubTitle('Are you sure you want to start this promotion?');

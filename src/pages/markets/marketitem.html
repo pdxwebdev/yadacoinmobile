@@ -34,11 +34,12 @@
       </ion-card>
       <ion-item *ngIf="smartContract.asset_proof_type === 'auction'">
         <ion-label color="primary">Bid amount</ion-label>
-        <ion-input type="number" [min]="minPrice" [(ngModel)]="price" placeholder="How much YDA are you bidding?"></ion-input>
+        <ion-input type="number" [min]="minPrice" [(ngModel)]="price" placeholder="How much YDA are you bidding?" [disabled]="item.pending"></ion-input>
       </ion-item>
-      <button ion-button secondary *ngIf="smartContract.asset_proof_type === 'auction'" (click)="buy($event)" [disabled]="price < minPrice">Place bid</button>
-      <button ion-button secondary *ngIf="bids.length === 0 && smartContract.asset_proof_type === 'first_come'" (click)="buy($event)" [disabled]="price < minPrice">Buy this asset</button>
-      <button ion-button secondary *ngIf="bids.length > 0 && smartContract.asset_proof_type === 'first_come'" disabled=disabled>This item is sold</button>
+      <button ion-button secondary *ngIf="!item.pending && smartContract.asset_proof_type === 'auction'" (click)="buy($event)" [disabled]="price < minPrice">Place bid</button>
+      <button ion-button secondary *ngIf="item.pending" (click)="buy($event)" [disabled]="item.pending">Pending blockchain insertion</button>
+      <button ion-button secondary *ngIf="!item.pending && bids.length === 0 && smartContract.asset_proof_type === 'first_come'" (click)="buy($event)" [disabled]="price < minPrice">Buy this asset</button>
+      <button ion-button secondary *ngIf="!item.pending && bids.length > 0 && smartContract.asset_proof_type === 'first_come'" disabled=disabled>This item is sold</button>
     </ion-col>
     <ion-col col-md-3 *ngIf="smartContract.asset_proof_type === 'auction'">
       <h3>Bids</h3>
@@ -99,10 +100,10 @@
           *ngFor="let affiliate of affiliates"
         >
           <ion-label color="primary"></ion-label>
-          <ion-input type="text" [value]="affiliate.rid"></ion-input>
+          <ion-input type="text" [value]="affiliate.pending ? 'Promo code pending blockchain insertion' : affiliate.rid"></ion-input>
         </ion-item>
       </ion-list>
-      <button ion-button secondary  (click)="joinPromotion($event)">Become an Affiliate</button>
+      <button ion-button secondary  (click)="joinPromotion($event)" [disabled]="item.pending || (affiliates.length && affiliates.length > 0)">{{item.pending ? 'Pending block insertion' : 'Become an Affiliate'}}</button>
     </ion-col>
   </ion-row>
 </ion-content>

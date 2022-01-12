@@ -193,7 +193,8 @@ export class TransactionService {
                     this.transaction.requester_rid +
                     this.transaction.requested_rid +
                     inputs_hashes_concat +
-                    outputs_hashes_concat
+                    outputs_hashes_concat +
+                    version
                 ).toString('hex')
             } else if (this.info.relationship[this.settingsService.collections.SMART_CONTRACT]) {
               //creating smart contract instance
@@ -226,7 +227,8 @@ export class TransactionService {
                   this.transaction.requester_rid +
                   this.transaction.requested_rid +
                   inputs_hashes_concat +
-                  outputs_hashes_concat
+                  outputs_hashes_concat +
+                  version
               ).toString('hex')
             } else if (
               this.info.relationship[this.settingsService.collections.CALENDAR] ||
@@ -248,7 +250,8 @@ export class TransactionService {
                     this.transaction.requester_rid +
                     this.transaction.requested_rid +
                     inputs_hashes_concat +
-                    outputs_hashes_concat
+                    outputs_hashes_concat +
+                    version
                 ).toString('hex')
             } else if (this.info.relationship[this.settingsService.collections.WEB_PAGE_REQUEST ]) {
                 // sign in
@@ -263,7 +266,8 @@ export class TransactionService {
                     this.transaction.requester_rid +
                     this.transaction.requested_rid +
                     inputs_hashes_concat +
-                    outputs_hashes_concat
+                    outputs_hashes_concat +
+                    version
                 ).toString('hex')
             } else if (this.info.relationship.wif) {
                 // recovery
@@ -278,7 +282,8 @@ export class TransactionService {
                     this.transaction.requester_rid +
                     this.transaction.requested_rid +
                     inputs_hashes_concat +
-                    outputs_hashes_concat
+                    outputs_hashes_concat +
+                    version
                 ).toString('hex')
             } else if (
               this.info.relationship[this.settingsService.collections.GROUP]
@@ -299,7 +304,8 @@ export class TransactionService {
                     this.transaction.requester_rid +
                     this.transaction.requested_rid +
                     inputs_hashes_concat +
-                    outputs_hashes_concat
+                    outputs_hashes_concat +
+                    version
                 ).toString('hex')
             } else if (
               this.info.relationship[this.settingsService.collections.MARKET]
@@ -316,7 +322,8 @@ export class TransactionService {
                   this.transaction.requester_rid +
                   this.transaction.requested_rid +
                   inputs_hashes_concat +
-                  outputs_hashes_concat
+                  outputs_hashes_concat +
+                  version
               ).toString('hex')
             } else if (
               this.info.relationship[this.settingsService.collections.AFFILIATE] ||
@@ -339,7 +346,8 @@ export class TransactionService {
                     this.transaction.requester_rid +
                     this.transaction.requested_rid +
                     inputs_hashes_concat +
-                    outputs_hashes_concat
+                    outputs_hashes_concat +
+                    version
                 ).toString('hex')
             } else if (
               this.info.relationship[this.settingsService.collections.WEB_PAGE] ||
@@ -357,7 +365,8 @@ export class TransactionService {
                     this.transaction.requester_rid +
                     this.transaction.requested_rid +
                     inputs_hashes_concat +
-                    outputs_hashes_concat
+                    outputs_hashes_concat +
+                    version
                 ).toString('hex')
             } else {
                 //straight transaction
@@ -370,7 +379,8 @@ export class TransactionService {
                     (this.transaction.requester_rid || '') +
                     (this.transaction.requested_rid || '') +
                     inputs_hashes_concat +
-                    outputs_hashes_concat
+                    outputs_hashes_concat +
+                    version
                 ).toString('hex');
             }
 

@@ -971,7 +971,9 @@ export class GraphService {
                         decrypted = this.decrypt(group.relationship);
                     }
                     var relationship;
-                    if (!bypassDecrypt) {
+                    if (bypassDecrypt) {
+                        relationship = group.relationship[collection]
+                    } else {
                         relationship = JSON.parse(decrypted);
                         if (!relationship[collection]) continue;
                         if (relationship[collection].collection !== collection) continue;
@@ -997,7 +999,9 @@ export class GraphService {
                             );
                         }
                         var relationship;
-                        if (!bypassDecrypt) {
+                        if (bypassDecrypt) {
+                            relationship = group.relationship[collection]
+                        } else {
                             relationship = JSON.parse(decrypted);
                             if (!relationship[collection]) continue;
                             if (!relationship[collection].parent) continue
@@ -1017,7 +1021,13 @@ export class GraphService {
                 }
 
                 this.groups_indexed[group.requested_rid] = group;
-                let group_username_signature = group.relationship[collection].username_signature
+                let group_username_signature
+                if (group.relationship[this.settingsService.collections.SMART_CONTRACT]) {
+                  group_username_signature = group.relationship[collection].identity.username_signature
+                } else {
+                  group_username_signature = group.relationship[collection].username_signature
+                }
+
                 if (collection === this.settingsService.collections.GROUP) {
                   this.groups_indexed[this.generateRid(
                       group_username_signature,
@@ -1417,10 +1427,8 @@ export class GraphService {
       for(var i=0; i<smartContracts.length; i++) {
         try {
           let smartContractTxn = smartContracts[i];
-          // if (smartContractTxn.pending && smartContractTxn.public_key !== this.bulletinSecretService.identity.public_key) {
-          //   continue;
-          // }
           let smartContract = smartContractTxn.relationship[this.settingsService.collections.SMART_CONTRACT];
+          if (!smartContract) continue;
           if (smartContract.asset) {
             let asset = this.shared_decrypt(market.username_signature, smartContract.asset)
             smartContract.asset = JSON.parse(asset)

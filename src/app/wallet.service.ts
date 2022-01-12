@@ -28,10 +28,10 @@ export class WalletService {
             if (!this.settingsService.remoteSettings || !this.settingsService.remoteSettings['walletUrl']) return resolve();
             return this.walletPromise(amount_needed)
             .then(() => {
-                return resolve();  
+                return resolve();
             })
             .catch((err) => {
-                return reject(err);  
+                return reject(err);
             });
         })
     }
