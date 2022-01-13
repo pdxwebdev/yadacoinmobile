@@ -36,11 +36,14 @@ export class CreatePromoPage {
     pay_referrer_operator: any;
     pay_referrer_payout_type: any;
     pay_referrer_amount: any;
+    pay_referrer_payout_interval: any;
     pay_referee: any;
     pay_referee_operator: any;
     pay_referee_payout_type: any;
     pay_referee_amount: any;
+    pay_referee_payout_interval: any;
     fund_amount: any;
+    expiry: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -59,6 +62,10 @@ export class CreatePromoPage {
       this.market = market.relationship[this.settingsService.collections.MARKET]
       this.affiliate_proof_type = this.smartContractService.promoProofTypes.HONOR
       this.promotedIdentity = 'me';
+      this.graphService.getBlockHeight()
+      .then((data) => {
+        this.settingsService.latest_block = data;
+      })
     }
 
     myForm = new FormGroup({
@@ -98,6 +105,10 @@ export class CreatePromoPage {
           this.presentError('pay_referrer_payout_type')
           return
         }
+        if (!this.pay_referrer_payout_interval) {
+          this.presentError('pay_referrer_payout_interval')
+          return
+        }
         if (!this.pay_referrer_amount) {
           this.presentError('pay_referrer_amount')
           return
@@ -112,6 +123,10 @@ export class CreatePromoPage {
           this.presentError('pay_referee_payout_type')
           return
         }
+        if (!this.pay_referee_payout_interval) {
+          this.presentError('pay_referee_payout_interval')
+          return
+        }
         if (!this.pay_referee_amount) {
           this.presentError('pay_referee_amount')
           return
@@ -123,6 +138,10 @@ export class CreatePromoPage {
       }
       if (!this.fund_amount) {
         this.presentError('fund_amount')
+        return
+      }
+      if (!this.expiry) {
+        this.presentError('expiry')
         return
       }
 
@@ -151,11 +170,14 @@ export class CreatePromoPage {
                 this.pay_referrer,
                 this.pay_referrer_operator,
                 this.pay_referrer_payout_type,
+                parseInt(this.pay_referrer_payout_interval),
                 parseFloat(this.pay_referrer_amount),
                 this.pay_referee,
                 this.pay_referee_operator,
                 this.pay_referee_payout_type,
-                parseFloat(this.pay_referee_amount)
+                parseInt(this.pay_referee_payout_interval),
+                parseFloat(this.pay_referee_amount),
+                parseInt(this.expiry)
               )
               const rids = this.graphService.generateRids(
                 contract.identity,

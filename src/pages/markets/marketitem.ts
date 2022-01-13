@@ -28,6 +28,7 @@ export class MarketItemPage {
   smartContractAddress: any
   price: any;
   minPrice: any;
+  balance: any;
   constructor(
     public navCtrl: NavController,
     private navParams: NavParams,
@@ -48,6 +49,10 @@ export class MarketItemPage {
     this.refresh();
     this.price = this.smartContract.price;
     this.minPrice = this.smartContract.price;
+    this.graphService.getBlockHeight()
+    .then((data) => {
+      this.settingsService.latest_block = data;
+    })
   }
 
   refresh() {
@@ -58,7 +63,13 @@ export class MarketItemPage {
       identity.collection = this.settingsService.collections.AFFILIATE
     }
     const rids = this.graphService.generateRids(identity);
-    this.graphService.getBids(rids.requested_rid, this.market)
+
+    const scAddress = this.bulletinSecretService.publicKeyToAddress(this.smartContract.identity.public_key)
+    this.walletService.get(this.price, scAddress)
+    .then((wallet: any) => {
+      this.balance = wallet.balance;
+      return this.graphService.getBids(rids.requested_rid, this.market)
+    })
     .then((bids) => {
       this.bids = bids.sort((a, b) => {
         const aamount = this.getAmount(a);
@@ -120,6 +131,7 @@ export class MarketItemPage {
     alert.addButton({
         text: buttonText,
         handler: (data: any) => {
+          const scAddress = this.bulletinSecretService.publicKeyToAddress(this.smartContract.identity.public_key)
           this.walletService.get(this.price)
           .then(() => {
             const rids = this.graphService.generateRids(this.smartContract.identity, this.smartContract.identity, this.settingsService.collections.BID)
@@ -131,7 +143,7 @@ export class MarketItemPage {
               this.settingsService.collections.BID,
               this.market.username_signature,
               {
-                to: this.bulletinSecretService.publicKeyToAddress(this.smartContract.identity.public_key),
+                to: scAddress,
                 value: this.price
               }
             )

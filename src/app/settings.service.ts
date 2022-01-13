@@ -36,9 +36,11 @@ export class SettingsService {
       WEB_SIGNIN_REQUEST: 'web_signin_request',
       WEB_SIGNIN_RESPONSE: 'web_signin_response'
     }
+    latest_block: any;
     constructor(
     ) {
         this.tokens = {};
+        this.latest_block = {};
     }
 
     go() {

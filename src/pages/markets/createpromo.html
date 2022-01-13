@@ -62,6 +62,10 @@
             <ion-radio [value]="smartContractService.payoutType.RECURRING"></ion-radio>
           </ion-item>
         </ion-list>
+        <ion-item *ngIf="pay_referrer_payout_type === smartContractService.payoutType.RECURRING">
+          <ion-label color="primary">Payment interval</ion-label>
+          <ion-input type="number" [(ngModel)]="pay_referrer_payout_interval" placeholder="How many blocks between payouts?"></ion-input>
+        </ion-item>
         <h3>Amount</h3>
         <ion-item *ngIf="pay_referrer_operator === smartContractService.payoutOperators.FIXED">
           <ion-label>{{smartContractService.payoutOperators.FIXED}}</ion-label>
@@ -106,6 +110,10 @@
             <ion-radio [value]="smartContractService.payoutType.RECURRING"></ion-radio>
           </ion-item>
         </ion-list>
+        <ion-item *ngIf="pay_referee_payout_type === smartContractService.payoutType.RECURRING">
+          <ion-label color="primary">Payment interval</ion-label>
+          <ion-input type="number" [(ngModel)]="pay_referee_payout_interval" placeholder="How many blocks between payouts?"></ion-input>
+        </ion-item>
         <h3>Amount</h3>
         <ion-item *ngIf="pay_referee_operator === smartContractService.payoutOperators.FIXED">
           <ion-label>{{smartContractService.payoutOperators.FIXED}}</ion-label>
@@ -121,6 +129,10 @@
         <ion-item>
           <ion-label color="primary">Fund amount</ion-label>
           <ion-input type="number" [(ngModel)]="fund_amount" placeholder="How much YDA to fund this promotion?"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label color="primary">Expiry</ion-label>
+          <ion-input type="number" [(ngModel)]="expiry" placeholder="Expires in how many blocks?"></ion-input>
         </ion-item>
       </ng-container>
       <h3>&nbsp;</h3>

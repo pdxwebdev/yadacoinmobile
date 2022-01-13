@@ -26,8 +26,12 @@
     <ion-col col-md-4>
       <h3>Sale info</h3>
       <ion-item>
-        <ion-label color="primary">Sale price</ion-label>
+        <ion-label color="primary">Price</ion-label>
         <ion-input type="number" [(ngModel)]="price" placeholder="What's the price of this asset?"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-label color="primary">Expires</ion-label>
+        <ion-input type="number" [(ngModel)]="expiry" placeholder="How many blocks until this sale ends?"></ion-input>
       </ion-item>
       <h3>Sale type</h3>
       <ion-list radio-group [(ngModel)]="asset_proof_type">

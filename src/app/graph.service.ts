@@ -248,6 +248,17 @@ export class GraphService {
         })
     }
 
+    getBlockHeight(): any {
+      return new Promise((resolve, reject) => {
+        this.endpointRequest(
+          'get-height',
+        )
+        .then((data: any) => {
+            return resolve(data);
+        })
+      })
+    }
+
     addNotification(item, collection) {
       if (!this.notifications[collection]) this.notifications[collection] = [];
       if (Array.isArray(item)) {

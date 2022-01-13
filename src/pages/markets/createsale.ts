@@ -27,6 +27,7 @@ export class CreateSalePage {
     price: any;
     market: any;
     asset_proof_type: any;
+    expiry: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -80,7 +81,8 @@ export class CreateSalePage {
               this.graphService.toIdentity(this.bulletinSecretService.cloneIdentity()),
               parseFloat(this.price),
               this.asset_proof_type,
-              this.market
+              this.market,
+              this.expiry
             )
             const rids = this.graphService.generateRids(
               contract.identity,

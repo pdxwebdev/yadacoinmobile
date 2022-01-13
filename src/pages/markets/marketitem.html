@@ -31,6 +31,7 @@
         <ion-card-content *ngIf="smartContract.asset_proof_type === 'first_come'">
           <strong>Seller: </strong><span *ngIf="smartContract.creator" (click)="openProfile(smartContract.creator)">{{smartContract.creator.username}} <ion-icon *ngIf="graphService.isAdded(smartContract.creator)" name="checkmark-circle" class="success"></ion-icon></span>
         </ion-card-content>
+        <strong>Expires: </strong>In {{smartContract.expiry - settingsService.latest_block.height}} blocks
       </ion-card>
       <ion-item *ngIf="smartContract.asset_proof_type === 'auction'">
         <ion-label color="primary">Bid amount</ion-label>
@@ -74,6 +75,9 @@
           Payout type: {{smartContract.referrer.payout_type}}
         </ion-item>
         <ion-item>
+          Payout interval: Every {{smartContract.referrer.interval}} blocks
+        </ion-item>
+        <ion-item>
           Amount: {{smartContract.referrer.amount}} YDA
         </ion-item>
       </ng-container>
@@ -86,9 +90,19 @@
           Payout type: {{smartContract.referee.payout_type}}
         </ion-item>
         <ion-item>
+          Payout interval: Every {{smartContract.referee.interval}} blocks
+        </ion-item>
+        <ion-item>
           Amount: {{smartContract.referee.amount}} YDA
         </ion-item>
       </ng-container>
+      <h3>Funding</h3>
+      <ion-item>
+        Balance: {{balance}} YDA
+      </ion-item>
+      <ion-item>
+        Expires: In {{smartContract.expiry - settingsService.latest_block.height}} blocks
+      </ion-item>
     </ion-col>
     <ion-col col-md-3>
       <h1>&nbsp;</h1>
