@@ -67,7 +67,7 @@ export class MarketItemPage {
     const scAddress = this.bulletinSecretService.publicKeyToAddress(this.smartContract.identity.public_key)
     this.walletService.get(this.price, scAddress)
     .then((wallet: any) => {
-      this.balance = wallet.balance;
+      this.balance = this.item.pending ? wallet.pending_balance : wallet.balance;
       return this.graphService.getBids(rids.requested_rid, this.market)
     })
     .then((bids) => {

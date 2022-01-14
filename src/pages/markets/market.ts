@@ -34,6 +34,9 @@ export class MarketPage {
       this.smartContracts = smartContracts.filter((item) => {
         try {
           const sc = item.relationship[this.settingsService.collections.SMART_CONTRACT]
+          if ((sc.expiry - this.settingsService.latest_block.height) < 0) {
+            return false;
+          }
           if (sc.contract_type === this.smartContractService.contractTypes.CHANGE_OWNERSHIP) {
             return sc.asset.data.substr(0, 5) === 'data:';
           }

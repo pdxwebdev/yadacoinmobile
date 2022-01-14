@@ -105,7 +105,10 @@ export class CreatePromoPage {
           this.presentError('pay_referrer_payout_type')
           return
         }
-        if (!this.pay_referrer_payout_interval) {
+        if (
+          this.pay_referrer_payout_type === this.smartContractService.payoutType.RECURRING &&
+          !this.pay_referrer_payout_interval
+        ) {
           this.presentError('pay_referrer_payout_interval')
           return
         }
@@ -123,7 +126,10 @@ export class CreatePromoPage {
           this.presentError('pay_referee_payout_type')
           return
         }
-        if (!this.pay_referee_payout_interval) {
+        if (
+          this.pay_referee_payout_type === this.smartContractService.payoutType.RECURRING &&
+          !this.pay_referee_payout_interval
+        ) {
           this.presentError('pay_referee_payout_interval')
           return
         }
