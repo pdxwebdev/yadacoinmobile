@@ -28,7 +28,7 @@ export class CreatePromoPage {
     asset: any;
     price: any;
     market: any;
-    affiliate_proof_type: any;
+    proof_type: any;
     promotedIdentity: any;
     selectedIdentity: any;
     selectedIdentityForm: any;
@@ -60,7 +60,7 @@ export class CreatePromoPage {
     ) {
       const market = this.navParams.get('market');
       this.market = market.relationship[this.settingsService.collections.MARKET]
-      this.affiliate_proof_type = this.smartContractService.promoProofTypes.HONOR
+      this.proof_type = this.smartContractService.promoProofTypes.HONOR
       this.promotedIdentity = 'me';
       this.graphService.getBlockHeight()
       .then((data) => {
@@ -170,7 +170,7 @@ export class CreatePromoPage {
             .then(() => {
               const contract = this.smartContractService.generateNewRelationshipPromo(
                 this.graphService.toIdentity(this.bulletinSecretService.cloneIdentity()),
-                this.affiliate_proof_type,
+                this.proof_type,
                 selectedIdentity,
                 this.market,
                 this.pay_referrer,

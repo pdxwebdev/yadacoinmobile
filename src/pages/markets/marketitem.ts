@@ -116,11 +116,11 @@ export class MarketItemPage {
     // generate purchase txn
     let alert = this.alertCtrl.create();
     let buttonText = '';
-    if(this.smartContract.asset_proof_type === this.smartContractService.assetProofTypes.FIRST_COME) {
+    if(this.smartContract.proof_type === this.smartContractService.assetProofTypes.FIRST_COME) {
       alert.setTitle('Buy Asset');
       alert.setSubTitle('Are you sure you want to buy this asset?');
       buttonText = 'Buy'
-    } else if(this.smartContract.asset_proof_type === this.smartContractService.assetProofTypes.AUCTION) {
+    } else if(this.smartContract.proof_type === this.smartContractService.assetProofTypes.AUCTION) {
       alert.setTitle('Bid on Asset');
       alert.setSubTitle('Are you sure you want to place a bid for this asset?');
       buttonText = 'Bid'

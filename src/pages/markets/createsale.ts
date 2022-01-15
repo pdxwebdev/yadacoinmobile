@@ -26,7 +26,7 @@ export class CreateSalePage {
     asset: any;
     price: any;
     market: any;
-    asset_proof_type: any;
+    proof_type: any;
     expiry: any;
     constructor(
         public navCtrl: NavController,
@@ -44,7 +44,11 @@ export class CreateSalePage {
       this.market = market.relationship[this.settingsService.collections.MARKET]
       this.item = this.navParams.get('item');
       this.asset = this.item.relationship[this.settingsService.collections.ASSET];
-      this.asset_proof_type = this.smartContractService.assetProofTypes.FIRST_COME
+      this.proof_type = this.smartContractService.assetProofTypes.FIRST_COME
+      this.graphService.getBlockHeight()
+      .then((data) => {
+        this.settingsService.latest_block = data;
+      })
     }
 
     presentError(field) {
@@ -63,8 +67,8 @@ export class CreateSalePage {
         this.presentError('price')
         return
       }
-      if (!this.asset_proof_type) {
-        this.presentError('asset_proof_type')
+      if (!this.proof_type) {
+        this.presentError('proof_type')
         return
       }
       let alert = this.alertCtrl.create();
@@ -80,7 +84,7 @@ export class CreateSalePage {
               this.asset,
               this.graphService.toIdentity(this.bulletinSecretService.cloneIdentity()),
               parseFloat(this.price),
-              this.asset_proof_type,
+              this.proof_type,
               this.market,
               this.expiry
             )

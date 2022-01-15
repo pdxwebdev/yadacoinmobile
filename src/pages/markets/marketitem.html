@@ -12,8 +12,8 @@
   </ion-refresher>
   <ion-row *ngIf="smartContract.contract_type === smartContractService.contractTypes.CHANGE_OWNERSHIP">
     <ion-col col-md-3>
-      <h1 *ngIf="smartContract.asset_proof_type === 'first_come'">Asset for sale</h1>
-      <h1 *ngIf="smartContract.asset_proof_type === 'auction'">Asset auction</h1>
+      <h1 *ngIf="smartContract.proof_type === 'first_come'">Asset for sale</h1>
+      <h1 *ngIf="smartContract.proof_type === 'auction'">Asset auction</h1>
       <h3>Info</h3>
       <ion-card ion-item style="">
         <ion-card-title style="text-overflow:ellipsis;" text-wrap>
@@ -22,27 +22,29 @@
         <ion-card-content>
           <strong>Name: </strong>{{smartContract.asset.identity.username}}
         </ion-card-content>
-        <ion-card-content *ngIf="smartContract.asset_proof_type === 'auction'">
+        <ion-card-content *ngIf="smartContract.proof_type === 'auction'">
           <strong>Reserve: </strong>{{smartContract.price}} YDA
         </ion-card-content>
-        <ion-card-content *ngIf="smartContract.asset_proof_type === 'first_come'">
+        <ion-card-content *ngIf="smartContract.proof_type === 'first_come'">
           <strong>Price: </strong>{{smartContract.price}} YDA
         </ion-card-content>
-        <ion-card-content *ngIf="smartContract.asset_proof_type === 'first_come'">
+        <ion-card-content *ngIf="smartContract.proof_type === 'first_come'">
           <strong>Seller: </strong><span *ngIf="smartContract.creator" (click)="openProfile(smartContract.creator)">{{smartContract.creator.username}} <ion-icon *ngIf="graphService.isAdded(smartContract.creator)" name="checkmark-circle" class="success"></ion-icon></span>
         </ion-card-content>
-        <strong>Expires: </strong>In {{smartContract.expiry - settingsService.latest_block.height}} blocks
+        <ion-card-content>
+          <strong>Expires: </strong>In {{smartContract.expiry - settingsService.latest_block.height}} blocks
+        </ion-card-content>
       </ion-card>
-      <ion-item *ngIf="smartContract.asset_proof_type === 'auction'">
+      <ion-item *ngIf="smartContract.proof_type === 'auction'">
         <ion-label color="primary">Bid amount</ion-label>
         <ion-input type="number" [min]="minPrice" [(ngModel)]="price" placeholder="How much YDA are you bidding?" [disabled]="item.pending"></ion-input>
       </ion-item>
-      <button ion-button secondary *ngIf="!item.pending && smartContract.asset_proof_type === 'auction'" (click)="buy($event)" [disabled]="price < minPrice">Place bid</button>
+      <button ion-button secondary *ngIf="!item.pending && smartContract.proof_type === 'auction'" (click)="buy($event)" [disabled]="price < minPrice">Place bid</button>
       <button ion-button secondary *ngIf="item.pending" (click)="buy($event)" [disabled]="item.pending">Pending blockchain insertion</button>
-      <button ion-button secondary *ngIf="!item.pending && bids.length === 0 && smartContract.asset_proof_type === 'first_come'" (click)="buy($event)" [disabled]="price < minPrice">Buy this asset</button>
-      <button ion-button secondary *ngIf="!item.pending && bids.length > 0 && smartContract.asset_proof_type === 'first_come'" disabled=disabled>This item is sold</button>
+      <button ion-button secondary *ngIf="!item.pending && bids.length === 0 && smartContract.proof_type === 'first_come'" (click)="buy($event)" [disabled]="price < minPrice">Buy this asset</button>
+      <button ion-button secondary *ngIf="!item.pending && bids.length > 0 && smartContract.proof_type === 'first_come'" disabled=disabled>This item is sold</button>
     </ion-col>
-    <ion-col col-md-3 *ngIf="smartContract.asset_proof_type === 'auction'">
+    <ion-col col-md-3 *ngIf="smartContract.proof_type === 'auction'">
       <h3>Bids</h3>
       <ion-list>
         <ion-item *ngIf="bids.length === 0">No bids yet</ion-item>
