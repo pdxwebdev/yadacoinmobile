@@ -103,7 +103,7 @@ export class MarketItemPage {
     for(let i=0; i < bid.outputs.length; i++) {
       if(bid.outputs[i].to === this.smartContractAddress) total += bid.outputs[i].value;
     }
-    return total;
+    return total.toFixed(8);
   }
 
   openProfile(identity) {

@@ -23,10 +23,10 @@
           <strong>Name: </strong>{{smartContract.asset.identity.username}}
         </ion-card-content>
         <ion-card-content *ngIf="smartContract.proof_type === 'auction'">
-          <strong>Reserve: </strong>{{smartContract.price}} YDA
+          <strong>Reserve: </strong>{{smartContract.price.toFixed(8)}} YDA
         </ion-card-content>
         <ion-card-content *ngIf="smartContract.proof_type === 'first_come'">
-          <strong>Price: </strong>{{smartContract.price}} YDA
+          <strong>Price: </strong>{{smartContract.price.toFixed(8)}} YDA
         </ion-card-content>
         <ion-card-content *ngIf="smartContract.proof_type === 'first_come'">
           <strong>Seller: </strong><span *ngIf="smartContract.creator" (click)="openProfile(smartContract.creator)">{{smartContract.creator.username}} <ion-icon *ngIf="graphService.isAdded(smartContract.creator)" name="checkmark-circle" class="success"></ion-icon></span>
@@ -80,7 +80,7 @@
           Payout interval: Every {{smartContract.referrer.interval}} blocks
         </ion-item>
         <ion-item>
-          Amount: {{smartContract.referrer.amount}} YDA
+          Amount: {{smartContract.referrer.amount.toFixed(8)}} YDA
         </ion-item>
       </ng-container>
       <ng-container *ngIf="smartContract.referee.active">
@@ -95,7 +95,7 @@
           Payout interval: Every {{smartContract.referee.interval}} blocks
         </ion-item>
         <ion-item>
-          Amount: {{smartContract.referee.amount}} YDA
+          Amount: {{smartContract.referee.amount.toFixed(8)}} YDA
         </ion-item>
       </ng-container>
       <h3>Funding</h3>
