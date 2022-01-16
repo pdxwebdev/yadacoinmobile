@@ -209,7 +209,7 @@ export class SendReceive {
         .then(() => {
             this.getReceivedPendingHistory();
         }).catch((err) => {
-            console.log(err);  
+            console.log(err);
         });
     }
 
@@ -243,11 +243,11 @@ export class SendReceive {
         })
     }
 
-    getSentHistory() {
+    getSentHistory(public_key=null) {
         return new Promise((resolve, reject) => {
             this.sentLoading = true;
             let options = new RequestOptions({ withCredentials: true });
-            this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/get-past-sent-txns?page=' + this.sentPage + '&public_key=' + this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex') + '&origin=' + encodeURIComponent(window.location.origin), options)
+            this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/get-past-sent-txns?page=' + this.sentPage + '&public_key=' + (public_key || this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex')) + '&origin=' + encodeURIComponent(window.location.origin), options)
             .subscribe((res) => {
                 this.sentLoading = false;
                 this.past_sent_transactions = res.json()['past_transactions'].sort(this.sortFunc);

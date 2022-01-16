@@ -13,6 +13,7 @@ import Groups from '../../app/groups';
 import { MarketPage } from './market';
 import { CompleteTestService } from '../../app/autocomplete.provider';
 import { WalletService } from '../../app/wallet.service';
+import { MarketItemPage } from './marketitem';
 
 
 declare var X25519;
@@ -44,6 +45,7 @@ export class CreatePromoPage {
     pay_referee_payout_interval: any;
     fund_amount: any;
     expiry: any;
+    marketTxn: any;
     constructor(
         public navCtrl: NavController,
         public navParams: NavParams,
@@ -58,8 +60,8 @@ export class CreatePromoPage {
         public completeTestService: CompleteTestService,
         private walletService: WalletService
     ) {
-      const market = this.navParams.get('market');
-      this.market = market.relationship[this.settingsService.collections.MARKET]
+      this.marketTxn = this.navParams.get('market');
+      this.market = this.marketTxn.relationship[this.settingsService.collections.MARKET]
       this.proof_type = this.smartContractService.promoProofTypes.HONOR
       this.promotedIdentity = 'me';
       this.graphService.getBlockHeight()
@@ -212,8 +214,14 @@ export class CreatePromoPage {
                 this.market.username_signature,
                 {outputs: outputs}
               )
-            }).then(() => {
-              this.navCtrl.pop();
+            }).then((smartContract: any) => {
+              smartContract.relationship[this.settingsService.collections.SMART_CONTRACT][this.settingsService.collections.ASSET] = this.asset
+              smartContract.relationship[this.settingsService.collections.SMART_CONTRACT].creator = this.graphService.toIdentity(this.bulletinSecretService.cloneIdentity())
+              smartContract.pending = true
+              this.navCtrl.setRoot(MarketItemPage, {
+                item: smartContract,
+                market: this.marketTxn
+              });
             })
           }
       });

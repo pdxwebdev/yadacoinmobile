@@ -16,6 +16,7 @@ export class WebSocketService {
   websocket: any;
   loadingModal: any;
   directMessageRequestResolve: any;
+  reconnectInterval: any;
   constructor(
     private ahttp: Http,
     private bulletinSecretService: BulletinSecretService,
@@ -26,13 +27,26 @@ export class WebSocketService {
   ) {}
 
   init() {
-    if (this.websocket) return;
+    if (this.websocket && this.websocket.readyState > 1) {
+      this.websocket.close()
+    };
     this.websocket = new WebSocket(this.settingsService.remoteSettings.websocketUrl);
     this.websocket.onopen = this.onOpen.bind(this);
     this.websocket.onmessage = this.onMessage.bind(this);
+    this.websocket.onerror = (err) => {
+      console.error('Socket encountered error: ', err.message, 'Closing socket');
+      this.websocket.close();
+    };
+    this.websocket.onclose = (e) => {
+      console.log('Socket is closed. Reconnect will be attempted in 1 second.', e.reason);
+      setTimeout(() => {
+        this.init();
+      }, 1000);
+    };
   }
 
   onOpen(event) {
+    this.connect()
     console.log(event.data);
   }
 
@@ -290,6 +304,12 @@ export class WebSocketService {
 
         }
         break
+
+      case 'newblock':
+        const block = msg.params.payload.block
+        block.height = block.index
+        this.settingsService.latest_block = block;
+        break
     }
   }
 
@@ -325,8 +345,9 @@ export class WebSocketService {
     }
     request.relationship[collection] = item
     return this.transactionService.generateTransaction(request)
-    .then(() => {
+    .then((txn):any => {
         this.sendnewtxn();
+        return txn;
     })
   }
 

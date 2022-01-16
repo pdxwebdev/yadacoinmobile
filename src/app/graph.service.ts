@@ -146,18 +146,18 @@ export class GraphService {
       .then(() => {
         return this.getFriendRequests()
       })
-      .then(() => {
-        const promises = this.graph.smart_contracts.map((smart_contract) => {
-          return this.getFriendRequests(
-            this.generateRid(
-              smart_contract.relationship[this.settingsService.collections.SMART_CONTRACT].identity.username_signature,
-              smart_contract.relationship[this.settingsService.collections.SMART_CONTRACT].identity.username_signature,
-              this.settingsService.collections.SMART_CONTRACT
-            )
-          )
-        });
-        return Promise.all(promises)
-      })
+      // .then(() => {
+      //   const promises = this.graph.smart_contracts.map((smart_contract) => {
+      //     return this.getFriendRequests(
+      //       this.generateRid(
+      //         smart_contract.relationship[this.settingsService.collections.SMART_CONTRACT].identity.username_signature,
+      //         smart_contract.relationship[this.settingsService.collections.SMART_CONTRACT].identity.username_signature,
+      //         this.settingsService.collections.SMART_CONTRACT
+      //       )
+      //     )
+      //   });
+      //   return Promise.all(promises)
+      // })
       .then(() => {
         return this.getSharedSecrets()
       });
@@ -1072,7 +1072,7 @@ export class GraphService {
                 )] = group;
 
                 try {
-                    if (!relationship.parent) {
+                    if (!relationship.parent && !relationship[this.settingsService.collections.SMART_CONTRACT]) {
                         promises.push(this.getGroups(
                             this.generateRid(
                                 group_username_signature,

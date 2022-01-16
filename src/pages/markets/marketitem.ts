@@ -9,6 +9,7 @@ import { ProfilePage } from '../profile/profile';
 import { SettingsService } from '../../app/settings.service';
 import { SmartContractService } from '../../app/smartContract.service';
 import { WebSocketService } from '../../app/websocket.service';
+import { Http, RequestOptions } from '@angular/http';
 
 
 declare var X25519;
@@ -29,6 +30,10 @@ export class MarketItemPage {
   price: any;
   minPrice: any;
   balance: any;
+  prevHeight: any;
+  past_sent_transactions: any;
+  sentPage: any;
+  past_sent_page_cache: any;
   constructor(
     public navCtrl: NavController,
     private navParams: NavParams,
@@ -39,13 +44,17 @@ export class MarketItemPage {
     private transactionService: TransactionService,
     private settingsService: SettingsService,
     private smartContractService: SmartContractService,
-    private websocketService: WebSocketService
+    private websocketService: WebSocketService,
+    private ahttp: Http
   ) {
     this.item = navParams.get('item');
     this.smartContract = this.item.relationship[this.settingsService.collections.SMART_CONTRACT];
     this.market = navParams.get('market').relationship[this.settingsService.collections.MARKET];
     this.bids = [];
     this.affiliates = [];
+    this.sentPage = 1
+    this.past_sent_page_cache = {}
+    this.past_sent_transactions = []
     this.refresh();
     this.price = this.smartContract.price;
     this.minPrice = this.smartContract.price;
@@ -53,9 +62,23 @@ export class MarketItemPage {
     .then((data) => {
       this.settingsService.latest_block = data;
     })
+    this.prevHeight = this.settingsService.latest_block.height
+    setInterval(() => {
+      if(this.prevHeight < this.settingsService.latest_block.height) {
+        this.prevHeight = this.settingsService.latest_block.height;
+        this.graphService.getSmartContracts(this.market)
+        .then((smartContracts: any) => {
+          const item = smartContracts.filter((item) => {
+            return item.id === this.item.id;
+          })[0]
+          this.item = item || this.item
+        })
+        this.refresh();
+      }
+    }, 1000)
   }
 
-  refresh() {
+  refresh(e=null) {
     const identity = JSON.parse(JSON.stringify(this.smartContract.identity))
     if (this.smartContract.contract_type === this.smartContractService.contractTypes.CHANGE_OWNERSHIP) {
       identity.collection = this.settingsService.collections.BID;
@@ -87,7 +110,10 @@ export class MarketItemPage {
     this.graphService.getAffiliates(rids.requested_rid, this.market)
     .then((affiliates) => {
       this.affiliates = affiliates.filter((item) => {
-        if (item.public_key === this.bulletinSecretService.identity.public_key) return true
+        if (
+          item.public_key === this.bulletinSecretService.identity.public_key ||
+          this.item.public_key ===this.bulletinSecretService.identity.public_key
+        ) return true
       })
     })
     this.smartContractAddress = foobar.bitcoin.ECPair.fromPublicKeyBuffer(
@@ -95,6 +121,85 @@ export class MarketItemPage {
         this.smartContract.identity.public_key, 'hex'
       )
     ).getAddress()
+    this.getSentHistory();
+    setTimeout(() => {
+      e && e.complete();
+    }, 1000)
+  }
+
+  getSentHistory(public_key=null) {
+      return new Promise((resolve, reject) => {
+          let options = new RequestOptions({ withCredentials: true });
+          this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/get-past-sent-txns?page=' + this.sentPage + '&public_key=' + this.smartContract.identity.public_key + '&origin=' + encodeURIComponent(window.location.origin), options)
+          .subscribe((res) => {
+              this.past_sent_transactions = res.json()['past_transactions'].sort(this.sortFunc);
+              this.getSentOutputValue(this.past_sent_transactions);
+              this.past_sent_page_cache[this.sentPage] = this.past_sent_transactions;
+              resolve(res);
+          },
+          (err) => {
+              return reject('cannot unlock wallet');
+          });
+      })
+  }
+
+  prevSentPage() {
+      this.sentPage--;
+      var result = this.past_sent_transactions = this.past_sent_page_cache[this.sentPage] || [];
+      if(result.length > 0) {
+          this.past_sent_transactions = result
+          return;
+      }
+      return this.getSentHistory();
+  }
+
+  nextSentPage() {
+      this.sentPage++;
+      var result = this.past_sent_page_cache[this.sentPage] || [];
+      if(result.length > 0) {
+          this.past_sent_transactions = result;
+          return;
+      }
+      return this.getSentHistory();
+  }
+
+  getSentOutputValue(array) {
+      for(var i=0; i < array.length; i++) {
+          var txn = array[i];
+          if (!array[i]['value']) {
+              array[i]['value'] = 0;
+          }
+          for(var j=0; j < txn['outputs'].length; j++) {
+              var output = txn['outputs'][j];
+              if(this.smartContractAddress !== output.to) {
+                  array[i]['value'] += parseFloat(output.value);
+                  if(output.to) array[i]['to'] = output.to;
+              } else {
+                if(output.to) array[i]['from'] = output.to;
+              }
+          }
+          array[i]['value'] = array[i]['value'].toFixed(8);
+      }
+  }
+
+  sortFunc(a, b) {
+      if (parseInt(a.time) < parseInt(b.time))
+          return 1
+      if ( parseInt(a.time) > parseInt(b.time))
+          return -1
+      return 0
+  }
+
+  convertDateTime(timestamp) {
+      var a = new Date(timestamp * 1000);
+      var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      var year = a.getFullYear();
+      var month = months[a.getMonth()];
+      var date = a.getDate();
+      var hour = '0' + a.getHours();
+      var min = '0' + a.getMinutes();
+      var time = date + '-' + month + '-' + year + ' ' + hour.substr(-2) + ':' + min.substr(-2) ;
+      return time;
   }
 
   getAmount(bid) {

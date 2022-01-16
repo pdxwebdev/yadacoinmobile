@@ -31,17 +31,20 @@
         <ion-card-content *ngIf="smartContract.proof_type === 'first_come'">
           <strong>Seller: </strong><span *ngIf="smartContract.creator" (click)="openProfile(smartContract.creator)">{{smartContract.creator.username}} <ion-icon *ngIf="graphService.isAdded(smartContract.creator)" name="checkmark-circle" class="success"></ion-icon></span>
         </ion-card-content>
-        <ion-card-content>
+        <ion-card-content *ngIf="(smartContract.expiry - settingsService.latest_block.height) >= 0">
           <strong>Expires: </strong>In {{smartContract.expiry - settingsService.latest_block.height}} blocks
+        </ion-card-content>
+        <ion-card-content *ngIf="(smartContract.expiry - settingsService.latest_block.height) < 0">
+          <strong>Expired: </strong>{{settingsService.latest_block.height - smartContract.expiry}} blocks ago
         </ion-card-content>
       </ion-card>
       <ion-item *ngIf="smartContract.proof_type === 'auction'">
         <ion-label color="primary">Bid amount</ion-label>
         <ion-input type="number" [min]="minPrice" [(ngModel)]="price" placeholder="How much YDA are you bidding?" [disabled]="item.pending"></ion-input>
       </ion-item>
-      <button ion-button secondary *ngIf="!item.pending && smartContract.proof_type === 'auction'" (click)="buy($event)" [disabled]="price < minPrice">Place bid</button>
+      <button ion-button secondary *ngIf="!item.pending && smartContract.proof_type === 'auction'" (click)="buy($event)" [disabled]="price < minPrice || (smartContract.expiry - settingsService.latest_block.height) < 0">Place bid</button>
       <button ion-button secondary *ngIf="item.pending" (click)="buy($event)" [disabled]="item.pending">Pending blockchain insertion</button>
-      <button ion-button secondary *ngIf="!item.pending && bids.length === 0 && smartContract.proof_type === 'first_come'" (click)="buy($event)" [disabled]="price < minPrice">Buy this asset</button>
+      <button ion-button secondary *ngIf="!item.pending && bids.length === 0 && smartContract.proof_type === 'first_come'" (click)="buy($event)" [disabled]="price < minPrice || (smartContract.expiry - settingsService.latest_block.height) < 0">Buy this asset</button>
       <button ion-button secondary *ngIf="!item.pending && bids.length > 0 && smartContract.proof_type === 'first_come'" disabled=disabled>This item is sold</button>
     </ion-col>
     <ion-col col-md-3 *ngIf="smartContract.proof_type === 'auction'">
@@ -102,8 +105,11 @@
       <ion-item>
         Balance: {{balance}} YDA
       </ion-item>
-      <ion-item>
+      <ion-item *ngIf="(smartContract.expiry - settingsService.latest_block.height) >= 0">
         Expires: In {{smartContract.expiry - settingsService.latest_block.height}} blocks
+      </ion-item>
+      <ion-item *ngIf="(smartContract.expiry - settingsService.latest_block.height) < 0">
+        Expired: {{settingsService.latest_block.height - smartContract.expiry}} blocks ago
       </ion-item>
     </ion-col>
     <ion-col col-md-3>
@@ -120,6 +126,22 @@
         </ion-item>
       </ion-list>
       <button ion-button secondary  (click)="joinPromotion($event)" [disabled]="item.pending || (affiliates.length && affiliates.length > 0)">{{item.pending ? 'Pending block insertion' : 'Become an Affiliate'}}</button>
+    </ion-col>
+  </ion-row>
+  <ion-row>
+    <ion-col>
+      <h4>Transaction history</h4>
+      <strong>Sent</strong><br>
+      <button ion-button small (click)="prevSentPage()" [disabled]="sentPage <= 1">< Prev</button> <button ion-button small (click)="nextSentPage()" [disabled]="past_sent_transactions.length === 0 || past_sent_transactions.length < 10">Next ></button>
+      <p *ngIf="past_sent_transactions.length === 0">No more results</p><span *ngIf="sentLoading"> (loading...)</span>
+      <ion-list>
+        <ion-item *ngFor="let txn of past_sent_transactions">
+          <ion-label>{{convertDateTime(txn.time)}}</ion-label>
+          <ion-label>{{txn.from}}</ion-label>
+          <ion-label>{{txn.to}}</ion-label>
+          <ion-label>{{txn.value}}</ion-label>
+        </ion-item>
+      </ion-list>
     </ion-col>
   </ion-row>
 </ion-content>

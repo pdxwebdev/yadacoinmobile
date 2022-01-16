@@ -88,10 +88,7 @@ export class Settings {
         this.refresh(null)
         .then(() => {
             return this.peerService.go();
-        })
-        .then(() => {
-            return this.websocketService.init();
-        }).catch((err) => {
+      }).catch((err) => {
             console.log(err)
         });
     }
@@ -538,7 +535,7 @@ export class Settings {
             }
           })
           .then(() => {
-              return this.websocketService.connect();
+              return this.websocketService.init();
           })
           .then(() => {
               if (showModal) {
@@ -605,7 +602,7 @@ export class Settings {
               this.events.publish('menu', [{ title: 'Home', label: 'Home', component: HomePage, count: false, color: '', root: true }])
           })
           .then(() => {
-              return this.websocketService.connect();
+              return this.websocketService.init();
           })
           .catch((err)  => {
               console.log(err);

@@ -11,6 +11,7 @@ import { Http } from '@angular/http';
 import { SmartContractService } from '../../app/smartContract.service';
 import Groups from '../../app/groups';
 import { MarketPage } from './market';
+import { MarketItemPage } from './marketitem';
 
 
 declare var X25519;
@@ -26,6 +27,7 @@ export class CreateSalePage {
     asset: any;
     price: any;
     market: any;
+    marketTxn: any;
     proof_type: any;
     expiry: any;
     constructor(
@@ -40,8 +42,8 @@ export class CreateSalePage {
         private ahttp: Http,
         private smartContractService: SmartContractService
     ) {
-      const market = this.navParams.get('market');
-      this.market = market.relationship[this.settingsService.collections.MARKET]
+      this.marketTxn = this.navParams.get('market');
+      this.market = this.marketTxn.relationship[this.settingsService.collections.MARKET]
       this.item = this.navParams.get('item');
       this.asset = this.item.relationship[this.settingsService.collections.ASSET];
       this.proof_type = this.smartContractService.assetProofTypes.FIRST_COME
@@ -99,8 +101,14 @@ export class CreateSalePage {
               this.settingsService.collections.SMART_CONTRACT,
               this.market.username_signature
             )
-            .then(() => {
-              this.navCtrl.pop();
+            .then((smartContract: any) => {
+              smartContract.relationship[this.settingsService.collections.SMART_CONTRACT][this.settingsService.collections.ASSET] = this.asset
+              smartContract.relationship[this.settingsService.collections.SMART_CONTRACT].creator = this.graphService.toIdentity(this.bulletinSecretService.cloneIdentity())
+              smartContract.pending = true
+              this.navCtrl.setRoot(MarketItemPage, {
+                item: smartContract,
+                market: this.marketTxn
+              });
             })
           }
       });

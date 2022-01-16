@@ -17,6 +17,7 @@ export class MarketPage {
   item: any;
   market: any;
   smartContracts: any;
+  prevHeight: any;
   constructor(
     private navCtrl: NavController,
     private navParams: NavParams,
@@ -26,10 +27,23 @@ export class MarketPage {
   ) {
     this.item = this.navParams.get('item')
     this.market = this.item.relationship[this.settingsService.collections.MARKET]
+    setInterval(() => {
+      if(this.prevHeight < this.settingsService.latest_block.height) this.refresh();
+    }, 1000)
   }
 
   ionViewDidEnter() {
-    this.graphService.getSmartContracts(this.market)
+    this.refresh()
+  }
+
+  refresh(e=null) {
+    this.graphService.getBlockHeight()
+    .then((data) => {
+      this.settingsService.latest_block = data;
+    })
+    .then(() => {
+      return this.graphService.getSmartContracts(this.market)
+    })
     .then((smartContracts: any) => {
       this.smartContracts = smartContracts.filter((item) => {
         try {
@@ -46,6 +60,7 @@ export class MarketPage {
         return true;
       })
       console.log(this.smartContracts)
+      e && e.complete()
     })
   }
 
