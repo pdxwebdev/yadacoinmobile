@@ -287,17 +287,10 @@ export class GraphService {
               this.bulletinSecretService.identity.username_signature
             )];
 
-            const more_rids = this.graph.smart_contracts.map((smart_contract) => {
-              return this.generateRid(
-                smart_contract.relationship[this.settingsService.collections.SMART_CONTRACT].identity.username_signature,
-                smart_contract.relationship[this.settingsService.collections.SMART_CONTRACT].identity.username_signature,
-                this.settingsService.collections.SMART_CONTRACT
-              )
-            });
             this.endpointRequest(
               'get-graph-sent-friend-requests',
               null,
-              rids.concat(more_rids)
+              rids
             )
             .then((data: any) => {
                 this.graph.sent_friend_requests = this.parseSentFriendRequests(data.sent_friend_requests);
@@ -318,17 +311,10 @@ export class GraphService {
               this.settingsService.collections.CONTACT
             )];
 
-            const more_rids = this.graph.smart_contracts.map((smart_contract) => {
-              return this.generateRid(
-                smart_contract.relationship[this.settingsService.collections.SMART_CONTRACT].identity.username_signature,
-                smart_contract.relationship[this.settingsService.collections.SMART_CONTRACT].identity.username_signature,
-                this.settingsService.collections.SMART_CONTRACT
-              )
-            });
             this.endpointRequest(
               'get-graph-collection',
               null,
-              rids.concat(more_rids)
+              rids
             )
             .then((data: any) => {
                 this.parseFriendRequests(data.collection);

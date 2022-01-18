@@ -133,6 +133,7 @@ export class MarketItemPage {
           this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/get-past-sent-txns?page=' + this.sentPage + '&public_key=' + this.smartContract.identity.public_key + '&origin=' + encodeURIComponent(window.location.origin), options)
           .subscribe((res) => {
               this.past_sent_transactions = res.json()['past_transactions'].sort(this.sortFunc);
+              this.past_sent_transactions = this.breakApartByOutput();
               this.getSentOutputValue(this.past_sent_transactions);
               this.past_sent_page_cache[this.sentPage] = this.past_sent_transactions;
               resolve(res);
@@ -141,6 +142,19 @@ export class MarketItemPage {
               return reject('cannot unlock wallet');
           });
       })
+  }
+
+  breakApartByOutput() {
+    const new_array = [];
+    this.past_sent_transactions.map((item) => {
+      item.outputs.map((output) => {
+        if(this.smartContractAddress === output.to) return
+        const new_item = JSON.parse(JSON.stringify(item))
+        new_item.outputs = [output]
+        new_array.push(new_item)
+      })
+    })
+    return new_array
   }
 
   prevSentPage() {

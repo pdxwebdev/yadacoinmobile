@@ -85,48 +85,71 @@ export class TransactionService {
             } else {
                 transaction_total = parseFloat(this.transaction.fee);
             }
+            let inputs_hashes_concat = '';
             if ((this.info.relationship && this.info.relationship.dh_private_key && this.walletService.wallet.balance < transaction_total) /* || this.walletService.wallet.unspent_transactions.length == 0*/) {
                 reject("not enough money");
                 return
             } else {
-                var inputs = [];
-                var input_sum = 0
-                let unspent_transactions: any;
-                if(this.unspent_transaction_override) {
-                    unspent_transactions = [this.unspent_transaction_override];
-                } else {
-                    this.info.relationship = this.info.relationship || {};
-                    unspent_transactions = this.walletService.wallet.unspent_transactions;
-                    unspent_transactions.sort(function (a, b) {
-                        if (a.height < b.height)
-                          return -1
-                        if ( a.height > b.height)
-                          return 1
-                        return 0
-                    });
-                }
-                let already_added = []
-                dance:
-                for (var i=0; i < unspent_transactions.length; i++) {
-                    var unspent_transaction = unspent_transactions[i];
-                    for (var j=0; j < unspent_transaction.outputs.length; j++) {
-                        var unspent_output = unspent_transaction.outputs[j];
-                        if (unspent_output.to === this.key.getAddress()) {
-                            if (already_added.indexOf(unspent_transaction.id) === -1){
-                                already_added.push(unspent_transaction.id);
-                                inputs.push({id: unspent_transaction.id});
-                                input_sum += parseFloat(unspent_output.value);
-                                console.log(parseFloat(unspent_output.value));
-                            }
-                            if (input_sum >= transaction_total) {
-                                this.transaction.outputs.push({
-                                    to: this.key.getAddress(),
-                                    value: (input_sum - transaction_total)
-                                })
-                                break dance;
+                if (transaction_total > 0) {
+                    var inputs = [];
+                    var input_sum = 0
+                    let unspent_transactions: any;
+                    if(this.unspent_transaction_override) {
+                        unspent_transactions = [this.unspent_transaction_override];
+                    } else {
+                        this.info.relationship = this.info.relationship || {};
+                        unspent_transactions = this.walletService.wallet.unspent_transactions;
+                        unspent_transactions.sort(function (a, b) {
+                            if (a.height < b.height)
+                            return -1
+                            if ( a.height > b.height)
+                            return 1
+                            return 0
+                        });
+                    }
+                    let already_added = []
+                    dance:
+                    for (var i=0; i < unspent_transactions.length; i++) {
+                        var unspent_transaction = unspent_transactions[i];
+                        for (var j=0; j < unspent_transaction.outputs.length; j++) {
+                            var unspent_output = unspent_transaction.outputs[j];
+                            if (unspent_output.to === this.key.getAddress()) {
+                                if (already_added.indexOf(unspent_transaction.id) === -1){
+                                    already_added.push(unspent_transaction.id);
+                                    inputs.push({id: unspent_transaction.id});
+                                    input_sum += parseFloat(unspent_output.value);
+                                    console.log(parseFloat(unspent_output.value));
+                                }
+                                if (input_sum >= transaction_total) {
+                                    this.transaction.outputs.push({
+                                        to: this.key.getAddress(),
+                                        value: (input_sum - transaction_total)
+                                    })
+                                    break dance;
+                                }
                             }
                         }
                     }
+
+                    if (input_sum < transaction_total) {
+                        return reject('Insufficient funds');
+                    }
+                    this.transaction.inputs = inputs;
+
+                    var inputs_hashes = [];
+                    for(i=0; i < inputs.length; i++) {
+                        inputs_hashes.push(inputs[i].id);
+                    }
+
+                    var inputs_hashes_arr = inputs_hashes.sort(function (a, b) {
+                        if (a.toLowerCase() < b.toLowerCase())
+                          return -1
+                        if ( a.toLowerCase() > b.toLowerCase())
+                          return 1
+                        return 0
+                    });
+
+                    inputs_hashes_concat = inputs_hashes_arr.join('')
                 }
             }
             var myAddress = this.key.getAddress();
@@ -142,26 +165,6 @@ export class TransactionService {
                     value: 0
                 })
             }
-
-            if (input_sum < transaction_total) {
-                return reject('Insufficient funds');
-            }
-            this.transaction.inputs = inputs;
-
-            var inputs_hashes = [];
-            for(i=0; i < inputs.length; i++) {
-                inputs_hashes.push(inputs[i].id);
-            }
-
-            var inputs_hashes_arr = inputs_hashes.sort(function (a, b) {
-                if (a.toLowerCase() < b.toLowerCase())
-                  return -1
-                if ( a.toLowerCase() > b.toLowerCase())
-                  return 1
-                return 0
-            });
-
-            var inputs_hashes_concat = inputs_hashes_arr.join('')
 
             var outputs_hashes = [];
             for(i=0; i < this.transaction.outputs.length; i++) {

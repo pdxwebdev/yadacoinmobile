@@ -22,6 +22,9 @@
         <ion-card-content>
           <strong>Name: </strong>{{smartContract.asset.identity.username}}
         </ion-card-content>
+        <ion-card-content>
+          <strong>Type: </strong>{{smartContract.proof_type}}
+        </ion-card-content>
         <ion-card-content *ngIf="smartContract.proof_type === 'auction'">
           <strong>Reserve: </strong>{{smartContract.price.toFixed(8)}} YDA
         </ion-card-content>
@@ -69,6 +72,9 @@
       <ion-card ion-item>
         <ion-card-content>
           <strong>Name: </strong>{{smartContract.target.username}}
+        </ion-card-content>
+        <ion-card-content>
+          <strong>Type: </strong>{{smartContract.proof_type}}
         </ion-card-content>
       </ion-card>
       <ng-container *ngIf="smartContract.referrer.active">
@@ -137,7 +143,6 @@
       <ion-list>
         <ion-item *ngFor="let txn of past_sent_transactions">
           <ion-label>{{convertDateTime(txn.time)}}</ion-label>
-          <ion-label>{{txn.from}}</ion-label>
           <ion-label>{{txn.to}}</ion-label>
           <ion-label>{{txn.value}}</ion-label>
         </ion-item>

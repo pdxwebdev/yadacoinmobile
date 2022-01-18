@@ -14,6 +14,17 @@
   <ion-row>
     <ion-col col-md-4>
       <h3>Promotion info</h3>
+      <h3>Proof type</h3>
+      <ion-list radio-group [(ngModel)]="proof_type">
+        <ion-item>
+          <ion-label>{{smartContractService.promoProofTypes.HONOR}}</ion-label>
+          <ion-radio [value]="smartContractService.promoProofTypes.HONOR" checked></ion-radio>
+        </ion-item>
+        <ion-item>
+          <ion-label>{{smartContractService.promoProofTypes.CONFIRMATION}}</ion-label>
+          <ion-radio [value]="smartContractService.promoProofTypes.CONFIRMATION"></ion-radio>
+        </ion-item>
+      </ion-list>
       <h3>Identity to promote</h3>
       <ion-list radio-group [(ngModel)]="promotedIdentity" (change)="promotedIdentityChanged()">
         <ion-item>

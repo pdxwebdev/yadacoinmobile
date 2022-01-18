@@ -577,14 +577,19 @@ export class ListPage {
         })
       }
       if (promo_code) {
+        let promo;
         return this.graphService.getPromotion(promo_code)
         .then((promotion: any) => {
-          return this.graphService.addFriend(
-            promotion.relationship[this.settingsService.collections.AFFILIATE].target,
+          promo = promotion.relationship[this.settingsService.collections.AFFILIATE].target
+          this.graphService.addFriend(
+            promo,
             null,
             promotion.rid,
             promotion.requested_rid
           )
+        })
+        .then(() => {
+          return this.graphService.addFriend(promo) // add friend to global context
         });
       } else {
         return this.getIdentity()
@@ -626,6 +631,9 @@ export class ListPage {
             null,
             promotion.requested_rid
           )
+          .then(() => {
+            return this.graphService.addGroup(group) // add group to global context
+          });
         });
       } else {
         return this.getIdentity()

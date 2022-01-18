@@ -63,7 +63,17 @@ export class CreatePromoPage {
       this.marketTxn = this.navParams.get('market');
       this.market = this.marketTxn.relationship[this.settingsService.collections.MARKET]
       this.proof_type = this.smartContractService.promoProofTypes.HONOR
+      this.pay_referrer = true;
+      this.pay_referrer_operator = this.smartContractService.payoutOperators.FIXED;
+      this.pay_referrer_payout_type = this.smartContractService.payoutType.ONE_TIME;
+      this.pay_referrer_amount = 1
+      this.pay_referee = true;
+      this.pay_referee_operator = this.smartContractService.payoutOperators.FIXED;
+      this.pay_referee_payout_type = this.smartContractService.payoutType.ONE_TIME;
+      this.pay_referee_amount = 1
       this.promotedIdentity = 'me';
+      this.fund_amount = 1
+      this.expiry = 1000
       this.graphService.getBlockHeight()
       .then((data) => {
         this.settingsService.latest_block = data;
