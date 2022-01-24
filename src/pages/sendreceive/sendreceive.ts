@@ -125,9 +125,6 @@ export class SendReceive {
     }
 
     submit() {
-        var value = parseFloat(this.value)
-        var total = value + 0.01;
-
         var alert = this.alertCtrl.create();
         if (!this.recipients[0].to) {
             alert.setTitle('Enter an address');
@@ -141,6 +138,11 @@ export class SendReceive {
             alert.present();
             return
         }
+        let total = 0;
+        this.recipients.map((output, i) => {
+            this.recipients[i].value = parseFloat(output.value)
+            total += parseFloat(output.value)
+        })
         alert.setTitle('Approve Transaction');
         alert.setSubTitle('You are about to spend ' + total + ' coins');
         alert.addButton('Cancel');
@@ -148,14 +150,9 @@ export class SendReceive {
             text: 'Confirm',
             handler: (data: any) => {
                 this.loadingModal.present();
-                let value_needed = 0;
-                this.recipients.map((output, i) => {
-                    this.recipients[i].value = parseFloat(output.value)
-                    value_needed += parseFloat(output.value)
-                })
-                this.walletService.get(value_needed)
+                this.walletService.get(total)
                 .then(() => {
-                    if (this.walletService.wallet.balance < value_needed) {
+                    if (this.walletService.wallet.balance < total) {
                         let title = 'Insufficient Funds'
                         let message = "Not enough YadaCoins for transaction.";
                         var alert = this.alertCtrl.create();
