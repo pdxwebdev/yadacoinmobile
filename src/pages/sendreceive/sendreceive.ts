@@ -142,7 +142,7 @@ export class SendReceive {
             return
         }
         alert.setTitle('Approve Transaction');
-        alert.setSubTitle('You are about to spend ' + total + ' coins (' + this.value + ' coin + 0.001 fee)');
+        alert.setSubTitle('You are about to spend ' + total + ' coins');
         alert.addButton('Cancel');
         alert.addButton({
             text: 'Confirm',
