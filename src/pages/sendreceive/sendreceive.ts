@@ -148,9 +148,13 @@ export class SendReceive {
             text: 'Confirm',
             handler: (data: any) => {
                 this.loadingModal.present();
-                this.walletService.get(this.value)
+                let value_needed = 0;
+                this.recipients.map((output) => {
+                    value_needed += output.value
+                })
+                this.walletService.get(value_needed)
                 .then(() => {
-                    if (this.walletService.wallet.balance < value) {
+                    if (this.walletService.wallet.balance < value_needed) {
                         let title = 'Insufficient Funds'
                         let message = "Not enough YadaCoins for transaction.";
                         var alert = this.alertCtrl.create();
