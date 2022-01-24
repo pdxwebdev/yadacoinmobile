@@ -150,7 +150,7 @@ export class SendReceive {
                 this.loadingModal.present();
                 let value_needed = 0;
                 this.recipients.map((output, i) => {
-                    this.recipients[i] = parseFloat(output.value)
+                    this.recipients[i].value = parseFloat(output.value)
                     value_needed += parseFloat(output.value)
                 })
                 this.walletService.get(value_needed)
