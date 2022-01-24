@@ -63,7 +63,7 @@ export class SendReceive {
         }
         this.recipients = [
           {
-            address: '',
+            to: '',
             value: 0
           }
         ];
@@ -149,7 +149,8 @@ export class SendReceive {
             handler: (data: any) => {
                 this.loadingModal.present();
                 let value_needed = 0;
-                this.recipients.map((output) => {
+                this.recipients.map((output, i) => {
+                    this.recipients[i] = parseFloat(output.value)
                     value_needed += parseFloat(output.value)
                 })
                 this.walletService.get(value_needed)
@@ -169,7 +170,7 @@ export class SendReceive {
                         throw('insufficient funds')
                     }
                     return this.transactionService.generateTransaction({
-                        outputs: this.recipients
+                        outputs: JSON.parse(JSON.stringify(this.recipients))
                     });
                 }).then((txn) => {
                     return this.transactionService.sendTransaction(txn);
