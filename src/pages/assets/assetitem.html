@@ -1,0 +1,23 @@
+<ion-header>
+  <ion-navbar>
+    <button ion-button menuToggle color="{{color}}">
+      <ion-icon name="menu"></ion-icon>
+    </button>
+  </ion-navbar>
+</ion-header>
+
+<ion-content padding>
+  <ion-refresher (ionRefresh)="refresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+  <h1>Asset</h1>
+  <ion-item>
+    {{asset.identity.username}}
+  </ion-item>
+  <ion-item>
+    <img [src]="asset.data">
+  </ion-item>
+  <ion-item>
+    {{market.relationship[settingsService.collections.MARKET].username}} <button ion-button secondary (click)="sell($event, market)">Sell asset in this market</button>
+  </ion-item>
+</ion-content>

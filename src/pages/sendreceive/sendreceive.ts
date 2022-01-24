@@ -40,6 +40,7 @@ export class SendReceive {
     past_received_page_cache: any;
     past_received_pending_page_cache: any;
     identity: any;
+    recipients: any;
     constructor(
         private navCtrl: NavController,
         private navParams: NavParams,
@@ -60,6 +61,12 @@ export class SendReceive {
           this.identity = this.navParams.get('identity')
           this.address = this.bulletinSecretService.publicKeyToAddress(this.identity.public_key)
         }
+        this.recipients = [
+          {
+            address: '',
+            value: 0
+          }
+        ];
         this.value = 0;
         this.createdCode = bulletinSecretService.key.getAddress();
         this.refresh();
@@ -106,18 +113,29 @@ export class SendReceive {
         window.document.querySelector('ion-app').classList.add('transparentBody');
     }
 
+    addRecipient() {
+      this.recipients.push({
+        address: '',
+        value: 0
+      })
+    }
+
+    removeRecipient(index) {
+      this.recipients.splice(index, 1)
+    }
+
     submit() {
         var value = parseFloat(this.value)
         var total = value + 0.01;
 
         var alert = this.alertCtrl.create();
-        if (!this.address) {
+        if (!this.recipients[0].to) {
             alert.setTitle('Enter an address');
             alert.addButton('Ok');
             alert.present();
             return
         }
-        if (!value) {
+        if (!this.recipients[0].value) {
             alert.setTitle('Enter an amount');
             alert.addButton('Ok');
             alert.present();
@@ -133,22 +151,21 @@ export class SendReceive {
                 this.walletService.get(this.value)
                 .then(() => {
                     if (this.walletService.wallet.balance < value) {
-                          let title = 'Insufficient Funds'
-                          let message = "Not enough YadaCoins for transaction.";
-                          var alert = this.alertCtrl.create();
-                          alert.setTitle(title);
-                          alert.setSubTitle(message);
-                          alert.addButton('Ok');
-                          alert.present();
-                          this.value = '0';
-                          this.address = '';
-                          this.refresh();
-                          this.loadingModal.dismiss().catch(() => {});
-                          throw('insufficient funds')
+                        let title = 'Insufficient Funds'
+                        let message = "Not enough YadaCoins for transaction.";
+                        var alert = this.alertCtrl.create();
+                        alert.setTitle(title);
+                        alert.setSubTitle(message);
+                        alert.addButton('Ok');
+                        alert.present();
+                        this.value = '0';
+                        this.address = '';
+                        this.refresh();
+                        this.loadingModal.dismiss().catch(() => {});
+                        throw('insufficient funds')
                     }
                     return this.transactionService.generateTransaction({
-                        to: this.address,
-                        value: value
+                        outputs: this.recipients
                     });
                 }).then((txn) => {
                     return this.transactionService.sendTransaction(txn);
@@ -192,7 +209,7 @@ export class SendReceive {
         .then(() => {
             this.getReceivedPendingHistory();
         }).catch((err) => {
-            console.log(err);  
+            console.log(err);
         });
     }
 
@@ -226,11 +243,11 @@ export class SendReceive {
         })
     }
 
-    getSentHistory() {
+    getSentHistory(public_key=null) {
         return new Promise((resolve, reject) => {
             this.sentLoading = true;
             let options = new RequestOptions({ withCredentials: true });
-            this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/get-past-sent-txns?page=' + this.sentPage + '&public_key=' + this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex') + '&origin=' + encodeURIComponent(window.location.origin), options)
+            this.ahttp.get(this.settingsService.remoteSettings['baseUrl'] + '/get-past-sent-txns?page=' + this.sentPage + '&public_key=' + (public_key || this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex')) + '&origin=' + encodeURIComponent(window.location.origin), options)
             .subscribe((res) => {
                 this.sentLoading = false;
                 this.past_sent_transactions = res.json()['past_transactions'].sort(this.sortFunc);

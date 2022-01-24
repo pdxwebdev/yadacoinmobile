@@ -52,6 +52,14 @@ import { MyPagesPage } from '../pages/web/mypages'
 import { BuildPagePage } from '../pages/web/buildpage';
 import { TooltipsModule } from 'ionic-tooltips';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { AssetsPage } from '../pages/assets/assets';
+import { AssetItemPage } from '../pages/assets/assetitem';
+import { CreateAssetPage } from '../pages/assets/createasset';
+import { SmartContractService } from './smartContract.service';
+import { MarketPage } from '../pages/markets/market';
+import { MarketItemPage } from '../pages/markets/marketitem';
+import { CreateSalePage } from '../pages/markets/createsale';
+import { CreatePromoPage } from '../pages/markets/createpromo';
 
 
 @NgModule({
@@ -73,7 +81,14 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
     SignatureRequestPage,
     WebPage,
     MyPagesPage,
-    BuildPagePage
+    BuildPagePage,
+    AssetsPage,
+    AssetItemPage,
+    MarketPage,
+    MarketItemPage,
+    CreateAssetPage,
+    CreateSalePage,
+    CreatePromoPage
   ],
   imports: [
     BrowserModule,
@@ -109,7 +124,14 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
     SignatureRequestPage,
     WebPage,
     MyPagesPage,
-    BuildPagePage
+    BuildPagePage,
+    AssetsPage,
+    AssetItemPage,
+    MarketPage,
+    MarketItemPage,
+    CreateAssetPage,
+    CreateSalePage,
+    CreatePromoPage
   ],
   providers: [
     StatusBar,
@@ -135,7 +157,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
     CompleteTestService,
     AutoCompleteComponent,
     Geolocation,
-    GoogleMaps
+    GoogleMaps,
+    SmartContractService
   ]
 })
 export class AppModule {}

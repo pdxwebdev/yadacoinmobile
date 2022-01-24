@@ -4,6 +4,7 @@ import { WalletService } from './wallet.service';
 import { SettingsService } from './settings.service';
 import { Http } from '@angular/http';
 import { encrypt, decrypt, PrivateKey } from 'eciesjs'
+import { SmartContractService } from './smartContract.service';
 
 declare var foobar;
 declare var forge;
@@ -34,11 +35,13 @@ export class TransactionService {
         private walletService: WalletService,
         private bulletinSecretService: BulletinSecretService,
         private ahttp: Http,
-        private settingsService: SettingsService
+        private settingsService: SettingsService,
+        private smartContractService: SmartContractService
     ) {}
 
     generateTransaction(info) {
         return new Promise((resolve, reject) => {
+            const version = 3;
             this.key = this.bulletinSecretService.key;
             this.username = this.bulletinSecretService.username;
             this.recipient_identity = info.recipient_identity;
@@ -52,14 +55,18 @@ export class TransactionService {
             this.value = parseFloat(this.info.value);
 
             this.transaction = {
+                version: 3,
                 rid:  this.info.rid,
                 fee: 0.00,
+                outputs: [],
                 requester_rid: typeof this.info.requester_rid == 'undefined' ? '' : this.info.requester_rid,
                 requested_rid: typeof this.info.requested_rid == 'undefined' ? '' : this.info.requested_rid,
-                outputs: [],
                 time: parseInt(((+ new Date()) / 1000).toString()).toString(),
                 public_key: this.key.getPublicKeyBuffer().toString('hex')
             };
+            if (this.info.outputs) {
+                this.transaction.outputs = this.info.outputs;
+            }
             if (this.info.dh_public_key && this.info.relationship.dh_private_key) {
                 this.transaction.dh_public_key = this.info.dh_public_key;
             }
@@ -69,53 +76,80 @@ export class TransactionService {
                     value: this.value || 0
                 })
             }
+            let transaction_total = 0
             if (this.transaction.outputs.length > 0) {
-                var transaction_total = this.transaction.outputs[0].value + this.transaction.fee;
+                for(let i=0; i < this.transaction.outputs.length; i++) {
+                  transaction_total += parseFloat(this.transaction.outputs[i].value)
+                }
+                transaction_total += parseFloat(this.transaction.fee);
             } else {
-                transaction_total = this.transaction.fee;
+                transaction_total = parseFloat(this.transaction.fee);
             }
+            let inputs_hashes_concat = '';
             if ((this.info.relationship && this.info.relationship.dh_private_key && this.walletService.wallet.balance < transaction_total) /* || this.walletService.wallet.unspent_transactions.length == 0*/) {
                 reject("not enough money");
                 return
             } else {
-                var inputs = [];
-                var input_sum = 0
-                let unspent_transactions: any;
-                if(this.unspent_transaction_override) {
-                    unspent_transactions = [this.unspent_transaction_override];
-                } else {
-                    this.info.relationship = this.info.relationship || {};
-                    unspent_transactions = this.walletService.wallet.unspent_transactions;
-                    unspent_transactions.sort(function (a, b) {
-                        if (a.height < b.height)
-                          return -1
-                        if ( a.height > b.height)
-                          return 1
-                        return 0
-                    });
-                }
-                let already_added = []
-                dance:
-                for (var i=0; i < unspent_transactions.length; i++) {
-                    var unspent_transaction = unspent_transactions[i];
-                    for (var j=0; j < unspent_transaction.outputs.length; j++) {
-                        var unspent_output = unspent_transaction.outputs[j];
-                        if (unspent_output.to === this.key.getAddress()) {
-                            if (already_added.indexOf(unspent_transaction.id) === -1){
-                                already_added.push(unspent_transaction.id);
-                                inputs.push({id: unspent_transaction.id});
-                                input_sum += parseFloat(unspent_output.value);
-                                console.log(parseFloat(unspent_output.value));
-                            }
-                            if (input_sum >= transaction_total) {
-                                this.transaction.outputs.push({
-                                    to: this.key.getAddress(),
-                                    value: (input_sum - transaction_total)
-                                })
-                                break dance;
+                if (transaction_total > 0) {
+                    var inputs = [];
+                    var input_sum = 0
+                    let unspent_transactions: any;
+                    if(this.unspent_transaction_override) {
+                        unspent_transactions = [this.unspent_transaction_override];
+                    } else {
+                        this.info.relationship = this.info.relationship || {};
+                        unspent_transactions = this.walletService.wallet.unspent_transactions;
+                        unspent_transactions.sort(function (a, b) {
+                            if (a.height < b.height)
+                            return -1
+                            if ( a.height > b.height)
+                            return 1
+                            return 0
+                        });
+                    }
+                    let already_added = []
+                    dance:
+                    for (var i=0; i < unspent_transactions.length; i++) {
+                        var unspent_transaction = unspent_transactions[i];
+                        for (var j=0; j < unspent_transaction.outputs.length; j++) {
+                            var unspent_output = unspent_transaction.outputs[j];
+                            if (unspent_output.to === this.key.getAddress()) {
+                                if (already_added.indexOf(unspent_transaction.id) === -1){
+                                    already_added.push(unspent_transaction.id);
+                                    inputs.push({id: unspent_transaction.id});
+                                    input_sum += parseFloat(unspent_output.value);
+                                    console.log(parseFloat(unspent_output.value));
+                                }
+                                if (input_sum >= transaction_total) {
+                                    this.transaction.outputs.push({
+                                        to: this.key.getAddress(),
+                                        value: (input_sum - transaction_total)
+                                    })
+                                    break dance;
+                                }
                             }
                         }
                     }
+
+                    if (input_sum < transaction_total) {
+                        return reject('Insufficient funds');
+                    }
+                    this.transaction.inputs = inputs;
+
+                    var inputs_hashes = [];
+                    for(i=0; i < inputs.length; i++) {
+                        inputs_hashes.push(inputs[i].id);
+                    }
+
+                    var inputs_hashes_arr = inputs_hashes.sort(function (a, b) {
+                        if (a.toLowerCase() < b.toLowerCase())
+                          return -1
+                        if ( a.toLowerCase() > b.toLowerCase())
+                          return 1
+                        return 0
+                    });
+
+                    inputs_hashes_concat = inputs_hashes_arr.join('')
                 }
             }
             var myAddress = this.key.getAddress();
@@ -131,26 +165,6 @@ export class TransactionService {
                     value: 0
                 })
             }
-
-            if (input_sum < transaction_total) {
-                return reject('Insufficient funds');
-            }
-            this.transaction.inputs = inputs;
-
-            var inputs_hashes = [];
-            for(i=0; i < inputs.length; i++) {
-                inputs_hashes.push(inputs[i].id);
-            }
-
-            var inputs_hashes_arr = inputs_hashes.sort(function (a, b) {
-                if (a.toLowerCase() < b.toLowerCase())
-                  return -1
-                if ( a.toLowerCase() > b.toLowerCase())
-                  return 1
-                return 0
-            });
-
-            var inputs_hashes_concat = inputs_hashes_arr.join('')
 
             var outputs_hashes = [];
             for(i=0; i < this.transaction.outputs.length; i++) {
@@ -182,8 +196,43 @@ export class TransactionService {
                     this.transaction.requester_rid +
                     this.transaction.requested_rid +
                     inputs_hashes_concat +
-                    outputs_hashes_concat
+                    outputs_hashes_concat +
+                    version
                 ).toString('hex')
+            } else if (this.info.relationship[this.settingsService.collections.SMART_CONTRACT]) {
+              //creating smart contract instance
+              this.transaction.relationship = this.info.relationship;
+
+              let smart_contract = this.info.relationship[this.settingsService.collections.SMART_CONTRACT];
+              if(smart_contract.asset) {
+                smart_contract.asset = this.shared_encrypt(
+                  this.info.shared_secret,
+                  JSON.stringify(smart_contract.asset)
+                )
+              }
+
+              if(smart_contract.target) {
+                smart_contract.target = this.shared_encrypt(
+                  this.info.shared_secret,
+                  JSON.stringify(smart_contract.target)
+                )
+              }
+              this.transaction.relationship[this.settingsService.collections.SMART_CONTRACT].creator = this.shared_encrypt(
+                this.info.shared_secret,
+                JSON.stringify(this.transaction.relationship[this.settingsService.collections.SMART_CONTRACT].creator)
+              )
+              var hash = foobar.bitcoin.crypto.sha256(
+                  this.transaction.public_key +
+                  this.transaction.time +
+                  this.transaction.rid +
+                  this.smartContractService.toString(this.info.relationship[this.settingsService.collections.SMART_CONTRACT]) +
+                  this.transaction.fee.toFixed(8) +
+                  this.transaction.requester_rid +
+                  this.transaction.requested_rid +
+                  inputs_hashes_concat +
+                  outputs_hashes_concat +
+                  version
+              ).toString('hex')
             } else if (
               this.info.relationship[this.settingsService.collections.CALENDAR] ||
               this.info.relationship[this.settingsService.collections.CHAT] ||
@@ -204,7 +253,8 @@ export class TransactionService {
                     this.transaction.requester_rid +
                     this.transaction.requested_rid +
                     inputs_hashes_concat +
-                    outputs_hashes_concat
+                    outputs_hashes_concat +
+                    version
                 ).toString('hex')
             } else if (this.info.relationship[this.settingsService.collections.WEB_PAGE_REQUEST ]) {
                 // sign in
@@ -219,7 +269,8 @@ export class TransactionService {
                     this.transaction.requester_rid +
                     this.transaction.requested_rid +
                     inputs_hashes_concat +
-                    outputs_hashes_concat
+                    outputs_hashes_concat +
+                    version
                 ).toString('hex')
             } else if (this.info.relationship.wif) {
                 // recovery
@@ -234,7 +285,8 @@ export class TransactionService {
                     this.transaction.requester_rid +
                     this.transaction.requested_rid +
                     inputs_hashes_concat +
-                    outputs_hashes_concat
+                    outputs_hashes_concat +
+                    version
                 ).toString('hex')
             } else if (
               this.info.relationship[this.settingsService.collections.GROUP]
@@ -255,9 +307,30 @@ export class TransactionService {
                     this.transaction.requester_rid +
                     this.transaction.requested_rid +
                     inputs_hashes_concat +
-                    outputs_hashes_concat
+                    outputs_hashes_concat +
+                    version
                 ).toString('hex')
             } else if (
+              this.info.relationship[this.settingsService.collections.MARKET]
+            ) {
+              // join or create market
+              this.transaction.relationship = this.encrypt();
+
+              hash = foobar.bitcoin.crypto.sha256(
+                  this.transaction.public_key +
+                  this.transaction.time +
+                  this.transaction.rid +
+                  this.transaction.relationship +
+                  this.transaction.fee.toFixed(8) +
+                  this.transaction.requester_rid +
+                  this.transaction.requested_rid +
+                  inputs_hashes_concat +
+                  outputs_hashes_concat +
+                  version
+              ).toString('hex')
+            } else if (
+              this.info.relationship[this.settingsService.collections.AFFILIATE] ||
+              this.info.relationship[this.settingsService.collections.BID] ||
               this.info.relationship[this.settingsService.collections.WEB_CHALLENGE_REQUEST] ||
               this.info.relationship[this.settingsService.collections.WEB_CHALLENGE_RESPONSE] ||
               this.info.relationship[this.settingsService.collections.WEB_PAGE_REQUEST] ||
@@ -276,9 +349,13 @@ export class TransactionService {
                     this.transaction.requester_rid +
                     this.transaction.requested_rid +
                     inputs_hashes_concat +
-                    outputs_hashes_concat
+                    outputs_hashes_concat +
+                    version
                 ).toString('hex')
-            } else if (this.info.relationship[this.settingsService.collections.WEB_PAGE]) {
+            } else if (
+              this.info.relationship[this.settingsService.collections.WEB_PAGE] ||
+              this.info.relationship[this.settingsService.collections.ASSET]
+            ) {
                 // mypage
                 this.transaction.relationship = this.encrypt();
 
@@ -291,7 +368,8 @@ export class TransactionService {
                     this.transaction.requester_rid +
                     this.transaction.requested_rid +
                     inputs_hashes_concat +
-                    outputs_hashes_concat
+                    outputs_hashes_concat +
+                    version
                 ).toString('hex')
             } else {
                 //straight transaction
@@ -301,8 +379,11 @@ export class TransactionService {
                     (this.transaction.rid || '') +
                     (this.transaction.relationship || '') +
                     this.transaction.fee.toFixed(8) +
+                    (this.transaction.requester_rid || '') +
+                    (this.transaction.requested_rid || '') +
                     inputs_hashes_concat +
-                    outputs_hashes_concat
+                    outputs_hashes_concat +
+                    version
                 ).toString('hex');
             }
 

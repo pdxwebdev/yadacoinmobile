@@ -26,6 +26,8 @@ export class GraphService {
       groups: [],
       files: [],
       mail: [],
+      markets: [],
+      smart_contracts: [],
       mypages: []
     };
     // online = {};
@@ -105,6 +107,8 @@ export class GraphService {
         groups: [],
         files: [],
         mail: [],
+        markets: [],
+        smart_contracts: [],
         mypages: []
       };
       this.groups_indexed = {}
@@ -123,9 +127,37 @@ export class GraphService {
       .then((results) => {
         return this.getGroups(null, 'file');
       })
+      .then((results) => {
+        return this.getGroups(null, this.settingsService.collections.MARKET);
+      })
+      .then((results) => {
+        const promises = this.graph.markets.map((market) => {
+          return this.getGroups(
+            this.generateRid(
+              market.relationship[this.settingsService.collections.MARKET].username_signature,
+              market.relationship[this.settingsService.collections.MARKET].username_signature,
+              this.settingsService.collections.SMART_CONTRACT
+            ),
+            this.settingsService.collections.SMART_CONTRACT
+          );
+        })
+        return Promise.all(promises)
+      })
       .then(() => {
         return this.getFriendRequests()
       })
+      // .then(() => {
+      //   const promises = this.graph.smart_contracts.map((smart_contract) => {
+      //     return this.getFriendRequests(
+      //       this.generateRid(
+      //         smart_contract.relationship[this.settingsService.collections.SMART_CONTRACT].identity.username_signature,
+      //         smart_contract.relationship[this.settingsService.collections.SMART_CONTRACT].identity.username_signature,
+      //         this.settingsService.collections.SMART_CONTRACT
+      //       )
+      //     )
+      //   });
+      //   return Promise.all(promises)
+      // })
       .then(() => {
         return this.getSharedSecrets()
       });
@@ -216,6 +248,17 @@ export class GraphService {
         })
     }
 
+    getBlockHeight(): any {
+      return new Promise((resolve, reject) => {
+        this.endpointRequest(
+          'get-height',
+        )
+        .then((data: any) => {
+            return resolve(data);
+        })
+      })
+    }
+
     addNotification(item, collection) {
       if (!this.notifications[collection]) this.notifications[collection] = [];
       if (Array.isArray(item)) {
@@ -238,13 +281,16 @@ export class GraphService {
 
     getSentFriendRequests() {
         return new Promise((resolve, reject) => {
+
+            const rids = [this.generateRid(
+              this.bulletinSecretService.identity.username_signature,
+              this.bulletinSecretService.identity.username_signature
+            )];
+
             this.endpointRequest(
               'get-graph-sent-friend-requests',
               null,
-              [this.generateRid(
-                this.bulletinSecretService.identity.username_signature,
-                this.bulletinSecretService.identity.username_signature
-              )]
+              rids
             )
             .then((data: any) => {
                 this.graph.sent_friend_requests = this.parseSentFriendRequests(data.sent_friend_requests);
@@ -257,16 +303,18 @@ export class GraphService {
         });
     }
 
-    getFriendRequests() {
+    getFriendRequests(rid=null) {
         return new Promise((resolve, reject) => {
+            const rids = [rid || this.generateRid(
+              this.bulletinSecretService.identity.username_signature,
+              this.bulletinSecretService.identity.username_signature,
+              this.settingsService.collections.CONTACT
+            )];
+
             this.endpointRequest(
               'get-graph-collection',
               null,
-              [this.generateRid(
-                this.bulletinSecretService.identity.username_signature,
-                this.bulletinSecretService.identity.username_signature,
-                this.settingsService.collections.CONTACT
-              )]
+              rids
             )
             .then((data: any) => {
                 this.parseFriendRequests(data.collection);
@@ -314,7 +362,7 @@ export class GraphService {
         }
         return this.endpointRequest('get-graph-collection', null, rid)
         .then((data: any) => {
-            return this.parseGroups(data.collection, root, collectionName + 's');
+            return this.parseGroups(data.collection, root, collectionName);
         }).then((groups):any => {
             this.getGroupsRequestsError = false;
             return groups;
@@ -357,6 +405,44 @@ export class GraphService {
               this.getMailError = true;
               reject(err);
           });
+      });
+    }
+
+    getAssets(rids) {
+      const collection = this.settingsService.collections.ASSET;
+      return this.endpointRequest('get-graph-collection', null, rids)
+      .then((data: any) => {
+          return this.parseAssets(data.collection)
+      })
+    }
+
+    getSmartContracts(market, rid = null, collectionName = this.settingsService.collections.SMART_CONTRACT): Promise<null | void> {
+        const root = !rid;
+        rid = rid || this.generateRid(
+            market.username_signature,
+            market.username_signature,
+            collectionName
+        );
+        return this.endpointRequest('get-graph-collection', null, rid)
+        .then((data: any) => {
+            return this.parseSmartContracts(data.collection, market);
+        }).then((groups):any => {
+            this.getGroupsRequestsError = false;
+            return groups;
+        });
+    }
+
+    getBids(requested_rid, market) {
+      return this.endpointRequest('get-graph-collection', null, requested_rid)
+      .then((data: any) => {
+        return this.parseBids(data.collection, market);
+      });
+    }
+
+    getAffiliates(requested_rid, market) {
+      return this.endpointRequest('get-graph-collection', null, requested_rid)
+      .then((data: any) => {
+        return this.parseAffiliates(data.collection, market);
       });
     }
 
@@ -856,7 +942,7 @@ export class GraphService {
         });
     }
 
-    parseGroups(groups, root=true, collectionName = 'group') {
+    parseGroups(groups, root=true, collection = 'group') {
         // we must call getSentFriendRequests and getFriendRequests before getting here
         // because we need this.keys to be populated with the dh_public_keys and dh_private_keys from the requests
         // though friends really should be cached
@@ -882,10 +968,12 @@ export class GraphService {
                         decrypted = this.decrypt(group.relationship);
                     }
                     var relationship;
-                    if (!bypassDecrypt) {
+                    if (bypassDecrypt) {
+                        relationship = group.relationship[collection]
+                    } else {
                         relationship = JSON.parse(decrypted);
-                        if (!relationship[this.settingsService.collections.GROUP]) continue;
-                        if (relationship[this.settingsService.collections.GROUP].collection !== this.settingsService.collections.GROUP) continue;
+                        if (!relationship[collection]) continue;
+                        if (relationship[collection].collection !== collection) continue;
                         group['relationship'] = relationship;
                     }
                 } catch(err) {
@@ -896,7 +984,7 @@ export class GraphService {
                     try {
                         let parentGroup = this.getIdentityFromTxn(
                           this.groups_indexed[group.requester_rid],
-                          this.settingsService.collections.GROUP
+                          collection
                         )
                         if (parentGroup.public_key !== group.public_key) continue;
                         if (typeof group.relationship == 'object') {
@@ -908,11 +996,13 @@ export class GraphService {
                             );
                         }
                         var relationship;
-                        if (!bypassDecrypt) {
+                        if (bypassDecrypt) {
+                            relationship = group.relationship[collection]
+                        } else {
                             relationship = JSON.parse(decrypted);
-                            if (!relationship[this.settingsService.collections.GROUP]) continue;
-                            if (!relationship[this.settingsService.collections.GROUP].parent) continue
-                            if (relationship[this.settingsService.collections.GROUP].collection !== this.settingsService.collections.GROUP) continue;
+                            if (!relationship[collection]) continue;
+                            if (!relationship[collection].parent) continue
+                            if (relationship[collection].collection !== collection) continue;
                             group['relationship'] = relationship;
                         }
                     } catch(err) {
@@ -924,34 +1014,42 @@ export class GraphService {
                 }
 
                 if(!this.groups_indexed[group.requested_rid]) {
-                    this.graph[collectionName].push(group);
+                    this.graph[collection + 's'].push(group);
                 }
 
                 this.groups_indexed[group.requested_rid] = group;
-                let group_username_signature = relationship[this.settingsService.collections.GROUP].username_signature
-                this.groups_indexed[this.generateRid(
-                    group_username_signature,
-                    group_username_signature,
-                    this.settingsService.collections.GROUP_CHAT
-                )] = group;
+                let group_username_signature
+                if (group.relationship[this.settingsService.collections.SMART_CONTRACT]) {
+                  group_username_signature = group.relationship[collection].identity.username_signature
+                } else {
+                  group_username_signature = group.relationship[collection].username_signature
+                }
 
-                this.groups_indexed[this.generateRid(
-                    group_username_signature,
-                    group_username_signature,
-                    this.settingsService.collections.GROUP_MAIL
-                )] = group;
+                if (collection === this.settingsService.collections.GROUP) {
+                  this.groups_indexed[this.generateRid(
+                      group_username_signature,
+                      group_username_signature,
+                      this.settingsService.collections.GROUP_CHAT
+                  )] = group;
 
-                this.groups_indexed[this.generateRid(
-                    group_username_signature,
-                    group_username_signature,
-                    this.settingsService.collections.CALENDAR
-                )] = group;
+                  this.groups_indexed[this.generateRid(
+                      group_username_signature,
+                      group_username_signature,
+                      this.settingsService.collections.GROUP_MAIL
+                  )] = group;
 
-                this.groups_indexed[this.generateRid(
-                    group_username_signature,
-                    group_username_signature,
-                    this.settingsService.collections.GROUP_CALENDAR
-                )] = group;
+                  this.groups_indexed[this.generateRid(
+                      group_username_signature,
+                      group_username_signature,
+                      this.settingsService.collections.CALENDAR
+                  )] = group;
+
+                  this.groups_indexed[this.generateRid(
+                      group_username_signature,
+                      group_username_signature,
+                      this.settingsService.collections.GROUP_CALENDAR
+                  )] = group;
+                }
 
                 this.groups_indexed[this.generateRid(
                     group_username_signature,
@@ -960,21 +1058,20 @@ export class GraphService {
                 )] = group;
 
                 try {
-                    if (!relationship.parent) {
+                    if (!relationship.parent && !relationship[this.settingsService.collections.SMART_CONTRACT]) {
                         promises.push(this.getGroups(
                             this.generateRid(
                                 group_username_signature,
                                 group_username_signature,
                                 group_username_signature,
                             ),
-                            'group',
+                            collection,
                             true
                         ))
                     }
                 } catch(err) {
                     console.log(err);
                 }
-
             }
 
             var arr_friends = Object.keys(this.groups_indexed);
@@ -984,7 +1081,7 @@ export class GraphService {
               let used_username_signatures = [];
                 let arr_friends_keys = Array.from(friends_diff.keys())
                 for(i=0; i<arr_friends_keys.length; i++) {
-                    if(used_username_signatures.indexOf(this.groups_indexed[arr_friends_keys[i]].relationship[this.settingsService.collections.GROUP].username_signature) > -1) {
+                    if(!this.groups_indexed[arr_friends_keys[i]].relationship[this.settingsService.collections.GROUP] || used_username_signatures.indexOf(this.groups_indexed[arr_friends_keys[i]].relationship[this.settingsService.collections.GROUP].username_signature) > -1) {
                       continue;
                     } else {
                       groups.push(this.groups_indexed[arr_friends_keys[i]]);
@@ -1113,6 +1210,7 @@ export class GraphService {
                       try {
                           message.relationship[messageType] = JSON.parse(Base64.decode(messageJson[messageType]));
                           message.relationship.isInvite = true;
+                          if (typeof message.relationship[messageType] !== 'string') continue dance;
                       }
                       catch(err) {
                           //not an invite, do nothing
@@ -1292,6 +1390,102 @@ export class GraphService {
             }
         }
         return mypagesOut
+    }
+
+    parseAssets(assets) {
+        let assetsOut = []
+        for(var i=0; i<assets.length; i++) {
+            //hopefully we've prepared the stored_secrets option before getting here
+            //by calling getSentFriendRequests and getFriendRequests
+            const asset = assets[i];
+            let decrypted;
+
+            try {
+                decrypted = this.decrypt(asset.relationship);
+            }
+            catch(error) {
+                continue
+            }
+            try {
+                var messageJson = JSON.parse(decrypted);
+            } catch(err) {
+                continue;
+            }
+            if(messageJson[this.settingsService.collections.ASSET]) {
+                asset.relationship = messageJson;
+                assetsOut.push(asset)
+            }
+        }
+        return assetsOut
+    }
+
+    parseSmartContracts(smartContracts, market) {
+      let smartContractsOut = []
+      for(var i=0; i<smartContracts.length; i++) {
+        try {
+          let smartContractTxn = smartContracts[i];
+          let smartContract = smartContractTxn.relationship[this.settingsService.collections.SMART_CONTRACT];
+          if (!smartContract) continue;
+          if (smartContract.asset) {
+            let asset = this.shared_decrypt(market.username_signature, smartContract.asset)
+            smartContract.asset = JSON.parse(asset)
+          }
+
+          if (smartContract.target) {
+            let target = this.shared_decrypt(market.username_signature, smartContract.target)
+            smartContract.target = JSON.parse(target)
+          }
+          let creator = this.shared_decrypt(market.username_signature, smartContract.creator)
+          smartContract.creator = JSON.parse(creator)
+          smartContractTxn.relationship[this.settingsService.collections.SMART_CONTRACT] = smartContract
+          smartContractsOut.push(smartContractTxn);
+        } catch(err) {
+          console.log(err);
+        }
+      }
+      return smartContractsOut;
+    }
+
+    parsePromotion(promotionTxn, market) {
+        try {
+
+          let target = this.shared_decrypt(market.username_signature, promotionTxn.relationship)
+          promotionTxn.relationship = JSON.parse(target)
+
+        } catch(err) {
+          console.log(err);
+        }
+        return promotionTxn
+    }
+
+    parseBids(bids, market) {
+      let bidsOut = []
+      for(var i=0; i<bids.length; i++) {
+        try {
+          let bid = bids[i];
+          bid.relationship = this.shared_decrypt(market.username_signature, bid.relationship)
+          bid.relationship = JSON.parse(bid.relationship)
+          bidsOut.push(bid);
+        } catch(err) {
+          console.log(err);
+        }
+      }
+      return bidsOut;
+    }
+
+    parseAffiliates(affiliates, market) {
+      let affiliatesOut = []
+      for(var i=0; i<affiliates.length; i++) {
+        try {
+          let affiliate = affiliates[i];
+          affiliate.relationship = this.shared_decrypt(market.username_signature, affiliate.relationship)
+          affiliate.relationship = JSON.parse(affiliate.relationship)
+          affiliatesOut.push(affiliate);
+        } catch(err) {
+          console.log(err);
+        }
+      }
+      return affiliatesOut;
     }
 
     getSharedSecrets() {
@@ -1487,7 +1681,7 @@ export class GraphService {
 
     addFriendFromSkylink(skylink) {
       return this.identityFromSkylink(skylink)
-      .then((identity: any) => {
+      .then((identity) => {
         return this.addFriend(identity);
       })
     }
@@ -1540,7 +1734,7 @@ export class GraphService {
 
     addGroupFromSkylink(skylink) {
       return this.identityFromSkylink(skylink)
-      .then((identity: any) => {
+      .then((identity) => {
         return this.addGroup(identity);
       })
     }
@@ -1573,7 +1767,7 @@ export class GraphService {
         });
       }
       let info = {};
-      info[this.settingsService.collections.GROUP] = identity;
+      info[identity.collection] = identity;
       return this.transactionService.generateTransaction({
         rid: rid,
         relationship: info,
@@ -1592,15 +1786,39 @@ export class GraphService {
       });
     }
 
+    getPromotion(promo_code) {
+      let promotion;
+      return this.endpointRequest('get-graph-collection', null, [promo_code]) //get promotion
+      .then((data: any) => {
+        if(!data.collection[0]) throw Error('promotion does not exist')
+        promotion = data.collection[0];
+        return this.endpointRequest('get-graph-collection', null, [data.collection[0].requested_rid]) // get smart contract
+      })
+      .then((data: any) => {
+        if(!data.collection[0]) throw Error('smart contract does not exist')
+        let smart_contracts = data.collection.filter((item) => {
+          return !!item.relationship[this.settingsService.collections.SMART_CONTRACT]
+        })
+        if(!smart_contracts[0]) throw Error('smart contract does not exist')
+        const market_rid = smart_contracts[0].relationship[this.settingsService.collections.SMART_CONTRACT].market
+        const market = this.groups_indexed[market_rid].relationship[this.settingsService.collections.MARKET]
+        return this.parsePromotion(promotion, market)
+      })
+      .then((promotion: any) => {
+        return promotion;
+      })
+    }
+
     publicDecrypt(message) {
       const decrypted = decrypt(this.bulletinSecretService.key.d.toHex(), Buffer.from(this.hexToByteArray(message))).toString();
       return decrypted
     }
 
-    generateRids(identity) {
+    generateRids(identity, identity2=null, collection=null) {
+      identity2 = identity2 || this.bulletinSecretService.identity
       const rid = this.generateRid(
         identity.username_signature,
-        this.bulletinSecretService.identity.username_signature
+        identity2.username_signature
       )
 
       const requested_rid = this.generateRid(
@@ -1610,15 +1828,15 @@ export class GraphService {
       )
 
       const requester_rid = this.generateRid(
-        this.bulletinSecretService.identity.username_signature,
-        this.bulletinSecretService.identity.username_signature,
-        identity.collection
+        identity2.username_signature,
+        identity2.username_signature,
+        collection || identity2.collection
       )
 
       return {
-        rid: rid,
-        requested_rid: requested_rid,
-        requester_rid: requester_rid
+        rid,
+        requested_rid,
+        requester_rid
       }
     }
 

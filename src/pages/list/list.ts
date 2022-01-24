@@ -17,6 +17,7 @@ import { MailPage } from '../mail/mail';
 import { MailItemPage } from '../mail/mailitem';
 import { WebSocketService } from '../../app/websocket.service';
 import { CalendarPage } from '../calendar/calendar';
+import { MarketPage } from '../markets/market';
 
 declare var X25519;
 declare var foobar;
@@ -171,6 +172,35 @@ export class ListPage {
           this.graphService.sortTxnsByUsername(graphArray, false, this.settingsService.collections.GROUP);
           this.makeList(graphArray, 'Groups', null);
           this.loading = false;
+        } else if (this.pageTitle == 'Markets') {
+          this.loading = false;
+          this.graphService.sortTxnsByUsername(this.graphService.graph.markets)
+          let marketList = this.graphService.graph.markets.filter((item) => {
+            let parentIdentity = this.graphService.getParentIdentityFromTxn(item, this.settingsService.collections.MARKET)
+            if(parentIdentity) {
+              this.subitems[parentIdentity.username_signature] = this.subitems[parentIdentity.username_signature] || [];
+              let identity = this.graphService.getIdentityFromTxn(item, this.settingsService.collections.MARKET)
+              this.subitems[parentIdentity.username_signature].push({
+                title: 'Markets',
+                label: identity.username,
+                component: MarketPage,
+                count: false,
+                color: '',
+                kwargs: {
+                  item: item,
+                  identity: identity,
+                  subitems: this.subitems
+                },
+                root: true
+              })
+            }
+            return !parentIdentity
+          })
+          return this.makeList(marketList, '', {title: 'Markets', component: MarketPage})
+          .then((pages) => {
+            this.events.publish('menu', pages);
+            this.loading = false;
+          });
         } else if (this.pageTitle == 'Messages') {
           public_key = this.bulletinSecretService.key.getPublicKeyBuffer().toString('hex');
           return this.graphService.getNewMessages()
@@ -338,7 +368,7 @@ export class ListPage {
           resolve();
         }
         else if (this.pageTitle == 'Contact Requests') {
-          this.friend_request = this.navParams.get('item').identity;
+          this.friend_request = this.navParams.get('item').item;
           resolve();
         }
         else if (this.pageTitle == 'Sign Ins') {
@@ -467,21 +497,15 @@ export class ListPage {
 
   itemTapped(event, item) {
     if(this.pageTitle == 'Messages') {
-      this.navCtrl.push(ChatPage, {
-        ...item
-      });
+      this.navCtrl.push(ChatPage, item);
     } else if(this.pageTitle == 'Community') {
-      this.navCtrl.push(ChatPage, {
-        ...item
-      });
+      this.navCtrl.push(ChatPage, item);
+    } else if(this.pageTitle == 'Markets') {
+      this.navCtrl.push(MarketPage, item);
     } else if(this.pageTitle == 'Groups') {
-      this.navCtrl.push(ProfilePage, {
-        ...item
-      });
+      this.navCtrl.push(ProfilePage, item);
     } else if(this.pageTitle == 'Contacts') {
-      this.navCtrl.push(ProfilePage, {
-        ...item
-      });
+      this.navCtrl.push(ProfilePage, item);
     } else if(this.pageTitle == 'Notifications') {
       if (item.relationship[this.settingsService.collections.SIGNATURE_REQUEST]) {
         this.navCtrl.push(SignatureRequestPage, item);
@@ -490,19 +514,19 @@ export class ListPage {
       }
     } else {
       this.navCtrl.push(ListPage, {
-        item: item
+        item
       });
     }
   }
 
   accept() {
-    const rids = this.graphService.generateRids(this.friend_request);
     this.loading = true;
+    const rids = this.graphService.generateRids(this.friend_request.relationship[this.settingsService.collections.CONTACT]);
     return this.graphService.addFriend(
-      this.friend_request,
+      this.friend_request.relationship[this.settingsService.collections.CONTACT],
       rids.rid,
-      rids.requester_rid,
-      rids.requested_rid
+      rids.requested_rid,
+      this.friend_request.requested_rid
     ).then((txn) => {
       return this.graphService.refreshFriendsAndGroups();
     })
@@ -519,77 +543,149 @@ export class ListPage {
     });
   }
 
-  addFriend() {
+  getIdentity() {
+    return new Promise((resolve, reject) => {
       var buttons = [];
       buttons.push({
-          text: 'Add',
-          handler: (data) => {
-            let promise;
-            if (this.settingsService.remoteSettings.restricted) {
-              promise = this.graphService.addFriendFromSkylink(data.identity)
-            } else {
-              promise = this.graphService.addFriend(JSON.parse(data.identity))
-            }
-            promise
-            .then(() => {
-              let alert = this.alertCtrl.create();
-              alert.setTitle('Contact added');
-              alert.setSubTitle('Your contact was added successfully');
-              alert.addButton('Ok');
-              alert.present();
-              return this.choosePage()
-            });
-          }
+        text: 'Add',
+        handler: (data) => {
+          resolve(data.identity);
+        }
       });
       let alert = this.alertCtrl.create({
-          inputs: [
-              {
-                  name: 'identity',
-                  placeholder: 'Paste identity here...'
-              }
-          ],
-          buttons: buttons
+        inputs: [
+            {
+                name: 'identity',
+                placeholder: 'Paste identity here...'
+            }
+        ],
+        buttons: buttons
       });
       alert.setTitle('Request contact');
       alert.setSubTitle('Paste the identity of your contact below');
       alert.present();
+    })
+  }
+
+  addFriend() {
+    return this.getPromo()
+    .then((promo_code) => {
+      if (this.settingsService.remoteSettings.restricted) {
+        return this.getIdentity()
+        .then((data: any) => {
+          return this.graphService.addFriendFromSkylink(data.identity)
+        })
+      }
+      if (promo_code) {
+        let promo;
+        return this.graphService.getPromotion(promo_code)
+        .then((promotion: any) => {
+          promo = promotion.relationship[this.settingsService.collections.AFFILIATE].target
+          this.graphService.addFriend(
+            promo,
+            null,
+            promotion.rid,
+            promotion.requested_rid
+          )
+        })
+        .then(() => {
+          return this.graphService.addFriend(promo) // add friend to global context
+        });
+      } else {
+        return this.getIdentity()
+        .then((identity: any) => {
+          return this.graphService.addFriend(
+            JSON.parse(identity)
+          )
+        })
+      }
+    })
+    .then(() => {
+      let alert = this.alertCtrl.create();
+      alert.setTitle('Contact added');
+      alert.setSubTitle('Your contact was added successfully');
+      alert.addButton('Ok');
+      alert.present();
+      return this.choosePage()
+    });
   }
 
   addGroup() {
-      var buttons = [];
-      buttons.push({
-          text: 'Add',
-          handler: (data) => {
-            let promise;
-            if (this.settingsService.remoteSettings.restricted) {
-              promise = this.graphService.addGroupFromSkylink(data.identity)
-            } else {
-              promise = this.graphService.addGroup(JSON.parse(data.identity))
-            }
-            promise
-            .then((identity) => {
-              this.websocketService.joinGroup(identity);
-              let alert = this.alertCtrl.create();
-              alert.setTitle('Group added');
-              alert.setSubTitle('Your group was added successfully');
-              alert.addButton('Ok');
-              alert.present();
-              return this.choosePage()
-            });
-          }
-      });
-      let alert = this.alertCtrl.create({
-          inputs: [
-              {
-                  name: 'identity',
-                  placeholder: 'Paste identity here...'
-              }
-          ],
-          buttons: buttons
-      });
-      alert.setTitle('Add group');
-      alert.setSubTitle('Paste the identity of your contact below');
+    let group;
+    return this.getPromo()
+    .then((promo_code) => {
+      if (this.settingsService.remoteSettings.restricted) {
+        return this.getIdentity()
+        .then((data: any) => {
+          return this.graphService.addGroupFromSkylink(data.identity)
+        })
+      }
+      if (promo_code) {
+        return this.graphService.getPromotion(promo_code)
+        .then((promotion: any) => {
+          group = promotion.relationship[this.settingsService.collections.AFFILIATE].target;
+          group.parent = this.graphService.toIdentity(promotion.relationship[this.settingsService.collections.AFFILIATE].contract)
+          return this.graphService.addGroup(
+            group,
+            promotion.rid,
+            null,
+            promotion.requested_rid
+          )
+          .then(() => {
+            return this.graphService.addGroup(group) // add group to global context
+          });
+        });
+      } else {
+        return this.getIdentity()
+        .then((identity: any) => {
+          group = identity
+          return this.graphService.addGroup(
+            JSON.parse(identity)
+          )
+        })
+      }
+    })
+    .then(() => {
+      this.websocketService.joinGroup(group);
+      let alert = this.alertCtrl.create();
+      alert.setTitle('Group added');
+      alert.setSubTitle('Your group was added successfully');
+      alert.addButton('Ok');
       alert.present();
+      return this.choosePage()
+    });
+  }
+
+  getPromo() {
+    return new Promise((resolve, reject) => {
+      let alert = this.alertCtrl.create({
+        title: 'Do you have a promotion code?',
+        subTitle: 'If so, enter it now, otherwise, leave blank.',
+        inputs: [
+          {
+            name: 'promo',
+            placeholder: 'Promo code'
+          }
+        ],
+        buttons: [
+          {
+            text: 'Cancel',
+            role: 'cancel',
+            handler: data => {
+              console.log('Cancel clicked');
+              reject('Cancel clicked');
+            }
+          },
+          {
+              text: 'confirm',
+              handler: data => {
+                  resolve(data.promo);
+              }
+          }
+        ]
+      });
+      alert.present();
+    })
   }
 
   sendSignIn() {

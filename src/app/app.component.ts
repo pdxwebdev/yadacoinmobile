@@ -22,6 +22,7 @@ import { WebSocketService } from './websocket.service';
 import { WebPage } from '../pages/web/web';
 import { MyPagesPage } from '../pages/web/mypages';
 import { BuildPagePage } from '../pages/web/buildpage';
+import { AssetsPage } from '../pages/assets/assets';
 
 declare var forge;
 
@@ -107,6 +108,18 @@ export class MyApp {
         { title: 'Contacts', label: 'Contacts', component: ListPage, count: false, color: '', root: true },
         { title: 'Contact Requests', label: 'Contact Requests', component: ListPage, count: false, color: '', root: true },
         { title: 'Groups', label: 'Groups', component: ListPage, count: false, color: '', root: true },
+      ];
+    } else if (this.settingsService.menu === 'assets') {
+      this.pages = [
+        { title: 'Assets', label: 'Assets', component: AssetsPage, count: false, color: '', root: true },
+      ];
+    } else if (this.settingsService.menu === 'markets') {
+      this.pages = [
+        { title: 'Markets', label: 'Markets', component: ListPage, count: false, color: '', root: true },
+      ];
+    } else if (this.settingsService.menu === 'affiliates') {
+      this.pages = [
+        { title: 'Affiliates', label: 'Affiliates', component: ListPage, count: false, color: '', root: true },
       ];
     } else if (this.settingsService.menu === 'files') {
       this.pages = [

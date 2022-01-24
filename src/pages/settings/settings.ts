@@ -18,7 +18,8 @@ import { Geolocation } from '@ionic-native/geolocation';
 import { SendReceive } from '../sendreceive/sendreceive';
 import { GoogleMaps, GoogleMapsEvent, LatLng, MarkerOptions, Marker, Environment, GoogleMapsMapTypeId } from "@ionic-native/google-maps";
 import { WebSocketService } from '../../app/websocket.service';
-import DefaultGroups from '../../app/groups';
+import Groups from '../../app/groups';
+import { MailPage } from '../mail/mail';
 
 
 declare var forge;
@@ -87,10 +88,7 @@ export class Settings {
         this.refresh(null)
         .then(() => {
             return this.peerService.go();
-        })
-        .then(() => {
-            return this.websocketService.init();
-        }).catch((err) => {
+      }).catch((err) => {
             console.log(err)
         });
     }
@@ -331,12 +329,44 @@ export class Settings {
       })
     }
 
+    getPromo() {
+      return new Promise((resolve, reject) => {
+        let alert = this.alertCtrl.create({
+          title: 'Set promo code',
+          inputs: [
+            {
+              name: 'promo',
+              placeholder: 'Promo code'
+            }
+          ],
+          buttons: [
+            {
+              text: 'Cancel',
+              role: 'cancel',
+              handler: data => {
+                console.log('Cancel clicked');
+                reject('Cancel clicked');
+              }
+            },
+            {
+                text: 'confirm',
+                handler: data => {
+                    resolve(data.promo);
+                }
+            }
+          ]
+        });
+        alert.present();
+      })
+    }
+
     createWalletFromInvite() {
       let promise;
       let username;
       let userType;
       let userParent;
       let invite;
+      let promo;
 
       this.loadingModal = this.loadingCtrl.create({
           content: 'initializing...'
@@ -344,6 +374,9 @@ export class Settings {
       this.loadingModal.present();
 
       promise = this.getInvite()
+      .then(() => {
+        return this.getPromo()
+      })
       .then((inv: any) => {
         invite = inv
         return this.graphService.checkInvite(invite);
@@ -502,14 +535,17 @@ export class Settings {
             }
           })
           .then(() => {
-              return this.websocketService.connect();
+              return this.websocketService.init();
           })
           .then(() => {
               if (showModal) {
                 this.loadingModal.dismiss();
               }
-              this.settingsService.menu = 'home';
-              this.events.publish('menu', [{ title: 'Home', label: 'Home', component: HomePage, count: false, color: '', root: true }])
+              this.settingsService.menu = 'mail';
+              this.events.publish('menu', [
+                { title: 'Inbox', label: 'Inbox', component: MailPage, count: false, color: '', root: true },
+                { title: 'Sent', label: 'Sent', component: MailPage, count: false, color: '', root: true }
+              ])
           })
           .catch((err)  => {
               console.log(err);
@@ -525,9 +561,31 @@ export class Settings {
           })
           .then(() => {
             const promises = [];
-            for (let i=0; i < DefaultGroups.length; i++) {
-              if(!this.graphService.isAdded(DefaultGroups[i])) {
-                promises.push(this.graphService.addGroup(DefaultGroups[i], undefined, undefined, undefined, false));
+            for (let i=0; i < Groups.default_groups.length; i++) {
+              if(!this.graphService.isAdded(Groups.default_groups[i])) {
+                promises.push(
+                  this.graphService.addGroup(
+                    Groups.default_groups[i],
+                    undefined,
+                    undefined,
+                    undefined,
+                    false
+                  )
+                );
+                addedDefaults = true
+              }
+            }
+            for (let i=0; i < Groups.default_markets.length; i++) {
+              if(!this.graphService.isAdded(Groups.default_markets[i])) {
+                promises.push(
+                  this.graphService.addGroup(
+                    Groups.default_markets[i],
+                    undefined,
+                    undefined,
+                    undefined,
+                    false
+                  )
+                );
                 addedDefaults = true
               }
             }
@@ -544,7 +602,7 @@ export class Settings {
               this.events.publish('menu', [{ title: 'Home', label: 'Home', component: HomePage, count: false, color: '', root: true }])
           })
           .then(() => {
-              return this.websocketService.connect();
+              return this.websocketService.init();
           })
           .catch((err)  => {
               console.log(err);

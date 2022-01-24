@@ -16,6 +16,7 @@ export class WebSocketService {
   websocket: any;
   loadingModal: any;
   directMessageRequestResolve: any;
+  reconnectInterval: any;
   constructor(
     private ahttp: Http,
     private bulletinSecretService: BulletinSecretService,
@@ -26,13 +27,26 @@ export class WebSocketService {
   ) {}
 
   init() {
-    if (this.websocket) return;
+    if (this.websocket && this.websocket.readyState > 1) {
+      this.websocket.close()
+    };
     this.websocket = new WebSocket(this.settingsService.remoteSettings.websocketUrl);
     this.websocket.onopen = this.onOpen.bind(this);
     this.websocket.onmessage = this.onMessage.bind(this);
+    this.websocket.onerror = (err) => {
+      console.error('Socket encountered error: ', err.message, 'Closing socket');
+      this.websocket.close();
+    };
+    this.websocket.onclose = (e) => {
+      console.log('Socket is closed. Reconnect will be attempted in 1 second.', e.reason);
+      setTimeout(() => {
+        this.init();
+      }, 1000);
+    };
   }
 
   onOpen(event) {
+    this.connect()
     console.log(event.data);
   }
 
@@ -287,54 +301,53 @@ export class WebSocketService {
               })
               break;
           }
-            
+
         }
+        break
+
+      case 'newblock':
+        const block = msg.params.payload.block
+        block.height = block.index
+        this.settingsService.latest_block = block;
         break
     }
   }
 
   connect() {
     this.websocket.send(JSON.stringify({
-      id: '',
-      jsonrpc: 2.0,
-      method: 'connect',
-      params: {
-        identity: this.graphService.toIdentity(this.bulletinSecretService.identity)
-      }
+        id: '',
+        jsonrpc: 2.0,
+        method: 'connect',
+        params: {
+            identity: this.graphService.toIdentity(this.bulletinSecretService.identity)
+        }
     }))
   }
 
   joinGroup(identity) {
     return this.websocket.send(JSON.stringify({
-      id: '',
-      jsonrpc: 2.0,
-      method: 'join_group',
-      params: identity
+        id: '',
+        jsonrpc: 2.0,
+        method: 'join_group',
+        params: identity
     }))
   }
 
-  webpage(mypage) {
+  newtxn(item, rids, collection, shared_secret=null, extra_data={}): Promise<void> {
 
-    let identity = this.graphService.toIdentity(JSON.parse(this.bulletinSecretService.identityJson()))
-    identity.collection = this.settingsService.collections.WEB_PAGE;
-    const rids = this.graphService.generateRids(identity)
-
-    const request = {
-      ...rids,
-      relationship: {},
-      shared_secret: this.bulletinSecretService.identity.username_signature
+    const request:any = {
+        ...rids,
+        relationship: {},
+        ...extra_data
     }
-    request.relationship[this.settingsService.collections.WEB_PAGE] = mypage
-    this.transactionService.generateTransaction(request)
-    .then(() => {
-      return this.websocket.send(JSON.stringify({
-        id: '',
-        jsonrpc: 2.0,
-        method: 'newtxn',
-        params: {
-          transaction: this.transactionService.transaction
-        }
-      }))
+    if (shared_secret) {
+        request.shared_secret = shared_secret
+    }
+    request.relationship[collection] = item
+    return this.transactionService.generateTransaction(request)
+    .then((txn):any => {
+        this.sendnewtxn();
+        return txn;
     })
   }
 
@@ -360,14 +373,7 @@ export class WebSocketService {
     request.relationship[collection] = relationship
     this.transactionService.generateTransaction(request)
     .then(() => {
-      this.websocket.send(JSON.stringify({
-        id: '',
-        jsonrpc: 2.0,
-        method: 'newtxn',
-        params: {
-          transaction: this.transactionService.transaction
-        }
-      }))
+        this.sendnewtxn()
     })
   }
 
@@ -407,15 +413,19 @@ export class WebSocketService {
     request.relationship[collection] = relationship;
     return this.transactionService.generateTransaction(request)
     .then(() => {
-      this.websocket.send(JSON.stringify({
-        id: '',
-        jsonrpc: 2.0,
-        method: 'newtxn',
-        params: {
-          transaction: this.transactionService.transaction
-        }
-      }))
+      this.sendnewtxn()
     })
+  }
+
+  sendnewtxn() {
+    return this.websocket.send(JSON.stringify({
+      id: '',
+      jsonrpc: 2.0,
+      method: 'newtxn',
+      params: {
+          transaction: this.transactionService.transaction
+      }
+    }))
   }
 
   toHex(byteArray) {

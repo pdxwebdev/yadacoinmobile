@@ -170,6 +170,43 @@
           >
             <ion-icon name="folder"></ion-icon>
           </button>
+          <button
+            class="navbutton"
+            [color]="settingsService.menu === 'assets' ? 'secondary' : 'primary'"
+            ion-button
+            value="assets"
+            tooltip="Assets"
+            (click)="segmentChanged($event)"
+            *ngIf="!settingsService.remoteSettings.restricted"
+            icon-only
+            navTooltip
+            arrow="true"
+            positionH="right"
+            topOffset="-67"
+          >
+            <ion-icon name="pricetag"></ion-icon>
+          </button>
+          <button
+            class="navbutton"
+            [color]="settingsService.menu === 'markets' ? 'secondary' : 'primary'"
+            ion-button
+            value="markets"
+            tooltip="Markets"
+            (click)="segmentChanged($event)"
+            icon-only
+            navTooltip
+            arrow="true"
+            positionH="right"
+            topOffset="-67"
+          >
+            <ion-icon name="cart"></ion-icon>
+            <ion-badge
+              *ngIf="graphService.notifications[settingsService.collections.MARKET]?.length > 0"
+              color="secondary"
+              style="vertical-align:top;position:absolute;"
+              item-right
+            >{{graphService.notifications[settingsService.collections.MARKET].length}}</ion-badge>
+          </button>
           <!-- <button
             class="navbutton"
             [color]="settingsService.menu === 'web' ? 'secondary' : 'primary'"

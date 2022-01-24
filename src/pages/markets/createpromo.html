@@ -1,0 +1,155 @@
+<ion-header>
+  <ion-navbar>
+    <button ion-button menuToggle color="{{color}}">
+      <ion-icon name="menu"></ion-icon>
+    </button>
+  </ion-navbar>
+</ion-header>
+
+<ion-content padding>
+  <ion-refresher (ionRefresh)="refresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+  <h1>Start new promotion</h1>
+  <ion-row>
+    <ion-col col-md-4>
+      <h3>Promotion info</h3>
+      <h3>Proof type</h3>
+      <ion-list radio-group [(ngModel)]="proof_type">
+        <ion-item>
+          <ion-label>{{smartContractService.promoProofTypes.HONOR}}</ion-label>
+          <ion-radio [value]="smartContractService.promoProofTypes.HONOR" checked></ion-radio>
+        </ion-item>
+        <ion-item>
+          <ion-label>{{smartContractService.promoProofTypes.CONFIRMATION}}</ion-label>
+          <ion-radio [value]="smartContractService.promoProofTypes.CONFIRMATION"></ion-radio>
+        </ion-item>
+      </ion-list>
+      <h3>Identity to promote</h3>
+      <ion-list radio-group [(ngModel)]="promotedIdentity" (change)="promotedIdentityChanged()">
+        <ion-item>
+          <ion-label>Promote myself</ion-label>
+          <ion-radio value="me" checked></ion-radio>
+        </ion-item>
+        <ion-item>
+          <ion-label>Promote a contact</ion-label>
+          <ion-radio value="contact"></ion-radio>
+        </ion-item>
+        <form [formGroup]="myForm" (change)="contactSearchChanged()">
+          <ion-auto-complete #searchbar [(ngModel)]="selectedIdentityForm" [options]="{ placeholder : 'Recipient' }" [dataProvider]="completeTestService" formControlName="searchTerm" required></ion-auto-complete>
+        </form>
+      </ion-list>
+      <h3>Referrer payout</h3>
+      <ion-list radio-group [(ngModel)]="pay_referrer">
+        <ion-item>
+          <ion-label>Yes</ion-label>
+          <ion-radio [value]="true"></ion-radio>
+        </ion-item>
+        <ion-item>
+          <ion-label>No</ion-label>
+          <ion-radio [value]="false" checked></ion-radio>
+        </ion-item>
+      </ion-list>
+      <ng-container *ngIf="pay_referrer">
+        <h3>Type</h3>
+        <ion-list radio-group [(ngModel)]="pay_referrer_operator">
+          <ion-item>
+            <ion-label>{{smartContractService.payoutOperators.FIXED}}</ion-label>
+            <ion-radio [value]="smartContractService.payoutOperators.FIXED" checked></ion-radio>
+          </ion-item>
+          <ion-item>
+            <ion-label>{{smartContractService.payoutOperators.PERCENT}}</ion-label>
+            <ion-radio [value]="smartContractService.payoutOperators.PERCENT"></ion-radio>
+          </ion-item>
+        </ion-list>
+        <h3>Term</h3>
+        <ion-list radio-group [(ngModel)]="pay_referrer_payout_type">
+          <ion-item>
+            <ion-label>{{smartContractService.payoutType.ONE_TIME}}</ion-label>
+            <ion-radio [value]="smartContractService.payoutType.ONE_TIME" checked></ion-radio>
+          </ion-item>
+          <ion-item>
+            <ion-label>{{smartContractService.payoutType.RECURRING}}</ion-label>
+            <ion-radio [value]="smartContractService.payoutType.RECURRING"></ion-radio>
+          </ion-item>
+        </ion-list>
+        <ion-item *ngIf="pay_referrer_payout_type === smartContractService.payoutType.RECURRING">
+          <ion-label color="primary">Payment interval</ion-label>
+          <ion-input type="number" [(ngModel)]="pay_referrer_payout_interval" placeholder="How many blocks between payouts?"></ion-input>
+        </ion-item>
+        <h3>Amount</h3>
+        <ion-item *ngIf="pay_referrer_operator === smartContractService.payoutOperators.FIXED">
+          <ion-label>{{smartContractService.payoutOperators.FIXED}}</ion-label>
+          <ion-input type="number" [(ngModel)]="pay_referrer_amount" placeholder="How much to pay the referrer?"></ion-input>
+        </ion-item>
+        <ion-item *ngIf="pay_referrer_operator === smartContractService.payoutOperators.PERCENT">
+          <ion-label>{{smartContractService.payoutOperators.PERCENT}}</ion-label>
+          <ion-input type="number" min="0.0" max="1.0" step="0.1" [(ngModel)]="pay_referrer_amount" placeholder="What percentage does the referrer get?"></ion-input>
+        </ion-item>
+      </ng-container>
+      <h3>Referree payout</h3>
+      <ion-list radio-group [(ngModel)]="pay_referee">
+        <ion-item>
+          <ion-label>Yes</ion-label>
+          <ion-radio [value]="true"></ion-radio>
+        </ion-item>
+        <ion-item>
+          <ion-label>No</ion-label>
+          <ion-radio [value]="false" checked></ion-radio>
+        </ion-item>
+      </ion-list>
+      <ng-container *ngIf="pay_referee">
+        <h3>Type</h3>
+        <ion-list radio-group [(ngModel)]="pay_referee_operator">
+          <ion-item>
+            <ion-label>{{smartContractService.payoutOperators.FIXED}}</ion-label>
+            <ion-radio [value]="smartContractService.payoutOperators.FIXED" checked></ion-radio>
+          </ion-item>
+          <ion-item>
+            <ion-label>{{smartContractService.payoutOperators.PERCENT}}</ion-label>
+            <ion-radio [value]="smartContractService.payoutOperators.PERCENT"></ion-radio>
+          </ion-item>
+        </ion-list>
+        <h3>Term</h3>
+        <ion-list radio-group [(ngModel)]="pay_referee_payout_type">
+          <ion-item>
+            <ion-label>{{smartContractService.payoutType.ONE_TIME}}</ion-label>
+            <ion-radio [value]="smartContractService.payoutType.ONE_TIME" checked></ion-radio>
+          </ion-item>
+          <ion-item>
+            <ion-label>{{smartContractService.payoutType.RECURRING}}</ion-label>
+            <ion-radio [value]="smartContractService.payoutType.RECURRING"></ion-radio>
+          </ion-item>
+        </ion-list>
+        <ion-item *ngIf="pay_referee_payout_type === smartContractService.payoutType.RECURRING">
+          <ion-label color="primary">Payment interval</ion-label>
+          <ion-input type="number" [(ngModel)]="pay_referee_payout_interval" placeholder="How many blocks between payouts?"></ion-input>
+        </ion-item>
+        <h3>Amount</h3>
+        <ion-item *ngIf="pay_referee_operator === smartContractService.payoutOperators.FIXED">
+          <ion-label>{{smartContractService.payoutOperators.FIXED}}</ion-label>
+          <ion-input type="number" [(ngModel)]="pay_referee_amount" placeholder="How much to pay the referee?"></ion-input>
+        </ion-item>
+        <ion-item *ngIf="pay_referee_operator === smartContractService.payoutOperators.PERCENT">
+          <ion-label>{{smartContractService.payoutOperators.PERCENT}}</ion-label>
+          <ion-input type="number" min="0.0" max="1.0" step="0.1" [(ngModel)]="pay_referee_amount" placeholder="What percentage does the referee?"></ion-input>
+        </ion-item>
+      </ng-container>
+      <ng-container *ngIf="pay_referee_operator === smartContractService.payoutOperators.FIXED || pay_referrer_operator === smartContractService.payoutOperators.FIXED">
+        <h3>Contract fund</h3>
+        <ion-item>
+          <ion-label color="primary">Fund amount</ion-label>
+          <ion-input type="number" [(ngModel)]="fund_amount" placeholder="How much YDA to fund this promotion?"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label color="primary">Expiry</ion-label>
+          <ion-input type="number" [(ngModel)]="expiry" placeholder="Expires in how many blocks?"></ion-input>
+        </ion-item>
+      </ng-container>
+      <h3>&nbsp;</h3>
+      <ion-item>
+        <button ion-button secondary (click)="save()">Confirm</button>
+      </ion-item>
+    </ion-col>
+  </ion-row>
+</ion-content>

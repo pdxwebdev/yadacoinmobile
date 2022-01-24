@@ -8,6 +8,9 @@ export class SettingsService {
     tokens = {};
     menu = '';
     collections = {
+      AFFILIATE: 'affiliate',
+      ASSET: 'asset',
+      BID: 'bid',
       CONTACT: 'contact',
       CALENDAR: 'event_meeting',
       CHAT: 'chat',
@@ -21,8 +24,10 @@ export class SettingsService {
       GROUP_CHAT_FILE: 'group_chat_file',
       GROUP_MAIL: 'group_mail',
       MAIL: 'mail',
+      MARKET: 'market',
       PERMISSION_REQUEST: 'permission_request',
       SIGNATURE_REQUEST: 'signature_request',
+      SMART_CONTRACT: 'smart_contract',
       WEB_CHALLENGE_REQUEST: 'web_challenge_request',
       WEB_CHALLENGE_RESPONSE: 'web_challenge_response',
       WEB_PAGE: 'web_page',
@@ -31,9 +36,11 @@ export class SettingsService {
       WEB_SIGNIN_REQUEST: 'web_signin_request',
       WEB_SIGNIN_RESPONSE: 'web_signin_response'
     }
+    latest_block: any;
     constructor(
     ) {
         this.tokens = {};
+        this.latest_block = {};
     }
 
     go() {
