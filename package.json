@@ -85,7 +85,7 @@
     "ionic2-calendar": "^0.6.9",
     "ionic3-map-address-autocomplete": "git+https://github.com/reddimohan/ionic-3-google-maps-autocomplete.git",
     "ionicons": "3.0.0",
-    "metascraper": "^1.0.7",
+    "metascraper": "^5.2.0",
     "ngx-qrcode2": "0.0.5",
     "node-forge": "^0.7.1",
     "rxjs": "^6.5.2",
