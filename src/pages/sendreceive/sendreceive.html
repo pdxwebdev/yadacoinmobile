@@ -58,7 +58,7 @@
   <ion-list>
     <ion-item *ngFor="let txn of past_received_pending_transactions">
       <ion-label>{{convertDateTime(txn.time)}}</ion-label>
-      <ion-label><a href="https://yadacoin.io/explorer?term={{txn.id}}" target="_blank">{{txn.id}}</a></ion-label>
+      <ion-label><a href="/explorer?term={{txn.id}}" target="_blank">{{txn.id}}</a></ion-label>
       <ion-label>{{txn.value}}</ion-label>
     </ion-item>
   </ion-list>
@@ -68,7 +68,7 @@
   <ion-list>
     <ion-item *ngFor="let txn of past_sent_pending_transactions">
       <ion-label>{{convertDateTime(txn.time)}}</ion-label>
-      <ion-label><a href="https://yadacoin.io/explorer?term={{txn.id}}" target="_blank">{{txn.id}}</a></ion-label>
+      <ion-label><a href="/explorer?term={{txn.id}}" target="_blank">{{txn.id}}</a></ion-label>
       <ion-label>{{txn.value}}</ion-label>
     </ion-item>
   </ion-list>
@@ -79,7 +79,7 @@
   <ion-list>
     <ion-item *ngFor="let txn of past_received_transactions">
       <ion-label>{{convertDateTime(txn.time)}}</ion-label>
-      <ion-label><a href="https://yadacoin.io/explorer?term={{txn.id}}" target="_blank">{{txn.id}}</a></ion-label>
+      <ion-label><a href="/explorer?term={{txn.id}}" target="_blank">{{txn.id}}</a></ion-label>
       <ion-label>{{txn.value}}</ion-label>
     </ion-item>
   </ion-list>
@@ -89,7 +89,7 @@
   <ion-list>
     <ion-item *ngFor="let txn of past_sent_transactions">
       <ion-label>{{convertDateTime(txn.time)}}</ion-label>
-      <ion-label><a href="https://yadacoin.io/explorer?term={{txn.id}}" target="_blank">{{txn.id}}</a></ion-label>
+      <ion-label><a href="/explorer?term={{txn.id}}" target="_blank">{{txn.id}}</a></ion-label>
       <ion-label>{{txn.value}}</ion-label>
     </ion-item>
   </ion-list>
