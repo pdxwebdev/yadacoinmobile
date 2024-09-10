@@ -1,4 +1,6 @@
 This is a starter template for [Ionic](http://ionicframework.com/docs/) projects.
+# USE NODE VERSION 8!!!
+`nvm use 8`
 
 ## How to use this template
 

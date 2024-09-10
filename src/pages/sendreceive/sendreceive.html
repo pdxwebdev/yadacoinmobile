@@ -22,10 +22,10 @@
   <ion-item *ngIf="identity" title="Verified" class="sender">Recipient: {{identity.username}} <ion-icon *ngIf="graphService.isAdded(identity)" name="checkmark-circle" class="success"></ion-icon></ion-item>
   <ion-list>
     <ion-row *ngFor="let recipient of recipients; let i = index">
-      <ion-col>
+      <ion-col col-12 col-lg-6>
         <ion-item>
           <ion-label color="primary" stacked>Address</ion-label>
-          <ion-input type="text" placeholder="Recipient address..." [(ngModel)]="recipients[i].to">
+          <ion-input type="text" placeholder="Recipient address..." [(ngModel)]="recipients[i].to" class="addressinput">
           </ion-input>
         </ion-item>
         <ion-item>
@@ -39,13 +39,27 @@
     </ion-row>
   </ion-list>
   <button ion-button secondary (click)="addRecipient()"><ion-icon name="add"></ion-icon>&nbsp;Add recipient</button>
-  <button ion-button secondary (click)="submit()">Send&nbsp;<ion-icon name="send"></ion-icon></button>
+  <h4>Fee</h4>
+  <p>Enter a fee amount to give your transaction higher priority or to support the miners.</p>
+  <ion-item>
+    <ion-label color="primary" fixed>Amount</ion-label>
+    <ion-input type="number" placeholder="Amount..." [(ngModel)]="fee"></ion-input>
+  </ion-item>
+  <h4>Masternode Fee</h4>
+  <p>Enter a masternode fee if you intend to use p2p communication services. If you enter a value you do not need to send coins to anyone. However, you can pay masternode fees and send coins to recipients.</p>
+  <ion-item>
+    <ion-label color="primary" fixed>Amount</ion-label>
+    <ion-input type="number" placeholder="Amount..." [(ngModel)]="masternode_fee"></ion-input>
+  </ion-item>
+  <button ion-button secondary (click)="submit()" style="margin-top: 15px;">Send&nbsp;<ion-icon name="send"></ion-icon></button>
   <h4>Receive YadaCoins</h4>
   <ion-item>
     <ion-label color="primary" stacked>Your Address:</ion-label>
     <ion-input type="text" [(ngModel)]="createdCode"></ion-input>
   </ion-item>
-  <button *ngIf="isDevice" ion-button outline item-end (click)="shareAddress()">share address&nbsp;<ion-icon name="share"></ion-icon></button>
+  <ion-item mt-5>
+    <button *ngIf="isDevice" ion-button outline item-end (click)="shareAddress()">share address&nbsp;<ion-icon name="share"></ion-icon></button>
+  </ion-item>
   <ion-card>
     <ion-card-content>
       <ngx-qrcode [qrc-value]="createdCode"></ngx-qrcode>

@@ -40,6 +40,8 @@ export class SendReceive {
   past_received_pending_page_cache: any;
   identity: any;
   recipients: any;
+  fee: any;
+  masternode_fee: any;
   constructor(
     private navCtrl: NavController,
     private navParams: NavParams,
@@ -53,9 +55,6 @@ export class SendReceive {
     private ahttp: Http,
     private settingsService: SettingsService
   ) {
-    this.loadingModal = this.loadingCtrl.create({
-      content: "Please wait...",
-    });
     if (this.navParams.get("identity")) {
       this.identity = this.navParams.get("identity");
       this.address = this.bulletinSecretService.publicKeyToAddress(
@@ -87,6 +86,8 @@ export class SendReceive {
     this.past_sent_pending_page_cache = {};
     this.past_received_page_cache = {};
     this.past_received_pending_page_cache = {};
+    this.fee = 0;
+    this.masternode_fee = 0;
   }
 
   scan() {
@@ -131,20 +132,22 @@ export class SendReceive {
   }
 
   submit() {
+    const fee = parseFloat(this.fee) || 0;
+    const masternode_fee = parseFloat(this.masternode_fee) || 0;
     var alert = this.alertCtrl.create();
-    if (!this.recipients[0].to) {
+    if (!this.recipients[0].to && masternode_fee === 0) {
       alert.setTitle("Enter an address");
       alert.addButton("Ok");
       alert.present();
       return;
     }
-    if (!this.recipients[0].value) {
+    if (!this.recipients[0].value && masternode_fee === 0) {
       alert.setTitle("Enter an amount");
       alert.addButton("Ok");
       alert.present();
       return;
     }
-    let total = 0;
+    let total = fee + masternode_fee;
     this.recipients.map((output, i) => {
       this.recipients[i].value = parseFloat(output.value);
       total += parseFloat(output.value);
@@ -155,6 +158,9 @@ export class SendReceive {
     alert.addButton({
       text: "Confirm",
       handler: (data: any) => {
+        this.loadingModal = this.loadingCtrl.create({
+          content: "Please wait...",
+        });
         this.loadingModal.present();
         this.walletService
           .get(total)
@@ -206,8 +212,15 @@ export class SendReceive {
             this.loadingModal.dismiss().catch(() => {});
           })
           .catch((err) => {
+            var alert = this.alertCtrl.create();
+            alert.setTitle("Error");
+            alert.setSubTitle(err);
+            alert.addButton("Ok");
+            alert.present();
             console.log(err);
-            this.loadingModal.dismiss().catch(() => {});
+            try {
+              this.loadingModal.dismiss().catch(() => {});
+            } catch (err) {}
           });
       },
     });

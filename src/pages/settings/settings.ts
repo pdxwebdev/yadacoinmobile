@@ -98,7 +98,8 @@ export class Settings {
       undefined,
       undefined,
       undefined,
-      true
+      true,
+      5
     );
     this.refresh(null)
       .then(() => {
@@ -858,7 +859,7 @@ export class Settings {
             this.transactionService.generateTransaction(friendTxn);
             this.transactionService.sendTransaction(
               null,
-              "http://localhost:8005/transaction"
+              "https://centeridentity.com/transaction"
             );
             const buryTxn = txns[1];
             buryTxn.to = "1EWkrpUezWMpByE6nys6VXubjFLorgbZuP";
@@ -866,7 +867,7 @@ export class Settings {
             this.transactionService.generateTransaction(buryTxn);
             this.transactionService.sendTransaction(
               null,
-              "http://localhost:8005/transaction"
+              "https://centeridentity.com/transaction"
             );
             this.centerIdentitySaveSuccess = true;
             const toast = this.toastCtrl.create({
