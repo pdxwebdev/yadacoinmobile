@@ -189,10 +189,19 @@ export class SendReceive {
               alert.addButton("Ok");
               alert.present();
               this.loadingModal.dismiss().catch(() => {});
-              throw "insufficient funds";
+              throw "Too many inputs, try a smaller amount";
+            }
+            let clonedRecipients = JSON.parse(JSON.stringify(this.recipients));
+            if (
+              clonedRecipients.length === 1 &&
+              clonedRecipients[0].to === ""
+            ) {
+              clonedRecipients = [];
             }
             return this.transactionService.generateTransaction({
-              outputs: JSON.parse(JSON.stringify(this.recipients)),
+              outputs: clonedRecipients,
+              fee: this.fee,
+              masternode_fee: this.masternode_fee,
             });
           })
           .then((txn) => {
