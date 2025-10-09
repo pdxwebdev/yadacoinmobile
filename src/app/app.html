@@ -3,15 +3,19 @@
     <ion-header>
       <ion-toolbar>
         <ion-title>
-          <ion-note *ngIf="settingsService.remoteSettings.restricted" style="font-size: 20px">
+          <ion-note
+            *ngIf="settingsService.remoteSettings.restricted"
+            style="font-size: 20px"
+          >
             {{bulletinSecretService.identity.username || 'Center Identity'}}
           </ion-note>
-          <ion-note *ngIf="!settingsService.remoteSettings.restricted" style="font-size: 20px">
+          <ion-note
+            *ngIf="!settingsService.remoteSettings.restricted"
+            style="font-size: 20px"
+          >
             {{bulletinSecretService.identity.username || 'YadaCoin'}}
           </ion-note>
-          <ion-note style="font-size: 12px">
-            {{version}}
-          </ion-note>
+          <ion-note style="font-size: 12px"> {{version}} </ion-note>
         </ion-title>
       </ion-toolbar>
     </ion-header>
@@ -66,9 +70,12 @@
             <ion-badge
               *ngIf="graphService.notifications[settingsService.collections.MAIL]?.length > 0 || graphService.notifications[settingsService.collections.GROUP_MAIL]?.length > 0"
               color="secondary"
-              style="vertical-align:top;position:absolute;"
+              style="vertical-align: top; position: absolute"
               item-right
-            >{{graphService.notifications[settingsService.collections.MAIL].length + graphService.notifications[settingsService.collections.GROUP_MAIL].length}}</ion-badge>
+              >{{graphService.notifications[settingsService.collections.MAIL].length
+              +
+              graphService.notifications[settingsService.collections.GROUP_MAIL].length}}</ion-badge
+            >
           </button>
           <button
             class="navbutton"
@@ -87,9 +94,10 @@
             <ion-badge
               *ngIf="graphService.notifications[settingsService.collections.CHAT]?.length > 0"
               color="secondary"
-              style="vertical-align:top;position:absolute;"
+              style="vertical-align: top; position: absolute"
               item-right
-            >{{graphService.notifications[settingsService.collections.CHAT].length}}</ion-badge>
+              >{{graphService.notifications[settingsService.collections.CHAT].length}}</ion-badge
+            >
           </button>
           <button
             class="navbutton"
@@ -108,9 +116,10 @@
             <ion-badge
               *ngIf="graphService.notifications[settingsService.collections.GROUP_CHAT]?.length > 0"
               color="secondary"
-              style="vertical-align:top;position:absolute;"
+              style="vertical-align: top; position: absolute"
               item-right
-            >{{graphService.notifications[settingsService.collections.GROUP_CHAT].length}}</ion-badge>
+              >{{graphService.notifications[settingsService.collections.GROUP_CHAT].length}}</ion-badge
+            >
           </button>
           <button
             class="navbutton"
@@ -129,9 +138,12 @@
             <ion-badge
               *ngIf="graphService.notifications[settingsService.collections.CALENDAR]?.length > 0 || graphService.notifications[settingsService.collections.GROUP_CALENDAR]?.length > 0"
               color="secondary"
-              style="vertical-align:top;position:absolute;"
+              style="vertical-align: top; position: absolute"
               item-right
-            >{{graphService.notifications[settingsService.collections.CALENDAR].length + graphService.notifications[settingsService.collections.GROUP_CALENDAR].length}}</ion-badge>
+              >{{graphService.notifications[settingsService.collections.CALENDAR].length
+              +
+              graphService.notifications[settingsService.collections.GROUP_CALENDAR].length}}</ion-badge
+            >
           </button>
           <button
             class="navbutton"
@@ -150,9 +162,10 @@
             <ion-badge
               *ngIf="graphService.notifications[settingsService.collections.CONTACT]?.length > 0"
               color="secondary"
-              style="vertical-align:top;position:absolute;"
+              style="vertical-align: top; position: absolute"
               item-right
-            >{{graphService.notifications[settingsService.collections.CONTACT].length}}</ion-badge>
+              >{{graphService.notifications[settingsService.collections.CONTACT].length}}</ion-badge
+            >
           </button>
           <button
             class="navbutton"
@@ -203,9 +216,10 @@
             <ion-badge
               *ngIf="graphService.notifications[settingsService.collections.MARKET]?.length > 0"
               color="secondary"
-              style="vertical-align:top;position:absolute;"
+              style="vertical-align: top; position: absolute"
               item-right
-            >{{graphService.notifications[settingsService.collections.MARKET].length}}</ion-badge>
+              >{{graphService.notifications[settingsService.collections.MARKET].length}}</ion-badge
+            >
           </button>
           <!-- <button
             class="navbutton"
@@ -239,9 +253,10 @@
             <ion-badge
               *ngIf="graphService.notifications['notifications']?.length > 0"
               color="secondary"
-              style="vertical-align:top;position:absolute;"
+              style="vertical-align: top; position: absolute"
               item-right
-            >{{graphService.notifications['notifications'].length}}</ion-badge>
+              >{{graphService.notifications['notifications'].length}}</ion-badge
+            >
           </button>
           <button
             class="navbutton"
@@ -259,7 +274,12 @@
             <ion-icon name="contact"></ion-icon>
           </button>
         </ion-col>
-        <ion-col col-lg-10 col-md-10 col-sm-10 style="padding-right: 7px; margin-top: 4px;">
+        <ion-col
+          col-lg-10
+          col-md-10
+          col-sm-10
+          style="padding-right: 7px; margin-top: 4px"
+        >
           <ng-container *ngFor="let p of pages">
             <button
               menuClose
@@ -269,7 +289,10 @@
               *ngIf="p.title == 'Contact Requests'"
               class="subnavbutton"
             >
-              {{p.label}} <ion-note *ngIf="graphService.graph.friend_requests">{{graphService.graph.friend_requests.length}}</ion-note>
+              {{p.label}}
+              <ion-note *ngIf="graphService.graph.friend_requests"
+                >{{graphService.graph.friend_requests.length}}</ion-note
+              >
             </button>
             <button
               menuClose
@@ -288,9 +311,15 @@
               *ngIf="['Messages', 'Contact Requests'].indexOf(p.title) < 0"
               class="subnavbutton"
             >
-              {{p.label}} <ion-note *ngIf="p.kwargs && p.kwargs.identity && graphService.counts[p.kwargs.identity.username_signature] && graphService.counts[p.kwargs.identity.username_signature] > 0">{{graphService.counts[p.kwargs.identity.username_signature]}}</ion-note>
+              {{p.label}}
+              <ion-note
+                *ngIf="p.kwargs && p.kwargs.identity && graphService.counts[p.kwargs.identity.username_signature] && graphService.counts[p.kwargs.identity.username_signature] > 0"
+                >{{graphService.counts[p.kwargs.identity.username_signature]}}</ion-note
+              >
             </button>
-            <ng-container *ngIf="p.kwargs && p.kwargs.identity && p.kwargs.subitems && p.kwargs.subitems[p.kwargs.identity.username_signature]">
+            <ng-container
+              *ngIf="p.kwargs && p.kwargs.identity && p.kwargs.subitems && p.kwargs.subitems[p.kwargs.identity.username_signature]"
+            >
               <button
                 menuClose
                 ion-item
@@ -298,14 +327,26 @@
                 class="subnavbutton"
                 *ngFor="let subitem of p.kwargs.subitems[p.kwargs.identity.username_signature]"
               >
-                &nbsp;&nbsp;&nbsp;&nbsp;{{subitem.kwargs.identity.username}} <ion-note *ngIf="graphService.counts[subitem.kwargs.identity.username_signature] && graphService.counts[subitem.kwargs.identity.username_signature] > 0">{{graphService.counts[subitem.kwargs.identity.username_signature]}}</ion-note>
+                &nbsp;&nbsp;&nbsp;&nbsp;{{subitem.kwargs.identity.username}}
+                <ion-note
+                  *ngIf="graphService.counts[subitem.kwargs.identity.username_signature] && graphService.counts[subitem.kwargs.identity.username_signature] > 0"
+                  >{{graphService.counts[subitem.kwargs.identity.username_signature]}}</ion-note
+                >
               </button>
             </ng-container>
           </ng-container>
         </ion-col>
       </ion-row>
-      <img *ngIf="!settingsService.remoteSettings.restricted" src="assets/img/yadacoinlogosmall.png" class="logo">
-      <img *ngIf="settingsService.remoteSettings.restricted" src="assets/center-identity-logo-square.png" class="logo">
+      <img
+        *ngIf="!settingsService.remoteSettings.restricted"
+        src="yadacoinstatic/app/assets/img/yadacoinlogosmall.png"
+        class="logo"
+      />
+      <img
+        *ngIf="settingsService.remoteSettings.restricted"
+        src="yadacoinstatic/app/assets/center-identity-logo-square.png"
+        class="logo"
+      />
     </ion-content>
   </ion-menu>
   <!-- Disable swipe-to-go-back because it's poor UX to combine STGB with side menus -->

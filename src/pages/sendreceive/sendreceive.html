@@ -10,55 +10,160 @@
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
   <h4>Balance</h4>
-  <ion-item>
-    {{walletService.wallet.balance}} YADA
-  </ion-item>
-  <h4>Pending Balance</h4><ion-note>(including funds to be returned to you from your transactions)</ion-note>
-  <ion-item>
-    {{walletService.wallet.pending_balance}} YADA
-  </ion-item>
-  <h4>Send YadaCoins</h4>
-  <button *ngIf="isDevice" ion-button color="secondary" (click)="scan()" full>Scan Address</button>
-  <ion-item *ngIf="identity" title="Verified" class="sender">Recipient: {{identity.username}} <ion-icon *ngIf="graphService.isAdded(identity)" name="checkmark-circle" class="success"></ion-icon></ion-item>
-  <ion-list>
+  <ion-item> {{walletService.wallet.balance}} YADA </ion-item>
+  <h4>Pending Balance</h4>
+  <ion-note
+    >(including funds to be returned to you from your transactions)</ion-note
+  >
+  <ion-item> {{walletService.wallet.pending_balance}} YADA </ion-item>
+
+  <h4>Wrap on Binance Smart Chain</h4>
+  <button
+    ion-button
+    menuToggle
+    [color]="isCrossChain === true ? 'secondary' : 'primary'"
+    (click)="toggleIsCrossChain($event)"
+  >
+    Wrap on BSC
+  </button>
+  <h4 *ngIf="!isCrossChain">Send YadaCoins</h4>
+  <button *ngIf="isDevice" ion-button color="secondary" (click)="scan()" full>
+    Scan Address
+  </button>
+  <ion-item *ngIf="identity && !isCrossChain" title="Verified" class="sender"
+    >Recipient: {{identity.username}}
+    <ion-icon
+      *ngIf="graphService.isAdded(identity)"
+      name="checkmark-circle"
+      class="success"
+    ></ion-icon
+  ></ion-item>
+  <ion-list *ngIf="!isCrossChain">
     <ion-row *ngFor="let recipient of recipients; let i = index">
       <ion-col col-12 col-lg-6>
         <ion-item>
           <ion-label color="primary" stacked>Address</ion-label>
-          <ion-input type="text" placeholder="Recipient address..." [(ngModel)]="recipients[i].to" class="addressinput">
+          <ion-input
+            type="text"
+            placeholder="Recipient address..."
+            [(ngModel)]="recipients[i].to"
+            class="addressinput"
+          >
           </ion-input>
         </ion-item>
         <ion-item>
           <ion-label color="primary" fixed>Amount</ion-label>
-          <ion-input type="number" placeholder="Amount..." [(ngModel)]="recipients[i].value"></ion-input>
+          <ion-input
+            type="number"
+            placeholder="Amount..."
+            [(ngModel)]="recipients[i].value"
+          ></ion-input>
         </ion-item>
       </ion-col>
       <ion-col>
-        <button ion-button secondary (click)="removeRecipient(i)" *ngIf="i > 0"><ion-icon name="trash"></ion-icon></button>
+        <button ion-button secondary (click)="removeRecipient(i)" *ngIf="i > 0">
+          <ion-icon name="trash"></ion-icon>
+        </button>
       </ion-col>
     </ion-row>
   </ion-list>
-  <button ion-button secondary (click)="addRecipient()"><ion-icon name="add"></ion-icon>&nbsp;Add recipient</button>
+  <button *ngIf="!isCrossChain" ion-button secondary (click)="addRecipient()">
+    <ion-icon name="add"></ion-icon>&nbsp;Add recipient
+  </button>
+  <h4 *ngIf="isCrossChain === true">Cross-bridge Address</h4>
+  <p *ngIf="isCrossChain === true">
+    Enter the address where you'd like your new coins minted on the Binanace
+    Smart Chain.
+  </p>
+  <ion-label color="primary" fixed *ngIf="isCrossChain === true"
+    >BSC Address</ion-label
+  >
+  <ion-item *ngIf="isCrossChain === true">
+    <ion-input
+      type="text"
+      placeholder="BSC address..."
+      [(ngModel)]="bscAddress"
+      class="addressinput"
+    >
+    </ion-input>
+  </ion-item>
+  <ion-item *ngIf="isCrossChain === true">
+    <ion-input
+      type="number"
+      placeholder="YDA amount to wrap"
+      [(ngModel)]="wrapAmount"
+    >
+    </ion-input>
+  </ion-item>
   <h4>Fee</h4>
-  <p>Enter a fee amount to give your transaction higher priority or to support the miners.</p>
+  <p>
+    Enter a fee amount to give your transaction higher priority or to support
+    the miners.
+  </p>
   <ion-item>
     <ion-label color="primary" fixed>Amount</ion-label>
-    <ion-input type="number" placeholder="Amount..." [(ngModel)]="fee"></ion-input>
+    <ion-input
+      type="number"
+      placeholder="Amount..."
+      [(ngModel)]="fee"
+    ></ion-input>
   </ion-item>
-  <h4>Masternode Fee</h4>
-  <p>Enter a masternode fee if you intend to use p2p communication services. If you enter a value you do not need to send coins to anyone. However, you can pay masternode fees and send coins to recipients.</p>
-  <ion-item>
+  <h4 *ngIf="!isCrossChain">Masternode Fee</h4>
+  <p *ngIf="!isCrossChain">
+    Enter a masternode fee if you intend to use p2p communication services. If
+    you enter a value you do not need to send coins to anyone. However, you can
+    pay masternode fees and send coins to recipients.
+  </p>
+  <ion-item *ngIf="!isCrossChain">
     <ion-label color="primary" fixed>Amount</ion-label>
-    <ion-input type="number" placeholder="Amount..." [(ngModel)]="masternode_fee"></ion-input>
+    <ion-input
+      type="number"
+      placeholder="Amount..."
+      [(ngModel)]="masternode_fee"
+    ></ion-input>
   </ion-item>
-  <button ion-button secondary (click)="submit()" style="margin-top: 15px;">Send&nbsp;<ion-icon name="send"></ion-icon></button>
+  <ion-item *ngIf="!isCrossChain">
+    <ion-label color="primary" stacked
+      >Deligate masternode fee to another identity</ion-label
+    >
+    <ion-checkbox
+      [(ngModel)]="delegate_masternode_fee"
+      [disabled]="masternode_fee <= 0"
+    ></ion-checkbox>
+  </ion-item>
+  <ion-list *ngIf="delegate_masternode_fee && keys.length > 0">
+    <button
+      *ngFor="let key of keys"
+      ion-item
+      (click)="selectMasterNodeFeeDelegate(key)"
+      [color]="selected_masernode_fee_delegate && key.key === selected_masernode_fee_delegate.wif ? 'primary' : 'dark'"
+    >
+      <ion-icon name="person" item-start [color]="'dark'"></ion-icon>
+      {{key.username}}
+    </button>
+  </ion-list>
+  <ion-item *ngIf="delegate_masternode_fee && keys.length <= 0"
+    >No identities to delegate to. Create a new identity on the identity
+    tab.</ion-item
+  >
+  <button ion-button secondary (click)="submit()" style="margin-top: 15px">
+    {{isCrossChain ? 'wrap': 'send'}}&nbsp;<ion-icon name="send"></ion-icon>
+  </button>
   <h4>Receive YadaCoins</h4>
   <ion-item>
     <ion-label color="primary" stacked>Your Address:</ion-label>
     <ion-input type="text" [(ngModel)]="createdCode"></ion-input>
   </ion-item>
   <ion-item mt-5>
-    <button *ngIf="isDevice" ion-button outline item-end (click)="shareAddress()">share address&nbsp;<ion-icon name="share"></ion-icon></button>
+    <button
+      *ngIf="isDevice"
+      ion-button
+      outline
+      item-end
+      (click)="shareAddress()"
+    >
+      share address&nbsp;<ion-icon name="share"></ion-icon>
+    </button>
   </ion-item>
   <ion-card>
     <ion-card-content>
@@ -66,44 +171,119 @@
     </ion-card-content>
   </ion-card>
   <h4>Pending Transactions</h4>
-  <strong>Received</strong><br>
-  <button ion-button small (click)="prevReceivedPendingPage()" [disabled]="receivedPendingPage <= 1">< Prev</button> <button ion-button small (click)="nextReceivedPendingPage()" [disabled]="past_received_pending_transactions.length === 0 || past_received_pending_transactions.length < 10">Next ></button>
-  <p *ngIf="past_received_pending_transactions.length === 0">No more results</p><span *ngIf="receivedPendingLoading"> (loading...)</span>
+  <strong>Received</strong><br />
+  <button
+    ion-button
+    small
+    (click)="prevReceivedPendingPage()"
+    [disabled]="receivedPendingPage <= 1"
+  >
+    < Prev
+  </button>
+  <button
+    ion-button
+    small
+    (click)="nextReceivedPendingPage()"
+    [disabled]="past_received_pending_transactions.length === 0 || past_received_pending_transactions.length < 10"
+  >
+    Next >
+  </button>
+  <p *ngIf="past_received_pending_transactions.length === 0">No more results</p>
+  <span *ngIf="receivedPendingLoading"> (loading...)</span>
   <ion-list>
     <ion-item *ngFor="let txn of past_received_pending_transactions">
       <ion-label>{{convertDateTime(txn.time)}}</ion-label>
-      <ion-label><a href="/explorer?term={{txn.id}}" target="_blank">{{txn.id}}</a></ion-label>
+      <ion-label
+        ><a href="/explorer?term={{txn.id}}" target="_blank"
+          >{{txn.id}}</a
+        ></ion-label
+      >
       <ion-label>{{txn.value}}</ion-label>
     </ion-item>
   </ion-list>
-  <strong>Sent</strong><br>
-  <button ion-button small (click)="prevSentPendingPage()" [disabled]="sentPendingPage <= 1">< Prev</button> <button ion-button small (click)="nextSentPendingPage()" [disabled]="past_sent_pending_transactions.length === 0 || past_sent_pending_transactions.length < 10">Next ></button>
-  <p *ngIf="past_sent_pending_transactions.length === 0">No more results</p><span *ngIf="sentPendingLoading"> (loading...)</span>
+  <strong>Sent</strong><br />
+  <button
+    ion-button
+    small
+    (click)="prevSentPendingPage()"
+    [disabled]="sentPendingPage <= 1"
+  >
+    < Prev
+  </button>
+  <button
+    ion-button
+    small
+    (click)="nextSentPendingPage()"
+    [disabled]="past_sent_pending_transactions.length === 0 || past_sent_pending_transactions.length < 10"
+  >
+    Next >
+  </button>
+  <p *ngIf="past_sent_pending_transactions.length === 0">No more results</p>
+  <span *ngIf="sentPendingLoading"> (loading...)</span>
   <ion-list>
     <ion-item *ngFor="let txn of past_sent_pending_transactions">
       <ion-label>{{convertDateTime(txn.time)}}</ion-label>
-      <ion-label><a href="/explorer?term={{txn.id}}" target="_blank">{{txn.id}}</a></ion-label>
+      <ion-label
+        ><a href="/explorer?term={{txn.id}}" target="_blank"
+          >{{txn.id}}</a
+        ></ion-label
+      >
       <ion-label>{{txn.value}}</ion-label>
     </ion-item>
   </ion-list>
   <h4>Transaction history</h4>
-  <strong>Received</strong><br>
-  <button ion-button small (click)="prevReceivedPage()" [disabled]="receivedPage <= 1">< Prev</button> <button ion-button small (click)="nextReceivedPage()" [disabled]="past_received_transactions.length === 0 || past_received_transactions.length < 10">Next ></button>
-  <p *ngIf="past_received_transactions.length === 0">No more results</p><span *ngIf="receivedLoading"> (loading...)</span>
+  <strong>Received</strong><br />
+  <button
+    ion-button
+    small
+    (click)="prevReceivedPage()"
+    [disabled]="receivedPage <= 1"
+  >
+    < Prev
+  </button>
+  <button
+    ion-button
+    small
+    (click)="nextReceivedPage()"
+    [disabled]="past_received_transactions.length === 0 || past_received_transactions.length < 10"
+  >
+    Next >
+  </button>
+  <p *ngIf="past_received_transactions.length === 0">No more results</p>
+  <span *ngIf="receivedLoading"> (loading...)</span>
   <ion-list>
     <ion-item *ngFor="let txn of past_received_transactions">
       <ion-label>{{convertDateTime(txn.time)}}</ion-label>
-      <ion-label><a href="/explorer?term={{txn.id}}" target="_blank">{{txn.id}}</a></ion-label>
+      <ion-label
+        ><a href="/explorer?term={{txn.id}}" target="_blank"
+          >{{txn.id}}</a
+        ></ion-label
+      >
       <ion-label>{{txn.value}}</ion-label>
     </ion-item>
   </ion-list>
-  <strong>Sent</strong><br>
-  <button ion-button small (click)="prevSentPage()" [disabled]="sentPage <= 1">< Prev</button> <button ion-button small (click)="nextSentPage()" [disabled]="past_sent_transactions.length === 0 || past_sent_transactions.length < 10">Next ></button>
-  <p *ngIf="past_sent_transactions.length === 0">No more results</p><span *ngIf="sentLoading"> (loading...)</span>
+  <strong>Sent</strong><br />
+  <button ion-button small (click)="prevSentPage()" [disabled]="sentPage <= 1">
+    < Prev
+  </button>
+  <button
+    ion-button
+    small
+    (click)="nextSentPage()"
+    [disabled]="past_sent_transactions.length === 0 || past_sent_transactions.length < 10"
+  >
+    Next >
+  </button>
+  <p *ngIf="past_sent_transactions.length === 0">No more results</p>
+  <span *ngIf="sentLoading"> (loading...)</span>
   <ion-list>
     <ion-item *ngFor="let txn of past_sent_transactions">
       <ion-label>{{convertDateTime(txn.time)}}</ion-label>
-      <ion-label><a href="/explorer?term={{txn.id}}" target="_blank">{{txn.id}}</a></ion-label>
+      <ion-label
+        ><a href="/explorer?term={{txn.id}}" target="_blank"
+          >{{txn.id}}</a
+        ></ion-label
+      >
       <ion-label>{{txn.value}}</ion-label>
     </ion-item>
   </ion-list>

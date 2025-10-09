@@ -42,6 +42,11 @@ export class SendReceive {
   recipients: any;
   fee: any;
   masternode_fee: any;
+  keys: any;
+  selected_masernode_fee_delegate: any;
+  isCrossChain: any;
+  bscAddress: any;
+  wrapAmount: any;
   constructor(
     private navCtrl: NavController,
     private navParams: NavParams,
@@ -57,9 +62,11 @@ export class SendReceive {
   ) {
     if (this.navParams.get("identity")) {
       this.identity = this.navParams.get("identity");
-      this.address = this.bulletinSecretService.publicKeyToAddress(
-        this.identity.public_key
-      );
+      this.bulletinSecretService
+        .publicKeyToAddress(this.identity.public_key)
+        .then((address) => {
+          this.address = address;
+        });
     }
     this.recipients = [
       {
@@ -88,6 +95,41 @@ export class SendReceive {
     this.past_received_pending_page_cache = {};
     this.fee = 0;
     this.masternode_fee = 0;
+    this.bulletinSecretService.all().then((keys: any) => {
+      this.keys = keys.filter((item) => {
+        if (item.idx === this.bulletinSecretService.keyname) return false;
+        const username = item.idx.substr("username-".length + 1);
+        item.username = username;
+        return true;
+      });
+    });
+    this.isCrossChain = false;
+    this.bscAddress = "";
+    this.wrapAmount = 0;
+  }
+
+  async toggleIsCrossChain() {
+    this.isCrossChain = !this.isCrossChain;
+    if (this.isCrossChain) {
+      this.recipients = [
+        {
+          to: "16U1gAmHazqqEkbRE9KFPShAperjJreMRA",
+          value: 0,
+        },
+      ];
+    } else {
+      this.recipients = [
+        {
+          to: "",
+          value: 0,
+        },
+      ];
+    }
+  }
+
+  async selectMasterNodeFeeDelegate(key) {
+    const identity = await this.bulletinSecretService.keyToIdentity(key);
+    this.selected_masernode_fee_delegate = identity;
   }
 
   scan() {
@@ -135,17 +177,50 @@ export class SendReceive {
     const fee = parseFloat(this.fee) || 0;
     const masternode_fee = parseFloat(this.masternode_fee) || 0;
     var alert = this.alertCtrl.create();
-    if (!this.recipients[0].to && masternode_fee === 0) {
+    if (!this.isCrossChain && !this.recipients[0].to && masternode_fee === 0) {
       alert.setTitle("Enter an address");
       alert.addButton("Ok");
       alert.present();
       return;
     }
-    if (!this.recipients[0].value && masternode_fee === 0) {
+    if (
+      !this.isCrossChain &&
+      !this.recipients[0].value &&
+      masternode_fee === 0
+    ) {
       alert.setTitle("Enter an amount");
       alert.addButton("Ok");
       alert.present();
       return;
+    }
+    if (this.isCrossChain && !this.bscAddress.includes("0x")) {
+      alert.setTitle("Enter a valid BSC Address");
+      alert.addButton("Ok");
+      alert.present();
+      return;
+    }
+    if (this.isCrossChain && parseFloat(this.wrapAmount) <= 0) {
+      alert.setTitle("Enter an amount of yada to wrap");
+      alert.addButton("Ok");
+      alert.present();
+      return;
+    }
+    if (this.masternode_fee > 0 && !this.selected_masernode_fee_delegate) {
+      alert.setTitle(
+        "You must select a masternode fee delegate from the list."
+      );
+      alert.addButton("Ok");
+      alert.present();
+      return;
+    }
+
+    if (this.isCrossChain) {
+      this.recipients = [
+        {
+          to: "16U1gAmHazqqEkbRE9KFPShAperjJreMRA",
+          value: parseFloat(this.wrapAmount),
+        },
+      ];
     }
     let total = fee + masternode_fee;
     this.recipients.map((output, i) => {
@@ -153,7 +228,12 @@ export class SendReceive {
       total += parseFloat(output.value);
     });
     alert.setTitle("Approve Transaction");
-    alert.setSubTitle("You are about to spend " + total + " coins");
+    alert.setSubTitle(
+      "You are about to " +
+        (this.isCrossChain ? "wrap " : "spend ") +
+        total +
+        " coins"
+    );
     alert.addButton("Cancel");
     alert.addButton({
       text: "Confirm",
@@ -202,6 +282,11 @@ export class SendReceive {
               outputs: clonedRecipients,
               fee: this.fee,
               masternode_fee: this.masternode_fee,
+              masternode_fee_delegate: this.selected_masernode_fee_delegate
+                ? this.selected_masernode_fee_delegate.address
+                : "",
+              isCrossChain: this.isCrossChain,
+              bscAddress: this.bscAddress,
             });
           })
           .then((txn) => {

@@ -154,6 +154,19 @@ export class BulletinSecretService {
     });
   }
 
+  async keyToIdentity(key) {
+    const privkey = foobar.bitcoin.ECPair.fromWIF(key.key);
+    const username = key.idx.substr("usernames-".length);
+    const public_key = privkey.getPublicKeyBuffer().toString("hex");
+    return {
+      username: username,
+      username_signature: this.generate_username_signature(),
+      public_key: public_key,
+      address: await this.publicKeyToAddress(public_key),
+      wif: key.key,
+    };
+  }
+
   all() {
     return new Promise((resolve, reject) => {
       var keykeys = [];
@@ -184,8 +197,8 @@ export class BulletinSecretService {
     };
   }
 
-  publicKeyToAddress(public_key) {
-    return foobar.bitcoin.ECPair.fromPublicKeyBuffer(
+  async publicKeyToAddress(public_key) {
+    return await foobar.bitcoin.ECPair.fromPublicKeyBuffer(
       foobar.Buffer.Buffer.from(public_key, "hex")
     ).getAddress();
   }

@@ -31,6 +31,8 @@ export class TransactionService {
   username = null;
   signatures = null;
   recipient_identity = null;
+  isCrossChain = null;
+  bscAddress = null;
   constructor(
     private walletService: WalletService,
     private bulletinSecretService: BulletinSecretService,
@@ -53,6 +55,8 @@ export class TransactionService {
       this.callbackurl = this.info.callbackurl;
       this.to = this.info.to;
       this.value = parseFloat(this.info.value);
+      this.isCrossChain = info.isCrossChain;
+      this.bscAddress = info.bscAddress;
 
       this.transaction = {
         version: version,
@@ -137,13 +141,13 @@ export class TransactionService {
                 }
                 input_sum += parseFloat(unspent_output.value);
                 console.log(parseFloat(unspent_output.value));
-                this.transaction.outputs.push({
-                  to: this.key.getAddress(),
-                  value: input_sum - transaction_total,
-                });
               }
             }
           }
+          this.transaction.outputs.push({
+            to: this.key.getAddress(),
+            value: input_sum - transaction_total,
+          });
 
           if (input_sum < transaction_total) {
             return reject(
@@ -194,8 +198,29 @@ export class TransactionService {
         return 0;
       });
       var outputs_hashes_concat = outputs_hashes_arr.join("");
+
+      if (
+        this.info.masternode_fee > 0 &&
+        this.info.masternode_fee_delegate.length > 0
+      ) {
+        this.info.relationship = this.info.masternode_fee_delegate;
+        this.info.relationship_hash = foobar.bitcoin.crypto
+          .sha256(this.info.relationship)
+          .toString("hex");
+      }
+
+      if (this.isCrossChain === true && this.bscAddress) {
+        this.info.relationship = this.bscAddress;
+        this.info.relationship_hash = foobar.bitcoin.crypto
+          .sha256(this.info.relationship)
+          .toString("hex");
+      }
+
       if (typeof this.info.relationship === "string") {
         this.transaction.relationship = this.info.relationship;
+      }
+      if (typeof this.info.relationship_hash === "string") {
+        this.transaction.relationship_hash = this.info.relationship_hash;
       }
 
       if (this.info.dh_public_key && this.info.relationship.dh_private_key) {

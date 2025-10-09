@@ -1918,7 +1918,7 @@ export class GraphService {
     });
   }
 
-  createGroup(
+  async createGroup(
     groupname,
     parentGroup = null,
     extraData = {},
@@ -1969,7 +1969,7 @@ export class GraphService {
     return this.transactionService
       .generateTransaction({
         relationship: info,
-        to: this.bulletinSecretService.publicKeyToAddress(
+        to: await this.bulletinSecretService.publicKeyToAddress(
           this.bulletinSecretService.identity.public_key
         ),
         requester_rid: this.generateRid(
@@ -2117,7 +2117,7 @@ export class GraphService {
     });
   }
 
-  addFriend(identity, rid = "", requester_rid = "", requested_rid = "") {
+  async addFriend(identity, rid = "", requester_rid = "", requested_rid = "") {
     rid =
       rid ||
       this.generateRid(
@@ -2163,7 +2163,9 @@ export class GraphService {
         requested_rid: requested_rid,
         requester_rid: requester_rid,
         rid: rid,
-        to: this.bulletinSecretService.publicKeyToAddress(identity.public_key),
+        to: await this.bulletinSecretService.publicKeyToAddress(
+          identity.public_key
+        ),
         recipient_identity: identity,
       })
       .then((hash) => {
@@ -2180,7 +2182,7 @@ export class GraphService {
     });
   }
 
-  addGroup(
+  async addGroup(
     identity,
     rid = "",
     requester_rid = "",
@@ -2229,7 +2231,9 @@ export class GraphService {
         relationship: info,
         requested_rid: requested_rid,
         requester_rid: requester_rid,
-        to: this.bulletinSecretService.publicKeyToAddress(identity.public_key),
+        to: await this.bulletinSecretService.publicKeyToAddress(
+          identity.public_key
+        ),
       })
       .then((txn) => {
         return this.transactionService.sendTransaction(txn);

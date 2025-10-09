@@ -35,7 +35,10 @@ export class PeerService {
         return resolve(null);
       });
     return new Promise((resolve, reject) => {
-      var domain = window.location.origin;
+      var domain =
+        window.location.origin === "http://localhost:8100"
+          ? `http://${window.location.hostname}:8005`
+          : window.location.origin;
       this.settingsService.remoteSettingsUrl = domain;
       this.settingsService.remoteSettings = {
         baseUrl: domain,
@@ -75,10 +78,13 @@ export class PeerService {
                 let url = new URL(
                   remoteSettings[Object.keys(remoteSettings)[i]]
                 );
+
                 remoteSettings[Object.keys(remoteSettings)[i]] =
                   url.protocol +
                   "//" +
-                  location.host +
+                  (window.location.origin === "http://localhost:8100"
+                    ? `${window.location.hostname}:8005`
+                    : window.location.host) +
                   (url.pathname === "/" ? "" : url.pathname);
               } catch (e) {
                 continue;
